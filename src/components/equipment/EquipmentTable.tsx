@@ -24,16 +24,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { 
   MoreHorizontal, 
   Eye, 
@@ -46,13 +36,14 @@ import {
   Plus,
   ArrowUpDown,
   Calendar,
-  User,
   Info,
 } from 'lucide-react';
 import { Equipment, InspectionFrequency } from '@/types/equipment';
 import { StatusBadge } from './StatusBadge';
+import { EquipmentFormDialog } from './EquipmentFormDialog';
+import { InspectionFormDialog } from './InspectionFormDialog';
+import { EquipmentDetailDialog } from './EquipmentDetailDialog';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
 
 interface EquipmentTableProps {
   equipment: Equipment[];
@@ -69,13 +60,6 @@ const frequencyLabels: Record<string, string> = {
   custom: 'Personalizada',
 };
 
-const mockInspectors = [
-  { id: 'insp-1', name: 'Carlos Silva', role: 'Técnico de Segurança' },
-  { id: 'insp-2', name: 'Maria Santos', role: 'Engenheira de Segurança' },
-  { id: 'insp-3', name: 'João Oliveira', role: 'Técnico de Manutenção' },
-  { id: 'insp-4', name: 'Ana Costa', role: 'Inspetora Certificada' },
-];
-
 export function EquipmentTable({ 
   equipment, 
   categoryName,
@@ -85,15 +69,13 @@ export function EquipmentTable({
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [inspectionDialogOpen, setInspectionDialogOpen] = useState(false);
+  
+  // Dialog states
+  const [equipmentFormOpen, setEquipmentFormOpen] = useState(false);
+  const [inspectionFormOpen, setInspectionFormOpen] = useState(false);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
-  const [inspectionData, setInspectionData] = useState({
-    inspector: '',
-    date: new Date().toISOString().split('T')[0],
-    status: 'compliant',
-    observations: '',
-  });
-  const { toast } = useToast();
+  const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
 
   const filteredEquipment = equipment.filter(item => {
     const matchesSearch = 
@@ -119,36 +101,26 @@ export function EquipmentTable({
     );
   };
 
-  const openInspectionDialog = (eq: Equipment) => {
-    setSelectedEquipment(eq);
-    setInspectionData({
-      inspector: '',
-      date: new Date().toISOString().split('T')[0],
-      status: 'compliant',
-      observations: '',
-    });
-    setInspectionDialogOpen(true);
+  const openCreateForm = () => {
+    setFormMode('create');
+    setSelectedEquipment(null);
+    setEquipmentFormOpen(true);
   };
 
-  const handleInspectionSubmit = () => {
-    if (!inspectionData.inspector) {
-      toast({
-        title: "Erro",
-        description: "Selecione o responsável pela inspeção",
-        variant: "destructive",
-      });
-      return;
-    }
+  const openEditForm = (eq: Equipment) => {
+    setFormMode('edit');
+    setSelectedEquipment(eq);
+    setEquipmentFormOpen(true);
+  };
 
-    const inspector = mockInspectors.find(i => i.id === inspectionData.inspector);
-    
-    toast({
-      title: "Inspeção Registrada",
-      description: `Inspeção do equipamento ${selectedEquipment?.internalCode} registrada por ${inspector?.name}`,
-    });
-    
-    setInspectionDialogOpen(false);
-    setSelectedEquipment(null);
+  const openInspectionForm = (eq: Equipment) => {
+    setSelectedEquipment(eq);
+    setInspectionFormOpen(true);
+  };
+
+  const openDetailDialog = (eq: Equipment) => {
+    setSelectedEquipment(eq);
+    setDetailDialogOpen(true);
   };
 
   return (
@@ -208,7 +180,7 @@ export function EquipmentTable({
                 <Download className="h-4 w-4" />
                 Exportar
               </Button>
-              <Button className="gap-2">
+              <Button className="gap-2" onClick={openCreateForm}>
                 <Plus className="h-4 w-4" />
                 Novo Equipamento
               </Button>
@@ -270,11 +242,12 @@ export function EquipmentTable({
                   <TableRow 
                     key={item.id}
                     className={cn(
-                      'transition-colors',
+                      'transition-colors cursor-pointer',
                       selectedRows.includes(item.id) && 'bg-primary/5'
                     )}
+                    onDoubleClick={() => openDetailDialog(item)}
                   >
-                    <TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
                       <Checkbox
                         checked={selectedRows.includes(item.id)}
                         onCheckedChange={() => toggleRow(item.id)}
@@ -307,7 +280,7 @@ export function EquipmentTable({
                     <TableCell className="text-sm">
                       {new Date(item.certificateExpiry).toLocaleDateString('pt-BR')}
                     </TableCell>
-                    <TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -315,15 +288,21 @@ export function EquipmentTable({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-popover border border-border shadow-lg z-50">
-                          <DropdownMenuItem className="gap-2 cursor-pointer">
+                          <DropdownMenuItem 
+                            className="gap-2 cursor-pointer"
+                            onClick={() => openDetailDialog(item)}
+                          >
                             <Eye className="h-4 w-4" /> Visualizar
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="gap-2 cursor-pointer">
+                          <DropdownMenuItem 
+                            className="gap-2 cursor-pointer"
+                            onClick={() => openEditForm(item)}
+                          >
                             <Edit className="h-4 w-4" /> Editar
                           </DropdownMenuItem>
                           <DropdownMenuItem 
                             className="gap-2 cursor-pointer"
-                            onClick={() => openInspectionDialog(item)}
+                            onClick={() => openInspectionForm(item)}
                           >
                             <ClipboardCheck className="h-4 w-4" /> Registrar Inspeção
                           </DropdownMenuItem>
@@ -354,121 +333,50 @@ export function EquipmentTable({
         </div>
       </div>
 
-      {/* Inspection Dialog */}
-      <Dialog open={inspectionDialogOpen} onOpenChange={setInspectionDialogOpen}>
-        <DialogContent className="sm:max-w-lg bg-card border border-border">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ClipboardCheck className="h-5 w-5 text-primary" />
-              Registrar Inspeção
-            </DialogTitle>
-            <DialogDescription>
-              {selectedEquipment && (
-                <span>
-                  Equipamento: <strong>{selectedEquipment.internalCode}</strong> - {selectedEquipment.name}
-                </span>
-              )}
-            </DialogDescription>
-          </DialogHeader>
+      {/* Equipment Form Dialog */}
+      <EquipmentFormDialog
+        open={equipmentFormOpen}
+        onOpenChange={setEquipmentFormOpen}
+        mode={formMode}
+        initialData={selectedEquipment ? {
+          internalCode: selectedEquipment.internalCode,
+          name: selectedEquipment.name,
+          categoryId: selectedEquipment.categoryId,
+          type: selectedEquipment.type,
+          manufacturer: selectedEquipment.manufacturer,
+          model: selectedEquipment.model,
+          serialNumber: selectedEquipment.serialNumber,
+          unit: selectedEquipment.unit,
+          location: selectedEquipment.location,
+          manufacturingDate: selectedEquipment.manufacturingDate,
+          acquisitionDate: selectedEquipment.acquisitionDate,
+          expiryDate: selectedEquipment.expiryDate,
+          certificateExpiry: selectedEquipment.certificateExpiry,
+        } : undefined}
+      />
 
-          <div className="space-y-4 py-4">
-            {/* Inspector Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="inspector" className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                Responsável pela Inspeção *
-              </Label>
-              <Select 
-                value={inspectionData.inspector} 
-                onValueChange={(value) => setInspectionData(prev => ({ ...prev, inspector: value }))}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione o inspetor responsável" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover border border-border shadow-lg z-50">
-                  {mockInspectors.map((inspector) => (
-                    <SelectItem key={inspector.id} value={inspector.id}>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{inspector.name}</span>
-                        <span className="text-xs text-muted-foreground">{inspector.role}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+      {/* Inspection Form Dialog */}
+      <InspectionFormDialog
+        open={inspectionFormOpen}
+        onOpenChange={setInspectionFormOpen}
+        equipment={selectedEquipment}
+      />
 
-            {/* Inspection Date */}
-            <div className="space-y-2">
-              <Label htmlFor="date" className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Data da Inspeção
-              </Label>
-              <Input
-                id="date"
-                type="date"
-                value={inspectionData.date}
-                onChange={(e) => setInspectionData(prev => ({ ...prev, date: e.target.value }))}
-              />
-            </div>
-
-            {/* Inspection Status */}
-            <div className="space-y-2">
-              <Label>Resultado da Inspeção</Label>
-              <Select 
-                value={inspectionData.status} 
-                onValueChange={(value) => setInspectionData(prev => ({ ...prev, status: value }))}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-popover border border-border shadow-lg z-50">
-                  <SelectItem value="compliant">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-status-success" />
-                      Conforme
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="attention">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-status-warning" />
-                      Atenção
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="non-compliant">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-status-danger" />
-                      Não Conforme
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Observations */}
-            <div className="space-y-2">
-              <Label htmlFor="observations">Observações</Label>
-              <Textarea
-                id="observations"
-                placeholder="Adicione observações sobre a inspeção..."
-                value={inspectionData.observations}
-                onChange={(e) => setInspectionData(prev => ({ ...prev, observations: e.target.value }))}
-                rows={3}
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setInspectionDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleInspectionSubmit} className="gap-2">
-              <ClipboardCheck className="h-4 w-4" />
-              Registrar Inspeção
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Equipment Detail Dialog */}
+      <EquipmentDetailDialog
+        open={detailDialogOpen}
+        onOpenChange={setDetailDialogOpen}
+        equipment={selectedEquipment}
+        onEdit={() => {
+          setDetailDialogOpen(false);
+          setFormMode('edit');
+          setEquipmentFormOpen(true);
+        }}
+        onNewInspection={() => {
+          setDetailDialogOpen(false);
+          setInspectionFormOpen(true);
+        }}
+      />
     </>
   );
 }
