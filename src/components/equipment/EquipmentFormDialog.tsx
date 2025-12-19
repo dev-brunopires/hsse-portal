@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -41,9 +41,12 @@ import {
   CheckCircle2,
   Loader2,
 } from 'lucide-react';
-import { mockCategories } from '@/data/mockData';
+import { useCategories } from '@/hooks/useCategories';
+import { useCreateEquipment, useUpdateEquipment } from '@/hooks/useEquipment';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { uploadEquipmentDocument } from '@/hooks/useStorage';
 
 const equipmentSchema = z.object({
   // Dados Gerais
@@ -72,7 +75,8 @@ interface EquipmentFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   mode: 'create' | 'edit';
-  initialData?: Partial<EquipmentFormData>;
+  initialData?: Partial<EquipmentFormData> & { id?: string };
+  onSuccess?: () => void;
 }
 
 const units = [
@@ -89,12 +93,18 @@ export function EquipmentFormDialog({
   open, 
   onOpenChange, 
   mode,
-  initialData 
+  initialData,
+  onSuccess,
 }: EquipmentFormDialogProps) {
   const [activeTab, setActiveTab] = useState('general');
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
+  
+  const { data: categories = [], isLoading: categoriesLoading } = useCategories();
+  const createEquipment = useCreateEquipment();
+  const updateEquipment = useUpdateEquipment();
 
   const form = useForm<EquipmentFormData>({
     resolver: zodResolver(equipmentSchema),
@@ -116,6 +126,29 @@ export function EquipmentFormDialog({
     },
   });
 
+  useEffect(() => {
+    if (open && initialData) {
+      form.reset({
+        internalCode: initialData.internalCode || '',
+        name: initialData.name || '',
+        categoryId: initialData.categoryId || '',
+        type: initialData.type || '',
+        manufacturer: initialData.manufacturer || '',
+        model: initialData.model || '',
+        serialNumber: initialData.serialNumber || '',
+        unit: initialData.unit || '',
+        location: initialData.location || '',
+        manufacturingDate: initialData.manufacturingDate || '',
+        acquisitionDate: initialData.acquisitionDate || '',
+        expiryDate: initialData.expiryDate || '',
+        certificateExpiry: initialData.certificateExpiry || '',
+        observations: initialData.observations || '',
+      });
+    } else if (open && !initialData) {
+      form.reset();
+    }
+  }, [open, initialData, form]);
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
@@ -130,18 +163,53 @@ export function EquipmentFormDialog({
   const onSubmit = async (data: EquipmentFormData) => {
     setIsSubmitting(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    toast({
-      title: mode === 'create' ? 'Equipamento Cadastrado' : 'Equipamento Atualizado',
-      description: `${data.name} (${data.internalCode}) foi ${mode === 'create' ? 'cadastrado' : 'atualizado'} com sucesso.`,
-    });
-    
-    setIsSubmitting(false);
-    onOpenChange(false);
-    form.reset();
-    setUploadedFiles([]);
+    try {
+      const equipmentData = {
+        internal_code: data.internalCode,
+        name: data.name,
+        category_id: data.categoryId,
+        type: data.type,
+        manufacturer: data.manufacturer,
+        model: data.model,
+        serial_number: data.serialNumber,
+        unit: data.unit,
+        location: data.location,
+        manufacturing_date: data.manufacturingDate,
+        acquisition_date: data.acquisitionDate,
+        expiry_date: data.expiryDate || null,
+        certificate_expiry: data.certificateExpiry || null,
+        observations: data.observations || null,
+        created_by: user?.id,
+      };
+
+      let equipmentId: string;
+
+      if (mode === 'create') {
+        const result = await createEquipment.mutateAsync(equipmentData);
+        equipmentId = result.id;
+      } else if (initialData?.id) {
+        await updateEquipment.mutateAsync({ id: initialData.id, ...equipmentData });
+        equipmentId = initialData.id;
+      } else {
+        throw new Error('ID do equipamento não encontrado');
+      }
+
+      // Upload documents
+      if (uploadedFiles.length > 0 && user) {
+        for (const file of uploadedFiles) {
+          await uploadEquipmentDocument(equipmentId, file, user.id);
+        }
+      }
+
+      onOpenChange(false);
+      form.reset();
+      setUploadedFiles([]);
+      onSuccess?.();
+    } catch (error) {
+      console.error('Error saving equipment:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const tabProgress = {
@@ -227,14 +295,14 @@ export function EquipmentFormDialog({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Categoria *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select onValueChange={field.onChange} value={field.value} disabled={categoriesLoading}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Selecione a categoria" />
+                                <SelectValue placeholder={categoriesLoading ? 'Carregando...' : 'Selecione a categoria'} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent className="bg-popover border border-border shadow-lg z-50">
-                              {mockCategories.map((cat) => (
+                              {categories.map((cat) => (
                                 <SelectItem key={cat.id} value={cat.id}>
                                   {cat.name}
                                 </SelectItem>

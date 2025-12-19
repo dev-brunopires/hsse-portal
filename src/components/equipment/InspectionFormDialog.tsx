@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -27,7 +27,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -36,23 +35,24 @@ import {
   ClipboardCheck, 
   User, 
   Calendar,
-  Upload,
   X,
   CheckCircle2,
   AlertTriangle,
   XCircle,
   Loader2,
   Camera,
-  FileText,
 } from 'lucide-react';
 import { Equipment } from '@/types/equipment';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useTechniciansAndAdmins } from '@/hooks/useProfiles';
+import { useCreateInspection } from '@/hooks/useInspections';
+import { useAuth } from '@/contexts/AuthContext';
 
 const inspectionSchema = z.object({
   inspectorId: z.string().min(1, 'Selecione o inspetor responsável'),
   inspectionDate: z.string().min(1, 'Data é obrigatória'),
-  overallStatus: z.enum(['compliant', 'attention', 'non-compliant']),
+  overallStatus: z.enum(['approved', 'attention', 'rejected']),
   observations: z.string().optional(),
   recommendations: z.string().optional(),
   nextInspectionDate: z.string().optional(),
@@ -64,6 +64,7 @@ interface InspectionFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   equipment: Equipment | null;
+  onSuccess?: () => void;
 }
 
 interface ChecklistItem {
@@ -73,13 +74,6 @@ interface ChecklistItem {
   notes: string;
   required: boolean;
 }
-
-const mockInspectors = [
-  { id: 'insp-1', name: 'Carlos Silva', role: 'Técnico de Segurança', cert: 'NR-13, NR-35' },
-  { id: 'insp-2', name: 'Maria Santos', role: 'Engenheira de Segurança', cert: 'CREA-RJ' },
-  { id: 'insp-3', name: 'João Oliveira', role: 'Técnico de Manutenção', cert: 'NR-10, NR-12' },
-  { id: 'insp-4', name: 'Ana Costa', role: 'Inspetora Certificada', cert: 'ISO 9001' },
-];
 
 const getChecklistForCategory = (categoryId: string): ChecklistItem[] => {
   const baseChecklist: ChecklistItem[] = [
@@ -117,31 +111,43 @@ const getChecklistForCategory = (categoryId: string): ChecklistItem[] => {
 export function InspectionFormDialog({ 
   open, 
   onOpenChange, 
-  equipment 
+  equipment,
+  onSuccess,
 }: InspectionFormDialogProps) {
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
   const [uploadedPhotos, setUploadedPhotos] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
+  
+  const { data: inspectors = [], isLoading: inspectorsLoading } = useTechniciansAndAdmins();
+  const createInspection = useCreateInspection();
 
   const form = useForm<InspectionFormData>({
     resolver: zodResolver(inspectionSchema),
     defaultValues: {
       inspectorId: '',
       inspectionDate: new Date().toISOString().split('T')[0],
-      overallStatus: 'compliant',
+      overallStatus: 'approved',
       observations: '',
       recommendations: '',
       nextInspectionDate: '',
     },
   });
 
-  // Initialize checklist when equipment changes
-  useState(() => {
-    if (equipment) {
+  useEffect(() => {
+    if (open && equipment) {
       setChecklist(getChecklistForCategory(equipment.categoryId));
+      form.reset({
+        inspectorId: user?.id || '',
+        inspectionDate: new Date().toISOString().split('T')[0],
+        overallStatus: 'approved',
+        observations: '',
+        recommendations: '',
+        nextInspectionDate: '',
+      });
     }
-  });
+  }, [open, equipment, form, user]);
 
   const updateChecklistItem = (itemId: string, field: 'status' | 'notes', value: string) => {
     setChecklist(prev => prev.map(item => 
@@ -168,15 +174,17 @@ export function InspectionFormDialog({
     return counts;
   };
 
-  const calculateOverallStatus = () => {
+  const calculateOverallStatus = (): 'approved' | 'attention' | 'rejected' => {
     const counts = getStatusCounts();
-    if (counts.fail > 0) return 'non-compliant';
+    if (counts.fail > 0) return 'rejected';
     if (counts.attention > 0) return 'attention';
     if (counts.pending > 0) return 'attention';
-    return 'compliant';
+    return 'approved';
   };
 
   const onSubmit = async (data: InspectionFormData) => {
+    if (!equipment) return;
+    
     const pendingItems = checklist.filter(item => item.status === 'pending' && item.required);
     if (pendingItems.length > 0) {
       toast({
@@ -189,21 +197,35 @@ export function InspectionFormDialog({
 
     setIsSubmitting(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    const inspector = mockInspectors.find(i => i.id === data.inspectorId);
-    
-    toast({
-      title: "Inspeção Registrada",
-      description: `Inspeção do equipamento ${equipment?.internalCode} registrada com sucesso por ${inspector?.name}.`,
-    });
-    
-    setIsSubmitting(false);
-    onOpenChange(false);
-    form.reset();
-    setChecklist([]);
-    setUploadedPhotos([]);
+    try {
+      await createInspection.mutateAsync({
+        inspection: {
+          equipment_id: equipment.id,
+          inspector_id: data.inspectorId,
+          inspection_date: data.inspectionDate,
+          status: calculateOverallStatus(),
+          observations: data.observations || null,
+          recommendations: data.recommendations || null,
+          next_inspection_date: data.nextInspectionDate || null,
+        },
+        checklistItems: checklist.map(item => ({
+          description: item.description,
+          status: item.status,
+          notes: item.notes,
+        })),
+        photos: uploadedPhotos,
+      });
+      
+      onOpenChange(false);
+      form.reset();
+      setChecklist([]);
+      setUploadedPhotos([]);
+      onSuccess?.();
+    } catch (error) {
+      console.error('Error creating inspection:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const statusCounts = getStatusCounts();
@@ -248,19 +270,19 @@ export function InspectionFormDialog({
                           <User className="h-4 w-4" />
                           Inspetor Responsável *
                         </FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value} disabled={inspectorsLoading}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Selecione o inspetor" />
+                              <SelectValue placeholder={inspectorsLoading ? 'Carregando...' : 'Selecione o inspetor'} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent className="bg-popover border border-border shadow-lg z-50">
-                            {mockInspectors.map((inspector) => (
-                              <SelectItem key={inspector.id} value={inspector.id}>
+                            {inspectors.map((inspector) => (
+                              <SelectItem key={inspector.user_id} value={inspector.user_id}>
                                 <div className="flex flex-col">
-                                  <span className="font-medium">{inspector.name}</span>
+                                  <span className="font-medium">{inspector.full_name}</span>
                                   <span className="text-xs text-muted-foreground">
-                                    {inspector.role} • {inspector.cert}
+                                    {inspector.email}
                                   </span>
                                 </div>
                               </SelectItem>
@@ -536,25 +558,19 @@ export function InspectionFormDialog({
                 Cancelar
               </Button>
               
-              <div className="flex items-center gap-2">
-                <Button type="button" variant="outline" className="gap-2">
-                  <FileText className="h-4 w-4" />
-                  Salvar Rascunho
-                </Button>
-                <Button type="submit" disabled={isSubmitting} className="gap-2">
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Registrando...
-                    </>
-                  ) : (
-                    <>
-                      <ClipboardCheck className="h-4 w-4" />
-                      Finalizar Inspeção
-                    </>
-                  )}
-                </Button>
-              </div>
+              <Button type="submit" disabled={isSubmitting} className="gap-2">
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Registrando...
+                  </>
+                ) : (
+                  <>
+                    <ClipboardCheck className="h-4 w-4" />
+                    Finalizar Inspeção
+                  </>
+                )}
+              </Button>
             </div>
           </form>
         </Form>
