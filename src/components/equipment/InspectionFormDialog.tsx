@@ -522,26 +522,26 @@ export function InspectionFormDialog({
                 {/* Overall Status Summary */}
                 <div className={cn(
                   'p-4 rounded-lg border',
-                  calculateOverallStatus() === 'compliant' && 'border-status-success bg-status-success/10',
+                  calculateOverallStatus() === 'approved' && 'border-status-success bg-status-success/10',
                   calculateOverallStatus() === 'attention' && 'border-status-warning bg-status-warning/10',
-                  calculateOverallStatus() === 'non-compliant' && 'border-status-danger bg-status-danger/10',
+                  calculateOverallStatus() === 'rejected' && 'border-status-danger bg-status-danger/10',
                 )}>
                   <div className="flex items-center gap-3">
-                    {calculateOverallStatus() === 'compliant' && (
+                    {calculateOverallStatus() === 'approved' && (
                       <CheckCircle2 className="h-6 w-6 text-status-success" />
                     )}
                     {calculateOverallStatus() === 'attention' && (
                       <AlertTriangle className="h-6 w-6 text-status-warning" />
                     )}
-                    {calculateOverallStatus() === 'non-compliant' && (
+                    {calculateOverallStatus() === 'rejected' && (
                       <XCircle className="h-6 w-6 text-status-danger" />
                     )}
                     <div>
                       <p className="font-semibold">
                         Status Geral: {' '}
-                        {calculateOverallStatus() === 'compliant' && 'CONFORME'}
+                        {calculateOverallStatus() === 'approved' && 'APROVADO'}
                         {calculateOverallStatus() === 'attention' && 'ATENÇÃO NECESSÁRIA'}
-                        {calculateOverallStatus() === 'non-compliant' && 'NÃO CONFORME'}
+                        {calculateOverallStatus() === 'rejected' && 'REPROVADO'}
                       </p>
                       <p className="text-sm text-muted-foreground">
                         {statusCounts.ok} conformes • {statusCounts.attention} com atenção • {statusCounts.fail} não conformes
