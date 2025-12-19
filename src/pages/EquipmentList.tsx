@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EquipmentTable } from '@/components/equipment/EquipmentTable';
-import { mockEquipment, mockCategories } from '@/data/mockData';
+import { useEquipment } from '@/hooks/useEquipment';
+import { useCategories } from '@/hooks/useCategories';
 import { 
   Flame, 
   Wind, 
@@ -10,7 +11,8 @@ import {
   Gauge, 
   ArrowUp, 
   Package,
-  FolderOpen 
+  FolderOpen,
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -21,20 +23,37 @@ const iconMap: Record<string, React.ElementType> = {
   waves: Waves,
   gauge: Gauge,
   'arrow-up': ArrowUp,
+  package: Package,
 };
 
 export default function EquipmentList() {
   const [activeTab, setActiveTab] = useState('all');
+  const { data: equipment = [], isLoading: equipmentLoading } = useEquipment();
+  const { data: categories = [], isLoading: categoriesLoading } = useCategories();
 
   const getEquipmentByCategory = (categoryId: string) => {
-    if (categoryId === 'all') return mockEquipment;
-    return mockEquipment.filter(eq => eq.categoryId === categoryId);
+    if (categoryId === 'all') return equipment;
+    return equipment.filter(eq => eq.category_id === categoryId);
   };
 
   const getCategoryCount = (categoryId: string) => {
-    if (categoryId === 'all') return mockEquipment.length;
-    return mockEquipment.filter(eq => eq.categoryId === categoryId).length;
+    if (categoryId === 'all') return equipment.length;
+    return equipment.filter(eq => eq.category_id === categoryId).length;
   };
+
+  const getCategory = (categoryId: string) => {
+    return categories.find(c => c.id === categoryId);
+  };
+
+  const isLoading = equipmentLoading || categoriesLoading;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -72,8 +91,8 @@ export default function EquipmentList() {
             </TabsTrigger>
 
             {/* Category Tabs */}
-            {mockCategories.map((category) => {
-              const IconComponent = iconMap[category.icon] || FolderOpen;
+            {categories.map((category) => {
+              const IconComponent = iconMap[category.icon || 'package'] || FolderOpen;
               const count = getCategoryCount(category.id);
               
               return (
@@ -109,13 +128,13 @@ export default function EquipmentList() {
         </TabsContent>
 
         {/* Category-specific Content */}
-        {mockCategories.map((category) => (
+        {categories.map((category) => (
           <TabsContent key={category.id} value={category.id} className="mt-6">
             <EquipmentTable 
               equipment={getEquipmentByCategory(category.id)} 
               categoryName={category.name}
-              categoryDescription={category.description}
-              inspectionFrequency={category.inspectionFrequency}
+              categoryDescription={category.description || undefined}
+              inspectionFrequency={category.inspection_frequency as any}
             />
           </TabsContent>
         ))}
