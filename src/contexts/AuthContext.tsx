@@ -38,6 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [role, setRole] = useState<UserRole['role'] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [roleLoading, setRoleLoading] = useState(false);
   const { toast } = useToast();
 
   const fetchProfile = async (userId: string) => {
@@ -56,6 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const fetchRole = async (userId: string) => {
+    setRoleLoading(true);
     try {
       const { data, error } = await supabase
         .from('user_roles')
@@ -68,6 +70,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Error fetching role:', error);
       setRole('viewer');
+    } finally {
+      setRoleLoading(false);
     }
   };
 
@@ -94,13 +98,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        fetchProfile(session.user.id);
-        fetchRole(session.user.id);
+        await Promise.all([
+          fetchProfile(session.user.id),
+          fetchRole(session.user.id),
+        ]);
       }
       
       setLoading(false);
