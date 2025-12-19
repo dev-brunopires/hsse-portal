@@ -1,0 +1,593 @@
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  Package, 
+  Building2, 
+  Calendar, 
+  FileText, 
+  Upload,
+  X,
+  Image as ImageIcon,
+  File,
+  CheckCircle2,
+  Loader2,
+} from 'lucide-react';
+import { mockCategories } from '@/data/mockData';
+import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+
+const equipmentSchema = z.object({
+  // Dados Gerais
+  internalCode: z.string().min(1, 'Código interno é obrigatório'),
+  name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
+  categoryId: z.string().min(1, 'Selecione uma categoria'),
+  type: z.string().min(1, 'Tipo é obrigatório'),
+  manufacturer: z.string().min(1, 'Fabricante é obrigatório'),
+  model: z.string().min(1, 'Modelo é obrigatório'),
+  serialNumber: z.string().min(1, 'Número de série é obrigatório'),
+  // Localização
+  unit: z.string().min(1, 'Unidade é obrigatória'),
+  location: z.string().min(1, 'Localização é obrigatória'),
+  // Datas
+  manufacturingDate: z.string().min(1, 'Data de fabricação é obrigatória'),
+  acquisitionDate: z.string().min(1, 'Data de aquisição é obrigatória'),
+  expiryDate: z.string().optional(),
+  certificateExpiry: z.string().optional(),
+  // Observações
+  observations: z.string().optional(),
+});
+
+type EquipmentFormData = z.infer<typeof equipmentSchema>;
+
+interface EquipmentFormDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  mode: 'create' | 'edit';
+  initialData?: Partial<EquipmentFormData>;
+}
+
+const units = [
+  'FPSO Cidade de Paraty',
+  'FPSO Cidade de Maricá',
+  'FPSO Almirante Barroso',
+  'FPSO Sepetiba',
+  'FPSO Cidade de Ilhabela',
+  'Escritório Rio de Janeiro',
+  'Base Macaé',
+];
+
+export function EquipmentFormDialog({ 
+  open, 
+  onOpenChange, 
+  mode,
+  initialData 
+}: EquipmentFormDialogProps) {
+  const [activeTab, setActiveTab] = useState('general');
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+
+  const form = useForm<EquipmentFormData>({
+    resolver: zodResolver(equipmentSchema),
+    defaultValues: {
+      internalCode: initialData?.internalCode || '',
+      name: initialData?.name || '',
+      categoryId: initialData?.categoryId || '',
+      type: initialData?.type || '',
+      manufacturer: initialData?.manufacturer || '',
+      model: initialData?.model || '',
+      serialNumber: initialData?.serialNumber || '',
+      unit: initialData?.unit || '',
+      location: initialData?.location || '',
+      manufacturingDate: initialData?.manufacturingDate || '',
+      acquisitionDate: initialData?.acquisitionDate || '',
+      expiryDate: initialData?.expiryDate || '',
+      certificateExpiry: initialData?.certificateExpiry || '',
+      observations: initialData?.observations || '',
+    },
+  });
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      setUploadedFiles(prev => [...prev, ...Array.from(files)]);
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const onSubmit = async (data: EquipmentFormData) => {
+    setIsSubmitting(true);
+    
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    toast({
+      title: mode === 'create' ? 'Equipamento Cadastrado' : 'Equipamento Atualizado',
+      description: `${data.name} (${data.internalCode}) foi ${mode === 'create' ? 'cadastrado' : 'atualizado'} com sucesso.`,
+    });
+    
+    setIsSubmitting(false);
+    onOpenChange(false);
+    form.reset();
+    setUploadedFiles([]);
+  };
+
+  const tabProgress = {
+    general: form.watch('name') && form.watch('categoryId') && form.watch('internalCode'),
+    location: form.watch('unit') && form.watch('location'),
+    dates: form.watch('manufacturingDate') && form.watch('acquisitionDate'),
+    documents: true,
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col bg-card border border-border">
+        <DialogHeader className="pb-4 border-b border-border">
+          <DialogTitle className="flex items-center gap-2 text-xl">
+            <Package className="h-5 w-5 text-primary" />
+            {mode === 'create' ? 'Novo Equipamento' : 'Editar Equipamento'}
+          </DialogTitle>
+          <DialogDescription>
+            Preencha as informações do equipamento de segurança. Campos com * são obrigatórios.
+          </DialogDescription>
+        </DialogHeader>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-hidden flex flex-col">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+              <TabsList className="grid w-full grid-cols-4 mb-4">
+                <TabsTrigger value="general" className="gap-2 relative">
+                  <Package className="h-4 w-4" />
+                  <span className="hidden sm:inline">Geral</span>
+                  {tabProgress.general && (
+                    <CheckCircle2 className="h-3 w-3 text-status-success absolute -top-1 -right-1" />
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="location" className="gap-2 relative">
+                  <Building2 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Localização</span>
+                  {tabProgress.location && (
+                    <CheckCircle2 className="h-3 w-3 text-status-success absolute -top-1 -right-1" />
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="dates" className="gap-2 relative">
+                  <Calendar className="h-4 w-4" />
+                  <span className="hidden sm:inline">Datas</span>
+                  {tabProgress.dates && (
+                    <CheckCircle2 className="h-3 w-3 text-status-success absolute -top-1 -right-1" />
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="documents" className="gap-2 relative">
+                  <FileText className="h-4 w-4" />
+                  <span className="hidden sm:inline">Documentos</span>
+                  {uploadedFiles.length > 0 && (
+                    <span className="absolute -top-1 -right-1 h-4 w-4 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center">
+                      {uploadedFiles.length}
+                    </span>
+                  )}
+                </TabsTrigger>
+              </TabsList>
+
+              <div className="flex-1 overflow-y-auto pr-2">
+                {/* General Tab */}
+                <TabsContent value="general" className="space-y-4 mt-0">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="internalCode"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Código Interno *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="EXT-FPSO-001" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Código único de identificação interna
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="categoryId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Categoria *</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione a categoria" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent className="bg-popover border border-border shadow-lg z-50">
+                              {mockCategories.map((cat) => (
+                                <SelectItem key={cat.id} value={cat.id}>
+                                  {cat.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome do Equipamento *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Ex: Extintor CO2 6kg" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tipo *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Ex: CO2, PQS, Água" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="serialNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Número de Série *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Ex: KD2024001234" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="manufacturer"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Fabricante *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Ex: Kidde, MSA, Dräger" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="model"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Modelo *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Ex: Pro 10 CO2" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </TabsContent>
+
+                {/* Location Tab */}
+                <TabsContent value="location" className="space-y-4 mt-0">
+                  <FormField
+                    control={form.control}
+                    name="unit"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Unidade / FPSO *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione a unidade" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent className="bg-popover border border-border shadow-lg z-50">
+                            {units.map((unit) => (
+                              <SelectItem key={unit} value={unit}>
+                                {unit}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Localização Física *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Ex: Deck Principal - Área de Processo" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          Descreva a localização exata do equipamento na unidade
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="observations"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Observações</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Informações adicionais sobre o equipamento..."
+                            rows={4}
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </TabsContent>
+
+                {/* Dates Tab */}
+                <TabsContent value="dates" className="space-y-4 mt-0">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="manufacturingDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Data de Fabricação *</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="acquisitionDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Data de Aquisição *</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="expiryDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Data de Validade</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Validade do equipamento (se aplicável)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="certificateExpiry"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Validade do Certificado</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Data de vencimento da certificação
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="p-4 bg-muted/50 rounded-lg border border-border">
+                    <h4 className="font-medium text-sm mb-2">Informações Importantes</h4>
+                    <ul className="text-sm text-muted-foreground space-y-1">
+                      <li>• A data de validade determina quando o equipamento precisa ser substituído</li>
+                      <li>• A validade do certificado indica quando a recertificação é necessária</li>
+                      <li>• Alertas serão gerados automaticamente antes do vencimento</li>
+                    </ul>
+                  </div>
+                </TabsContent>
+
+                {/* Documents Tab */}
+                <TabsContent value="documents" className="space-y-4 mt-0">
+                  <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors">
+                    <input
+                      type="file"
+                      multiple
+                      accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      id="file-upload"
+                    />
+                    <label htmlFor="file-upload" className="cursor-pointer">
+                      <Upload className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                      <p className="font-medium text-foreground">
+                        Arraste arquivos ou clique para fazer upload
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        PDF, imagens ou documentos (máx. 10MB cada)
+                      </p>
+                    </label>
+                  </div>
+
+                  {uploadedFiles.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-sm">Arquivos Anexados</h4>
+                      <div className="space-y-2">
+                        {uploadedFiles.map((file, index) => (
+                          <div 
+                            key={index}
+                            className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg border border-border"
+                          >
+                            {file.type.startsWith('image/') ? (
+                              <ImageIcon className="h-5 w-5 text-primary" />
+                            ) : (
+                              <File className="h-5 w-5 text-primary" />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm truncate">{file.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {(file.size / 1024).toFixed(1)} KB
+                              </p>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => removeFile(index)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+                    <h4 className="font-medium text-sm mb-2 text-primary">Documentos Recomendados</h4>
+                    <ul className="text-sm text-muted-foreground space-y-1">
+                      <li>• Certificado de conformidade do fabricante</li>
+                      <li>• Nota fiscal de aquisição</li>
+                      <li>• Laudo de inspeção inicial</li>
+                      <li>• Manual do equipamento</li>
+                      <li>• Fotos do equipamento instalado</li>
+                    </ul>
+                  </div>
+                </TabsContent>
+              </div>
+            </Tabs>
+
+            {/* Footer */}
+            <div className="flex items-center justify-between pt-4 mt-4 border-t border-border">
+              <div className="flex items-center gap-2">
+                {activeTab !== 'general' && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      const tabs = ['general', 'location', 'dates', 'documents'];
+                      const currentIndex = tabs.indexOf(activeTab);
+                      if (currentIndex > 0) setActiveTab(tabs[currentIndex - 1]);
+                    }}
+                  >
+                    Anterior
+                  </Button>
+                )}
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                  Cancelar
+                </Button>
+                
+                {activeTab !== 'documents' ? (
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      const tabs = ['general', 'location', 'dates', 'documents'];
+                      const currentIndex = tabs.indexOf(activeTab);
+                      if (currentIndex < tabs.length - 1) setActiveTab(tabs[currentIndex + 1]);
+                    }}
+                  >
+                    Próximo
+                  </Button>
+                ) : (
+                  <Button type="submit" disabled={isSubmitting} className="gap-2">
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Salvando...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="h-4 w-4" />
+                        {mode === 'create' ? 'Cadastrar Equipamento' : 'Salvar Alterações'}
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
