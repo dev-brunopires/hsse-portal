@@ -24,6 +24,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { 
   MoreHorizontal, 
   Eye, 
@@ -37,19 +47,23 @@ import {
   ArrowUpDown,
   Calendar,
   Info,
+  Loader2,
 } from 'lucide-react';
-import { Equipment, InspectionFrequency } from '@/types/equipment';
+import type { EquipmentWithCategory } from '@/hooks/useEquipment';
+import { useDeleteEquipment } from '@/hooks/useEquipment';
 import { StatusBadge } from './StatusBadge';
 import { EquipmentFormDialog } from './EquipmentFormDialog';
 import { InspectionFormDialog } from './InspectionFormDialog';
 import { EquipmentDetailDialog } from './EquipmentDetailDialog';
 import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface EquipmentTableProps {
-  equipment: Equipment[];
+  equipment: EquipmentWithCategory[];
   categoryName?: string;
   categoryDescription?: string;
-  inspectionFrequency?: InspectionFrequency;
+  inspectionFrequency?: string;
 }
 
 const frequencyLabels: Record<string, string> = {
@@ -74,14 +88,17 @@ export function EquipmentTable({
   const [equipmentFormOpen, setEquipmentFormOpen] = useState(false);
   const [inspectionFormOpen, setInspectionFormOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
-  const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedEquipment, setSelectedEquipment] = useState<EquipmentWithCategory | null>(null);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
+
+  const deleteEquipment = useDeleteEquipment();
 
   const filteredEquipment = equipment.filter(item => {
     const matchesSearch = 
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.internalCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.serialNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.internal_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.serial_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.location.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
@@ -107,20 +124,38 @@ export function EquipmentTable({
     setEquipmentFormOpen(true);
   };
 
-  const openEditForm = (eq: Equipment) => {
+  const openEditForm = (eq: EquipmentWithCategory) => {
     setFormMode('edit');
     setSelectedEquipment(eq);
     setEquipmentFormOpen(true);
   };
 
-  const openInspectionForm = (eq: Equipment) => {
+  const openInspectionForm = (eq: EquipmentWithCategory) => {
     setSelectedEquipment(eq);
     setInspectionFormOpen(true);
   };
 
-  const openDetailDialog = (eq: Equipment) => {
+  const openDetailDialog = (eq: EquipmentWithCategory) => {
     setSelectedEquipment(eq);
     setDetailDialogOpen(true);
+  };
+
+  const openDeleteDialog = (eq: EquipmentWithCategory) => {
+    setSelectedEquipment(eq);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (selectedEquipment) {
+      await deleteEquipment.mutateAsync(selectedEquipment.id);
+      setDeleteDialogOpen(false);
+      setSelectedEquipment(null);
+    }
+  };
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return '—';
+    return format(new Date(dateString), 'dd/MM/yyyy', { locale: ptBR });
   };
 
   return (
@@ -138,7 +173,7 @@ export function EquipmentTable({
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 <span className="text-muted-foreground">Frequência de Inspeção:</span>
                 <span className="font-medium text-foreground">
-                  {frequencyLabels[inspectionFrequency]}
+                  {frequencyLabels[inspectionFrequency] || inspectionFrequency}
                 </span>
               </div>
             )}
@@ -234,7 +269,7 @@ export function EquipmentTable({
               {filteredEquipment.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                    Nenhum equipamento encontrado nesta categoria
+                    Nenhum equipamento encontrado
                   </TableCell>
                 </TableRow>
               ) : (
@@ -254,12 +289,12 @@ export function EquipmentTable({
                       />
                     </TableCell>
                     <TableCell className="font-mono text-sm font-medium text-primary">
-                      {item.internalCode}
+                      {item.internal_code}
                     </TableCell>
                     <TableCell>
                       <div>
                         <p className="font-medium">{item.name}</p>
-                        <p className="text-xs text-muted-foreground">{item.serialNumber}</p>
+                        <p className="text-xs text-muted-foreground">{item.serial_number}</p>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -269,16 +304,16 @@ export function EquipmentTable({
                       </div>
                     </TableCell>
                     <TableCell>
-                      <StatusBadge status={item.status} size="sm" />
+                      <StatusBadge status={item.status as any} size="sm" />
                     </TableCell>
                     <TableCell className="text-sm">
-                      {new Date(item.lastInspection).toLocaleDateString('pt-BR')}
+                      {formatDate(item.last_inspection)}
                     </TableCell>
                     <TableCell className="text-sm">
-                      {new Date(item.nextInspection).toLocaleDateString('pt-BR')}
+                      {formatDate(item.next_inspection)}
                     </TableCell>
                     <TableCell className="text-sm">
-                      {new Date(item.certificateExpiry).toLocaleDateString('pt-BR')}
+                      {formatDate(item.certificate_expiry)}
                     </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
@@ -307,7 +342,10 @@ export function EquipmentTable({
                             <ClipboardCheck className="h-4 w-4" /> Registrar Inspeção
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem className="gap-2 text-destructive cursor-pointer">
+                          <DropdownMenuItem 
+                            className="gap-2 text-destructive cursor-pointer"
+                            onClick={() => openDeleteDialog(item)}
+                          >
                             <Trash2 className="h-4 w-4" /> Excluir
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -325,11 +363,6 @@ export function EquipmentTable({
           <p className="text-sm text-muted-foreground">
             Mostrando {filteredEquipment.length} de {equipment.length} equipamentos
           </p>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" disabled>Anterior</Button>
-            <Button variant="outline" size="sm" className="bg-primary text-primary-foreground">1</Button>
-            <Button variant="outline" size="sm">Próximo</Button>
-          </div>
         </div>
       </div>
 
@@ -339,19 +372,21 @@ export function EquipmentTable({
         onOpenChange={setEquipmentFormOpen}
         mode={formMode}
         initialData={selectedEquipment ? {
-          internalCode: selectedEquipment.internalCode,
+          id: selectedEquipment.id,
+          internalCode: selectedEquipment.internal_code,
           name: selectedEquipment.name,
-          categoryId: selectedEquipment.categoryId,
+          categoryId: selectedEquipment.category_id,
           type: selectedEquipment.type,
           manufacturer: selectedEquipment.manufacturer,
           model: selectedEquipment.model,
-          serialNumber: selectedEquipment.serialNumber,
+          serialNumber: selectedEquipment.serial_number,
           unit: selectedEquipment.unit,
           location: selectedEquipment.location,
-          manufacturingDate: selectedEquipment.manufacturingDate,
-          acquisitionDate: selectedEquipment.acquisitionDate,
-          expiryDate: selectedEquipment.expiryDate,
-          certificateExpiry: selectedEquipment.certificateExpiry,
+          manufacturingDate: selectedEquipment.manufacturing_date,
+          acquisitionDate: selectedEquipment.acquisition_date,
+          expiryDate: selectedEquipment.expiry_date || '',
+          certificateExpiry: selectedEquipment.certificate_expiry || '',
+          observations: selectedEquipment.observations || '',
         } : undefined}
       />
 
@@ -359,14 +394,52 @@ export function EquipmentTable({
       <InspectionFormDialog
         open={inspectionFormOpen}
         onOpenChange={setInspectionFormOpen}
-        equipment={selectedEquipment}
+        equipment={selectedEquipment ? {
+          id: selectedEquipment.id,
+          name: selectedEquipment.name,
+          internalCode: selectedEquipment.internal_code,
+          type: selectedEquipment.type,
+          category: selectedEquipment.categories?.name || '',
+          location: selectedEquipment.location,
+          unit: selectedEquipment.unit,
+          lastInspection: selectedEquipment.last_inspection || '',
+          status: selectedEquipment.status as any,
+          serialNumber: selectedEquipment.serial_number,
+          manufacturer: selectedEquipment.manufacturer,
+          model: selectedEquipment.model,
+          categoryId: selectedEquipment.category_id,
+          manufacturingDate: selectedEquipment.manufacturing_date,
+          acquisitionDate: selectedEquipment.acquisition_date,
+          expiryDate: selectedEquipment.expiry_date || '',
+          certificateExpiry: selectedEquipment.certificate_expiry || '',
+          nextInspection: selectedEquipment.next_inspection || '',
+        } : null}
       />
 
       {/* Equipment Detail Dialog */}
       <EquipmentDetailDialog
         open={detailDialogOpen}
         onOpenChange={setDetailDialogOpen}
-        equipment={selectedEquipment}
+        equipment={selectedEquipment ? {
+          id: selectedEquipment.id,
+          name: selectedEquipment.name,
+          internalCode: selectedEquipment.internal_code,
+          type: selectedEquipment.type,
+          category: selectedEquipment.categories?.name || '',
+          location: selectedEquipment.location,
+          unit: selectedEquipment.unit,
+          lastInspection: selectedEquipment.last_inspection || '',
+          status: selectedEquipment.status as any,
+          serialNumber: selectedEquipment.serial_number,
+          manufacturer: selectedEquipment.manufacturer,
+          model: selectedEquipment.model,
+          categoryId: selectedEquipment.category_id,
+          manufacturingDate: selectedEquipment.manufacturing_date,
+          acquisitionDate: selectedEquipment.acquisition_date,
+          expiryDate: selectedEquipment.expiry_date || '',
+          certificateExpiry: selectedEquipment.certificate_expiry || '',
+          nextInspection: selectedEquipment.next_inspection || '',
+        } : null}
         onEdit={() => {
           setDetailDialogOpen(false);
           setFormMode('edit');
@@ -377,6 +450,36 @@ export function EquipmentTable({
           setInspectionFormOpen(true);
         }}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Equipamento</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o equipamento <strong>{selectedEquipment?.name}</strong>?
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteEquipment.isPending}
+            >
+              {deleteEquipment.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Excluindo...
+                </>
+              ) : (
+                'Excluir'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

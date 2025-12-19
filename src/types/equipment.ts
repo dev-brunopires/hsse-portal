@@ -24,7 +24,8 @@ export interface Equipment {
   internalCode: string;
   name: string;
   categoryId: string;
-  categoryName: string;
+  categoryName?: string;
+  category?: string;
   type: string;
   manufacturer: string;
   model: string;
@@ -38,8 +39,8 @@ export interface Equipment {
   certificateExpiry: string;
   lastInspection: string;
   nextInspection: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Inspection {
