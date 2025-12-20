@@ -7,35 +7,39 @@
 
 @layer base {
   :root {
-    /* SBM Offshore Corporate Colors */
-    --background: 210 20% 98%;
-    --foreground: 215 25% 15%;
+    /* SBM Offshore Brand Colors */
+    /* Primary: Orange #F26522 → HSL 18 89% 54% */
+    /* Secondary: Blue #003366 → HSL 210 100% 20% */
+    
+    --background: 210 15% 98%;
+    --foreground: 210 50% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 215 25% 15%;
+    --card-foreground: 210 50% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 15%;
+    --popover-foreground: 210 50% 10%;
 
-    /* Navy Blue - SBM Primary */
-    --primary: 215 70% 22%;
+    /* SBM Orange - Primary Brand Color */
+    --primary: 18 89% 54%;
     --primary-foreground: 0 0% 100%;
 
-    /* Light blue accent */
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 215 70% 22%;
+    /* SBM Blue - Secondary Brand Color */
+    --secondary: 210 100% 20%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 20% 94%;
-    --muted-foreground: 215 15% 45%;
+    --muted: 210 15% 94%;
+    --muted-foreground: 210 20% 45%;
 
-    --accent: 200 85% 45%;
+    /* Blue accent */
+    --accent: 210 100% 30%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Status Colors */
-    --status-success: 152 69% 40%;
+    /* Status Colors - SBM Aligned */
+    --status-success: 145 65% 38%;
     --status-success-foreground: 0 0% 100%;
     --status-warning: 38 92% 50%;
     --status-warning-foreground: 0 0% 10%;
@@ -46,56 +50,58 @@
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 10%;
 
-    --border: 214 20% 88%;
-    --input: 214 20% 88%;
-    --ring: 215 70% 22%;
+    --border: 210 20% 88%;
+    --input: 210 20% 88%;
+    --ring: 18 89% 54%;
 
     --radius: 0.5rem;
 
-    /* Sidebar */
-    --sidebar-background: 215 70% 18%;
-    --sidebar-foreground: 210 20% 90%;
-    --sidebar-primary: 200 85% 55%;
+    /* Sidebar - Deep Blue */
+    --sidebar-background: 210 100% 15%;
+    --sidebar-foreground: 210 15% 95%;
+    --sidebar-primary: 18 89% 54%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 215 60% 25%;
-    --sidebar-accent-foreground: 210 20% 95%;
-    --sidebar-border: 215 50% 28%;
-    --sidebar-ring: 200 85% 55%;
+    --sidebar-accent: 210 80% 25%;
+    --sidebar-accent-foreground: 210 15% 98%;
+    --sidebar-border: 210 60% 25%;
+    --sidebar-ring: 18 89% 54%;
 
-    /* Chart colors */
-    --chart-1: 215 70% 22%;
-    --chart-2: 200 85% 45%;
-    --chart-3: 152 69% 40%;
+    /* Chart colors - SBM Brand */
+    --chart-1: 18 89% 54%;
+    --chart-2: 210 100% 30%;
+    --chart-3: 145 65% 38%;
     --chart-4: 38 92% 50%;
-    --chart-5: 0 72% 51%;
+    --chart-5: 210 100% 20%;
   }
 
   .dark {
-    --background: 215 25% 10%;
-    --foreground: 210 20% 95%;
+    --background: 210 40% 8%;
+    --foreground: 210 15% 95%;
 
-    --card: 215 25% 13%;
-    --card-foreground: 210 20% 95%;
+    --card: 210 40% 11%;
+    --card-foreground: 210 15% 95%;
 
-    --popover: 215 25% 13%;
-    --popover-foreground: 210 20% 95%;
+    --popover: 210 40% 11%;
+    --popover-foreground: 210 15% 95%;
 
-    --primary: 200 85% 55%;
-    --primary-foreground: 215 25% 10%;
+    /* SBM Orange - Primary */
+    --primary: 18 89% 58%;
+    --primary-foreground: 210 40% 8%;
 
-    --secondary: 215 25% 18%;
-    --secondary-foreground: 210 20% 95%;
+    /* Dark mode blue */
+    --secondary: 210 60% 25%;
+    --secondary-foreground: 210 15% 95%;
 
-    --muted: 215 20% 20%;
-    --muted-foreground: 215 15% 60%;
+    --muted: 210 30% 18%;
+    --muted-foreground: 210 15% 60%;
 
-    --accent: 200 85% 45%;
+    --accent: 210 80% 40%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 62% 45%;
+    --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --status-success: 152 69% 45%;
+    --status-success: 145 65% 45%;
     --status-success-foreground: 0 0% 100%;
     --status-warning: 38 92% 55%;
     --status-warning-foreground: 0 0% 10%;
@@ -106,18 +112,18 @@
     --warning: 38 92% 55%;
     --warning-foreground: 0 0% 10%;
 
-    --border: 215 20% 22%;
-    --input: 215 20% 22%;
-    --ring: 200 85% 55%;
+    --border: 210 30% 20%;
+    --input: 210 30% 20%;
+    --ring: 18 89% 58%;
 
-    --sidebar-background: 215 30% 8%;
-    --sidebar-foreground: 210 20% 90%;
-    --sidebar-primary: 200 85% 55%;
+    --sidebar-background: 210 50% 6%;
+    --sidebar-foreground: 210 15% 92%;
+    --sidebar-primary: 18 89% 58%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 215 25% 15%;
-    --sidebar-accent-foreground: 210 20% 95%;
-    --sidebar-border: 215 20% 18%;
-    --sidebar-ring: 200 85% 55%;
+    --sidebar-accent: 210 40% 15%;
+    --sidebar-accent-foreground: 210 15% 95%;
+    --sidebar-border: 210 30% 18%;
+    --sidebar-ring: 18 89% 58%;
   }
 }
 
@@ -171,9 +177,13 @@
     @apply bg-status-danger/15 text-[hsl(var(--status-danger))];
   }
 
-  /* KPI Cards */
+  /* KPI Cards with SBM styling */
   .kpi-card {
-    @apply bg-card rounded-xl border border-border p-6 shadow-sm hover:shadow-md transition-shadow;
+    @apply bg-card rounded-xl border border-border p-6 shadow-sm hover:shadow-md transition-all duration-300;
+  }
+
+  .kpi-card:hover {
+    @apply -translate-y-0.5;
   }
 
   .kpi-value {
@@ -196,6 +206,32 @@
   ::-webkit-scrollbar-thumb {
     @apply bg-muted-foreground/30 rounded-full hover:bg-muted-foreground/50 transition-colors;
   }
+
+  /* Interactive hover effects */
+  .hover-scale {
+    @apply transition-transform duration-200 hover:scale-105;
+  }
+
+  .hover-lift {
+    @apply transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg;
+  }
+
+  /* Button enhancements */
+  .btn-primary-glow {
+    @apply relative overflow-hidden;
+  }
+
+  .btn-primary-glow::after {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full;
+    animation: shimmer 2s infinite;
+  }
+
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
 }
 
 @layer utilities {
@@ -203,13 +239,40 @@
     animation: fadeIn 0.3s ease-out;
   }
 
+  .animate-fade-in-up {
+    animation: fadeInUp 0.4s ease-out;
+  }
+
   .animate-slide-in {
     animation: slideIn 0.3s ease-out;
+  }
+
+  .animate-slide-in-right {
+    animation: slideInRight 0.3s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.2s ease-out;
+  }
+
+  .animate-pulse-soft {
+    animation: pulseSoft 2s ease-in-out infinite;
   }
 
   @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
+  }
+
+  @keyframes fadeInUp {
+    from { 
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to { 
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   @keyframes slideIn {
@@ -222,4 +285,42 @@
       transform: translateY(0);
     }
   }
+
+  @keyframes slideInRight {
+    from { 
+      opacity: 0;
+      transform: translateX(20px);
+    }
+    to { 
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes scaleIn {
+    from { 
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to { 
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes pulseSoft {
+    0%, 100% { 
+      opacity: 1;
+    }
+    50% { 
+      opacity: 0.7;
+    }
+  }
+
+  /* Staggered animations for lists */
+  .stagger-1 { animation-delay: 0.05s; }
+  .stagger-2 { animation-delay: 0.1s; }
+  .stagger-3 { animation-delay: 0.15s; }
+  .stagger-4 { animation-delay: 0.2s; }
+  .stagger-5 { animation-delay: 0.25s; }
 }
