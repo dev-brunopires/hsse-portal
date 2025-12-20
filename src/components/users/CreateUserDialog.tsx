@@ -100,47 +100,35 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
 
   const onSubmit = async (data: CreateUserFormData) => {
     setIsSubmitting(true);
-    
+
     try {
-      // Get current session token
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) {
-        throw new Error('Você precisa estar logado para criar usuários');
+      // Use backend function so the admin session is not affected
+      const { data: result, error } = await supabase.functions.invoke('create-user', {
+        body: {
+          email: data.email,
+          password: data.password,
+          fullName: data.fullName,
+          unit: data.unit || null,
+          role: data.role,
+        },
+      });
+
+      if (error) {
+        throw new Error(error.message);
       }
 
-      // Call edge function to create user (won't affect current session)
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-user`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${sessionData.session.access_token}`,
-          },
-          body: JSON.stringify({
-            email: data.email,
-            password: data.password,
-            fullName: data.fullName,
-            unit: data.unit || null,
-            role: data.role,
-          }),
-        }
-      );
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Erro ao criar usuário');
+      if (!result?.success) {
+        throw new Error(result?.error || 'Erro ao criar usuário');
       }
 
       queryClient.invalidateQueries({ queryKey: ['profiles'] });
       queryClient.invalidateQueries({ queryKey: ['units'] });
-      
+
       toast({
         title: 'Usuário Criado',
         description: `${data.fullName} foi cadastrado com sucesso.`,
       });
-      
+
       form.reset();
       onOpenChange(false);
     } catch (error: any) {
