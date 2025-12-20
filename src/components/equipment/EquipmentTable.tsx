@@ -279,11 +279,11 @@ export function EquipmentTable({
     exportToExcel(dataToExport);
   };
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     const dataToExport = selectedRows.length > 0 
       ? filteredAndSortedEquipment.filter(e => selectedRows.includes(e.id))
       : filteredAndSortedEquipment;
-    exportToPDF(dataToExport);
+    await exportToPDF(dataToExport);
   };
 
 

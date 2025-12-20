@@ -4,6 +4,19 @@ import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { InspectionWithDetails } from '@/hooks/useInspections';
+import {
+  SBM_BLUE,
+  DARK_GRAY,
+  LIGHT_GRAY,
+  MEDIUM_GRAY,
+  SUCCESS_GREEN,
+  DANGER_RED,
+  WARNING_YELLOW,
+  addPDFHeader,
+  addPDFFooter,
+  addSectionHeader,
+  preloadLogo,
+} from './pdfStyles';
 
 const statusLabels: Record<string, string> = {
   approved: 'Aprovado',
@@ -40,22 +53,34 @@ export function exportInspectionsToExcel(inspections: InspectionWithDetails[], f
   XLSX.writeFile(wb, `${filename}_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
 }
 
-export function exportInspectionsToPDF(inspections: InspectionWithDetails[], filename = 'relatorio_inspecoes') {
+export async function exportInspectionsToPDF(inspections: InspectionWithDetails[], filename = 'relatorio_inspecoes') {
+  // Preload logo
+  await preloadLogo();
+  
   const doc = new jsPDF('landscape');
+  const generatedDate = format(new Date(), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR });
   
-  doc.setFontSize(18);
-  doc.text('Relatório de Inspeções', 14, 22);
-  
-  doc.setFontSize(10);
-  doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, 14, 30);
-  doc.text(`Total de inspeções: ${inspections.length}`, 14, 36);
+  // Add standardized header with logo
+  let yPos = await addPDFHeader(
+    doc,
+    'RELATÓRIO DE INSPEÇÕES',
+    `Gerado em: ${generatedDate}`,
+    [`Total: ${inspections.length} inspeções`]
+  );
 
   // Summary
   const approved = inspections.filter(i => i.status === 'approved').length;
   const rejected = inspections.filter(i => i.status === 'rejected').length;
   const pending = inspections.filter(i => i.status === 'pending').length;
   
-  doc.text(`Aprovadas: ${approved} | Reprovadas: ${rejected} | Pendentes: ${pending}`, 14, 42);
+  // Add summary section
+  yPos = addSectionHeader(doc, yPos, 'RESUMO', SBM_BLUE);
+  yPos += 2;
+  
+  doc.setFontSize(9);
+  doc.setTextColor(...DARK_GRAY);
+  doc.text(`Aprovadas: ${approved} | Reprovadas: ${rejected} | Pendentes: ${pending}`, 14, yPos + 4);
+  yPos += 12;
 
   const tableData = inspections.map(item => [
     format(new Date(item.inspection_date), 'dd/MM/yyyy', { locale: ptBR }),
@@ -70,7 +95,7 @@ export function exportInspectionsToPDF(inspections: InspectionWithDetails[], fil
   ]);
 
   autoTable(doc, {
-    startY: 48,
+    startY: yPos,
     head: [[
       'Data',
       'Equipamento',
@@ -82,98 +107,111 @@ export function exportInspectionsToPDF(inspections: InspectionWithDetails[], fil
     ]],
     body: tableData,
     styles: { fontSize: 8 },
-    headStyles: { fillColor: [30, 41, 59] },
+    headStyles: { fillColor: SBM_BLUE },
     alternateRowStyles: { fillColor: [248, 250, 252] },
   });
+
+  // Add standardized footer
+  addPDFFooter(
+    doc,
+    'SBM Offshore - Sistema de Gestão de Equipamentos de Segurança',
+    `Relatório de Inspeções - ${format(new Date(), 'dd/MM/yyyy HH:mm')}`
+  );
 
   doc.save(`${filename}_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
 }
 
-export function exportSingleInspectionPDF(
+export async function exportSingleInspectionPDF(
   inspection: InspectionWithDetails, 
   checklistItems: { description: string; status: string; notes: string | null }[] = []
 ) {
+  // Preload logo
+  await preloadLogo();
+  
   const doc = new jsPDF();
+  const generatedDate = format(new Date(), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR });
   
-  // Header
-  doc.setFontSize(18);
-  doc.text('Relatório de Inspeção', 14, 22);
+  // Add standardized header with logo
+  let yPos = await addPDFHeader(
+    doc,
+    'RELATÓRIO DE INSPEÇÃO',
+    `Documento: INS-${inspection.id.substring(0, 8).toUpperCase()}`,
+    [`Emitido: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`]
+  );
   
-  doc.setFontSize(10);
-  doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, 14, 30);
-  
-  // Inspection info
-  doc.setFontSize(12);
-  doc.text('Dados da Inspeção', 14, 42);
-  
-  doc.setFontSize(10);
-  const infoY = 50;
-  doc.text(`Data: ${format(new Date(inspection.inspection_date), 'dd/MM/yyyy', { locale: ptBR })}`, 14, infoY);
-  doc.text(`Status: ${statusLabels[inspection.status] || inspection.status}`, 14, infoY + 6);
-  doc.text(`Inspetor: ${inspection.profiles?.full_name || '—'}`, 14, infoY + 12);
-  doc.text(`Email: ${inspection.profiles?.email || '—'}`, 14, infoY + 18);
-  
-  // Equipment info
-  doc.setFontSize(12);
-  doc.text('Equipamento', 14, infoY + 32);
+  // Inspection info section
+  yPos = addSectionHeader(doc, yPos, 'DADOS DA INSPEÇÃO', SBM_BLUE);
+  yPos += 4;
   
   doc.setFontSize(10);
-  doc.text(`Nome: ${inspection.equipment?.name || '—'}`, 14, infoY + 40);
-  doc.text(`Código: ${inspection.equipment?.internal_code || '—'}`, 14, infoY + 46);
+  doc.setTextColor(...DARK_GRAY);
+  doc.text(`Data: ${format(new Date(inspection.inspection_date), 'dd/MM/yyyy', { locale: ptBR })}`, 14, yPos);
+  doc.text(`Status: ${statusLabels[inspection.status] || inspection.status}`, 100, yPos);
+  yPos += 6;
+  doc.text(`Inspetor: ${inspection.profiles?.full_name || '—'}`, 14, yPos);
+  doc.text(`Email: ${inspection.profiles?.email || '—'}`, 100, yPos);
+  yPos += 10;
   
-  // Observations
-  if (inspection.observations) {
-    doc.setFontSize(12);
-    doc.text('Observações', 14, infoY + 60);
-    doc.setFontSize(10);
-    const obsLines = doc.splitTextToSize(inspection.observations, 180);
-    doc.text(obsLines, 14, infoY + 68);
-  }
+  // Equipment info section
+  yPos = addSectionHeader(doc, yPos, 'EQUIPAMENTO', SBM_BLUE);
+  yPos += 4;
   
-  // Recommendations
-  if (inspection.recommendations) {
-    const recY = inspection.observations ? infoY + 90 : infoY + 60;
-    doc.setFontSize(12);
-    doc.text('Recomendações', 14, recY);
-    doc.setFontSize(10);
-    const recLines = doc.splitTextToSize(inspection.recommendations, 180);
-    doc.text(recLines, 14, recY + 8);
-  }
-
-  // Checklist
+  doc.text(`Nome: ${inspection.equipment?.name || '—'}`, 14, yPos);
+  doc.text(`Código: ${inspection.equipment?.internal_code || '—'}`, 100, yPos);
+  yPos += 10;
+  
+  // Checklist section
   if (checklistItems.length > 0) {
-    const checklistY = inspection.recommendations 
-      ? (inspection.observations ? 150 : 120) 
-      : (inspection.observations ? 120 : 90);
+    yPos = addSectionHeader(doc, yPos, 'CHECKLIST DE INSPEÇÃO', SBM_BLUE);
     
-    doc.setFontSize(12);
-    doc.text('Itens do Checklist', 14, checklistY);
+    const checklistStatusLabels: Record<string, string> = {
+      ok: 'Conforme',
+      fail: 'Não Conforme',
+      pending: 'Pendente',
+    };
     
-    const checklistData = checklistItems.map(item => [
-      item.description,
-      item.status === 'ok' ? 'OK' : item.status === 'fail' ? 'Falha' : 'Atenção',
-      item.notes || '—',
-    ]);
-
     autoTable(doc, {
-      startY: checklistY + 6,
+      startY: yPos + 2,
       head: [['Item', 'Status', 'Observações']],
-      body: checklistData,
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [30, 41, 59] },
+      body: checklistItems.map(item => [
+        item.description,
+        checklistStatusLabels[item.status] || item.status,
+        item.notes || '—'
+      ]),
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: SBM_BLUE },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
     });
+    
+    yPos = (doc as any).lastAutoTable.finalY + 10;
+  }
+  
+  // Observations section
+  if (inspection.observations) {
+    yPos = addSectionHeader(doc, yPos, 'OBSERVAÇÕES', SBM_BLUE);
+    yPos += 4;
+    doc.setFontSize(9);
+    const lines = doc.splitTextToSize(inspection.observations, 180);
+    doc.text(lines, 14, yPos);
+    yPos += lines.length * 5 + 6;
+  }
+  
+  // Recommendations section
+  if (inspection.recommendations) {
+    yPos = addSectionHeader(doc, yPos, 'RECOMENDAÇÕES', SBM_BLUE);
+    yPos += 4;
+    doc.setFontSize(9);
+    const lines = doc.splitTextToSize(inspection.recommendations, 180);
+    doc.text(lines, 14, yPos);
+    yPos += lines.length * 5 + 6;
   }
 
-  // Next inspection
-  if (inspection.next_inspection_date) {
-    const pageHeight = doc.internal.pageSize.height;
-    doc.setFontSize(10);
-    doc.text(
-      `Próxima inspeção programada: ${format(new Date(inspection.next_inspection_date), 'dd/MM/yyyy', { locale: ptBR })}`,
-      14,
-      pageHeight - 20
-    );
-  }
+  // Add standardized footer
+  addPDFFooter(
+    doc,
+    'SBM Offshore - Sistema de Gestão de Equipamentos de Segurança',
+    `Relatório de Inspeção - ${format(new Date(), 'dd/MM/yyyy HH:mm')}`
+  );
 
-  doc.save(`inspecao_${inspection.equipment?.internal_code || 'relatorio'}_${format(new Date(inspection.inspection_date), 'yyyy-MM-dd')}.pdf`);
+  doc.save(`inspecao_${inspection.id.substring(0, 8)}_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
 }

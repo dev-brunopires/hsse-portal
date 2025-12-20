@@ -53,10 +53,12 @@ export default function Dashboard() {
     return categories.find(c => c.id === filters.categoryId)?.name;
   }, [filters.categoryId, categories]);
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     if (!stats) return;
     
-    exportDashboardPDF(stats, {
+    toast.info('Gerando relatório...');
+    
+    await exportDashboardPDF(stats, {
       shipName: selectedShipName,
       categoryName: selectedCategoryName,
       startDate: filters.startDate,

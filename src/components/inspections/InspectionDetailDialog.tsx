@@ -137,8 +137,8 @@ export function InspectionDetailDialog({
   const config = statusConfig[inspection.status] || statusConfig.pending;
   const StatusIcon = config.icon;
 
-  const handleExportPDF = () => {
-    exportSingleInspectionPDF(
+  const handleExportPDF = async () => {
+    await exportSingleInspectionPDF(
       inspection, 
       checklistItems.map(item => ({
         description: item.description,

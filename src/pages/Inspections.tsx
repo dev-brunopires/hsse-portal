@@ -215,8 +215,10 @@ export default function Inspections() {
     exportInspectionsToExcel(filteredInspections);
   };
 
-  const handleExportPDF = () => {
-    exportInspectionsToPDF(filteredInspections);
+  const handleExportPDF = async () => {
+    toast({ title: 'Gerando relatório...', description: 'Aguarde enquanto o PDF é preparado.' });
+    await exportInspectionsToPDF(filteredInspections);
+    toast({ title: 'Sucesso!', description: 'Relatório exportado com sucesso.' });
   };
 
   return (

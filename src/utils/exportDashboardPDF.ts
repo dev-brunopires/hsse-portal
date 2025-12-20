@@ -14,6 +14,7 @@ import {
   addPDFHeader,
   addPDFFooter,
   addSectionHeader,
+  preloadLogo,
 } from './pdfStyles';
 
 interface ExportFilters {
@@ -31,7 +32,10 @@ const statusLabels: Record<string, string> = {
   inactive: 'Inativo',
 };
 
-export function exportDashboardPDF(stats: DashboardStats, filters: ExportFilters) {
+export async function exportDashboardPDF(stats: DashboardStats, filters: ExportFilters) {
+  // Preload logo before generating PDF
+  await preloadLogo();
+  
   const doc = new jsPDF({ orientation: 'landscape' });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -51,7 +55,7 @@ export function exportDashboardPDF(stats: DashboardStats, filters: ExportFilters
   const generatedDate = format(new Date(), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR });
   
   // Add standardized header
-  let yPos = addPDFHeader(
+  let yPos = await addPDFHeader(
     doc,
     'RELATÓRIO GERENCIAL DE EQUIPAMENTOS',
     `Gerado em: ${generatedDate}`,

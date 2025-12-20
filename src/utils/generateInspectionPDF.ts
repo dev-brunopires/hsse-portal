@@ -13,6 +13,7 @@ import {
   DANGER_RED,
   addPDFFooter,
   addSectionHeader,
+  preloadLogo,
 } from './pdfStyles';
 
 interface InspectionPDFData {
@@ -84,7 +85,36 @@ const formatDate = (date: string | null | undefined): string => {
   }
 };
 
-export function generateInspectionPDF(data: InspectionPDFData) {
+// Cache for the logo base64
+let logoBase64Cache: string | null = null;
+
+async function loadLogoBase64(): Promise<string | null> {
+  if (logoBase64Cache) return logoBase64Cache;
+  
+  try {
+    const logoModule = await import('@/assets/sbm-logo-white.png');
+    const response = await fetch(logoModule.default);
+    const blob = await response.blob();
+    
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        logoBase64Cache = reader.result as string;
+        resolve(logoBase64Cache);
+      };
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function generateInspectionPDF(data: InspectionPDFData) {
+  // Preload logos
+  await preloadLogo();
+  const logoBase64 = await loadLogoBase64();
+  
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -95,16 +125,32 @@ export function generateInspectionPDF(data: InspectionPDFData) {
   doc.setFillColor(...SBM_BLUE);
   doc.rect(0, 0, pageWidth, 32, 'F');
   
-  // Company name (white text - simulating white logo)
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(24);
-  doc.setFont('helvetica', 'bold');
-  doc.text('SBM', margin, 18);
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text('OFFSHORE', margin, 26);
+  // Add logo image or fallback to text
+  if (logoBase64) {
+    try {
+      doc.addImage(logoBase64, 'PNG', margin, 8, 40, 16);
+    } catch {
+      // Fallback to text
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(24);
+      doc.setFont('helvetica', 'bold');
+      doc.text('SBM', margin, 18);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text('OFFSHORE', margin, 26);
+    }
+  } else {
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
+    doc.setFont('helvetica', 'bold');
+    doc.text('SBM', margin, 18);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('OFFSHORE', margin, 26);
+  }
   
   // Report title
+  doc.setTextColor(255, 255, 255);
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.text('RELATÓRIO DE INSPEÇÃO', pageWidth - margin, 16, { align: 'right' });
