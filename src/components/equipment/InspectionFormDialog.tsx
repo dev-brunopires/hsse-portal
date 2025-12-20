@@ -179,12 +179,12 @@ export function InspectionFormDialog({
     return counts;
   };
 
-  const calculateOverallStatus = (): 'approved' | 'attention' | 'rejected' => {
+  const calculateOverallStatus = (): 'compliant' | 'attention' | 'non-compliant' => {
     const counts = getStatusCounts();
-    if (counts.fail > 0) return 'rejected';
+    if (counts.fail > 0) return 'non-compliant';
     if (counts.attention > 0) return 'attention';
     if (counts.pending > 0) return 'attention';
-    return 'approved';
+    return 'compliant';
   };
 
   const onSubmit = async (data: InspectionFormData) => {
@@ -315,7 +315,12 @@ export function InspectionFormDialog({
                               <SelectContent className="bg-popover border border-border shadow-lg z-50">
                                 {inspectors.map((inspector) => (
                                   <SelectItem key={inspector.user_id} value={inspector.user_id}>
-                                    {inspector.full_name}
+                                    <div className="flex items-center gap-2">
+                                      <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
+                                        {inspector.full_name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()}
+                                      </div>
+                                      <span>{inspector.full_name}</span>
+                                    </div>
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -360,26 +365,26 @@ export function InspectionFormDialog({
                     {/* Overall Status Summary */}
                     <div className={cn(
                       'p-4 rounded-lg border',
-                      calculateOverallStatus() === 'approved' && 'border-status-success bg-status-success/10',
+                      calculateOverallStatus() === 'compliant' && 'border-status-success bg-status-success/10',
                       calculateOverallStatus() === 'attention' && 'border-status-warning bg-status-warning/10',
-                      calculateOverallStatus() === 'rejected' && 'border-status-danger bg-status-danger/10',
+                      calculateOverallStatus() === 'non-compliant' && 'border-status-danger bg-status-danger/10',
                     )}>
                       <div className="flex items-center gap-3">
-                        {calculateOverallStatus() === 'approved' && (
+                        {calculateOverallStatus() === 'compliant' && (
                           <CheckCircle2 className="h-6 w-6 text-status-success" />
                         )}
                         {calculateOverallStatus() === 'attention' && (
                           <AlertTriangle className="h-6 w-6 text-status-warning" />
                         )}
-                        {calculateOverallStatus() === 'rejected' && (
+                        {calculateOverallStatus() === 'non-compliant' && (
                           <XCircle className="h-6 w-6 text-status-danger" />
                         )}
                         <div>
                           <p className="font-semibold">
                             Status Geral: {' '}
-                            {calculateOverallStatus() === 'approved' && 'APROVADO'}
+                            {calculateOverallStatus() === 'compliant' && 'CONFORME'}
                             {calculateOverallStatus() === 'attention' && 'ATENÇÃO NECESSÁRIA'}
-                            {calculateOverallStatus() === 'rejected' && 'REPROVADO'}
+                            {calculateOverallStatus() === 'non-compliant' && 'NÃO CONFORME'}
                           </p>
                           <p className="text-sm text-muted-foreground">
                             {statusCounts.ok} conformes • {statusCounts.attention} com atenção • {statusCounts.fail} não conformes

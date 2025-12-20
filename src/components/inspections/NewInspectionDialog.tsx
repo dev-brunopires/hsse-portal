@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -7,14 +7,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
-import { Button } from '@/components/ui/button';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -24,8 +22,10 @@ import {
   MapPin,
   Calendar,
   ArrowRight,
+  Filter,
 } from 'lucide-react';
 import { useEquipment, type EquipmentWithCategory } from '@/hooks/useEquipment';
+import { useCategories } from '@/hooks/useCategories';
 import { InspectionFormDialog } from '@/components/equipment/InspectionFormDialog';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -52,15 +52,24 @@ const statusColors: Record<string, string> = {
 
 export function NewInspectionDialog({ open, onOpenChange }: NewInspectionDialogProps) {
   const { data: equipmentList = [], isLoading } = useEquipment();
+  const { data: categories = [] } = useCategories();
   const [selectedEquipment, setSelectedEquipment] = useState<EquipmentWithCategory | null>(null);
   const [inspectionDialogOpen, setInspectionDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
-  const filteredEquipment = equipmentList.filter(eq => 
-    eq.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    eq.internal_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    eq.location.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredEquipment = useMemo(() => {
+    return equipmentList.filter(eq => {
+      const matchesSearch = 
+        eq.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        eq.internal_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        eq.location.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesCategory = categoryFilter === 'all' || eq.category_id === categoryFilter;
+      
+      return matchesSearch && matchesCategory;
+    });
+  }, [equipmentList, searchTerm, categoryFilter]);
 
   const handleSelectEquipment = (equipment: EquipmentWithCategory) => {
     setSelectedEquipment(equipment);
@@ -118,25 +127,41 @@ export function NewInspectionDialog({ open, onOpenChange }: NewInspectionDialogP
           </DialogHeader>
 
           <div className="flex-1 overflow-hidden flex flex-col">
-            <div className="relative py-4 px-1">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                placeholder="Buscar por nome, código ou localização..."
-                className="w-full pl-10 pr-4 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+            <div className="flex flex-col sm:flex-row gap-3 py-4 px-1">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input
+                  placeholder="Buscar por nome, código ou localização..."
+                  className="w-full pl-10 pr-4 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Categoria" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border border-border shadow-lg z-50">
+                  <SelectItem value="all">Todas Categorias</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <ScrollArea className="flex-1">
-              <div className="space-y-2 pr-4">
+              <div className="space-y-2 px-1">
                 {isLoading ? (
                   <div className="text-center py-8 text-muted-foreground">
                     Carregando equipamentos...
                   </div>
                 ) : filteredEquipment.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
-                    {searchTerm ? 'Nenhum equipamento encontrado.' : 'Nenhum equipamento cadastrado.'}
+                    {searchTerm || categoryFilter !== 'all' ? 'Nenhum equipamento encontrado.' : 'Nenhum equipamento cadastrado.'}
                   </div>
                 ) : (
                   filteredEquipment.map((equipment) => (
@@ -192,7 +217,7 @@ export function NewInspectionDialog({ open, onOpenChange }: NewInspectionDialogP
               </div>
             </ScrollArea>
 
-            <div className="pt-4 border-t border-border text-sm text-muted-foreground">
+            <div className="pt-4 border-t border-border text-sm text-muted-foreground px-1">
               {filteredEquipment.length} equipamento(s) disponível(is)
             </div>
           </div>
