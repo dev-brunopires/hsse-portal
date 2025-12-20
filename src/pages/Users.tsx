@@ -7,7 +7,7 @@ import {
   Trash2, 
   Search,
   User,
-  Loader2,
+  
   Crown,
   UserCheck,
   Plus,
@@ -47,6 +47,9 @@ import { CreateUserDialog } from '@/components/users/CreateUserDialog';
 import { UserShipsDialog } from '@/components/users/UserShipsDialog';
 import { ShipFormDialog } from '@/components/ships/ShipFormDialog';
 import { DeleteShipDialog } from '@/components/ships/DeleteShipDialog';
+import { TableSkeleton, CardSkeleton } from '@/components/ui/table-skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -150,8 +153,27 @@ export default function Users() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="space-y-6 animate-fade-in">
+        {/* Header Skeleton */}
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-72" />
+          </div>
+          <Skeleton className="h-10 w-32" />
+        </div>
+
+        {/* Tabs Skeleton */}
+        <div className="flex gap-2">
+          <Skeleton className="h-10 w-32 rounded-lg" />
+          <Skeleton className="h-10 w-32 rounded-lg" />
+        </div>
+
+        {/* Stats Cards Skeleton */}
+        <CardSkeleton count={4} />
+
+        {/* Table Skeleton */}
+        <TableSkeleton columns={6} rows={6} />
       </div>
     );
   }

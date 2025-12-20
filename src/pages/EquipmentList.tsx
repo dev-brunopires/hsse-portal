@@ -4,8 +4,10 @@ import { EquipmentTable } from '@/components/equipment/EquipmentTable';
 import { useEquipment } from '@/hooks/useEquipment';
 import { useCategories } from '@/hooks/useCategories';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { TableSkeleton } from '@/components/ui/table-skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 import { 
-  Flame, Wind, Shield, Waves, Gauge, ArrowUp, Package, FolderOpen, Loader2,
+  Flame, Wind, Shield, Waves, Gauge, ArrowUp, Package, FolderOpen,
   FireExtinguisher, Siren, AlertTriangle, Zap, Droplets, Thermometer, Activity, Radio, Bell,
   Construction, Wrench, Settings, Cog, Truck, Building, Factory, Warehouse, Cylinder, CircleDot,
   ShieldCheck, ShieldAlert, Eye, Camera, Lock, Key, Plug, Power, BatteryCharging,
@@ -98,8 +100,26 @@ export default function EquipmentList() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="space-y-6 animate-fade-in">
+        {/* Page Header Skeleton */}
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-80" />
+          </div>
+        </div>
+
+        {/* Tabs Skeleton */}
+        <div className="bg-card border border-border rounded-lg p-2">
+          <div className="flex gap-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-10 w-28 rounded-lg" />
+            ))}
+          </div>
+        </div>
+
+        {/* Table Skeleton */}
+        <TableSkeleton columns={7} rows={8} />
       </div>
     );
   }

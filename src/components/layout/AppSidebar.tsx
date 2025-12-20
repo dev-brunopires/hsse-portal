@@ -12,11 +12,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Shield,
-  Flame,
-  Wind,
-  Gauge,
-  ArrowUp,
-  Waves,
   User,
   AlertCircle,
   Moon,
@@ -58,24 +53,6 @@ const NavItem = ({ to, icon, label, collapsed }: NavItemProps) => {
     </NavLink>
   );
 };
-
-const CategoryItem = ({ icon, label, count, collapsed }: { icon: React.ReactNode; label: string; count: number; collapsed: boolean }) => (
-  <div
-    className={cn(
-      'flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200',
-      'hover:bg-sidebar-accent/50 text-sidebar-foreground/80 cursor-pointer',
-      collapsed && 'justify-center px-2'
-    )}
-  >
-    <span className="flex-shrink-0 text-sidebar-foreground/60">{icon}</span>
-    {!collapsed && (
-      <>
-        <span className="text-sm truncate flex-1">{label}</span>
-        <span className="text-xs bg-sidebar-accent px-2 py-0.5 rounded-full">{count}</span>
-      </>
-    )}
-  </div>
-);
 
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
@@ -124,21 +101,6 @@ export function AppSidebar() {
         <NavItem to="/reports" icon={<FileText size={20} />} label="Relatórios" collapsed={collapsed} />
         <NavItem to="/alerts" icon={<Bell size={20} />} label="Alertas" collapsed={collapsed} />
         <NavItem to="/categories" icon={<FolderOpen size={20} />} label="Categorias" collapsed={collapsed} />
-
-        {!collapsed && (
-          <div className="pt-4">
-            <p className="px-3 pb-2 text-xs font-medium uppercase tracking-wider text-sidebar-foreground/50">
-              Tipos de Equipamento
-            </p>
-          </div>
-        )}
-
-        <CategoryItem icon={<Flame size={18} />} label="Extintores" count={3} collapsed={collapsed} />
-        <CategoryItem icon={<Wind size={18} />} label="EEBD" count={1} collapsed={collapsed} />
-        <CategoryItem icon={<Shield size={18} />} label="SCBA" count={1} collapsed={collapsed} />
-        <CategoryItem icon={<Waves size={18} />} label="Mangueiras" count={1} collapsed={collapsed} />
-        <CategoryItem icon={<Gauge size={18} />} label="Detectores" count={1} collapsed={collapsed} />
-        <CategoryItem icon={<ArrowUp size={18} />} label="Altura" count={1} collapsed={collapsed} />
       </nav>
 
       {/* Bottom Section */}

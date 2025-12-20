@@ -20,7 +20,7 @@ import { DashboardFilters, type DashboardFiltersState } from '@/components/dashb
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useShips } from '@/hooks/useShips';
 import { useCategories } from '@/hooks/useCategories';
-import { Skeleton } from '@/components/ui/skeleton';
+import { CardSkeleton, ChartSkeleton, ListSkeleton } from '@/components/ui/table-skeleton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { exportDashboardPDF } from '@/utils/exportDashboardPDF';
@@ -78,18 +78,28 @@ export default function Dashboard() {
             <p className="text-muted-foreground">Visão geral do sistema de gestão de equipamentos</p>
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-32 rounded-2xl" />
-          ))}
+        
+        {/* KPI Cards Skeleton */}
+        <CardSkeleton count={4} />
+        
+        {/* Compliance Skeleton */}
+        <div className="bg-card rounded-xl border border-border p-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <div className="h-5 w-40 bg-muted rounded animate-pulse" />
+              <div className="h-4 w-60 bg-muted rounded animate-pulse" />
+            </div>
+            <div className="h-24 w-24 bg-muted rounded-full animate-pulse" />
+          </div>
         </div>
-        <Skeleton className="h-36 rounded-2xl" />
+        
+        {/* Charts Grid Skeleton */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            <Skeleton className="h-80 rounded-2xl" />
-            <Skeleton className="h-80 rounded-2xl" />
+            <ChartSkeleton />
+            <ChartSkeleton />
           </div>
-          <Skeleton className="h-[600px] rounded-2xl" />
+          <ListSkeleton rows={6} />
         </div>
       </div>
     );
