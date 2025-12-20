@@ -5,38 +5,15 @@ export function useUnits() {
   return useQuery({
     queryKey: ['units'],
     queryFn: async () => {
-      // Get unique units from profiles
-      const { data: profileUnits, error: profileError } = await supabase
-        .from('profiles')
-        .select('unit')
-        .not('unit', 'is', null);
+      // Get units from ships table (source of truth)
+      const { data: ships, error } = await supabase
+        .from('ships')
+        .select('name')
+        .order('name');
       
-      if (profileError) throw profileError;
+      if (error) throw error;
 
-      // Get unique units from equipment
-      const { data: equipmentUnits, error: equipmentError } = await supabase
-        .from('equipment')
-        .select('unit')
-        .not('unit', 'is', null);
-      
-      if (equipmentError) throw equipmentError;
-
-      // Combine and deduplicate
-      const allUnits = new Set<string>();
-      
-      profileUnits?.forEach(p => {
-        if (p.unit && p.unit.trim()) {
-          allUnits.add(p.unit.trim());
-        }
-      });
-      
-      equipmentUnits?.forEach(e => {
-        if (e.unit && e.unit.trim()) {
-          allUnits.add(e.unit.trim());
-        }
-      });
-
-      return Array.from(allUnits).sort();
+      return ships?.map(ship => ship.name) || [];
     },
   });
 }
