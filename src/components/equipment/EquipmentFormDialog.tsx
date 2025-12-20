@@ -417,9 +417,9 @@ export function EquipmentFormDialog({
                           </FormControl>
                           <SelectContent className="bg-popover border border-border shadow-lg z-50">
                             {units.length === 0 ? (
-                              <div className="p-2 text-sm text-muted-foreground text-center">
+                              <SelectItem value="__no_units__" disabled>
                                 Nenhuma unidade cadastrada
-                              </div>
+                              </SelectItem>
                             ) : (
                               units.map((unit) => (
                                 <SelectItem key={unit} value={unit}>
