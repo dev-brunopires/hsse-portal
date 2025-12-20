@@ -225,12 +225,13 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Scanner container - key forces remount on each open */}
-          <div 
+          {/* Scanner container (React must NOT render children inside the element that html5-qrcode mutates) */}
+          <div
             key={containerId}
-            id={containerId}
-            className="w-full aspect-square bg-muted rounded-lg overflow-hidden relative"
+            className="relative w-full aspect-square bg-muted rounded-lg overflow-hidden"
           >
+            <div id={containerId} className="absolute inset-0" />
+
             {(isInitializing || (!isScanning && !error)) && (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground z-10 bg-muted">
                 <Camera className="h-12 w-12 mb-2" />
