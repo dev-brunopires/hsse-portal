@@ -139,15 +139,15 @@ export function EquipmentDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col bg-card border border-border">
-        <DialogHeader className="pb-4 border-b border-border">
-          <div className="flex items-start justify-between">
-            <div>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col bg-card border border-border" hideCloseButton>
+        <DialogHeader className="pb-4 border-b border-border pr-0">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div className="min-w-0">
               <DialogTitle className="flex items-center gap-3 text-xl">
-                <div className="p-2 bg-primary/10 rounded-lg">
+                <div className="p-2 bg-primary/10 rounded-lg shrink-0">
                   <Package className="h-5 w-5 text-primary" />
                 </div>
-                <div>
+                <div className="truncate">
                   <span className="font-mono text-primary">{equipment.internalCode}</span>
                   <span className="mx-2 text-muted-foreground">•</span>
                   <span>{equipment.name}</span>
@@ -158,7 +158,7 @@ export function EquipmentDetailDialog({
                 <StatusBadge status={equipment.status} />
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <Button variant="outline" size="sm" className="gap-2" onClick={onEdit}>
                 <Edit className="h-4 w-4" />
                 Editar

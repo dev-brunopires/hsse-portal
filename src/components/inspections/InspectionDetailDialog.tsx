@@ -157,15 +157,15 @@ export function InspectionDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col bg-card border border-border">
-        <DialogHeader className="pb-4 border-b border-border">
-          <div className="flex items-start justify-between">
-            <div>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col bg-card border border-border" hideCloseButton>
+        <DialogHeader className="pb-4 border-b border-border pr-0">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div className="min-w-0">
               <DialogTitle className="flex items-center gap-3 text-xl">
-                <div className={cn('p-2 rounded-lg', config.color.replace('text-', 'bg-') + '/10')}>
+                <div className={cn('p-2 rounded-lg shrink-0', config.color.replace('text-', 'bg-') + '/10')}>
                   <ClipboardCheck className={cn('h-5 w-5', config.color)} />
                 </div>
-                <div>
+                <div className="truncate">
                   <span>Inspeção - {inspection.equipment?.internal_code}</span>
                 </div>
               </DialogTitle>
@@ -179,7 +179,7 @@ export function InspectionDetailDialog({
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0 flex-wrap">
               {canEdit && onEdit && (
                 <Button variant="outline" size="sm" className="gap-2" onClick={() => onEdit(inspection)}>
                   <Edit className="h-4 w-4" />
