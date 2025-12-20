@@ -13,17 +13,17 @@ import { Button } from '@/components/ui/button';
 import { Rocket, X } from 'lucide-react';
 
 export function OnboardingProvider() {
-  const { hasCompleted, startTour, skipTour } = useOnboarding();
+  const { hasCompleted, isLoading, startTour, skipTour } = useOnboarding();
   const [showWelcome, setShowWelcome] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
-    // Only show on dashboard after login
-    if (!hasCompleted && location.pathname === '/') {
+    // Only show on dashboard after login and when loading is complete
+    if (!isLoading && !hasCompleted && location.pathname === '/') {
       const timer = setTimeout(() => setShowWelcome(true), 1000);
       return () => clearTimeout(timer);
     }
-  }, [hasCompleted, location.pathname]);
+  }, [hasCompleted, isLoading, location.pathname]);
 
   const handleStartTour = () => {
     setShowWelcome(false);
@@ -66,6 +66,10 @@ export function OnboardingProvider() {
             <li className="flex items-center gap-2">
               <span className="h-1.5 w-1.5 rounded-full bg-primary" />
               Relatórios e alertas do sistema
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+              <strong>Como configurar sua assinatura digital</strong>
             </li>
             <li className="flex items-center gap-2">
               <span className="h-1.5 w-1.5 rounded-full bg-primary" />
