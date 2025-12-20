@@ -5,6 +5,7 @@ import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useMarkAllNotificationsAsRead } from '@/hooks/useNotifications';
 import { useToast } from '@/hooks/use-toast';
 import { markSystemNotificationRead } from '@/utils/systemNotificationsRead';
+import { formatDate } from '@/utils/dateFormat';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Alert } from '@/types/equipment';
@@ -180,7 +181,7 @@ export default function Alerts() {
                       <p className="font-medium text-foreground mt-1">{alert.message}</p>
                       <p className="text-sm text-muted-foreground">{alert.equipmentName}</p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {new Date(alert.date).toLocaleDateString('pt-BR')}
+                        {formatDate(alert.date)}
                       </p>
                     </div>
                     <Button variant="outline" size="sm">Ver Detalhes</Button>

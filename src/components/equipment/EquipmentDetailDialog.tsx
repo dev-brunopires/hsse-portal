@@ -36,6 +36,7 @@ import {
 import { Equipment } from '@/types/equipment';
 import { StatusBadge } from './StatusBadge';
 import { cn } from '@/lib/utils';
+import { formatDate } from '@/utils/dateFormat';
 import { useInspectionsByEquipment } from '@/hooks/useInspections';
 import { useEquipmentDocuments, useUploadDocument, useDeleteDocument } from '@/hooks/useEquipmentDocuments';
 import { supabase } from '@/integrations/supabase/client';
@@ -280,15 +281,15 @@ export function EquipmentDetailDialog({
                   <div className="space-y-3 pl-6">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Fabricação</span>
-                      <span>{equipment.manufacturingDate ? new Date(equipment.manufacturingDate).toLocaleDateString('pt-BR') : '—'}</span>
+                      <span>{formatDate(equipment.manufacturingDate)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Aquisição</span>
-                      <span>{equipment.acquisitionDate ? new Date(equipment.acquisitionDate).toLocaleDateString('pt-BR') : '—'}</span>
+                      <span>{formatDate(equipment.acquisitionDate)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Validade</span>
-                      <span>{equipment.expiryDate ? new Date(equipment.expiryDate).toLocaleDateString('pt-BR') : '—'}</span>
+                      <span>{formatDate(equipment.expiryDate)}</span>
                     </div>
                   </div>
                 </div>

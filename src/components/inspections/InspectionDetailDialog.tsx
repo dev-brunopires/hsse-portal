@@ -5,6 +5,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -22,24 +33,32 @@ import {
   Clock,
   Download,
   Image as ImageIcon,
+  Edit,
+  Trash2,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { formatDate, formatDateLong } from '@/utils/dateFormat';
 import type { InspectionWithDetails, InspectionChecklistItem, InspectionPhoto } from '@/hooks/useInspections';
+import { useDeleteInspection } from '@/hooks/useInspections';
 import { supabase } from '@/integrations/supabase/client';
 import { exportSingleInspectionPDF } from '@/utils/exportInspections';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface InspectionDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   inspection: InspectionWithDetails | null;
+  onEdit?: (inspection: InspectionWithDetails) => void;
 }
 
 const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: typeof CheckCircle2; color: string }> = {
+  compliant: { label: 'Conforme', variant: 'default', icon: CheckCircle2, color: 'text-status-success' },
   approved: { label: 'Aprovado', variant: 'default', icon: CheckCircle2, color: 'text-status-success' },
   pending: { label: 'Pendente', variant: 'secondary', icon: Clock, color: 'text-status-warning' },
+  attention: { label: 'Atenção', variant: 'outline', icon: AlertTriangle, color: 'text-status-warning' },
   rejected: { label: 'Reprovado', variant: 'destructive', icon: XCircle, color: 'text-status-danger' },
+  'non-compliant': { label: 'Não Conforme', variant: 'destructive', icon: XCircle, color: 'text-status-danger' },
   conditional: { label: 'Condicional', variant: 'outline', icon: AlertTriangle, color: 'text-status-warning' },
 };
 
@@ -52,12 +71,20 @@ const checklistStatusLabels: Record<string, { label: string; color: string }> = 
 export function InspectionDetailDialog({ 
   open, 
   onOpenChange, 
-  inspection 
+  inspection,
+  onEdit,
 }: InspectionDetailDialogProps) {
   const [checklistItems, setChecklistItems] = useState<InspectionChecklistItem[]>([]);
   const [photos, setPhotos] = useState<InspectionPhoto[]>([]);
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  
+  const { role } = useAuth();
+  const deleteInspection = useDeleteInspection();
+  
+  const isAdmin = role === 'admin' || (role as string) === 'admin_master';
+  const canEdit = isAdmin || role === 'technician' || (role as string) === 'supervisor';
 
   useEffect(() => {
     if (open && inspection?.id) {
@@ -121,6 +148,13 @@ export function InspectionDetailDialog({
     );
   };
 
+  const handleDelete = async () => {
+    if (!inspection) return;
+    await deleteInspection.mutateAsync(inspection.id);
+    setDeleteDialogOpen(false);
+    onOpenChange(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col bg-card border border-border">
@@ -141,14 +175,53 @@ export function InspectionDetailDialog({
                   {config.label}
                 </Badge>
                 <span className="text-sm text-muted-foreground">
-                  {format(new Date(inspection.inspection_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                  {formatDateLong(inspection.inspection_date)}
                 </span>
               </div>
             </div>
-            <Button variant="outline" size="sm" className="gap-2" onClick={handleExportPDF}>
-              <Download className="h-4 w-4" />
-              Exportar PDF
-            </Button>
+            <div className="flex items-center gap-2">
+              {canEdit && onEdit && (
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => onEdit(inspection)}>
+                  <Edit className="h-4 w-4" />
+                  Editar
+                </Button>
+              )}
+              {isAdmin && (
+                <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-2 text-destructive hover:text-destructive">
+                      <Trash2 className="h-4 w-4" />
+                      Excluir
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Excluir Inspeção</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Tem certeza que deseja excluir esta inspeção? Esta ação não pode ser desfeita.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDelete}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        disabled={deleteInspection.isPending}
+                      >
+                        {deleteInspection.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        ) : null}
+                        Excluir
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+              <Button variant="outline" size="sm" className="gap-2" onClick={handleExportPDF}>
+                <Download className="h-4 w-4" />
+                PDF
+              </Button>
+            </div>
           </div>
         </DialogHeader>
 
@@ -189,7 +262,7 @@ export function InspectionDetailDialog({
                   Data da Inspeção
                 </h3>
                 <p className="pl-6">
-                  {format(new Date(inspection.inspection_date), "dd/MM/yyyy", { locale: ptBR })}
+                  {formatDate(inspection.inspection_date)}
                 </p>
               </div>
               
@@ -200,7 +273,7 @@ export function InspectionDetailDialog({
                     Próxima Inspeção
                   </h3>
                   <p className="pl-6">
-                    {format(new Date(inspection.next_inspection_date), "dd/MM/yyyy", { locale: ptBR })}
+                    {formatDate(inspection.next_inspection_date)}
                   </p>
                 </div>
               )}
