@@ -280,8 +280,7 @@ export default function Alerts() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Bell className="h-6 w-6 text-primary" />
+          <h1 className="text-2xl font-bold text-foreground">
             Central de Alertas
           </h1>
           <p className="text-muted-foreground mt-1">
