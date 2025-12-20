@@ -3,6 +3,18 @@ import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { DashboardStats } from '@/types/equipment';
+import {
+  SBM_BLUE,
+  DARK_GRAY,
+  LIGHT_GRAY,
+  MEDIUM_GRAY,
+  SUCCESS_GREEN,
+  WARNING_YELLOW,
+  DANGER_RED,
+  addPDFHeader,
+  addPDFFooter,
+  addSectionHeader,
+} from './pdfStyles';
 
 interface ExportFilters {
   shipName?: string;
@@ -19,52 +31,12 @@ const statusLabels: Record<string, string> = {
   inactive: 'Inativo',
 };
 
-// SBM Brand Colors
-const SBM_ORANGE: [number, number, number] = [243, 111, 39]; // #F36F27
-const SBM_BLUE: [number, number, number] = [22, 85, 154]; // #16559A
-const DARK_GRAY: [number, number, number] = [51, 51, 51];
-const LIGHT_GRAY: [number, number, number] = [245, 247, 250];
-const MEDIUM_GRAY: [number, number, number] = [156, 163, 175];
-const SUCCESS_GREEN: [number, number, number] = [16, 185, 129];
-const WARNING_YELLOW: [number, number, number] = [245, 158, 11];
-const DANGER_RED: [number, number, number] = [239, 68, 68];
-
 export function exportDashboardPDF(stats: DashboardStats, filters: ExportFilters) {
   const doc = new jsPDF({ orientation: 'landscape' });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   
-  let yPos = 0;
-  
-  // === HEADER WITH SBM BRANDING ===
-  // Orange accent bar at top
-  doc.setFillColor(...SBM_ORANGE);
-  doc.rect(0, 0, pageWidth, 4, 'F');
-  
-  // Blue header section
-  doc.setFillColor(...SBM_BLUE);
-  doc.rect(0, 4, pageWidth, 28, 'F');
-  
-  // Company name
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(22);
-  doc.setFont('helvetica', 'bold');
-  doc.text('SBM', 14, 18);
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
-  doc.text('OFFSHORE', 14, 25);
-  
-  // Report title
-  doc.setFontSize(18);
-  doc.setFont('helvetica', 'bold');
-  doc.text('RELATÓRIO GERENCIAL DE EQUIPAMENTOS', pageWidth / 2, 18, { align: 'center' });
-  
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
-  const generatedDate = format(new Date(), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR });
-  doc.text(`Gerado em: ${generatedDate}`, pageWidth / 2, 26, { align: 'center' });
-  
-  // Filters applied
+  // Build filters text
   const filtersApplied: string[] = [];
   if (filters.shipName && filters.shipName !== 'all') {
     filtersApplied.push(`Unidade: ${filters.shipName}`);
@@ -76,24 +48,19 @@ export function exportDashboardPDF(stats: DashboardStats, filters: ExportFilters
     filtersApplied.push(`Período: ${format(filters.startDate, 'dd/MM/yyyy')} - ${format(filters.endDate, 'dd/MM/yyyy')}`);
   }
   
-  if (filtersApplied.length > 0) {
-    doc.text(filtersApplied.join(' | '), pageWidth - 14, 18, { align: 'right' });
-  }
+  const generatedDate = format(new Date(), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR });
   
-  yPos = 42;
+  // Add standardized header
+  let yPos = addPDFHeader(
+    doc,
+    'RELATÓRIO GERENCIAL DE EQUIPAMENTOS',
+    `Gerado em: ${generatedDate}`,
+    filtersApplied.length > 0 ? [filtersApplied.join(' | ')] : undefined
+  );
   
   // === KPI SECTION ===
-  doc.setFillColor(...SBM_ORANGE);
-  doc.rect(14, yPos, 4, 8, 'F');
-  doc.setFillColor(...LIGHT_GRAY);
-  doc.rect(18, yPos, pageWidth - 32, 8, 'F');
-  
-  doc.setTextColor(...DARK_GRAY);
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'bold');
-  doc.text('INDICADORES PRINCIPAIS', 24, yPos + 5.5);
-  
-  yPos += 14;
+  yPos = addSectionHeader(doc, yPos, 'INDICADORES PRINCIPAIS', SBM_BLUE, pageWidth - 28);
+  yPos += 4;
   
   // KPI Cards
   const kpiWidth = (pageWidth - 98) / 6;
@@ -138,15 +105,7 @@ export function exportDashboardPDF(stats: DashboardStats, filters: ExportFilters
   const colWidth = (pageWidth - 42) / 2;
   
   // Left column: Status Table
-  doc.setFillColor(...SBM_BLUE);
-  doc.rect(14, yPos, 4, 8, 'F');
-  doc.setFillColor(...LIGHT_GRAY);
-  doc.rect(18, yPos, colWidth - 4, 8, 'F');
-  
-  doc.setTextColor(...DARK_GRAY);
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
-  doc.text('DISTRIBUIÇÃO POR STATUS', 24, yPos + 5.5);
+  addSectionHeader(doc, yPos, 'DISTRIBUIÇÃO POR STATUS', SBM_BLUE, colWidth);
   
   const statusData = stats.byStatus
     .filter(s => s.count > 0)
@@ -179,15 +138,7 @@ export function exportDashboardPDF(stats: DashboardStats, filters: ExportFilters
   });
   
   // Right column: Category Table
-  doc.setFillColor(...SBM_ORANGE);
-  doc.rect(14 + colWidth + 14, yPos, 4, 8, 'F');
-  doc.setFillColor(...LIGHT_GRAY);
-  doc.rect(14 + colWidth + 18, yPos, colWidth - 4, 8, 'F');
-  
-  doc.setTextColor(...DARK_GRAY);
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
-  doc.text('CONFORMIDADE POR CATEGORIA', 14 + colWidth + 24, yPos + 5.5);
+  addSectionHeader(doc, yPos, 'CONFORMIDADE POR CATEGORIA', SBM_BLUE, colWidth);
   
   if (stats.byCategory.length > 0) {
     const categoryData = stats.byCategory.map(c => [
@@ -204,7 +155,7 @@ export function exportDashboardPDF(stats: DashboardStats, filters: ExportFilters
       body: categoryData,
       theme: 'striped',
       headStyles: { 
-        fillColor: SBM_ORANGE, 
+        fillColor: SBM_BLUE, 
         fontSize: 9, 
         cellPadding: 3,
         textColor: [255, 255, 255]
@@ -229,15 +180,7 @@ export function exportDashboardPDF(stats: DashboardStats, filters: ExportFilters
   
   // Alerts Section - Full width
   if (stats.recentAlerts.length > 0 && yPos < pageHeight - 50) {
-    doc.setFillColor(...DANGER_RED);
-    doc.rect(14, yPos, 4, 8, 'F');
-    doc.setFillColor(...LIGHT_GRAY);
-    doc.rect(18, yPos, pageWidth - 32, 8, 'F');
-    
-    doc.setTextColor(...DARK_GRAY);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text('ALERTAS PRIORITÁRIOS', 24, yPos + 5.5);
+    addSectionHeader(doc, yPos, 'ALERTAS PRIORITÁRIOS', DANGER_RED, pageWidth - 28);
     
     const alertData = stats.recentAlerts.slice(0, 8).map(a => {
       const severityLabel = a.severity === 'high' ? 'Alta' : a.severity === 'medium' ? 'Média' : 'Baixa';
@@ -278,23 +221,12 @@ export function exportDashboardPDF(stats: DashboardStats, filters: ExportFilters
     });
   }
   
-  // === FOOTER ===
-  const pageCount = doc.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
-    
-    // Footer orange accent
-    doc.setFillColor(...SBM_ORANGE);
-    doc.rect(0, pageHeight - 10, pageWidth, 2, 'F');
-    
-    // Footer text
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(...MEDIUM_GRAY);
-    doc.text('SBM Offshore - Sistema de Gestão de Equipamentos de Segurança', 14, pageHeight - 4);
-    doc.text(`Relatório Gerencial - ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, pageWidth / 2, pageHeight - 4, { align: 'center' });
-    doc.text(`Página ${i} de ${pageCount}`, pageWidth - 14, pageHeight - 4, { align: 'right' });
-  }
+  // Add standardized footer
+  addPDFFooter(
+    doc,
+    'SBM Offshore - Sistema de Gestão de Equipamentos de Segurança',
+    `Relatório Gerencial - ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`
+  );
   
   // Save
   const fileName = `SBM_Relatorio_Gerencial_${format(new Date(), 'yyyy-MM-dd-HHmm')}.pdf`;
