@@ -48,6 +48,7 @@ import { useTechniciansAndAdmins } from '@/hooks/useProfiles';
 import { useCreateInspection, useLastInspection } from '@/hooks/useInspections';
 import { useEquipment, type EquipmentWithCategory } from '@/hooks/useEquipment';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserSignature } from '@/hooks/useUserSignature';
 import { EquipmentWarningAlert } from './EquipmentWarningAlert';
 import {
   Command,
@@ -146,6 +147,7 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
   const { data: equipment = [], isLoading: equipmentLoading } = useEquipment();
   const { data: inspectors = [], isLoading: inspectorsLoading } = useTechniciansAndAdmins();
   const { data: lastInspection } = useLastInspection(selectedEquipment?.id);
+  const { data: userSignatureSettings } = useUserSignature();
   const createInspection = useCreateInspection();
 
   // Filter equipment based on search term - prioritize code matches
@@ -301,6 +303,11 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
         notes: '',
       }));
 
+      // Get signature data if auto-sign is enabled
+      const signatureData = userSignatureSettings?.auto_sign_inspections 
+        ? userSignatureSettings.default_signature 
+        : null;
+
       await createInspection.mutateAsync({
         inspection: {
           equipment_id: selectedEquipment.id,
@@ -311,6 +318,8 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
           observations: 'Inspeção rápida - Todos os itens conformes',
           recommendations: null,
           next_inspection_date: formData.nextInspectionDate || null,
+          signature_data: signatureData,
+          signed_at: signatureData ? new Date().toISOString() : null,
         },
         checklistItems: quickChecklist,
         photos: [],
@@ -349,6 +358,11 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
     setIsSubmitting(true);
     
     try {
+      // Get signature data if auto-sign is enabled
+      const signatureData = userSignatureSettings?.auto_sign_inspections 
+        ? userSignatureSettings.default_signature 
+        : null;
+
       await createInspection.mutateAsync({
         inspection: {
           equipment_id: data.equipmentId,
@@ -359,6 +373,8 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
           observations: data.observations || null,
           recommendations: data.recommendations || null,
           next_inspection_date: data.nextInspectionDate || null,
+          signature_data: signatureData,
+          signed_at: signatureData ? new Date().toISOString() : null,
         },
         checklistItems: checklist.map(item => ({
           description: item.description,
