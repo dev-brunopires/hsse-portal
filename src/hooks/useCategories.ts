@@ -63,11 +63,13 @@ export function useUpdateCategory() {
         .from('categories')
         .update(updates)
         .eq('id', id)
-        .select()
-        .single();
+        .select();
       
       if (error) throw error;
-      return data;
+      if (!data || data.length === 0) {
+        throw new Error('Não foi possível atualizar a categoria. Verifique suas permissões.');
+      }
+      return data[0];
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
