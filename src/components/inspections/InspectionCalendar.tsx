@@ -5,7 +5,6 @@ import {
   endOfMonth, 
   eachDayOfInterval, 
   isSameMonth, 
-  isSameDay, 
   isToday,
   addMonths,
   subMonths,
@@ -24,6 +23,7 @@ import {
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { parseLocalDate } from '@/utils/dateFormat';
 import type { InspectionWithDetails } from '@/hooks/useInspections';
 
 interface InspectionCalendarProps {
@@ -69,8 +69,9 @@ export function InspectionCalendar({ inspections, onInspectionClick }: Inspectio
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
-  const calendarStart = startOfWeek(monthStart, { locale: ptBR });
-  const calendarEnd = endOfWeek(monthEnd, { locale: ptBR });
+  // Use weekStartsOn: 0 to start weeks on Sunday, matching our weekDays array
+  const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 });
+  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
 
   const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
