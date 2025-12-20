@@ -8,6 +8,7 @@ interface InspectionPDFData {
     id: string;
     inspection_date: string;
     status: string;
+    actions_taken?: string | null;
     observations?: string | null;
     recommendations?: string | null;
     next_inspection_date?: string | null;
@@ -150,9 +151,21 @@ export function generateInspectionPDF(data: InspectionPDFData) {
     headStyles: { fillColor: [59, 130, 246] },
   });
 
-  // Observations and Recommendations
+  // Actions Taken, Observations and Recommendations
   yPos = (doc as any).lastAutoTable.finalY + 10;
   
+  if (data.inspection.actions_taken) {
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('AÇÕES TOMADAS', 14, yPos);
+    yPos += 5;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    const actionsLines = doc.splitTextToSize(data.inspection.actions_taken, pageWidth - 28);
+    doc.text(actionsLines, 14, yPos);
+    yPos += actionsLines.length * 5 + 5;
+  }
+
   if (data.inspection.observations) {
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
