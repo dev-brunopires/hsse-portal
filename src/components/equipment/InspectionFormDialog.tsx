@@ -24,13 +24,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import { 
   ClipboardCheck, 
   User, 
@@ -41,6 +42,10 @@ import {
   XCircle,
   Loader2,
   Camera,
+  ClipboardList,
+  FileText,
+  ImageIcon,
+  Info,
 } from 'lucide-react';
 import { Equipment } from '@/types/equipment';
 import { useToast } from '@/hooks/use-toast';
@@ -240,7 +245,7 @@ export function InspectionFormDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[95vh] overflow-hidden flex flex-col bg-card border border-border">
-        <DialogHeader className="pb-4 border-b border-border">
+        <DialogHeader className="pb-4 border-b border-border flex-shrink-0">
           <DialogTitle className="flex items-center gap-2 text-xl">
             <ClipboardCheck className="h-5 w-5 text-primary" />
             Registrar Inspeção
@@ -257,303 +262,342 @@ export function InspectionFormDialog({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-hidden flex flex-col">
-            <ScrollArea className="flex-1 pr-4">
-              <div className="space-y-6 py-4">
-                {/* Inspector and Date Section */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="inspectorId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-2">
-                          <User className="h-4 w-4" />
-                          Inspetor Responsável *
-                        </FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value} disabled={inspectorsLoading}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder={inspectorsLoading ? 'Carregando...' : 'Selecione o inspetor'} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent className="bg-popover border border-border shadow-lg z-50">
-                            {inspectors.map((inspector) => (
-                              <SelectItem key={inspector.user_id} value={inspector.user_id}>
-                                <div className="flex flex-col">
-                                  <span className="font-medium">{inspector.full_name}</span>
-                                  <span className="text-xs text-muted-foreground">
-                                    {inspector.email}
-                                  </span>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+            <Tabs defaultValue="info" className="flex-1 flex flex-col overflow-hidden">
+              <TabsList className="grid w-full grid-cols-4 flex-shrink-0">
+                <TabsTrigger value="info" className="flex items-center gap-2">
+                  <Info className="h-4 w-4" />
+                  <span className="hidden sm:inline">Dados</span>
+                </TabsTrigger>
+                <TabsTrigger value="checklist" className="flex items-center gap-2">
+                  <ClipboardList className="h-4 w-4" />
+                  <span className="hidden sm:inline">Checklist</span>
+                  {statusCounts.pending > 0 && (
+                    <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                      {statusCounts.pending}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="observations" className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  <span className="hidden sm:inline">Observações</span>
+                </TabsTrigger>
+                <TabsTrigger value="photos" className="flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4" />
+                  <span className="hidden sm:inline">Fotos</span>
+                  {uploadedPhotos.length > 0 && (
+                    <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                      {uploadedPhotos.length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+              </TabsList>
 
-                  <FormField
-                    control={form.control}
-                    name="inspectionDate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4" />
-                          Data da Inspeção *
-                        </FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <Separator />
-
-                {/* Checklist Section */}
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold text-lg">Checklist de Inspeção</h3>
-                    <div className="flex items-center gap-3 text-sm">
-                      <span className="flex items-center gap-1">
-                        <CheckCircle2 className="h-4 w-4 text-status-success" />
-                        {statusCounts.ok} OK
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <AlertTriangle className="h-4 w-4 text-status-warning" />
-                        {statusCounts.attention} Atenção
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <XCircle className="h-4 w-4 text-status-danger" />
-                        {statusCounts.fail} Falha
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    {checklist.map((item, index) => (
-                      <div 
-                        key={item.id}
-                        className={cn(
-                          'p-4 rounded-lg border transition-colors',
-                          item.status === 'ok' && 'border-status-success/30 bg-status-success/5',
-                          item.status === 'attention' && 'border-status-warning/30 bg-status-warning/5',
-                          item.status === 'fail' && 'border-status-danger/30 bg-status-danger/5',
-                          item.status === 'pending' && 'border-border bg-card',
+              {/* Tab: Dados Gerais */}
+              <TabsContent value="info" className="flex-1 overflow-hidden mt-4">
+                <ScrollArea className="h-full pr-4">
+                  <div className="space-y-6 pb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="inspectorId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="flex items-center gap-2">
+                              <User className="h-4 w-4" />
+                              Inspetor Responsável *
+                            </FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value} disabled={inspectorsLoading}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder={inspectorsLoading ? 'Carregando...' : 'Selecione o inspetor'} />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent className="bg-popover border border-border shadow-lg z-50">
+                                {inspectors.map((inspector) => (
+                                  <SelectItem key={inspector.user_id} value={inspector.user_id}>
+                                    <div className="flex flex-col">
+                                      <span className="font-medium">{inspector.full_name}</span>
+                                      <span className="text-xs text-muted-foreground">
+                                        {inspector.email}
+                                      </span>
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
                         )}
-                      >
-                        <div className="flex items-start gap-4">
-                          <span className="flex-shrink-0 w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
-                            {index + 1}
-                          </span>
-                          
-                          <div className="flex-1 space-y-3">
-                            <div className="flex items-center justify-between">
-                              <p className="font-medium text-sm">
-                                {item.description}
-                                {item.required && <span className="text-destructive ml-1">*</span>}
-                              </p>
-                            </div>
+                      />
 
-                            <RadioGroup
-                              value={item.status}
-                              onValueChange={(value) => updateChecklistItem(item.id, 'status', value)}
-                              className="flex items-center gap-4"
-                            >
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="ok" id={`${item.id}-ok`} />
-                                <Label 
-                                  htmlFor={`${item.id}-ok`}
-                                  className="flex items-center gap-1 text-sm cursor-pointer text-status-success"
-                                >
-                                  <CheckCircle2 className="h-4 w-4" />
-                                  Conforme
-                                </Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="attention" id={`${item.id}-attention`} />
-                                <Label 
-                                  htmlFor={`${item.id}-attention`}
-                                  className="flex items-center gap-1 text-sm cursor-pointer text-status-warning"
-                                >
-                                  <AlertTriangle className="h-4 w-4" />
-                                  Atenção
-                                </Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="fail" id={`${item.id}-fail`} />
-                                <Label 
-                                  htmlFor={`${item.id}-fail`}
-                                  className="flex items-center gap-1 text-sm cursor-pointer text-status-danger"
-                                >
-                                  <XCircle className="h-4 w-4" />
-                                  Não Conforme
-                                </Label>
-                              </div>
-                            </RadioGroup>
+                      <FormField
+                        control={form.control}
+                        name="inspectionDate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="flex items-center gap-2">
+                              <Calendar className="h-4 w-4" />
+                              Data da Inspeção *
+                            </FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
-                            {(item.status === 'attention' || item.status === 'fail') && (
-                              <Input
-                                placeholder="Descreva o problema encontrado..."
-                                value={item.notes}
-                                onChange={(e) => updateChecklistItem(item.id, 'notes', e.target.value)}
-                                className="text-sm"
-                              />
-                            )}
-                          </div>
+                    <FormField
+                      control={form.control}
+                      name="nextInspectionDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Próxima Inspeção Programada</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} className="max-w-xs" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Overall Status Summary */}
+                    <div className={cn(
+                      'p-4 rounded-lg border',
+                      calculateOverallStatus() === 'approved' && 'border-status-success bg-status-success/10',
+                      calculateOverallStatus() === 'attention' && 'border-status-warning bg-status-warning/10',
+                      calculateOverallStatus() === 'rejected' && 'border-status-danger bg-status-danger/10',
+                    )}>
+                      <div className="flex items-center gap-3">
+                        {calculateOverallStatus() === 'approved' && (
+                          <CheckCircle2 className="h-6 w-6 text-status-success" />
+                        )}
+                        {calculateOverallStatus() === 'attention' && (
+                          <AlertTriangle className="h-6 w-6 text-status-warning" />
+                        )}
+                        {calculateOverallStatus() === 'rejected' && (
+                          <XCircle className="h-6 w-6 text-status-danger" />
+                        )}
+                        <div>
+                          <p className="font-semibold">
+                            Status Geral: {' '}
+                            {calculateOverallStatus() === 'approved' && 'APROVADO'}
+                            {calculateOverallStatus() === 'attention' && 'ATENÇÃO NECESSÁRIA'}
+                            {calculateOverallStatus() === 'rejected' && 'REPROVADO'}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {statusCounts.ok} conformes • {statusCounts.attention} com atenção • {statusCounts.fail} não conformes
+                          </p>
                         </div>
                       </div>
-                    ))}
+                    </div>
                   </div>
-                </div>
+                </ScrollArea>
+              </TabsContent>
 
-                <Separator />
+              {/* Tab: Checklist */}
+              <TabsContent value="checklist" className="flex-1 overflow-hidden mt-4">
+                <ScrollArea className="h-full pr-4">
+                  <div className="space-y-4 pb-4">
+                    <div className="flex items-center justify-between sticky top-0 bg-card py-2 z-10">
+                      <h3 className="font-semibold">Itens de Verificação</h3>
+                      <div className="flex items-center gap-3 text-sm">
+                        <span className="flex items-center gap-1">
+                          <CheckCircle2 className="h-4 w-4 text-status-success" />
+                          {statusCounts.ok}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <AlertTriangle className="h-4 w-4 text-status-warning" />
+                          {statusCounts.attention}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <XCircle className="h-4 w-4 text-status-danger" />
+                          {statusCounts.fail}
+                        </span>
+                      </div>
+                    </div>
 
-                {/* Photo Evidence Section */}
-                <div>
-                  <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                    <Camera className="h-5 w-5" />
-                    Evidências Fotográficas
-                  </h3>
+                    <div className="space-y-3">
+                      {checklist.map((item, index) => (
+                        <div 
+                          key={item.id}
+                          className={cn(
+                            'p-4 rounded-lg border transition-colors',
+                            item.status === 'ok' && 'border-status-success/30 bg-status-success/5',
+                            item.status === 'attention' && 'border-status-warning/30 bg-status-warning/5',
+                            item.status === 'fail' && 'border-status-danger/30 bg-status-danger/5',
+                            item.status === 'pending' && 'border-border bg-card',
+                          )}
+                        >
+                          <div className="flex items-start gap-4">
+                            <span className="flex-shrink-0 w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
+                              {index + 1}
+                            </span>
+                            
+                            <div className="flex-1 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <p className="font-medium text-sm">
+                                  {item.description}
+                                  {item.required && <span className="text-destructive ml-1">*</span>}
+                                </p>
+                              </div>
 
-                  <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors mb-4">
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      onChange={handlePhotoUpload}
-                      className="hidden"
-                      id="photo-upload"
-                    />
-                    <label htmlFor="photo-upload" className="cursor-pointer">
-                      <Camera className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                      <p className="font-medium text-sm">Adicionar Fotos</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Clique ou arraste imagens
-                      </p>
-                    </label>
-                  </div>
+                              <RadioGroup
+                                value={item.status}
+                                onValueChange={(value) => updateChecklistItem(item.id, 'status', value)}
+                                className="flex flex-wrap items-center gap-4"
+                              >
+                                <div className="flex items-center space-x-2">
+                                  <RadioGroupItem value="ok" id={`${item.id}-ok`} />
+                                  <Label 
+                                    htmlFor={`${item.id}-ok`}
+                                    className="flex items-center gap-1 text-sm cursor-pointer text-status-success"
+                                  >
+                                    <CheckCircle2 className="h-4 w-4" />
+                                    Conforme
+                                  </Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <RadioGroupItem value="attention" id={`${item.id}-attention`} />
+                                  <Label 
+                                    htmlFor={`${item.id}-attention`}
+                                    className="flex items-center gap-1 text-sm cursor-pointer text-status-warning"
+                                  >
+                                    <AlertTriangle className="h-4 w-4" />
+                                    Atenção
+                                  </Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <RadioGroupItem value="fail" id={`${item.id}-fail`} />
+                                  <Label 
+                                    htmlFor={`${item.id}-fail`}
+                                    className="flex items-center gap-1 text-sm cursor-pointer text-status-danger"
+                                  >
+                                    <XCircle className="h-4 w-4" />
+                                    Não Conforme
+                                  </Label>
+                                </div>
+                              </RadioGroup>
 
-                  {uploadedPhotos.length > 0 && (
-                    <div className="grid grid-cols-4 gap-3">
-                      {uploadedPhotos.map((photo, index) => (
-                        <div key={index} className="relative group">
-                          <div className="aspect-square rounded-lg bg-muted flex items-center justify-center overflow-hidden border border-border">
-                            <img
-                              src={URL.createObjectURL(photo)}
-                              alt={`Evidência ${index + 1}`}
-                              className="w-full h-full object-cover"
-                            />
+                              {(item.status === 'attention' || item.status === 'fail') && (
+                                <Input
+                                  placeholder="Descreva o problema encontrado..."
+                                  value={item.notes}
+                                  onChange={(e) => updateChecklistItem(item.id, 'notes', e.target.value)}
+                                  className="text-sm"
+                                />
+                              )}
+                            </div>
                           </div>
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="icon"
-                            className="absolute -top-2 -right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => removePhoto(index)}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
                         </div>
                       ))}
                     </div>
-                  )}
-                </div>
-
-                <Separator />
-
-                {/* Observations Section */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="observations"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Observações Gerais</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Observações sobre a inspeção..."
-                            rows={4}
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="recommendations"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Recomendações / Ações Corretivas</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Ações necessárias..."
-                            rows={4}
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="nextInspectionDate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Próxima Inspeção Programada</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} className="max-w-xs" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Overall Status Summary */}
-                <div className={cn(
-                  'p-4 rounded-lg border',
-                  calculateOverallStatus() === 'approved' && 'border-status-success bg-status-success/10',
-                  calculateOverallStatus() === 'attention' && 'border-status-warning bg-status-warning/10',
-                  calculateOverallStatus() === 'rejected' && 'border-status-danger bg-status-danger/10',
-                )}>
-                  <div className="flex items-center gap-3">
-                    {calculateOverallStatus() === 'approved' && (
-                      <CheckCircle2 className="h-6 w-6 text-status-success" />
-                    )}
-                    {calculateOverallStatus() === 'attention' && (
-                      <AlertTriangle className="h-6 w-6 text-status-warning" />
-                    )}
-                    {calculateOverallStatus() === 'rejected' && (
-                      <XCircle className="h-6 w-6 text-status-danger" />
-                    )}
-                    <div>
-                      <p className="font-semibold">
-                        Status Geral: {' '}
-                        {calculateOverallStatus() === 'approved' && 'APROVADO'}
-                        {calculateOverallStatus() === 'attention' && 'ATENÇÃO NECESSÁRIA'}
-                        {calculateOverallStatus() === 'rejected' && 'REPROVADO'}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {statusCounts.ok} conformes • {statusCounts.attention} com atenção • {statusCounts.fail} não conformes
-                      </p>
-                    </div>
                   </div>
-                </div>
-              </div>
-            </ScrollArea>
+                </ScrollArea>
+              </TabsContent>
+
+              {/* Tab: Observações */}
+              <TabsContent value="observations" className="flex-1 overflow-hidden mt-4">
+                <ScrollArea className="h-full pr-4">
+                  <div className="space-y-6 pb-4">
+                    <FormField
+                      control={form.control}
+                      name="observations"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Observações Gerais</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Observações sobre a inspeção..."
+                              rows={6}
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="recommendations"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Recomendações / Ações Corretivas</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Ações necessárias..."
+                              rows={6}
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+
+              {/* Tab: Fotos */}
+              <TabsContent value="photos" className="flex-1 overflow-hidden mt-4">
+                <ScrollArea className="h-full pr-4">
+                  <div className="space-y-4 pb-4">
+                    <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handlePhotoUpload}
+                        className="hidden"
+                        id="photo-upload"
+                      />
+                      <label htmlFor="photo-upload" className="cursor-pointer">
+                        <Camera className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                        <p className="font-medium text-sm">Adicionar Fotos</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Clique ou arraste imagens
+                        </p>
+                      </label>
+                    </div>
+
+                    {uploadedPhotos.length > 0 ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                        {uploadedPhotos.map((photo, index) => (
+                          <div key={index} className="relative group">
+                            <div className="aspect-square rounded-lg bg-muted flex items-center justify-center overflow-hidden border border-border">
+                              <img
+                                src={URL.createObjectURL(photo)}
+                                alt={`Evidência ${index + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              className="absolute -top-2 -right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => removePhoto(index)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <ImageIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">Nenhuma foto adicionada</p>
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+            </Tabs>
 
             {/* Footer */}
-            <div className="flex items-center justify-between pt-4 mt-4 border-t border-border">
+            <div className="flex items-center justify-between pt-4 mt-4 border-t border-border flex-shrink-0">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar
               </Button>
