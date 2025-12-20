@@ -21,8 +21,9 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
   const [error, setError] = useState<string | null>(null);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [isInitializing, setIsInitializing] = useState(false);
+  const [containerId, setContainerId] = useState(() => `qr-reader-${Date.now()}`);
+
   const scannerRef = useRef<Html5Qrcode | null>(null);
-  const containerIdRef = useRef<string>(`qr-reader-${Date.now()}`);
   const isMountedRef = useRef(true);
   const isCleaningUpRef = useRef(false);
 
@@ -91,14 +92,27 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
     }
   }, [cleanupScanner, onScan, onOpenChange]);
 
-  const startScanning = useCallback(async () => {
+  const attemptStartScanning = useCallback(async (attempt: number) => {
     if (!isMountedRef.current || isCleaningUpRef.current) return;
-    
-    const containerId = containerIdRef.current;
+
     const containerElement = document.getElementById(containerId);
-    
+
+    // Radix Dialog renders through a portal; depending on animation timing,
+    // the container might not be in the DOM yet. Retry a few times.
     if (!containerElement) {
-      console.log('Container not found, retrying...');
+      if (attempt < 12) {
+        if (isMountedRef.current) setIsInitializing(true);
+        window.setTimeout(() => {
+          attemptStartScanning(attempt + 1);
+        }, 150);
+        return;
+      }
+
+      if (isMountedRef.current) {
+        setIsInitializing(false);
+        setIsScanning(false);
+        setError('Não foi possível inicializar o leitor de QR code. Feche e abra novamente para tentar.');
+      }
       return;
     }
 
@@ -135,46 +149,54 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       }
     } catch (err: any) {
       console.error('Error starting scanner:', err);
-      
+
       if (isMountedRef.current) {
         setIsScanning(false);
         setIsInitializing(false);
-        
-        if (err.toString().includes('Permission')) {
+
+        const errStr = String(err);
+        if (errStr.includes('Permission') || errStr.includes('NotAllowedError')) {
           setHasPermission(false);
-          setError('Permissão para usar a câmera foi negada. Por favor, permita o acesso à câmera nas configurações do navegador.');
-        } else if (err.toString().includes('NotAllowedError')) {
-          setHasPermission(false);
-          setError('Acesso à câmera negado. Verifique as permissões do navegador.');
+          setError('Acesso à câmera negado. Verifique as permissões do navegador e tente novamente.');
+        } else if (errStr.includes('NotFoundError') || errStr.includes('NotFound')) {
+          setError('Nenhuma câmera encontrada no dispositivo.');
         } else {
-          setError('Erro ao iniciar a câmera. Verifique se seu dispositivo possui câmera.');
+          setError('Erro ao iniciar a câmera. Verifique se seu dispositivo possui câmera e se o site está em HTTPS.');
         }
       }
     }
-  }, [cleanupScanner, handleScanSuccess]);
+  }, [cleanupScanner, containerId, handleScanSuccess]);
+
+  const startScanning = useCallback(async () => {
+    await attemptStartScanning(0);
+  }, [attemptStartScanning]);
 
   // Handle dialog open/close
   useEffect(() => {
     if (open) {
       isMountedRef.current = true;
-      // Generate new container ID when opening
-      containerIdRef.current = `qr-reader-${Date.now()}`;
-      
-      // Start scanning after a delay to ensure DOM is ready
-      const timer = setTimeout(() => {
-        if (isMountedRef.current) {
-          startScanning();
-        }
-      }, 300);
-      
-      return () => {
-        clearTimeout(timer);
-      };
+      setError(null);
+      setHasPermission(null);
+      setIsScanning(false);
+      setIsInitializing(true);
+
+      // Generate a new container id (forces the DOM node to remount)
+      setContainerId(`qr-reader-${Date.now()}`);
     } else {
-      // Cleanup when dialog closes
       cleanupScanner();
     }
-  }, [open, startScanning, cleanupScanner]);
+  }, [open, cleanupScanner]);
+
+  // Start scanning when the containerId is rendered
+  useEffect(() => {
+    if (!open) return;
+
+    const t = window.setTimeout(() => {
+      if (isMountedRef.current) startScanning();
+    }, 50);
+
+    return () => window.clearTimeout(t);
+  }, [open, containerId, startScanning]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -205,8 +227,8 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
         <div className="space-y-4">
           {/* Scanner container - key forces remount on each open */}
           <div 
-            key={containerIdRef.current}
-            id={containerIdRef.current}
+            key={containerId}
+            id={containerId}
             className="w-full aspect-square bg-muted rounded-lg overflow-hidden relative"
           >
             {(isInitializing || (!isScanning && !error)) && (
