@@ -8,7 +8,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Camera, CameraOff, Loader2, QrCode } from 'lucide-react';
+import { Camera, CameraOff, Loader2, QrCode, CheckCircle2, AlertCircle, Scan } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface QRCodeScannerDialogProps {
   open: boolean;
@@ -16,20 +17,27 @@ interface QRCodeScannerDialogProps {
   onScan: (equipmentId: string) => void;
 }
 
+type ScannerState = 'initializing' | 'scanning' | 'success' | 'error' | 'permission-denied';
+
 export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScannerDialogProps) {
-  const [isScanning, setIsScanning] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  const [isInitializing, setIsInitializing] = useState(false);
+  const [scannerState, setScannerState] = useState<ScannerState>('initializing');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [containerId, setContainerId] = useState(() => `qr-reader-${Date.now()}`);
+  const [scanProgress, setScanProgress] = useState(0);
 
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const isMountedRef = useRef(true);
   const isCleaningUpRef = useRef(false);
+  const progressIntervalRef = useRef<number | null>(null);
 
   const cleanupScanner = useCallback(async () => {
     if (isCleaningUpRef.current) return;
     isCleaningUpRef.current = true;
+
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+      progressIntervalRef.current = null;
+    }
 
     if (scannerRef.current) {
       try {
@@ -39,57 +47,60 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
         }
         scannerRef.current.clear();
       } catch (err) {
-        // Ignore cleanup errors
         console.log('Scanner cleanup:', err);
       }
       scannerRef.current = null;
     }
 
     isCleaningUpRef.current = false;
-    if (isMountedRef.current) {
-      setIsScanning(false);
-    }
   }, []);
 
   const handleScanSuccess = useCallback((decodedText: string) => {
-    cleanupScanner();
+    setScannerState('success');
+    setScanProgress(100);
     
-    let equipmentId: string | null = null;
+    // Brief success animation before processing
+    setTimeout(() => {
+      cleanupScanner();
+      
+      let equipmentId: string | null = null;
 
-    // Try to parse as URL with equipment ID
-    try {
-      const url = new URL(decodedText);
-      const scanParam = url.searchParams.get('scan');
-      if (scanParam) {
-        equipmentId = scanParam;
-      }
-    } catch {
-      // Not a URL
-    }
-
-    // Try to parse as JSON
-    if (!equipmentId) {
+      // Try to parse as URL with equipment ID
       try {
-        const data = JSON.parse(decodedText);
-        if (data.id) {
-          equipmentId = data.id;
+        const url = new URL(decodedText);
+        const scanParam = url.searchParams.get('scan');
+        if (scanParam) {
+          equipmentId = scanParam;
         }
       } catch {
-        // Not JSON
+        // Not a URL
       }
-    }
 
-    // Try as UUID directly
-    if (!equipmentId && decodedText.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-      equipmentId = decodedText;
-    }
+      // Try to parse as JSON
+      if (!equipmentId) {
+        try {
+          const data = JSON.parse(decodedText);
+          if (data.id) {
+            equipmentId = data.id;
+          }
+        } catch {
+          // Not JSON
+        }
+      }
 
-    if (equipmentId) {
-      onScan(equipmentId);
-      onOpenChange(false);
-    } else {
-      setError('QR Code inválido. Certifique-se de escanear um QR code de equipamento válido.');
-    }
+      // Try as UUID directly
+      if (!equipmentId && decodedText.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+        equipmentId = decodedText;
+      }
+
+      if (equipmentId) {
+        onScan(equipmentId);
+        onOpenChange(false);
+      } else {
+        setScannerState('error');
+        setErrorMessage('QR Code inválido. Certifique-se de escanear um QR code de equipamento válido.');
+      }
+    }, 600);
   }, [cleanupScanner, onScan, onOpenChange]);
 
   const attemptStartScanning = useCallback(async (attempt: number) => {
@@ -97,11 +108,8 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
 
     const containerElement = document.getElementById(containerId);
 
-    // Radix Dialog renders through a portal; depending on animation timing,
-    // the container might not be in the DOM yet. Retry a few times.
     if (!containerElement) {
       if (attempt < 12) {
-        if (isMountedRef.current) setIsInitializing(true);
         window.setTimeout(() => {
           attemptStartScanning(attempt + 1);
         }, 150);
@@ -109,59 +117,62 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       }
 
       if (isMountedRef.current) {
-        setIsInitializing(false);
-        setIsScanning(false);
-        setError('Não foi possível inicializar o leitor de QR code. Feche e abra novamente para tentar.');
+        setScannerState('error');
+        setErrorMessage('Não foi possível inicializar o leitor de QR code. Feche e abra novamente para tentar.');
       }
       return;
     }
 
-    setError(null);
-    setIsInitializing(true);
+    setErrorMessage(null);
+    setScannerState('initializing');
 
     try {
-      // Cleanup any existing scanner
       await cleanupScanner();
 
       if (!isMountedRef.current) return;
 
-      // Create new scanner instance
       scannerRef.current = new Html5Qrcode(containerId);
 
       await scannerRef.current.start(
         { facingMode: 'environment' },
         {
           fps: 10,
-          qrbox: { width: 200, height: 200 },
+          qrbox: { width: 220, height: 220 },
         },
         (decodedText) => {
           handleScanSuccess(decodedText);
         },
         () => {
-          // Ignore scan errors
+          // Ignore scan errors - this is normal behavior when no QR is detected
         }
       );
 
       if (isMountedRef.current) {
-        setIsScanning(true);
-        setHasPermission(true);
-        setIsInitializing(false);
+        setScannerState('scanning');
+        setScanProgress(0);
+        
+        // Animate scanning progress for visual feedback
+        progressIntervalRef.current = window.setInterval(() => {
+          setScanProgress(prev => {
+            if (prev >= 95) return 5;
+            return prev + 5;
+          });
+        }, 200);
       }
     } catch (err: any) {
       console.error('Error starting scanner:', err);
 
       if (isMountedRef.current) {
-        setIsScanning(false);
-        setIsInitializing(false);
-
         const errStr = String(err);
         if (errStr.includes('Permission') || errStr.includes('NotAllowedError')) {
-          setHasPermission(false);
-          setError('Acesso à câmera negado. Verifique as permissões do navegador e tente novamente.');
+          setScannerState('permission-denied');
+          setErrorMessage('Acesso à câmera negado. Verifique as permissões do navegador e tente novamente.');
         } else if (errStr.includes('NotFoundError') || errStr.includes('NotFound')) {
-          setError('Nenhuma câmera encontrada no dispositivo.');
+          setScannerState('error');
+          setErrorMessage('Nenhuma câmera encontrada no dispositivo.');
         } else {
-          setError('Erro ao iniciar a câmera. Verifique se seu dispositivo possui câmera e se o site está em HTTPS.');
+          setScannerState('error');
+          setErrorMessage('Erro ao iniciar a câmera. Verifique se seu dispositivo possui câmera e se o site está em HTTPS.');
         }
       }
     }
@@ -175,12 +186,9 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
   useEffect(() => {
     if (open) {
       isMountedRef.current = true;
-      setError(null);
-      setHasPermission(null);
-      setIsScanning(false);
-      setIsInitializing(true);
-
-      // Generate a new container id (forces the DOM node to remount)
+      setErrorMessage(null);
+      setScannerState('initializing');
+      setScanProgress(0);
       setContainerId(`qr-reader-${Date.now()}`);
     } else {
       cleanupScanner();
@@ -207,16 +215,78 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
   }, [cleanupScanner]);
 
   const handleRetry = () => {
-    setError(null);
+    setErrorMessage(null);
+    setScannerState('initializing');
     startScanning();
   };
+
+  const getStateConfig = () => {
+    switch (scannerState) {
+      case 'initializing':
+        return {
+          icon: Camera,
+          title: 'Inicializando câmera...',
+          subtitle: 'Aguarde enquanto preparamos o scanner',
+          color: 'text-muted-foreground',
+          bgColor: 'bg-muted',
+          showLoader: true,
+        };
+      case 'scanning':
+        return {
+          icon: Scan,
+          title: 'Escaneando...',
+          subtitle: 'Posicione o QR code dentro da área de leitura',
+          color: 'text-primary',
+          bgColor: 'bg-primary/5',
+          showLoader: false,
+        };
+      case 'success':
+        return {
+          icon: CheckCircle2,
+          title: 'QR Code detectado!',
+          subtitle: 'Processando equipamento...',
+          color: 'text-green-600',
+          bgColor: 'bg-green-50 dark:bg-green-950/30',
+          showLoader: false,
+        };
+      case 'error':
+        return {
+          icon: AlertCircle,
+          title: 'Erro no scanner',
+          subtitle: errorMessage || 'Ocorreu um erro inesperado',
+          color: 'text-destructive',
+          bgColor: 'bg-destructive/10',
+          showLoader: false,
+        };
+      case 'permission-denied':
+        return {
+          icon: CameraOff,
+          title: 'Câmera bloqueada',
+          subtitle: 'Permissão de câmera negada',
+          color: 'text-amber-600',
+          bgColor: 'bg-amber-50 dark:bg-amber-950/30',
+          showLoader: false,
+        };
+    }
+  };
+
+  const stateConfig = getStateConfig();
+  const StateIcon = stateConfig.icon;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <QrCode className="h-5 w-5 text-primary" />
+            <div className={cn(
+              "p-1.5 rounded-lg transition-colors duration-300",
+              scannerState === 'success' ? 'bg-green-100 dark:bg-green-900/30' : 'bg-primary/10'
+            )}>
+              <QrCode className={cn(
+                "h-5 w-5 transition-colors duration-300",
+                scannerState === 'success' ? 'text-green-600' : 'text-primary'
+              )} />
+            </div>
             Escanear QR Code
           </DialogTitle>
           <DialogDescription>
@@ -225,47 +295,150 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Scanner container (React must NOT render children inside the element that html5-qrcode mutates) */}
+          {/* Scanner container */}
           <div
             key={containerId}
-            className="relative w-full aspect-square bg-muted rounded-lg overflow-hidden"
+            className={cn(
+              "relative w-full aspect-square rounded-xl overflow-hidden transition-all duration-300 border-2",
+              scannerState === 'scanning' && "border-primary/50 shadow-lg shadow-primary/10",
+              scannerState === 'success' && "border-green-500/50 shadow-lg shadow-green-500/20",
+              scannerState === 'error' && "border-destructive/50",
+              scannerState === 'permission-denied' && "border-amber-500/50",
+              (scannerState === 'initializing') && "border-muted bg-muted"
+            )}
           >
+            {/* Camera feed container */}
             <div id={containerId} className="absolute inset-0" />
 
-            {(isInitializing || (!isScanning && !error)) && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground z-10 bg-muted">
-                <Camera className="h-12 w-12 mb-2" />
-                <p className="text-sm">Inicializando câmera...</p>
-                <Loader2 className="h-6 w-6 animate-spin mt-2" />
+            {/* Scanning frame overlay - only show when scanning */}
+            {scannerState === 'scanning' && (
+              <div className="absolute inset-0 pointer-events-none z-10">
+                {/* Corner brackets */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="relative w-56 h-56">
+                    {/* Top-left corner */}
+                    <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-primary rounded-tl-lg animate-pulse" />
+                    {/* Top-right corner */}
+                    <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-primary rounded-tr-lg animate-pulse" />
+                    {/* Bottom-left corner */}
+                    <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-primary rounded-bl-lg animate-pulse" />
+                    {/* Bottom-right corner */}
+                    <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-primary rounded-br-lg animate-pulse" />
+                    
+                    {/* Scanning line animation */}
+                    <div 
+                      className="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent transition-all duration-200"
+                      style={{ 
+                        top: `${scanProgress}%`,
+                        opacity: 0.8,
+                        boxShadow: '0 0 8px hsl(var(--primary))'
+                      }}
+                    />
+                  </div>
+                </div>
+                
+                {/* Semi-transparent overlay outside scanning area */}
+                <div className="absolute inset-0 bg-black/40">
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 bg-transparent" 
+                       style={{ boxShadow: '0 0 0 9999px rgba(0,0,0,0.4)' }} />
+                </div>
+              </div>
+            )}
+
+            {/* Success overlay */}
+            {scannerState === 'success' && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center z-20 bg-green-500/20 backdrop-blur-sm animate-in fade-in duration-300">
+                <div className="bg-white dark:bg-gray-900 rounded-full p-4 shadow-xl animate-in zoom-in duration-300">
+                  <CheckCircle2 className="h-16 w-16 text-green-500 animate-in spin-in-180 duration-500" />
+                </div>
+                <p className="mt-4 text-lg font-semibold text-white drop-shadow-lg">
+                  QR Code detectado!
+                </p>
+              </div>
+            )}
+
+            {/* Initializing overlay */}
+            {scannerState === 'initializing' && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-muted">
+                <div className="relative">
+                  <Camera className="h-16 w-16 text-muted-foreground animate-pulse" />
+                  <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-1">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground mt-4 font-medium">
+                  Inicializando câmera...
+                </p>
+                <div className="mt-2 w-32 h-1 bg-muted-foreground/20 rounded-full overflow-hidden">
+                  <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '60%' }} />
+                </div>
+              </div>
+            )}
+
+            {/* Error/Permission denied overlay */}
+            {(scannerState === 'error' || scannerState === 'permission-denied') && (
+              <div className={cn(
+                "absolute inset-0 flex flex-col items-center justify-center z-10 p-6",
+                stateConfig.bgColor
+              )}>
+                <div className={cn(
+                  "rounded-full p-4 mb-4",
+                  scannerState === 'error' ? 'bg-destructive/20' : 'bg-amber-500/20'
+                )}>
+                  <StateIcon className={cn("h-12 w-12", stateConfig.color)} />
+                </div>
+                <p className={cn("text-lg font-semibold mb-2", stateConfig.color)}>
+                  {stateConfig.title}
+                </p>
+                <p className="text-sm text-center text-muted-foreground max-w-xs">
+                  {stateConfig.subtitle}
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRetry}
+                  className="mt-4"
+                >
+                  <Camera className="h-4 w-4 mr-2" />
+                  Tentar Novamente
+                </Button>
               </div>
             )}
           </div>
 
-          {error && (
-            <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4">
-              <div className="flex items-start gap-3">
-                <CameraOff className="h-5 w-5 text-destructive mt-0.5 flex-shrink-0" />
-                <div className="space-y-2">
-                  <p className="text-sm text-destructive">{error}</p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleRetry}
-                  >
-                    Tentar Novamente
-                  </Button>
-                </div>
-              </div>
+          {/* Status indicator bar */}
+          <div className={cn(
+            "flex items-center gap-3 p-3 rounded-lg transition-all duration-300",
+            stateConfig.bgColor
+          )}>
+            <div className={cn(
+              "p-2 rounded-full transition-colors duration-300",
+              scannerState === 'scanning' && "bg-primary/20 animate-pulse",
+              scannerState === 'success' && "bg-green-500/20",
+              scannerState === 'error' && "bg-destructive/20",
+              scannerState === 'permission-denied' && "bg-amber-500/20",
+              scannerState === 'initializing' && "bg-muted-foreground/20"
+            )}>
+              {stateConfig.showLoader ? (
+                <Loader2 className={cn("h-5 w-5 animate-spin", stateConfig.color)} />
+              ) : (
+                <StateIcon className={cn("h-5 w-5", stateConfig.color)} />
+              )}
             </div>
-          )}
-
-          <div className="text-center text-sm text-muted-foreground">
-            {hasPermission === false ? (
-              <p>Acesso à câmera negado. Verifique as permissões do navegador.</p>
-            ) : isScanning ? (
-              <p>Posicione o QR code dentro da área de leitura</p>
-            ) : (
-              <p>Aguarde a inicialização da câmera</p>
+            <div className="flex-1 min-w-0">
+              <p className={cn("text-sm font-medium truncate", stateConfig.color)}>
+                {stateConfig.title}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">
+                {stateConfig.subtitle}
+              </p>
+            </div>
+            {scannerState === 'scanning' && (
+              <div className="flex gap-1">
+                <span className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
             )}
           </div>
         </div>
