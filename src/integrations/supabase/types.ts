@@ -559,6 +559,41 @@ export type Database = {
           },
         ]
       }
+      maintenance_photos: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_path: string
+          id: string
+          maintenance_request_id: string
+          photo_type: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_path: string
+          id?: string
+          maintenance_request_id: string
+          photo_type?: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          maintenance_request_id?: string
+          photo_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_photos_maintenance_request_id_fkey"
+            columns: ["maintenance_request_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_plans: {
         Row: {
           created_at: string
@@ -605,6 +640,108 @@ export type Database = {
             columns: ["equipment_id"]
             isOneToOne: false
             referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_requests: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          description: string
+          equipment_id: string
+          id: string
+          observations: string | null
+          parts_used: string | null
+          priority: Database["public"]["Enums"]["maintenance_priority"]
+          problem_identified: string | null
+          rejected_at: string | null
+          rejected_by: string | null
+          rejection_reason: string | null
+          requested_at: string
+          requested_by: string | null
+          scheduled_date: string | null
+          ship_id: string | null
+          started_at: string | null
+          started_by: string | null
+          status: Database["public"]["Enums"]["maintenance_status"]
+          title: string
+          type: Database["public"]["Enums"]["maintenance_type"]
+          updated_at: string
+          work_performed: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          description: string
+          equipment_id: string
+          id?: string
+          observations?: string | null
+          parts_used?: string | null
+          priority?: Database["public"]["Enums"]["maintenance_priority"]
+          problem_identified?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
+          requested_at?: string
+          requested_by?: string | null
+          scheduled_date?: string | null
+          ship_id?: string | null
+          started_at?: string | null
+          started_by?: string | null
+          status?: Database["public"]["Enums"]["maintenance_status"]
+          title: string
+          type?: Database["public"]["Enums"]["maintenance_type"]
+          updated_at?: string
+          work_performed?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          description?: string
+          equipment_id?: string
+          id?: string
+          observations?: string | null
+          parts_used?: string | null
+          priority?: Database["public"]["Enums"]["maintenance_priority"]
+          problem_identified?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
+          requested_at?: string
+          requested_by?: string | null
+          scheduled_date?: string | null
+          ship_id?: string | null
+          started_at?: string | null
+          started_by?: string | null
+          status?: Database["public"]["Enums"]["maintenance_status"]
+          title?: string
+          type?: Database["public"]["Enums"]["maintenance_type"]
+          updated_at?: string
+          work_performed?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_requests_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_ship_id_fkey"
+            columns: ["ship_id"]
+            isOneToOne: false
+            referencedRelation: "ships"
             referencedColumns: ["id"]
           },
         ]
@@ -866,6 +1003,14 @@ export type Database = {
         | "viewer"
         | "admin_master"
         | "supervisor"
+      maintenance_priority: "low" | "medium" | "high" | "critical"
+      maintenance_status:
+        | "pending"
+        | "approved"
+        | "in_progress"
+        | "completed"
+        | "rejected"
+      maintenance_type: "preventive" | "corrective"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -994,6 +1139,15 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "technician", "viewer", "admin_master", "supervisor"],
+      maintenance_priority: ["low", "medium", "high", "critical"],
+      maintenance_status: [
+        "pending",
+        "approved",
+        "in_progress",
+        "completed",
+        "rejected",
+      ],
+      maintenance_type: ["preventive", "corrective"],
     },
   },
 } as const
