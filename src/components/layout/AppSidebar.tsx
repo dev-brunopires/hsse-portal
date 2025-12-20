@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface NavItemProps {
   to: string;
@@ -75,6 +76,7 @@ const CategoryItem = ({ icon, label, count, collapsed }: { icon: React.ReactNode
 
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
+  const { isAdmin } = useAuth();
 
   return (
     <aside
@@ -134,7 +136,9 @@ export function AppSidebar() {
       {/* Bottom Section */}
       <div className="border-t border-sidebar-border p-3 space-y-1">
         <NavItem to="/profile" icon={<User size={20} />} label="Meu Perfil" collapsed={collapsed} />
-        <NavItem to="/users" icon={<Users size={20} />} label="Usuários" collapsed={collapsed} />
+        {isAdmin && (
+          <NavItem to="/users" icon={<Users size={20} />} label="Usuários" collapsed={collapsed} />
+        )}
         <NavItem to="/settings" icon={<Settings size={20} />} label="Configurações" collapsed={collapsed} />
       </div>
 
