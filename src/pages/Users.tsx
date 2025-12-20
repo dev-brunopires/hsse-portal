@@ -26,6 +26,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -307,11 +308,12 @@ export default function Users() {
                         <TableRow key={user.id}>
                           <TableCell>
                             <div className="flex items-center gap-3">
-                              <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
-                                <span className="text-sm font-medium text-primary">
+                              <Avatar className="h-9 w-9">
+                                <AvatarImage src={user.avatar_url || undefined} alt={user.full_name} />
+                                <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
                                   {user.full_name.charAt(0).toUpperCase()}
-                                </span>
-                              </div>
+                                </AvatarFallback>
+                              </Avatar>
                               <div>
                                 <p className="font-medium">{user.full_name}</p>
                                 {isCurrentUser && (
