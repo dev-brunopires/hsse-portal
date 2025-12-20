@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { 
   Layers, 
   Check, 
@@ -42,6 +42,7 @@ import { useEquipment, type EquipmentWithCategory } from '@/hooks/useEquipment';
 import { useShips } from '@/hooks/useShips';
 import { useCreateInspection } from '@/hooks/useInspections';
 import { useUserSignature } from '@/hooks/useUserSignature';
+import { useUserShips } from '@/hooks/useUserShips';
 import { useAuth } from '@/contexts/AuthContext';
 import { useShipFilter } from '@/contexts/ShipFilterContext';
 import { useToast } from '@/hooks/use-toast';
@@ -57,7 +58,7 @@ interface CategoryInspectionResult {
 }
 
 export function CategoryInspectionTab() {
-  const { user } = useAuth();
+  const { user, role, isAdmin, isAdminMaster } = useAuth();
   const { selectedShipId } = useShipFilter();
   const { toast } = useToast();
   
@@ -79,18 +80,39 @@ export function CategoryInspectionTab() {
   
   const { data: categories = [], isLoading: categoriesLoading } = useCategories();
   const { data: equipment = [], isLoading: equipmentLoading } = useEquipment();
-  const { data: ships = [] } = useShips();
+  const { data: allShips = [] } = useShips();
   const { data: userSignatureSettings } = useUserSignature();
+  const { data: userShips = [] } = useUserShips(user?.id);
   const createInspection = useCreateInspection();
   
+  // Determine available ships based on user role
+  const availableShips = useMemo(() => {
+    // Admin and admin_master can see all ships
+    if (isAdmin || isAdminMaster) {
+      return allShips;
+    }
+    // Technicians and supervisors only see their assigned ships
+    return userShips.map(us => us.ship).filter(Boolean) as { id: string; name: string; code: string | null }[];
+  }, [allShips, userShips, isAdmin, isAdminMaster]);
+  
   const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [selectedShip, setSelectedShip] = useState<string>(selectedShipId || '');
+  const [selectedShip, setSelectedShip] = useState<string>('');
   const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<Set<string>>(new Set());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSignatureDialog, setShowSignatureDialog] = useState(false);
   const [signatureData, setSignatureData] = useState<string | null>(null);
   const [inspectionResults, setInspectionResults] = useState<CategoryInspectionResult[]>([]);
   const [showResultsDialog, setShowResultsDialog] = useState(false);
+
+  // Auto-select ship if user has only one assigned (for technicians/supervisors)
+  useEffect(() => {
+    if (!selectedShip && availableShips.length === 1) {
+      setSelectedShip(availableShips[0].id);
+    } else if (!selectedShip && selectedShipId && availableShips.some(s => s.id === selectedShipId)) {
+      // Use the global filter if set and available
+      setSelectedShip(selectedShipId);
+    }
+  }, [availableShips, selectedShip, selectedShipId]);
 
   // Filter equipment by category and ship
   const filteredEquipment = useMemo(() => {
@@ -102,7 +124,7 @@ export function CategoryInspectionTab() {
   }, [equipment, selectedCategory, selectedShip]);
 
   const selectedCategory$ = categories.find(c => c.id === selectedCategory);
-  const selectedShip$ = ships.find(s => s.id === selectedShip);
+  const selectedShip$ = availableShips.find(s => s.id === selectedShip);
 
   const isAllSelected = filteredEquipment.length > 0 && 
     filteredEquipment.every(eq => selectedEquipmentIds.has(eq.id));
@@ -260,24 +282,46 @@ export function CategoryInspectionTab() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Unidade/Navio</label>
-              <Select value={selectedShip} onValueChange={(value) => {
-                setSelectedShip(value);
-                setSelectedEquipmentIds(new Set());
-              }}>
+              <label className="text-sm font-medium">
+                Unidade/Navio
+                {availableShips.length === 1 && !isAdmin && !isAdminMaster && (
+                  <Badge variant="secondary" className="ml-2 text-xs">Auto-selecionado</Badge>
+                )}
+              </label>
+              <Select 
+                value={selectedShip} 
+                onValueChange={(value) => {
+                  setSelectedShip(value);
+                  setSelectedEquipmentIds(new Set());
+                }}
+                disabled={availableShips.length === 1 && !isAdmin && !isAdminMaster}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione uma unidade" />
                 </SelectTrigger>
                 <SelectContent>
-                  {ships.map(ship => (
+                  {availableShips.map(ship => (
                     <SelectItem key={ship.id} value={ship.id}>
                       {ship.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {availableShips.length === 0 && !isAdmin && !isAdminMaster && (
+                <p className="text-sm text-destructive">Nenhuma unidade atribuída à sua conta.</p>
+              )}
             </div>
           </div>
+
+          {/* Auto-sign indicator */}
+          {userSignatureSettings?.auto_sign_inspections && userSignatureSettings?.default_signature && (
+            <div className="flex items-center gap-2 p-3 bg-primary/10 rounded-lg border border-primary/20">
+              <Check className="h-4 w-4 text-primary" />
+              <span className="text-sm text-primary">
+                Assinatura automática ativada - sua assinatura será aplicada automaticamente
+              </span>
+            </div>
+          )}
         </CardContent>
       </Card>
 
