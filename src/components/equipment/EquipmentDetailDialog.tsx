@@ -5,6 +5,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -33,13 +43,14 @@ import {
   Image,
   File,
   ExternalLink,
+  Eye,
 } from 'lucide-react';
 import { Equipment } from '@/types/equipment';
 import { StatusBadge } from './StatusBadge';
 import { cn } from '@/lib/utils';
 import { formatDate } from '@/utils/dateFormat';
 import { useInspectionsByEquipment } from '@/hooks/useInspections';
-import { useEquipmentDocuments, useUploadDocument, useDeleteDocument } from '@/hooks/useEquipmentDocuments';
+import { useEquipmentDocuments, useUploadDocument, useDeleteDocument, EquipmentDocument } from '@/hooks/useEquipmentDocuments';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -81,6 +92,11 @@ export function EquipmentDetailDialog({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
+  const [deleteDocDialog, setDeleteDocDialog] = useState<{ open: boolean; doc: EquipmentDocument | null }>({
+    open: false,
+    doc: null,
+  });
+
   const { data: inspections, isLoading: loadingInspections } = useInspectionsByEquipment(equipment?.id);
   const { data: documents, isLoading: loadingDocuments } = useEquipmentDocuments(equipment?.id);
   const uploadDocument = useUploadDocument();
@@ -114,17 +130,27 @@ export function EquipmentDetailDialog({
 
   const handleView = async (filePath: string, fileType: string) => {
     try {
-      const { data } = await supabase.storage
+      toast({ title: 'Carregando...', description: 'Abrindo documento.' });
+      
+      const { data, error } = await supabase.storage
         .from('equipment-documents')
         .createSignedUrl(filePath, 300);
       
+      if (error) {
+        console.error('Error getting signed URL:', error);
+        throw error;
+      }
+      
       if (data?.signedUrl) {
         window.open(data.signedUrl, '_blank');
+      } else {
+        throw new Error('URL não gerada');
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('View error:', error);
       toast({
         title: 'Erro ao visualizar',
-        description: 'Não foi possível abrir o documento.',
+        description: error.message || 'Não foi possível abrir o documento. Verifique suas permissões.',
         variant: 'destructive',
       });
     }
@@ -132,63 +158,127 @@ export function EquipmentDetailDialog({
 
   const handleDownload = async (filePath: string, fileName: string) => {
     try {
-      const { data } = await supabase.storage
+      toast({ title: 'Preparando download...', description: 'Gerando link do documento.' });
+      
+      const { data, error } = await supabase.storage
         .from('equipment-documents')
         .createSignedUrl(filePath, 60);
       
-      if (data?.signedUrl) {
-        const link = document.createElement('a');
-        link.href = data.signedUrl;
-        link.download = fileName;
-        link.click();
+      if (error) {
+        console.error('Error getting download URL:', error);
+        throw error;
       }
-    } catch (error) {
+      
+      if (data?.signedUrl) {
+        // Use fetch to download and create blob
+        const response = await fetch(data.signedUrl);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        toast({ title: 'Download iniciado!', description: fileName });
+      } else {
+        throw new Error('URL não gerada');
+      }
+    } catch (error: any) {
+      console.error('Download error:', error);
       toast({
         title: 'Erro ao baixar',
-        description: 'Não foi possível baixar o documento.',
+        description: error.message || 'Não foi possível baixar o documento. Verifique suas permissões.',
         variant: 'destructive',
       });
     }
   };
 
-  const handleDelete = async (id: string, filePath: string) => {
-    if (!equipment?.id) return;
-    await deleteDocument.mutateAsync({ id, filePath, equipmentId: equipment.id });
+  const handleDeleteConfirm = async () => {
+    if (!equipment?.id || !deleteDocDialog.doc) return;
+    
+    try {
+      await deleteDocument.mutateAsync({ 
+        id: deleteDocDialog.doc.id, 
+        filePath: deleteDocDialog.doc.file_path, 
+        equipmentId: equipment.id 
+      });
+      setDeleteDocDialog({ open: false, doc: null });
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      toast({
+        title: 'Erro ao excluir',
+        description: error.message || 'Não foi possível excluir o documento. Verifique suas permissões.',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col bg-card border border-border" hideCloseButton>
-        <DialogHeader className="pb-4 border-b border-border pr-0">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-            <div className="min-w-0">
-              <DialogTitle className="flex items-center gap-3 text-xl">
-                <div className="p-2 bg-primary/10 rounded-lg shrink-0">
-                  <Package className="h-5 w-5 text-primary" />
+    <>
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={deleteDocDialog.open} onOpenChange={(open) => setDeleteDocDialog({ open, doc: open ? deleteDocDialog.doc : null })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir documento?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o documento "{deleteDocDialog.doc?.file_name}"? 
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteDocument.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Excluindo...
+                </>
+              ) : (
+                'Excluir'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col bg-card border border-border" hideCloseButton>
+          <DialogHeader className="pb-4 border-b border-border pr-0">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+              <div className="min-w-0">
+                <DialogTitle className="flex items-center gap-3 text-xl">
+                  <div className="p-2 bg-primary/10 rounded-lg shrink-0">
+                    <Package className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="truncate">
+                    <span className="font-mono text-primary">{equipment.internalCode}</span>
+                    <span className="mx-2 text-muted-foreground">•</span>
+                    <span>{equipment.name}</span>
+                  </div>
+                </DialogTitle>
+                <div className="flex items-center gap-2 mt-2 ml-12">
+                  <Badge variant="outline">{equipment.category || equipment.categoryName}</Badge>
+                  <StatusBadge status={equipment.status} />
                 </div>
-                <div className="truncate">
-                  <span className="font-mono text-primary">{equipment.internalCode}</span>
-                  <span className="mx-2 text-muted-foreground">•</span>
-                  <span>{equipment.name}</span>
-                </div>
-              </DialogTitle>
-              <div className="flex items-center gap-2 mt-2 ml-12">
-                <Badge variant="outline">{equipment.category || equipment.categoryName}</Badge>
-                <StatusBadge status={equipment.status} />
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Button variant="outline" size="sm" className="gap-2" onClick={onEdit}>
+                  <Edit className="h-4 w-4" />
+                  Editar
+                </Button>
+                <Button size="sm" className="gap-2" onClick={onNewInspection}>
+                  <ClipboardCheck className="h-4 w-4" />
+                  Nova Inspeção
+                </Button>
               </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <Button variant="outline" size="sm" className="gap-2" onClick={onEdit}>
-                <Edit className="h-4 w-4" />
-                Editar
-              </Button>
-              <Button size="sm" className="gap-2" onClick={onNewInspection}>
-                <ClipboardCheck className="h-4 w-4" />
-                Nova Inspeção
-              </Button>
-            </div>
-          </div>
-        </DialogHeader>
+          </DialogHeader>
 
         <Tabs defaultValue="details" className="flex-1 flex flex-col overflow-hidden">
           <TabsList className="w-full justify-start border-b border-border rounded-none bg-transparent h-auto p-0">
@@ -573,7 +663,7 @@ export function EquipmentDetailDialog({
                             variant="ghost" 
                             size="sm"
                             className="text-destructive hover:text-destructive"
-                            onClick={() => handleDelete(doc.id, doc.file_path)}
+                            onClick={() => setDeleteDocDialog({ open: true, doc })}
                             disabled={deleteDocument.isPending}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -605,5 +695,6 @@ export function EquipmentDetailDialog({
         </Tabs>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
