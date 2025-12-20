@@ -83,8 +83,8 @@ export function useEquipment() {
       
       return data as EquipmentWithCategory[];
     },
-    // Use cached data as initial data when offline
-    initialData: () => {
+    // Provide placeholder data when offline
+    placeholderData: () => {
       if (!navigator.onLine) {
         const cached = getCachedEquipment();
         if (cached) {
@@ -95,6 +95,7 @@ export function useEquipment() {
       }
       return undefined;
     },
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   // Cache data when successfully fetched
