@@ -17,6 +17,8 @@ import {
   User,
   X,
   QrCode,
+  CalendarDays,
+  List,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -52,8 +54,10 @@ import { ptBR } from 'date-fns/locale';
 import { InspectionDetailDialog } from '@/components/inspections/InspectionDetailDialog';
 import { NewInspectionDialog } from '@/components/inspections/NewInspectionDialog';
 import { QRCodeScannerDialog } from '@/components/equipment/QRCodeScannerDialog';
+import { InspectionCalendar } from '@/components/inspections/InspectionCalendar';
 import { exportInspectionsToExcel, exportInspectionsToPDF } from '@/utils/exportInspections';
 import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: typeof CheckCircle }> = {
   compliant: { label: 'Conforme', variant: 'default', icon: CheckCircle },
@@ -84,6 +88,7 @@ export default function Inspections() {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [showNewInspectionForm, setShowNewInspectionForm] = useState(false);
   const [showQRScanner, setShowQRScanner] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
 
   // Auto-open form when scanning QR code
   useEffect(() => {
@@ -342,12 +347,26 @@ export default function Inspections() {
         </Card>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Histórico de Inspeções</CardTitle>
-          <CardDescription>Todas as inspeções realizadas no sistema</CardDescription>
-        </CardHeader>
+      {/* View Mode Tabs */}
+      <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'list' | 'calendar')}>
+        <TabsList>
+          <TabsTrigger value="list" className="gap-2">
+            <List className="h-4 w-4" />
+            Lista
+          </TabsTrigger>
+          <TabsTrigger value="calendar" className="gap-2">
+            <CalendarDays className="h-4 w-4" />
+            Calendário
+          </TabsTrigger>
+        </TabsList>
+
+        {/* List View */}
+        <TabsContent value="list" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Histórico de Inspeções</CardTitle>
+              <CardDescription>Todas as inspeções realizadas no sistema</CardDescription>
+            </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="relative flex-1">
@@ -500,7 +519,20 @@ export default function Inspections() {
             Total: {filteredInspections.length} inspeções
           </div>
         </CardContent>
-      </Card>
+          </Card>
+        </TabsContent>
+
+        {/* Calendar View */}
+        <TabsContent value="calendar" className="mt-6">
+          <InspectionCalendar 
+            inspections={inspections} 
+            onInspectionClick={(inspection) => {
+              setSelectedInspection(inspection);
+              setDetailDialogOpen(true);
+            }}
+          />
+        </TabsContent>
+      </Tabs>
 
       {/* Upcoming Inspections */}
       {upcomingInspections.length > 0 && (
