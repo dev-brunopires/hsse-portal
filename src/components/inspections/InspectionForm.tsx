@@ -40,6 +40,7 @@ import {
   ChevronDown,
   ChevronUp,
   QrCode,
+  Zap,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -266,6 +267,69 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
         description: 'O QR code não corresponde a nenhum equipamento cadastrado.',
         variant: 'destructive',
       });
+    }
+  };
+
+  // Quick inspection - mark all as OK and submit
+  const handleQuickInspection = async () => {
+    if (!selectedEquipment) {
+      toast({
+        title: "Equipamento Necessário",
+        description: "Selecione um equipamento antes de usar a inspeção rápida.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const formData = form.getValues();
+    if (!formData.inspectorId) {
+      toast({
+        title: "Inspetor Necessário",
+        description: "Selecione o inspetor responsável.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Mark all checklist items as OK
+      const quickChecklist = checklist.map(item => ({
+        description: item.description,
+        status: 'ok' as const,
+        notes: '',
+      }));
+
+      await createInspection.mutateAsync({
+        inspection: {
+          equipment_id: selectedEquipment.id,
+          inspector_id: formData.inspectorId,
+          inspection_date: formData.inspectionDate || new Date().toISOString().split('T')[0],
+          status: 'compliant',
+          actions_taken: null,
+          observations: 'Inspeção rápida - Todos os itens conformes',
+          recommendations: null,
+          next_inspection_date: formData.nextInspectionDate || null,
+        },
+        checklistItems: quickChecklist,
+        photos: [],
+      });
+
+      toast({
+        title: "Inspeção Registrada",
+        description: `${selectedEquipment.internal_code} marcado como conforme.`,
+      });
+
+      form.reset();
+      setChecklist([]);
+      setUploadedPhotos([]);
+      setSelectedEquipment(null);
+      onSuccess?.();
+    } catch (error) {
+      console.error('Error creating quick inspection:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -772,29 +836,43 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
             </Collapsible>
 
             {/* Actions */}
-            <div className="flex items-center justify-end gap-3 pt-4 border-t">
-              {onCancel && (
-                <Button type="button" variant="outline" onClick={onCancel}>
-                  Cancelar
-                </Button>
-              )}
-              <Button 
-                type="submit" 
-                disabled={isSubmitting || !selectedEquipment}
-                className="gap-2"
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t">
+              {/* Quick Inspection Button */}
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isSubmitting || !selectedEquipment || checklist.length === 0}
+                onClick={handleQuickInspection}
+                className="gap-2 bg-status-success/10 border-status-success/30 text-status-success hover:bg-status-success/20 hover:text-status-success"
               >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Registrando...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="h-4 w-4" />
-                    Registrar Inspeção
-                  </>
-                )}
+                <Zap className="h-4 w-4" />
+                Lançar como Conforme
               </Button>
+
+              <div className="flex items-center gap-3">
+                {onCancel && (
+                  <Button type="button" variant="outline" onClick={onCancel}>
+                    Cancelar
+                  </Button>
+                )}
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting || !selectedEquipment}
+                  className="gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Registrando...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="h-4 w-4" />
+                      Registrar Inspeção
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </form>
         </Form>
