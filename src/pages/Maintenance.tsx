@@ -1,5 +1,4 @@
 import { useState, useMemo } from 'react';
-import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -132,13 +131,7 @@ export default function Maintenance() {
   );
 
   return (
-    <>
-      <Helmet>
-        <title>Manutenção | SBM Inspect</title>
-        <meta name="description" content="Gerenciamento de manutenções preventivas e corretivas" />
-      </Helmet>
-
-      <div className="space-y-6">
+    <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -324,8 +317,6 @@ export default function Maintenance() {
             )}
           </TabsContent>
         </Tabs>
-      </div>
-
       {/* Dialogs */}
       <MaintenanceRequestDialog
         open={createDialogOpen}
@@ -337,6 +328,6 @@ export default function Maintenance() {
         onOpenChange={setDetailDialogOpen}
         requestId={selectedRequestId}
       />
-    </>
+    </div>
   );
 }

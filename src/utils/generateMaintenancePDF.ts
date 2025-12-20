@@ -2,7 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { pdfColors, pdfFonts, addHeader, addFooter, addSectionTitle, addInfoRow, formatDateBR } from './pdfStyles';
+import { addPDFHeader, addPDFFooter, addSectionHeader, SBM_BLUE, DARK_GRAY, DANGER_RED } from './pdfStyles';
 import type { MaintenanceRequestWithDetails, MaintenancePhoto } from '@/hooks/useMaintenanceRequests';
 
 interface MaintenanceHistory {
@@ -38,21 +38,36 @@ const priorityLabels: Record<string, string> = {
   critical: 'Crítica',
 };
 
+function formatDateBR(date: string | null | undefined): string {
+  if (!date) return 'N/A';
+  return format(new Date(date), 'dd/MM/yyyy', { locale: ptBR });
+}
+
+function addInfoRow(doc: jsPDF, label: string, value: string, yPos: number): number {
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(...DARK_GRAY);
+  doc.text(`${label}:`, 14, yPos);
+  doc.setFont('helvetica', 'normal');
+  doc.text(value || 'N/A', 60, yPos);
+  return yPos + 6;
+}
+
 export async function generateMaintenancePDF(data: MaintenanceDetailData): Promise<void> {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.width;
   
   // Add header
-  await addHeader(doc, 'Relatório de Manutenção');
+  await addPDFHeader(doc, 'Relatório de Manutenção', formatDateBR(data.requested_at));
   
-  let yPos = 55;
+  let yPos = 50;
   
   // Request info section
-  addSectionTitle(doc, 'Informações da Solicitação', yPos);
-  yPos += 10;
+  yPos = addSectionHeader(doc, yPos, 'Informações da Solicitação');
+  yPos += 8;
   
-  doc.setFontSize(pdfFonts.normal);
-  doc.setTextColor(...pdfColors.text);
+  doc.setFontSize(9);
+  doc.setTextColor(...DARK_GRAY);
   
   const requestInfo = [
     ['Nº Solicitação', data.id.substring(0, 8).toUpperCase()],
@@ -81,11 +96,11 @@ export async function generateMaintenancePDF(data: MaintenanceDetailData): Promi
     yPos = addInfoRow(doc, label, value, yPos);
   });
 
-  yPos += 10;
+  yPos += 8;
 
   // Equipment info section
-  addSectionTitle(doc, 'Dados do Equipamento', yPos);
-  yPos += 10;
+  yPos = addSectionHeader(doc, yPos, 'Dados do Equipamento');
+  yPos += 8;
 
   const equipmentInfo = [
     ['Código Interno', data.equipment?.internal_code || 'N/A'],
@@ -101,14 +116,14 @@ export async function generateMaintenancePDF(data: MaintenanceDetailData): Promi
     yPos = addInfoRow(doc, label, value, yPos);
   });
 
-  yPos += 10;
+  yPos += 8;
 
   // Problem description section
-  addSectionTitle(doc, 'Descrição do Problema', yPos);
-  yPos += 10;
+  yPos = addSectionHeader(doc, yPos, 'Descrição do Problema');
+  yPos += 8;
 
-  doc.setFontSize(pdfFonts.normal);
-  doc.setTextColor(...pdfColors.text);
+  doc.setFontSize(9);
+  doc.setTextColor(...DARK_GRAY);
   
   doc.setFont('helvetica', 'bold');
   doc.text('Título:', 14, yPos);
@@ -144,11 +159,11 @@ export async function generateMaintenancePDF(data: MaintenanceDetailData): Promi
   // Work performed section (if completed)
   if (data.work_performed) {
     yPos += 5;
-    addSectionTitle(doc, 'Trabalho Realizado', yPos);
-    yPos += 10;
+    yPos = addSectionHeader(doc, yPos, 'Trabalho Realizado');
+    yPos += 8;
 
-    doc.setFontSize(pdfFonts.normal);
-    doc.setTextColor(...pdfColors.text);
+    doc.setFontSize(9);
+    doc.setTextColor(...DARK_GRAY);
     const workLines = doc.splitTextToSize(data.work_performed, pageWidth - 28);
     doc.text(workLines, 14, yPos);
     yPos += workLines.length * 5 + 5;
@@ -177,14 +192,14 @@ export async function generateMaintenancePDF(data: MaintenanceDetailData): Promi
   // Rejection reason (if rejected)
   if (data.rejection_reason) {
     yPos += 5;
-    addSectionTitle(doc, 'Motivo da Rejeição', yPos);
-    yPos += 10;
+    yPos = addSectionHeader(doc, yPos, 'Motivo da Rejeição');
+    yPos += 8;
 
-    doc.setFontSize(pdfFonts.normal);
-    doc.setTextColor(...pdfColors.danger);
+    doc.setFontSize(9);
+    doc.setTextColor(...DANGER_RED);
     const rejectionLines = doc.splitTextToSize(data.rejection_reason, pageWidth - 28);
     doc.text(rejectionLines, 14, yPos);
-    doc.setTextColor(...pdfColors.text);
+    doc.setTextColor(...DARK_GRAY);
     yPos += rejectionLines.length * 5 + 5;
   }
 
@@ -197,8 +212,8 @@ export async function generateMaintenancePDF(data: MaintenanceDetailData): Promi
   // Maintenance history section
   if (data.history && data.history.length > 0) {
     yPos += 5;
-    addSectionTitle(doc, 'Histórico de Manutenções do Equipamento', yPos);
-    yPos += 10;
+    yPos = addSectionHeader(doc, yPos, 'Histórico de Manutenções do Equipamento');
+    yPos += 8;
 
     const historyData = data.history.map(h => [
       typeLabels[h.type] || h.type,
@@ -213,13 +228,13 @@ export async function generateMaintenancePDF(data: MaintenanceDetailData): Promi
       body: historyData,
       theme: 'striped',
       headStyles: { 
-        fillColor: pdfColors.primary,
+        fillColor: SBM_BLUE,
         textColor: [255, 255, 255],
         fontSize: 9,
       },
       bodyStyles: { 
         fontSize: 8,
-        textColor: pdfColors.text,
+        textColor: DARK_GRAY,
       },
       alternateRowStyles: { 
         fillColor: [248, 250, 252] 
@@ -229,7 +244,7 @@ export async function generateMaintenancePDF(data: MaintenanceDetailData): Promi
   }
 
   // Add footer
-  addFooter(doc);
+  addPDFFooter(doc, 'SBM Offshore - Sistema de Gestão de Manutenção', 'Documento gerado automaticamente');
 
   // Save the PDF
   const fileName = `manutencao_${data.id.substring(0, 8)}_${format(new Date(), 'yyyyMMdd')}.pdf`;

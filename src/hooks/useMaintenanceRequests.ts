@@ -69,7 +69,7 @@ export interface MaintenancePhoto {
   maintenance_request_id: string;
   file_name: string;
   file_path: string;
-  photo_type: 'problem' | 'during' | 'after';
+  photo_type: string;
   created_at: string;
 }
 
@@ -122,9 +122,9 @@ export function useMaintenanceRequests() {
           : { data: [] },
       ]);
 
-      const equipmentMap = new Map(equipmentResult.data?.map(e => [e.id, e]) || []);
-      const shipsMap = new Map(shipsResult.data?.map(s => [s.id, s]) || []);
-      const profilesMap = new Map(profilesResult.data?.map(p => [p.user_id, p]) || []);
+      const equipmentMap = new Map((equipmentResult.data || []).map(e => [e.id, e] as const));
+      const shipsMap = new Map((shipsResult.data || []).map(s => [s.id, s] as const));
+      const profilesMap = new Map((profilesResult.data || []).map(p => [p.user_id, p] as const));
 
       return (data || []).map(request => ({
         ...request,
@@ -165,7 +165,7 @@ export function useMaintenanceRequestDetails(requestId: string | undefined) {
         ? await supabase.from('profiles').select('user_id, full_name, email').in('user_id', userIds as string[])
         : { data: [] };
 
-      const profilesMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+      const profilesMap = new Map((profiles || []).map(p => [p.user_id, p] as const));
 
       return {
         ...request,
