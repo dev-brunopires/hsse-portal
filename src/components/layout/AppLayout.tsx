@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppSidebar } from './AppSidebar';
 import { MobileSidebar } from './MobileSidebar';
+import { MobileBottomNav } from './MobileBottomNav';
 import { Header } from './Header';
 import { OfflineIndicator } from './OfflineIndicator';
 import { PWAInstallPrompt } from './PWAInstallPrompt';
@@ -61,10 +62,14 @@ export function AppLayout({ children }: AppLayoutProps) {
           <Header />
         </div>
 
-        <main className="flex-1 overflow-auto p-4 lg:p-6">
+        <main className="flex-1 overflow-auto p-4 lg:p-6 pb-24 lg:pb-6">
           {children}
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav />
+
       <OfflineIndicator />
       <PWAInstallPrompt />
     </div>
