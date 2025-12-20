@@ -43,9 +43,10 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useTechniciansAndAdmins } from '@/hooks/useProfiles';
-import { useCreateInspection } from '@/hooks/useInspections';
+import { useCreateInspection, useLastInspection } from '@/hooks/useInspections';
 import { useEquipment, type EquipmentWithCategory } from '@/hooks/useEquipment';
 import { useAuth } from '@/contexts/AuthContext';
+import { EquipmentWarningAlert } from './EquipmentWarningAlert';
 import {
   Command,
   CommandEmpty,
@@ -141,6 +142,7 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
   
   const { data: equipment = [], isLoading: equipmentLoading } = useEquipment();
   const { data: inspectors = [], isLoading: inspectorsLoading } = useTechniciansAndAdmins();
+  const { data: lastInspection } = useLastInspection(selectedEquipment?.id);
   const createInspection = useCreateInspection();
 
   // Filter equipment based on search term - prioritize code matches
@@ -421,6 +423,14 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
                     )}
                   />
                 </div>
+
+                {/* Equipment Warning Alert */}
+                {selectedEquipment && (
+                  <EquipmentWarningAlert 
+                    equipment={selectedEquipment} 
+                    lastInspection={lastInspection || null}
+                  />
+                )}
 
                 {/* Inspector and Date Section */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

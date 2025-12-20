@@ -77,6 +77,28 @@ export function useInspectionsByEquipment(equipmentId: string | undefined) {
   });
 }
 
+// Hook to get the last inspection for an equipment
+export function useLastInspection(equipmentId: string | undefined) {
+  return useQuery({
+    queryKey: ['last-inspection', equipmentId],
+    queryFn: async () => {
+      if (!equipmentId) return null;
+      
+      const { data, error } = await supabase
+        .from('inspections')
+        .select('*')
+        .eq('equipment_id', equipmentId)
+        .order('inspection_date', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!equipmentId,
+  });
+}
+
 interface CreateInspectionData {
   inspection: InspectionInsert & {
     signature_data?: string | null;
