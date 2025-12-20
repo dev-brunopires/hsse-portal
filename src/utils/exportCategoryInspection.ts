@@ -39,15 +39,9 @@ export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFDat
   // Add header
   let yPosition = await addPDFHeader(
     doc,
-    'RELATÓRIO DE INSPEÇÃO POR CATEGORIA',
+    'RELATÓRIO DE INSPEÇÃO EM LOTE',
     format(new Date(data.inspectionDate), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
   );
-
-  // Title
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(33, 37, 41);
-  doc.text('RELATÓRIO DE INSPEÇÃO POR CATEGORIA', pageWidth / 2, yPosition, { align: 'center' });
   
   yPosition += 12;
 
