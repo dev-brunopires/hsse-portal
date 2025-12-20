@@ -45,6 +45,7 @@ import { useShips } from '@/hooks/useShips';
 import { useCreateInspection } from '@/hooks/useInspections';
 import { useUserSignature } from '@/hooks/useUserSignature';
 import { useUserShips } from '@/hooks/useUserShips';
+import { useDefaultChecklistTemplate } from '@/hooks/useChecklistTemplates';
 import { useAuth } from '@/contexts/AuthContext';
 import { useShipFilter } from '@/contexts/ShipFilterContext';
 import { useToast } from '@/hooks/use-toast';
@@ -87,16 +88,6 @@ export function CategoryInspectionTab() {
   const { data: userShips = [] } = useUserShips(user?.id);
   const createInspection = useCreateInspection();
   
-  // Determine available ships based on user role
-  const availableShips = useMemo(() => {
-    // Admin and admin_master can see all ships
-    if (isAdmin || isAdminMaster) {
-      return allShips;
-    }
-    // Technicians and supervisors only see their assigned ships
-    return userShips.map(us => us.ship).filter(Boolean) as { id: string; name: string; code: string | null }[];
-  }, [allShips, userShips, isAdmin, isAdminMaster]);
-  
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedShip, setSelectedShip] = useState<string>('');
   const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<Set<string>>(new Set());
@@ -106,6 +97,19 @@ export function CategoryInspectionTab() {
   const [signatureData, setSignatureData] = useState<string | null>(null);
   const [inspectionResults, setInspectionResults] = useState<CategoryInspectionResult[]>([]);
   const [showResultsDialog, setShowResultsDialog] = useState(false);
+  
+  // Fetch default checklist for the selected category
+  const { data: defaultChecklist } = useDefaultChecklistTemplate(selectedCategory || undefined);
+  
+  // Determine available ships based on user role
+  const availableShips = useMemo(() => {
+    // Admin and admin_master can see all ships
+    if (isAdmin || isAdminMaster) {
+      return allShips;
+    }
+    // Technicians and supervisors only see their assigned ships
+    return userShips.map(us => us.ship).filter(Boolean) as { id: string; name: string; code: string | null }[];
+  }, [allShips, userShips, isAdmin, isAdminMaster]);
 
   // Auto-select ship if user has only one assigned (for technicians/supervisors)
   useEffect(() => {
@@ -199,6 +203,13 @@ export function CategoryInspectionTab() {
     setIsSubmitting(true);
     const results: CategoryInspectionResult[] = [];
 
+    // Prepare checklist items from the default template (all as compliant)
+    const checklistItems = defaultChecklist?.items?.map(item => ({
+      description: item.description,
+      status: 'conforme',
+      notes: '',
+    })) || [];
+
     try {
       const selectedEquipments = filteredEquipment.filter(eq => 
         selectedEquipmentIds.has(eq.id)
@@ -215,7 +226,7 @@ export function CategoryInspectionTab() {
             signature_data: signature,
             signed_at: new Date().toISOString(),
           },
-          checklistItems: [],
+          checklistItems,
           photos: [],
         });
 
