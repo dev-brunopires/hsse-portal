@@ -14,6 +14,7 @@ import {
   Package,
   Search,
   X,
+  ShieldAlert,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -51,6 +52,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { getEffectiveEquipmentStatus, type EffectiveStatusResult } from '@/utils/equipmentStatus';
 
 interface PendingItem {
   equipment: EquipmentWithCategory;
@@ -59,6 +61,9 @@ interface PendingItem {
   hasCriticalStatus: boolean;
   isCertificateExpired: boolean;
   isInspectionOverdue: boolean;
+  isEquipmentExpired: boolean;
+  isAutoRejected: boolean;
+  autoRejectedReasons: string[];
   daysOverdue: number;
 }
 
@@ -88,10 +93,16 @@ export default function PendingRecommendations() {
         new Date(b.inspection_date).getTime() - new Date(a.inspection_date).getTime()
       )[0];
 
+      // Calculate effective status (auto-reject if certificate/expiry is overdue)
+      const effectiveResult = getEffectiveEquipmentStatus(eq);
+      const isAutoRejected = effectiveResult.isAutoRejected;
+      const autoRejectedReasons = effectiveResult.reasons;
+
       // Check for issues
       const isCertificateExpired = !!(eq.certificate_expiry && eq.certificate_expiry < today);
       const isInspectionOverdue = !!(eq.next_inspection && eq.next_inspection < today);
-      const hasCriticalStatus = eq.status === 'expired' || eq.status === 'rejected';
+      const isEquipmentExpired = !!(eq.expiry_date && eq.expiry_date < today);
+      const hasCriticalStatus = eq.status === 'expired' || eq.status === 'rejected' || isAutoRejected;
       
       // Check for unresolved recommendations
       const hasRecommendations = !!(lastInspection?.recommendations && lastInspection.recommendations.trim().length > 0);
@@ -107,8 +118,8 @@ export default function PendingRecommendations() {
         daysOverdue = Math.floor((new Date().getTime() - new Date(eq.next_inspection).getTime()) / (1000 * 60 * 60 * 24));
       }
 
-      // Add to pending items if any issue exists
-      if (hasUnresolvedRecommendations || isCertificateExpired || isInspectionOverdue || hasCriticalStatus || lastInspectionHadIssues) {
+      // Add to pending items if any issue exists (including auto-rejected)
+      if (hasUnresolvedRecommendations || isCertificateExpired || isInspectionOverdue || hasCriticalStatus || lastInspectionHadIssues || isEquipmentExpired || isAutoRejected) {
         items.push({
           equipment: eq,
           lastInspection,
@@ -116,14 +127,19 @@ export default function PendingRecommendations() {
           hasCriticalStatus,
           isCertificateExpired,
           isInspectionOverdue,
+          isEquipmentExpired,
+          isAutoRejected,
+          autoRejectedReasons,
           daysOverdue,
         });
       }
     });
 
-    // Sort by severity: certificate expired > inspection overdue > unresolved recommendations > critical status
+    // Sort by severity: auto-rejected > certificate expired > equipment expired > inspection overdue > unresolved recommendations
     return items.sort((a, b) => {
+      if (a.isAutoRejected !== b.isAutoRejected) return a.isAutoRejected ? -1 : 1;
       if (a.isCertificateExpired !== b.isCertificateExpired) return a.isCertificateExpired ? -1 : 1;
+      if (a.isEquipmentExpired !== b.isEquipmentExpired) return a.isEquipmentExpired ? -1 : 1;
       if (a.isInspectionOverdue !== b.isInspectionOverdue) return a.isInspectionOverdue ? -1 : 1;
       if (a.hasUnresolvedRecommendations !== b.hasUnresolvedRecommendations) return a.hasUnresolvedRecommendations ? -1 : 1;
       return b.daysOverdue - a.daysOverdue;
@@ -162,6 +178,8 @@ export default function PendingRecommendations() {
     expiredCertificates: pendingItems.filter(i => i.isCertificateExpired).length,
     overdueInspections: pendingItems.filter(i => i.isInspectionOverdue).length,
     criticalStatus: pendingItems.filter(i => i.hasCriticalStatus).length,
+    autoRejected: pendingItems.filter(i => i.isAutoRejected).length,
+    equipmentExpired: pendingItems.filter(i => i.isEquipmentExpired).length,
   }), [pendingItems]);
 
   const hasActiveFilters = categoryFilter !== 'all' || issueTypeFilter !== 'all' || searchTerm;
@@ -205,10 +223,12 @@ export default function PendingRecommendations() {
     yPos += 5;
     const tableBody = filteredItems.map(item => {
       const issues: string[] = [];
+      if (item.isAutoRejected) issues.push('REPROVADO (Auto)');
       if (item.isCertificateExpired) issues.push('Cert. Vencido');
+      if (item.isEquipmentExpired) issues.push('Validade Vencida');
       if (item.isInspectionOverdue) issues.push(`Insp. Atrasada (${item.daysOverdue}d)`);
       if (item.hasUnresolvedRecommendations) issues.push('Recomend. Pendente');
-      if (item.hasCriticalStatus) issues.push('Status Crítico');
+      if (item.hasCriticalStatus && !item.isAutoRejected) issues.push('Status Crítico');
 
       return [
         item.equipment.internal_code,
@@ -272,7 +292,7 @@ export default function PendingRecommendations() {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
@@ -285,6 +305,23 @@ export default function PendingRecommendations() {
               <Skeleton className="h-9 w-16" />
             ) : (
               <p className="text-3xl font-bold">{stats.total}</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-red-500/50 bg-red-500/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <ShieldAlert className="h-5 w-5 text-red-500" />
+              Reprovados
+            </CardTitle>
+            <CardDescription>Automático (vencido)</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="h-9 w-16" />
+            ) : (
+              <p className="text-3xl font-bold text-red-500">{stats.autoRejected}</p>
             )}
           </CardContent>
         </Card>
@@ -456,23 +493,32 @@ export default function PendingRecommendations() {
                   </TableRow>
                 ) : (
                   filteredItems.map((item) => (
-                    <TableRow key={item.equipment.id} className="hover:bg-muted/50">
+                    <TableRow 
+                      key={item.equipment.id} 
+                      className={`hover:bg-muted/50 ${item.isAutoRejected ? 'bg-red-500/5 border-l-4 border-l-red-500' : ''}`}
+                    >
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
-                            item.isCertificateExpired || item.hasCriticalStatus 
-                              ? 'bg-status-danger/10' 
-                              : item.isInspectionOverdue 
-                                ? 'bg-status-warning/10'
-                                : 'bg-primary/10'
-                          }`}>
-                            <Package className={`h-4 w-4 ${
-                              item.isCertificateExpired || item.hasCriticalStatus 
-                                ? 'text-status-danger' 
+                            item.isAutoRejected
+                              ? 'bg-red-500/20'
+                              : item.isCertificateExpired || item.hasCriticalStatus 
+                                ? 'bg-status-danger/10' 
                                 : item.isInspectionOverdue 
-                                  ? 'text-status-warning'
-                                  : 'text-primary'
-                            }`} />
+                                  ? 'bg-status-warning/10'
+                                  : 'bg-primary/10'
+                          }`}>
+                            {item.isAutoRejected ? (
+                              <ShieldAlert className="h-4 w-4 text-red-500" />
+                            ) : (
+                              <Package className={`h-4 w-4 ${
+                                item.isCertificateExpired || item.hasCriticalStatus 
+                                  ? 'text-status-danger' 
+                                  : item.isInspectionOverdue 
+                                    ? 'text-status-warning'
+                                    : 'text-primary'
+                              }`} />
+                            )}
                           </div>
                           <div>
                             <p className="font-medium">{item.equipment.name}</p>
@@ -502,9 +548,24 @@ export default function PendingRecommendations() {
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1">
-                          {item.isCertificateExpired && (
+                          {item.isAutoRejected && (
+                            <Badge className="text-xs bg-red-500 text-white font-bold">
+                              REPROVADO
+                            </Badge>
+                          )}
+                          {item.isAutoRejected && item.autoRejectedReasons.map((reason, idx) => (
+                            <Badge key={idx} variant="destructive" className="text-xs">
+                              {reason}
+                            </Badge>
+                          ))}
+                          {!item.isAutoRejected && item.isCertificateExpired && (
                             <Badge variant="destructive" className="text-xs">
                               Cert. Vencido
+                            </Badge>
+                          )}
+                          {!item.isAutoRejected && item.isEquipmentExpired && (
+                            <Badge variant="destructive" className="text-xs">
+                              Validade Vencida
                             </Badge>
                           )}
                           {item.isInspectionOverdue && (
@@ -517,7 +578,7 @@ export default function PendingRecommendations() {
                               Recomend. Pendente
                             </Badge>
                           )}
-                          {item.hasCriticalStatus && (
+                          {!item.isAutoRejected && item.hasCriticalStatus && (
                             <Badge variant="destructive" className="text-xs">
                               {item.equipment.status === 'rejected' ? 'Reprovado' : 'Vencido'}
                             </Badge>
@@ -606,7 +667,21 @@ export default function PendingRecommendations() {
                     Pendências Identificadas
                   </h4>
 
-                  {selectedItem.isCertificateExpired && (
+                  {selectedItem.isAutoRejected && (
+                    <div className="p-3 rounded-lg bg-red-500/10 border-2 border-red-500/50">
+                      <p className="font-bold text-red-500 flex items-center gap-2">
+                        <ShieldAlert className="h-4 w-4" />
+                        EQUIPAMENTO REPROVADO AUTOMATICAMENTE
+                      </p>
+                      <ul className="text-sm mt-1 list-disc list-inside">
+                        {selectedItem.autoRejectedReasons.map((reason, idx) => (
+                          <li key={idx}>{reason}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {selectedItem.isCertificateExpired && !selectedItem.isAutoRejected && (
                     <div className="p-3 rounded-lg bg-status-danger/10 border border-status-danger/30">
                       <p className="font-medium text-status-danger">Certificado Vencido</p>
                       <p className="text-sm">
@@ -625,7 +700,7 @@ export default function PendingRecommendations() {
                     </div>
                   )}
 
-                  {selectedItem.hasCriticalStatus && (
+                  {selectedItem.hasCriticalStatus && !selectedItem.isAutoRejected && (
                     <div className="p-3 rounded-lg bg-status-danger/10 border border-status-danger/30">
                       <p className="font-medium text-status-danger">
                         Status: {selectedItem.equipment.status === 'rejected' ? 'Reprovado' : 'Vencido'}

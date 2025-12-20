@@ -516,7 +516,7 @@ export function EquipmentTable({
                       </div>
                     </TableCell>
                     <TableCell>
-                      <StatusBadge status={item.status as any} size="sm" />
+                      <StatusBadge status={item.status as any} size="sm" equipment={item} />
                     </TableCell>
                     <TableCell className="text-sm">
                       {formatDate(item.last_inspection)}
