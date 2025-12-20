@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Check } from "lucide-react";
 import { DayPicker } from "react-day-picker";
 
 import { cn } from "@/lib/utils";
@@ -21,9 +21,9 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
-        caption: "flex justify-center pt-1 relative items-center gap-2",
+        caption: "flex justify-center pt-1 relative items-center gap-2 mb-2",
         caption_label: "text-sm font-medium hidden",
-        caption_dropdowns: "flex items-center gap-2",
+        caption_dropdowns: "flex items-center gap-2 justify-center",
         dropdown_month: "relative",
         dropdown_year: "relative",
         dropdown: "hidden",
@@ -68,36 +68,42 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
             onChange?.(syntheticEvent);
             setOpen(false);
           };
+
+          const displayLabel = isMonth 
+            ? String(selected?.props?.children).charAt(0).toUpperCase() + String(selected?.props?.children).slice(1)
+            : selected?.props?.children;
           
           return (
-            <Popover open={open} onOpenChange={setOpen}>
+            <Popover open={open} onOpenChange={setOpen} modal={true}>
               <PopoverTrigger asChild>
                 <button
                   type="button"
                   className={cn(
-                    "flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-md",
-                    "bg-background border border-input shadow-sm",
+                    "inline-flex items-center justify-between gap-1 text-sm font-medium",
+                    "h-8 px-3 rounded-md min-w-[90px]",
+                    "bg-background border border-input",
                     "hover:bg-accent hover:text-accent-foreground",
-                    "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
-                    "transition-colors cursor-pointer"
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    "transition-colors cursor-pointer",
+                    isMonth && "min-w-[110px]"
                   )}
                 >
-                  <span className="capitalize">
-                    {isMonth 
-                      ? String(selected?.props?.children).charAt(0).toUpperCase() + String(selected?.props?.children).slice(1)
-                      : selected?.props?.children
-                    }
-                  </span>
-                  <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+                  <span>{displayLabel}</span>
+                  <ChevronDown className={cn(
+                    "h-4 w-4 opacity-50 transition-transform",
+                    open && "rotate-180"
+                  )} />
                 </button>
               </PopoverTrigger>
               <PopoverContent 
-                className="w-auto p-1 z-[9999]" 
-                align="start"
+                className="p-0 w-auto min-w-[140px]" 
+                align="center"
+                side="bottom"
                 sideOffset={4}
+                onOpenAutoFocus={(e) => e.preventDefault()}
               >
-                <ScrollArea className={isMonth ? "h-[200px]" : "h-[200px]"}>
-                  <div className="flex flex-col gap-0.5">
+                <ScrollArea className="h-[220px]">
+                  <div className="p-1">
                     {options.map((option, i) => {
                       const isSelected = option.props.value === value;
                       const label = isMonth
@@ -110,13 +116,15 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
                           type="button"
                           onClick={() => handleSelect(option.props.value)}
                           className={cn(
-                            "w-full text-left px-3 py-1.5 text-sm rounded-md transition-colors",
+                            "w-full flex items-center justify-between gap-2",
+                            "px-3 py-2 text-sm rounded-md transition-colors",
                             "hover:bg-accent hover:text-accent-foreground",
                             "focus:outline-none focus:bg-accent focus:text-accent-foreground",
-                            isSelected && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
+                            isSelected && "bg-primary/10 text-primary font-medium"
                           )}
                         >
-                          {label}
+                          <span>{label}</span>
+                          {isSelected && <Check className="h-4 w-4" />}
                         </button>
                       );
                     })}
