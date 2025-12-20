@@ -23,6 +23,7 @@ import {
   Edit,
   MoreHorizontal,
   Trash2,
+  Layers,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -62,6 +63,7 @@ import { EditInspectionDialog } from '@/components/inspections/EditInspectionDia
 import { QRCodeScannerDialog } from '@/components/equipment/QRCodeScannerDialog';
 import { InspectionCalendar } from '@/components/inspections/InspectionCalendar';
 import { InspectionTimeline } from '@/components/inspections/InspectionTimeline';
+import { CategoryInspectionTab } from '@/components/inspections/CategoryInspectionTab';
 import { exportInspectionsToExcel, exportInspectionsToPDF } from '@/utils/exportInspections';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -96,7 +98,7 @@ export default function Inspections() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [showNewInspectionForm, setShowNewInspectionForm] = useState(false);
   const [showQRScanner, setShowQRScanner] = useState(false);
-  const [viewMode, setViewMode] = useState<'list' | 'calendar' | 'timeline'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'calendar' | 'timeline' | 'category'>('list');
 
   // Auto-open form when scanning QR code
   useEffect(() => {
@@ -370,11 +372,15 @@ export default function Inspections() {
       </div>
 
       {/* View Mode Tabs */}
-      <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'list' | 'calendar' | 'timeline')}>
+      <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'list' | 'calendar' | 'timeline' | 'category')}>
         <TabsList>
           <TabsTrigger value="list" className="gap-2">
             <List className="h-4 w-4" />
             Lista
+          </TabsTrigger>
+          <TabsTrigger value="category" className="gap-2">
+            <Layers className="h-4 w-4" />
+            Por Categoria
           </TabsTrigger>
           <TabsTrigger value="timeline" className="gap-2">
             <GitCommitHorizontal className="h-4 w-4" />
@@ -600,6 +606,11 @@ export default function Inspections() {
               setDetailDialogOpen(true);
             }}
           />
+        </TabsContent>
+
+        {/* Category Inspection View */}
+        <TabsContent value="category" className="mt-6">
+          <CategoryInspectionTab />
         </TabsContent>
       </Tabs>
 
