@@ -7,11 +7,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { useUpdateProfile } from '@/hooks/useUserRoles';
+import { useUnits } from '@/hooks/useUnits';
 import type { ProfileWithRole } from '@/hooks/useProfiles';
 
 interface UserEditDialogProps {
@@ -24,6 +32,7 @@ export function UserEditDialog({ open, onOpenChange, user }: UserEditDialogProps
   const [fullName, setFullName] = useState('');
   const [unit, setUnit] = useState('');
   const updateProfile = useUpdateProfile();
+  const { data: units = [] } = useUnits();
 
   useEffect(() => {
     if (user) {
@@ -74,12 +83,24 @@ export function UserEditDialog({ open, onOpenChange, user }: UserEditDialogProps
 
           <div className="space-y-2">
             <Label htmlFor="unit">Unidade</Label>
-            <Input
-              id="unit"
-              value={unit}
-              onChange={(e) => setUnit(e.target.value)}
-              placeholder="Ex: FPSO Cidade de Paraty"
-            />
+            <Select value={unit} onValueChange={setUnit}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione uma unidade" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border border-border shadow-lg z-50">
+                {units.length === 0 ? (
+                  <SelectItem value="_empty" disabled>
+                    Nenhuma unidade cadastrada
+                  </SelectItem>
+                ) : (
+                  units.map((u) => (
+                    <SelectItem key={u} value={u}>
+                      {u}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
