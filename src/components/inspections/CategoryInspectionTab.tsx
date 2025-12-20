@@ -91,6 +91,7 @@ export function CategoryInspectionTab() {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedShip, setSelectedShip] = useState<string>('');
   const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<Set<string>>(new Set());
+  const [equipmentStatuses, setEquipmentStatuses] = useState<Record<string, 'compliant' | 'attention' | 'non-compliant'>>({});
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSignatureDialog, setShowSignatureDialog] = useState(false);
@@ -145,7 +146,16 @@ export function CategoryInspectionTab() {
     if (isAllSelected) {
       setSelectedEquipmentIds(new Set());
     } else {
-      setSelectedEquipmentIds(new Set(filteredEquipment.map(eq => eq.id)));
+      const newIds = new Set(filteredEquipment.map(eq => eq.id));
+      setSelectedEquipmentIds(newIds);
+      // Set all to compliant by default when selecting all
+      const newStatuses = { ...equipmentStatuses };
+      filteredEquipment.forEach(eq => {
+        if (!newStatuses[eq.id]) {
+          newStatuses[eq.id] = 'compliant';
+        }
+      });
+      setEquipmentStatuses(newStatuses);
     }
   };
 
@@ -155,8 +165,24 @@ export function CategoryInspectionTab() {
       newSet.delete(equipmentId);
     } else {
       newSet.add(equipmentId);
+      // Set default status to compliant when selecting
+      if (!equipmentStatuses[equipmentId]) {
+        setEquipmentStatuses(prev => ({ ...prev, [equipmentId]: 'compliant' }));
+      }
     }
     setSelectedEquipmentIds(newSet);
+  };
+
+  const handleStatusChange = (equipmentId: string, status: 'compliant' | 'attention' | 'non-compliant') => {
+    setEquipmentStatuses(prev => ({ ...prev, [equipmentId]: status }));
+  };
+
+  const getStatusLabel = (status: 'compliant' | 'attention' | 'non-compliant') => {
+    switch (status) {
+      case 'compliant': return 'Conforme';
+      case 'attention': return 'Atenção';
+      case 'non-compliant': return 'Não Conforme';
+    }
   };
 
   const handleStartInspection = () => {
@@ -203,24 +229,31 @@ export function CategoryInspectionTab() {
     setIsSubmitting(true);
     const results: CategoryInspectionResult[] = [];
 
-    // Prepare checklist items from the default template (all as compliant)
-    const checklistItems = defaultChecklist?.items?.map(item => ({
-      description: item.description,
-      status: 'conforme',
-      notes: '',
-    })) || [];
-
     try {
       const selectedEquipments = filteredEquipment.filter(eq => 
         selectedEquipmentIds.has(eq.id)
       );
 
       for (const eq of selectedEquipments) {
+        const eqStatus = equipmentStatuses[eq.id] || 'compliant';
+        
+        // Map status to inspection status
+        const inspectionStatus = eqStatus === 'compliant' ? 'compliant' : 
+                                  eqStatus === 'attention' ? 'attention' : 'non-compliant';
+        
+        // Prepare checklist items based on status
+        const checklistItems = defaultChecklist?.items?.map(item => ({
+          description: item.description,
+          status: eqStatus === 'compliant' ? 'conforme' : 
+                  eqStatus === 'attention' ? 'atenção' : 'não conforme',
+          notes: '',
+        })) || [];
+
         await createInspection.mutateAsync({
           inspection: {
             equipment_id: eq.id,
             inspector_id: user.id,
-            status: 'compliant',
+            status: inspectionStatus,
             inspection_date: new Date().toISOString().split('T')[0],
             observations: `Inspeção em lote por categoria: ${selectedCategory$?.name}`,
             signature_data: signature,
@@ -232,13 +265,14 @@ export function CategoryInspectionTab() {
 
         results.push({
           equipment: eq,
-          status: 'compliant',
+          status: eqStatus,
         });
       }
 
       setInspectionResults(results);
       setShowResultsDialog(true);
       setSelectedEquipmentIds(new Set());
+      setEquipmentStatuses({});
 
       toast({
         title: 'Inspeções Registradas',
@@ -416,8 +450,8 @@ export function CategoryInspectionTab() {
                     </>
                   ) : (
                     <>
-                      <Check className="h-4 w-4 mr-2" />
-                      Lançar Conforme ({selectedEquipmentIds.size})
+                      <ClipboardCheck className="h-4 w-4 mr-2" />
+                      Lançar Inspeção ({selectedEquipmentIds.size})
                     </>
                   )}
                 </Button>
@@ -447,9 +481,9 @@ export function CategoryInspectionTab() {
                       </TableHead>
                       <TableHead>Código</TableHead>
                       <TableHead>Nome</TableHead>
-                      <TableHead>Tipo</TableHead>
                       <TableHead>Localização</TableHead>
-                      <TableHead>Status Atual</TableHead>
+                      <TableHead>Status Equipamento</TableHead>
+                      <TableHead>Status Inspeção</TableHead>
                       <TableHead>Última Inspeção</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -457,10 +491,9 @@ export function CategoryInspectionTab() {
                     {filteredEquipment.map((eq) => (
                       <TableRow 
                         key={eq.id}
-                        className="cursor-pointer hover:bg-muted/50"
-                        onClick={() => handleSelectEquipment(eq.id)}
+                        className={`hover:bg-muted/50 ${selectedEquipmentIds.has(eq.id) ? 'bg-primary/5' : ''}`}
                       >
-                        <TableCell onClick={(e) => e.stopPropagation()}>
+                        <TableCell>
                           <Checkbox
                             checked={selectedEquipmentIds.has(eq.id)}
                             onCheckedChange={() => handleSelectEquipment(eq.id)}
@@ -468,7 +501,6 @@ export function CategoryInspectionTab() {
                         </TableCell>
                         <TableCell className="font-mono">{eq.internal_code}</TableCell>
                         <TableCell className="font-medium">{eq.name}</TableCell>
-                        <TableCell>{eq.type}</TableCell>
                         <TableCell>{eq.location}</TableCell>
                         <TableCell>
                           <Badge variant={
@@ -480,6 +512,40 @@ export function CategoryInspectionTab() {
                              eq.status === 'maintenance' ? 'Manutenção' :
                              eq.status === 'rejected' ? 'Reprovado' : eq.status}
                           </Badge>
+                        </TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          {selectedEquipmentIds.has(eq.id) ? (
+                            <Select
+                              value={equipmentStatuses[eq.id] || 'compliant'}
+                              onValueChange={(value) => handleStatusChange(eq.id, value as 'compliant' | 'attention' | 'non-compliant')}
+                            >
+                              <SelectTrigger className="w-[140px] h-8">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="compliant">
+                                  <span className="flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-green-500" />
+                                    Conforme
+                                  </span>
+                                </SelectItem>
+                                <SelectItem value="attention">
+                                  <span className="flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-yellow-500" />
+                                    Atenção
+                                  </span>
+                                </SelectItem>
+                                <SelectItem value="non-compliant">
+                                  <span className="flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-red-500" />
+                                    Não Conforme
+                                  </span>
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">-</span>
+                          )}
                         </TableCell>
                         <TableCell>
                           {eq.last_inspection ? formatDate(eq.last_inspection) : '-'}
@@ -499,8 +565,22 @@ export function CategoryInspectionTab() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Assinatura do Inspetor</DialogTitle>
-            <DialogDescription>
-              Assine abaixo para confirmar a inspeção de {selectedEquipmentIds.size} equipamento(s)
+            <DialogDescription className="space-y-2">
+              <p>Assine abaixo para confirmar a inspeção de {selectedEquipmentIds.size} equipamento(s)</p>
+              <div className="flex flex-wrap gap-2 pt-2">
+                {(() => {
+                  const compliantCount = Array.from(selectedEquipmentIds).filter(id => (equipmentStatuses[id] || 'compliant') === 'compliant').length;
+                  const attentionCount = Array.from(selectedEquipmentIds).filter(id => equipmentStatuses[id] === 'attention').length;
+                  const nonCompliantCount = Array.from(selectedEquipmentIds).filter(id => equipmentStatuses[id] === 'non-compliant').length;
+                  return (
+                    <>
+                      {compliantCount > 0 && <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/30">{compliantCount} Conforme</Badge>}
+                      {attentionCount > 0 && <Badge variant="outline" className="bg-yellow-500/10 text-yellow-700 border-yellow-500/30">{attentionCount} Atenção</Badge>}
+                      {nonCompliantCount > 0 && <Badge variant="outline" className="bg-red-500/10 text-red-700 border-red-500/30">{nonCompliantCount} Não Conforme</Badge>}
+                    </>
+                  );
+                })()}
+              </div>
             </DialogDescription>
           </DialogHeader>
           <SignaturePad
