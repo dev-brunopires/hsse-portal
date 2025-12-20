@@ -96,9 +96,9 @@ export type Database = {
           internal_code: string
           last_inspection: string | null
           location: string
-          manufacturer: string
+          manufacturer: string | null
           manufacturing_date: string
-          model: string
+          model: string | null
           name: string
           next_inspection: string | null
           observations: string | null
@@ -121,9 +121,9 @@ export type Database = {
           internal_code: string
           last_inspection?: string | null
           location: string
-          manufacturer: string
+          manufacturer?: string | null
           manufacturing_date: string
-          model: string
+          model?: string | null
           name: string
           next_inspection?: string | null
           observations?: string | null
@@ -146,9 +146,9 @@ export type Database = {
           internal_code?: string
           last_inspection?: string | null
           location?: string
-          manufacturer?: string
+          manufacturer?: string | null
           manufacturing_date?: string
-          model?: string
+          model?: string | null
           name?: string
           next_inspection?: string | null
           observations?: string | null
