@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { NotificationSettingsCard } from '@/components/dashboard/NotificationSettingsCard';
 
 export default function Settings() {
   return (
@@ -31,14 +32,16 @@ export default function Settings() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="notifications" className="mt-6">
+        <TabsContent value="notifications" className="mt-6 space-y-6">
+          <NotificationSettingsCard />
+          
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Bell className="h-5 w-5 text-primary" />
-                Notificações
+                Preferências de Alertas
               </CardTitle>
-              <CardDescription>Configure as preferências de alertas do sistema</CardDescription>
+              <CardDescription>Configure quais tipos de alertas deseja receber</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
