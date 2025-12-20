@@ -12,6 +12,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useUnits } from '@/hooks/useUnits';
 
 const roleLabels = {
   admin: 'Administrador',
@@ -22,6 +23,7 @@ const roleLabels = {
 export function Header() {
   const { user, profile, role, signOut } = useAuth();
   const navigate = useNavigate();
+  const { data: units = [] } = useUnits();
 
   const handleSignOut = async () => {
     await signOut();
@@ -54,11 +56,10 @@ export function Header() {
           <DropdownMenuContent align="end" className="w-56 bg-popover border border-border shadow-lg z-50">
             <DropdownMenuLabel>Selecionar Unidade</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>FPSO Cidade de Paraty</DropdownMenuItem>
-            <DropdownMenuItem>FPSO Cidade de Maricá</DropdownMenuItem>
-            <DropdownMenuItem>FPSO Almirante Barroso</DropdownMenuItem>
-            <DropdownMenuItem>FPSO Sepetiba</DropdownMenuItem>
-            <DropdownMenuSeparator />
+            {units.map((unit) => (
+              <DropdownMenuItem key={unit}>{unit}</DropdownMenuItem>
+            ))}
+            {units.length > 0 && <DropdownMenuSeparator />}
             <DropdownMenuItem>Todas as Unidades</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
