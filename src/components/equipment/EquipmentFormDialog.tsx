@@ -420,7 +420,7 @@ export function EquipmentFormDialog({
   const tabProgress = {
     general: form.watch('name') && form.watch('categoryId') && form.watch('internalCode'),
     location: form.watch('shipId') && form.watch('location'),
-    dates: true, // Dates are all optional now
+    dates: form.watch('manufacturingDate') || form.watch('acquisitionDate') || form.watch('expiryDate') || form.watch('certificateExpiry'),
     documents: true,
   };
 
