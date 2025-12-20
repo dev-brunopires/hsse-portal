@@ -267,7 +267,12 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
         {isFilterEnabled && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2 hidden md:flex">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2 hidden md:flex"
+                data-tour="ship-filter"
+              >
                 <Ship className="h-4 w-4" />
                 <span className="text-sm max-w-[120px] lg:max-w-[180px] truncate">{selectedShipName}</span>
                 <ChevronDown className="h-4 w-4" />

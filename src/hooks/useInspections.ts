@@ -10,8 +10,21 @@ export type InspectionChecklistItem = Tables<'inspection_checklist_items'>;
 export type InspectionPhoto = Tables<'inspection_photos'>;
 
 export interface InspectionWithDetails extends Inspection {
-  equipment?: { name: string; internal_code: string } | null;
-  profiles?: { full_name: string; email: string } | null;
+  equipment?: { 
+    name: string; 
+    internal_code: string;
+    serial_number?: string;
+    type?: string;
+    manufacturer?: string;
+    model?: string;
+    location?: string;
+    capacity?: string | null;
+  } | null;
+  profiles?: { 
+    full_name: string; 
+    email: string;
+    position?: string | null;
+  } | null;
   inspection_checklist_items?: InspectionChecklistItem[];
   inspection_photos?: InspectionPhoto[];
 }
@@ -41,8 +54,8 @@ export function useInspections() {
       const inspectorIds = [...new Set(inspections.map(i => i.inspector_id))];
       
       const [equipmentResult, profilesResult] = await Promise.all([
-        supabase.from('equipment').select('id, name, internal_code').in('id', equipmentIds),
-        supabase.from('profiles').select('user_id, full_name, email').in('user_id', inspectorIds),
+        supabase.from('equipment').select('id, name, internal_code, serial_number, type, manufacturer, model, location, capacity').in('id', equipmentIds),
+        supabase.from('profiles').select('user_id, full_name, email, position').in('user_id', inspectorIds),
       ]);
       
       const equipmentMap = new Map(equipmentResult.data?.map(e => [e.id, e]) || []);
@@ -73,7 +86,7 @@ export function useInspectionsByEquipment(equipmentId: string | undefined) {
       const inspectorIds = [...new Set(inspections.map(i => i.inspector_id))];
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('user_id, full_name, email')
+        .select('user_id, full_name, email, position')
         .in('user_id', inspectorIds);
       
       const profilesMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
