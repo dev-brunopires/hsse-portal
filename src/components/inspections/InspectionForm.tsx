@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -24,6 +24,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   ClipboardCheck, 
   User, 
@@ -37,6 +38,7 @@ import {
   Search,
   ChevronDown,
   ChevronUp,
+  QrCode,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -62,6 +64,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import { QRCodeScannerDialog } from '@/components/equipment/QRCodeScannerDialog';
 
 const inspectionSchema = z.object({
   equipmentId: z.string().min(1, 'Selecione o equipamento'),
@@ -130,6 +133,8 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
   const [checklistOpen, setChecklistOpen] = useState(true);
   const [photosOpen, setPhotosOpen] = useState(false);
   const [observationsOpen, setObservationsOpen] = useState(false);
+  const [qrScannerOpen, setQrScannerOpen] = useState(false);
+  const [equipmentSearchTerm, setEquipmentSearchTerm] = useState('');
   
   const { toast } = useToast();
   const { user } = useAuth();
@@ -137,6 +142,35 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
   const { data: equipment = [], isLoading: equipmentLoading } = useEquipment();
   const { data: inspectors = [], isLoading: inspectorsLoading } = useTechniciansAndAdmins();
   const createInspection = useCreateInspection();
+
+  // Filter equipment based on search term - prioritize code matches
+  const filteredEquipment = useMemo(() => {
+    if (!equipmentSearchTerm.trim()) return equipment;
+    
+    const term = equipmentSearchTerm.toLowerCase().trim();
+    
+    // First, find exact code matches
+    const exactCodeMatches = equipment.filter(e => 
+      e.internal_code.toLowerCase() === term
+    );
+    
+    // Then, find partial code matches
+    const partialCodeMatches = equipment.filter(e => 
+      e.internal_code.toLowerCase().includes(term) &&
+      !exactCodeMatches.includes(e)
+    );
+    
+    // Finally, find name/location matches
+    const otherMatches = equipment.filter(e => 
+      (e.name.toLowerCase().includes(term) || 
+       e.location.toLowerCase().includes(term) ||
+       e.serial_number?.toLowerCase().includes(term)) &&
+      !exactCodeMatches.includes(e) &&
+      !partialCodeMatches.includes(e)
+    );
+    
+    return [...exactCodeMatches, ...partialCodeMatches, ...otherMatches];
+  }, [equipment, equipmentSearchTerm]);
 
   const form = useForm<InspectionFormData>({
     resolver: zodResolver(inspectionSchema),
@@ -198,18 +232,36 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
     return counts;
   };
 
-  const calculateOverallStatus = (): 'approved' | 'attention' | 'rejected' => {
+  const calculateOverallStatus = (): 'compliant' | 'attention' | 'non-compliant' => {
     const counts = getStatusCounts();
-    if (counts.fail > 0) return 'rejected';
+    if (counts.fail > 0) return 'non-compliant';
     if (counts.attention > 0) return 'attention';
     if (counts.pending > 0) return 'attention';
-    return 'approved';
+    return 'compliant';
   };
 
   const handleEquipmentSelect = (equip: EquipmentWithCategory) => {
     setSelectedEquipment(equip);
     form.setValue('equipmentId', equip.id);
     setEquipmentOpen(false);
+    setEquipmentSearchTerm('');
+  };
+
+  const handleQRScan = (equipmentId: string) => {
+    const equip = equipment.find(e => e.id === equipmentId);
+    if (equip) {
+      handleEquipmentSelect(equip);
+      toast({
+        title: 'Equipamento Encontrado',
+        description: `${equip.internal_code} - ${equip.name}`,
+      });
+    } else {
+      toast({
+        title: 'Equipamento Não Encontrado',
+        description: 'O QR code não corresponde a nenhum equipamento cadastrado.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const onSubmit = async (data: InspectionFormData) => {
@@ -261,80 +313,117 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
   const statusCounts = getStatusCounts();
 
   return (
-    <Card className="border-primary/20">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center gap-2">
-          <ClipboardCheck className="h-5 w-5 text-primary" />
-          Nova Inspeção
-        </CardTitle>
-        <CardDescription>
-          Preencha os dados para registrar uma nova inspeção
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Equipment, Inspector and Date Section */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="equipmentId"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
+    <>
+      <Card className="border-primary/20 flex flex-col max-h-[calc(100vh-200px)] md:max-h-none">
+        <CardHeader className="pb-4 flex-shrink-0">
+          <CardTitle className="flex items-center gap-2">
+            <ClipboardCheck className="h-5 w-5 text-primary" />
+            Nova Inspeção
+          </CardTitle>
+          <CardDescription>
+            Preencha os dados para registrar uma nova inspeção
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 overflow-hidden">
+          <ScrollArea className="h-full max-h-[calc(100vh-350px)] md:max-h-[600px] pr-4">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                {/* Equipment Section with QR Scanner */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
                     <FormLabel className="flex items-center gap-2">
                       <Search className="h-4 w-4" />
                       Equipamento *
                     </FormLabel>
-                    <Popover open={equipmentOpen} onOpenChange={setEquipmentOpen}>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            className={cn(
-                              "justify-between",
-                              !field.value && "text-muted-foreground"
-                            )}
-                            disabled={equipmentLoading}
-                          >
-                            {selectedEquipment 
-                              ? `${selectedEquipment.internal_code} - ${selectedEquipment.name}`
-                              : equipmentLoading 
-                                ? 'Carregando...' 
-                                : 'Selecione o equipamento'}
-                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[400px] p-0" align="start">
-                        <Command>
-                          <CommandInput placeholder="Buscar equipamento..." />
-                          <CommandList>
-                            <CommandEmpty>Nenhum equipamento encontrado.</CommandEmpty>
-                            <CommandGroup>
-                              {equipment.map((equip) => (
-                                <CommandItem
-                                  key={equip.id}
-                                  value={`${equip.internal_code} ${equip.name}`}
-                                  onSelect={() => handleEquipmentSelect(equip)}
-                                >
-                                  <div className="flex flex-col">
-                                    <span className="font-medium">{equip.internal_code} - {equip.name}</span>
-                                    <span className="text-xs text-muted-foreground">
-                                      {equip.categories?.name} • {equip.location}
-                                    </span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                      onClick={() => setQrScannerOpen(true)}
+                    >
+                      <QrCode className="h-4 w-4" />
+                      Escanear QR
+                    </Button>
+                  </div>
+                  
+                  <FormField
+                    control={form.control}
+                    name="equipmentId"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <Popover open={equipmentOpen} onOpenChange={setEquipmentOpen}>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                className={cn(
+                                  "justify-between w-full",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                                disabled={equipmentLoading}
+                              >
+                                {selectedEquipment 
+                                  ? `${selectedEquipment.internal_code} - ${selectedEquipment.name}`
+                                  : equipmentLoading 
+                                    ? 'Carregando...' 
+                                    : 'Selecione o equipamento'}
+                                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[350px] sm:w-[400px] p-0 bg-popover border border-border shadow-lg z-50" align="start">
+                            <Command shouldFilter={false}>
+                              <CommandInput 
+                                placeholder="Buscar por código, nome ou localização..." 
+                                value={equipmentSearchTerm}
+                                onValueChange={setEquipmentSearchTerm}
+                              />
+                              <CommandList className="max-h-[300px]">
+                                <CommandEmpty>
+                                  <div className="py-6 text-center text-sm">
+                                    <p>Nenhum equipamento encontrado.</p>
+                                    <p className="text-muted-foreground">Tente buscar pelo código interno.</p>
                                   </div>
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                                </CommandEmpty>
+                                <CommandGroup>
+                                  {filteredEquipment.slice(0, 50).map((equip) => (
+                                    <CommandItem
+                                      key={equip.id}
+                                      value={equip.id}
+                                      onSelect={() => handleEquipmentSelect(equip)}
+                                      className="cursor-pointer"
+                                    >
+                                      <div className="flex flex-col">
+                                        <span className="font-medium">
+                                          <span className="text-primary">{equip.internal_code}</span>
+                                          {' - '}{equip.name}
+                                        </span>
+                                        <span className="text-xs text-muted-foreground">
+                                          {equip.categories?.name} • {equip.location}
+                                        </span>
+                                      </div>
+                                    </CommandItem>
+                                  ))}
+                                  {filteredEquipment.length > 50 && (
+                                    <div className="py-2 px-3 text-xs text-muted-foreground text-center">
+                                      Mostrando 50 de {filteredEquipment.length} resultados. Refine sua busca.
+                                    </div>
+                                  )}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Inspector and Date Section */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
               <FormField
                 control={form.control}
@@ -659,7 +748,16 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
             </div>
           </form>
         </Form>
-      </CardContent>
-    </Card>
+          </ScrollArea>
+        </CardContent>
+      </Card>
+
+      {/* QR Code Scanner Dialog */}
+      <QRCodeScannerDialog
+        open={qrScannerOpen}
+        onOpenChange={setQrScannerOpen}
+        onScan={handleQRScan}
+      />
+    </>
   );
 }
