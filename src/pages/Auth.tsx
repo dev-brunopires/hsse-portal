@@ -64,15 +64,10 @@ export default function Auth() {
           alt="SBM Offshore - Wind Turbine"
           className="absolute inset-0 w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-black/50" />
         
         {/* Overlay Content */}
-        <div className="relative z-10 flex flex-col justify-between p-8 lg:p-12 text-white">
-          <div />
-          
-          <div className="max-w-md" />
-          
-          <p className="text-white/60 text-sm">
+        <div className="relative z-10 flex flex-col justify-end p-8 lg:p-12 text-white">
+          <p className="text-white/80 text-sm drop-shadow-md">
             © {new Date().getFullYear()} SBM Offshore. Todos os direitos reservados.
           </p>
         </div>
