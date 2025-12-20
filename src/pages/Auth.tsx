@@ -212,8 +212,8 @@ export default function Auth() {
         />
         
         {/* Overlay Content */}
-        <div className="relative z-10 flex flex-col justify-end items-end p-8 lg:p-12 text-white">
-          <p className="text-white/80 text-sm drop-shadow-md">
+        <div className="absolute bottom-0 right-0 p-8 lg:p-12">
+          <p className="text-white/80 text-sm drop-shadow-md text-right">
             © {new Date().getFullYear()} SBM Offshore. Todos os direitos reservados.
           </p>
         </div>
