@@ -85,7 +85,7 @@ export type Database = {
       }
       equipment: {
         Row: {
-          acquisition_date: string
+          acquisition_date: string | null
           capacity: string | null
           category_id: string
           certificate_expiry: string | null
@@ -97,7 +97,7 @@ export type Database = {
           last_inspection: string | null
           location: string
           manufacturer: string | null
-          manufacturing_date: string
+          manufacturing_date: string | null
           model: string | null
           name: string
           next_inspection: string | null
@@ -110,7 +110,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          acquisition_date: string
+          acquisition_date?: string | null
           capacity?: string | null
           category_id: string
           certificate_expiry?: string | null
@@ -122,7 +122,7 @@ export type Database = {
           last_inspection?: string | null
           location: string
           manufacturer?: string | null
-          manufacturing_date: string
+          manufacturing_date?: string | null
           model?: string | null
           name: string
           next_inspection?: string | null
@@ -135,7 +135,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          acquisition_date?: string
+          acquisition_date?: string | null
           capacity?: string | null
           category_id?: string
           certificate_expiry?: string | null
@@ -147,7 +147,7 @@ export type Database = {
           last_inspection?: string | null
           location?: string
           manufacturer?: string | null
-          manufacturing_date?: string
+          manufacturing_date?: string | null
           model?: string | null
           name?: string
           next_inspection?: string | null
