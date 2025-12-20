@@ -446,8 +446,8 @@ export function InspectionFormDialog({
 
               {/* Tab: Dados Gerais */}
               <TabsContent value="info" className="flex-1 overflow-hidden mt-4">
-                <ScrollArea className="h-full pr-4">
-                  <div className="space-y-6 pb-4">
+                <ScrollArea className="h-full px-1">
+                  <div className="space-y-6 pb-4 pr-3">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
@@ -562,8 +562,8 @@ export function InspectionFormDialog({
 
               {/* Tab: Checklist */}
               <TabsContent value="checklist" className="flex-1 overflow-hidden mt-4">
-                <ScrollArea className="h-full pr-4">
-                  <div className="space-y-4 pb-4">
+                <ScrollArea className="h-full px-1">
+                  <div className="space-y-4 pb-4 pr-3">
                     <div className="flex items-center justify-between sticky top-0 bg-card py-2 z-10">
                       <h3 className="font-semibold">Itens de Verificação</h3>
                       <div className="flex items-center gap-3 text-sm">
@@ -706,8 +706,8 @@ export function InspectionFormDialog({
 
               {/* Tab: Fotos */}
               <TabsContent value="photos" className="flex-1 overflow-hidden mt-4">
-                <ScrollArea className="h-full pr-4">
-                  <div className="space-y-4 pb-4">
+                <ScrollArea className="h-full px-1">
+                  <div className="space-y-4 pb-4 pr-3">
                     <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
                       <input
                         type="file"
@@ -761,8 +761,8 @@ export function InspectionFormDialog({
 
               {/* Tab: Assinatura */}
               <TabsContent value="signature" className="flex-1 overflow-hidden mt-4">
-                <ScrollArea className="h-full pr-4">
-                  <div className="space-y-4 pb-4">
+                <ScrollArea className="h-full px-1">
+                  <div className="space-y-4 pb-4 pr-3">
                     <div className="text-center mb-4">
                       <p className="text-sm text-muted-foreground">
                         Assine abaixo para confirmar a inspeção realizada
