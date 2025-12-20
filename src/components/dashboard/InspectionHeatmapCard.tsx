@@ -100,27 +100,27 @@ export function InspectionHeatmapCard() {
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="flex gap-1">
+      <CardContent className="pt-2">
+        <div className="flex gap-2">
           {/* Day labels */}
-          <div className="flex flex-col gap-1 text-xs text-muted-foreground mr-1">
+          <div className="flex flex-col gap-[3px] text-xs text-muted-foreground mr-1">
             {dayLabels.map((day) => (
-              <div key={day} className="h-4 flex items-center justify-end pr-1">
+              <div key={day} className="h-5 flex items-center justify-end pr-1">
                 {day}
               </div>
             ))}
           </div>
 
           {/* Heatmap grid */}
-          <div className="flex gap-1">
+          <div className="flex gap-[3px] flex-1">
             {heatmapData.weeks.map((week, weekIndex) => (
-              <div key={weekIndex} className="flex flex-col gap-1">
+              <div key={weekIndex} className="flex flex-col gap-[3px] flex-1">
                 {week.map((day, dayIndex) => (
                   <Tooltip key={dayIndex}>
                     <TooltipTrigger asChild>
                       <div
                         className={cn(
-                          'w-4 h-4 rounded-sm cursor-pointer transition-colors hover:ring-1 hover:ring-primary',
+                          'w-full aspect-square min-h-5 rounded-sm cursor-pointer transition-colors hover:ring-1 hover:ring-primary',
                           getIntensityClass(day.count, heatmapData.maxCount)
                         )}
                       />
@@ -141,13 +141,13 @@ export function InspectionHeatmapCard() {
         </div>
 
         {/* Legend */}
-        <div className="flex items-center justify-end gap-1 mt-3 text-xs text-muted-foreground">
+        <div className="flex items-center justify-end gap-1.5 mt-4 text-xs text-muted-foreground">
           <span>Menos</span>
-          <div className="w-3 h-3 rounded-sm bg-muted" />
-          <div className="w-3 h-3 rounded-sm bg-green-200 dark:bg-green-900" />
-          <div className="w-3 h-3 rounded-sm bg-green-400 dark:bg-green-700" />
-          <div className="w-3 h-3 rounded-sm bg-green-500 dark:bg-green-600" />
-          <div className="w-3 h-3 rounded-sm bg-green-600 dark:bg-green-500" />
+          <div className="w-4 h-4 rounded-sm bg-muted" />
+          <div className="w-4 h-4 rounded-sm bg-green-200 dark:bg-green-900" />
+          <div className="w-4 h-4 rounded-sm bg-green-400 dark:bg-green-700" />
+          <div className="w-4 h-4 rounded-sm bg-green-500 dark:bg-green-600" />
+          <div className="w-4 h-4 rounded-sm bg-green-600 dark:bg-green-500" />
           <span>Mais</span>
         </div>
       </CardContent>

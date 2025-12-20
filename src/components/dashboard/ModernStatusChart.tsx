@@ -62,17 +62,17 @@ export function ModernStatusChart({ data, totalEquipment }: ModernStatusChartPro
       </div>
       
       <div className="p-5">
-        <div className="flex items-center gap-6">
+        <div className="flex flex-col sm:flex-row items-center gap-6">
           {/* Chart */}
-          <div className="relative h-48 w-48 shrink-0">
+          <div className="relative h-36 w-36 shrink-0">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={chartData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={50}
-                  outerRadius={75}
+                  innerRadius={40}
+                  outerRadius={60}
                   paddingAngle={3}
                   dataKey="value"
                   strokeWidth={0}
@@ -87,13 +87,13 @@ export function ModernStatusChart({ data, totalEquipment }: ModernStatusChartPro
             
             {/* Center text */}
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-2xl font-bold text-foreground">{totalEquipment}</span>
+              <span className="text-xl font-bold text-foreground">{totalEquipment}</span>
               <span className="text-xs text-muted-foreground">Total</span>
             </div>
           </div>
           
           {/* Legend */}
-          <div className="flex-1 space-y-2">
+          <div className="flex-1 w-full space-y-1.5">
             {chartData.map((item) => (
               <div 
                 key={item.status}
@@ -101,7 +101,7 @@ export function ModernStatusChart({ data, totalEquipment }: ModernStatusChartPro
               >
                 <div className="flex items-center gap-2">
                   <div 
-                    className="w-3 h-3 rounded-full"
+                    className="w-2.5 h-2.5 rounded-full"
                     style={{ backgroundColor: item.color }}
                   />
                   <span className="text-sm font-medium text-foreground">{item.name}</span>
