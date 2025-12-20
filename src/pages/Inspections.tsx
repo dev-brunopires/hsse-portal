@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { 
   ClipboardCheck, 
   Calendar, 
@@ -17,6 +18,7 @@ import {
   X,
   ChevronDown,
   ChevronUp,
+  QrCode,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -51,11 +53,13 @@ import {
 } from '@/components/ui/collapsible';
 import { useInspections, type InspectionWithDetails } from '@/hooks/useInspections';
 import { useProfiles } from '@/hooks/useProfiles';
+import { useEquipmentById } from '@/hooks/useEquipment';
 import { format, isAfter, isBefore, addDays, startOfMonth, endOfMonth, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { InspectionDetailDialog } from '@/components/inspections/InspectionDetailDialog';
 import { InspectionForm } from '@/components/inspections/InspectionForm';
 import { exportInspectionsToExcel, exportInspectionsToPDF } from '@/utils/exportInspections';
+import { useToast } from '@/hooks/use-toast';
 
 const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: typeof CheckCircle }> = {
   approved: { label: 'Aprovado', variant: 'default', icon: CheckCircle },
@@ -65,8 +69,14 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'second
 };
 
 export default function Inspections() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const scanEquipmentId = searchParams.get('scan');
+  
   const { data: inspections = [], isLoading } = useInspections();
   const { data: profiles = [] } = useProfiles();
+  const { data: scannedEquipment } = useEquipmentById(scanEquipmentId || undefined);
+  const { toast } = useToast();
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [inspectorFilter, setInspectorFilter] = useState<string>('all');
@@ -75,6 +85,32 @@ export default function Inspections() {
   const [selectedInspection, setSelectedInspection] = useState<InspectionWithDetails | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [showNewInspectionForm, setShowNewInspectionForm] = useState(false);
+
+  // Auto-open form when scanning QR code
+  useEffect(() => {
+    if (scanEquipmentId && scannedEquipment) {
+      setShowNewInspectionForm(true);
+      toast({
+        title: 'QR Code detectado',
+        description: `Iniciando inspeção para: ${scannedEquipment.internal_code} - ${scannedEquipment.name}`,
+      });
+    }
+  }, [scanEquipmentId, scannedEquipment, toast]);
+
+  // Clear scan param after form closes
+  const handleFormSuccess = () => {
+    setShowNewInspectionForm(false);
+    if (scanEquipmentId) {
+      setSearchParams({});
+    }
+  };
+
+  const handleFormCancel = () => {
+    setShowNewInspectionForm(false);
+    if (scanEquipmentId) {
+      setSearchParams({});
+    }
+  };
 
   // Get unique inspectors from inspections
   const inspectors = useMemo(() => {
@@ -204,12 +240,31 @@ export default function Inspections() {
         </div>
       </div>
 
+      {/* QR Code Scan Indicator */}
+      {scanEquipmentId && scannedEquipment && (
+        <Card className="border-primary bg-primary/5">
+          <CardContent className="flex items-center gap-3 py-4">
+            <QrCode className="h-6 w-6 text-primary" />
+            <div className="flex-1">
+              <p className="font-medium">Inspeção via QR Code</p>
+              <p className="text-sm text-muted-foreground">
+                Equipamento: {scannedEquipment.internal_code} - {scannedEquipment.name}
+              </p>
+            </div>
+            <Button variant="ghost" size="sm" onClick={handleFormCancel}>
+              <X className="h-4 w-4" />
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* New Inspection Form */}
       <Collapsible open={showNewInspectionForm} onOpenChange={setShowNewInspectionForm}>
         <CollapsibleContent>
           <InspectionForm 
-            onSuccess={() => setShowNewInspectionForm(false)}
-            onCancel={() => setShowNewInspectionForm(false)}
+            onSuccess={handleFormSuccess}
+            onCancel={handleFormCancel}
+            preSelectedEquipmentId={scanEquipmentId}
           />
         </CollapsibleContent>
       </Collapsible>

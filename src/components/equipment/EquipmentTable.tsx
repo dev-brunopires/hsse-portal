@@ -685,6 +685,8 @@ export function EquipmentTable({
           id: selectedEquipment.id,
           name: selectedEquipment.name,
           internalCode: selectedEquipment.internal_code,
+          categoryName: selectedEquipment.categories?.name,
+          location: selectedEquipment.location,
         } : null}
       />
 
