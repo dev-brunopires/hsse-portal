@@ -204,6 +204,12 @@ export function EquipmentDetailDialog({
                       <span className="text-muted-foreground">Número de Série</span>
                       <span className="font-mono">{equipment.serialNumber}</span>
                     </div>
+                    {equipment.capacity && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Capacidade</span>
+                        <span className="font-medium">{equipment.capacity}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 

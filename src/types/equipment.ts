@@ -30,6 +30,7 @@ export interface Equipment {
   manufacturer: string;
   model: string;
   serialNumber: string;
+  capacity?: string;
   unit: string;
   location: string;
   status: EquipmentStatus;
