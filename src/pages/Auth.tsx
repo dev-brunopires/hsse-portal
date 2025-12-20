@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { Mail, Lock, Loader2, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Form,
   FormControl,
@@ -18,6 +19,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import loginBg from '@/assets/login-bg.jpg';
 import sbmLogo from '@/assets/sbm-logo.svg';
 
+const REMEMBER_EMAIL_KEY = 'sbm_remembered_email';
+
 const loginSchema = z.object({
   email: z.string().email('Email inválido').min(1, 'Email é obrigatório'),
   password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
@@ -28,14 +31,9 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const { signIn, user } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (user) {
-      navigate('/');
-    }
-  }, [user, navigate]);
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -45,8 +43,31 @@ export default function Auth() {
     },
   });
 
+  // Load remembered email on mount
+  useEffect(() => {
+    const rememberedEmail = localStorage.getItem(REMEMBER_EMAIL_KEY);
+    if (rememberedEmail) {
+      loginForm.setValue('email', rememberedEmail);
+      setRememberMe(true);
+    }
+  }, [loginForm]);
+
+  useEffect(() => {
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
+
   const handleLogin = async (data: LoginFormData) => {
     setIsLoading(true);
+    
+    // Save or remove remembered email
+    if (rememberMe) {
+      localStorage.setItem(REMEMBER_EMAIL_KEY, data.email);
+    } else {
+      localStorage.removeItem(REMEMBER_EMAIL_KEY);
+    }
+    
     const { error } = await signIn(data.email, data.password);
     setIsLoading(false);
     
@@ -57,23 +78,7 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen flex">
-      {/* Left Side - Image */}
-      <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 relative">
-        <img
-          src={loginBg}
-          alt="SBM Offshore - Wind Turbine"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        
-        {/* Overlay Content */}
-        <div className="relative z-10 flex flex-col justify-end p-8 lg:p-12 text-white">
-          <p className="text-white/80 text-sm drop-shadow-md">
-            © {new Date().getFullYear()} SBM Offshore. Todos os direitos reservados.
-          </p>
-        </div>
-      </div>
-
-      {/* Right Side - Form */}
+      {/* Left Side - Form */}
       <div className="flex-1 flex items-center justify-center p-6 sm:p-8 lg:p-12 bg-background">
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
@@ -155,7 +160,20 @@ export default function Auth() {
                 )}
               />
 
-              <div className="flex items-center justify-end">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="remember" 
+                    checked={rememberMe}
+                    onCheckedChange={(checked) => setRememberMe(checked === true)}
+                  />
+                  <label
+                    htmlFor="remember"
+                    className="text-sm text-muted-foreground cursor-pointer select-none"
+                  >
+                    Lembrar meu email
+                  </label>
+                </div>
                 <button type="button" className="text-sm text-primary hover:underline">
                   Esqueceu sua senha?
                 </button>
@@ -181,6 +199,22 @@ export default function Auth() {
             {' '}e{' '}
             <span className="text-primary hover:underline cursor-pointer">política de privacidade</span>
             {' '}da SBM Offshore.
+          </p>
+        </div>
+      </div>
+
+      {/* Right Side - Image */}
+      <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 relative">
+        <img
+          src={loginBg}
+          alt="SBM Offshore - Wind Turbine"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        
+        {/* Overlay Content */}
+        <div className="relative z-10 flex flex-col justify-end p-8 lg:p-12 text-white">
+          <p className="text-white/80 text-sm drop-shadow-md">
+            © {new Date().getFullYear()} SBM Offshore. Todos os direitos reservados.
           </p>
         </div>
       </div>
