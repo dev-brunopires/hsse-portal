@@ -102,47 +102,35 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
     setIsSubmitting(true);
     
     try {
-      // Create user with Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            full_name: data.fullName,
+      // Get current session token
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        throw new Error('Você precisa estar logado para criar usuários');
+      }
+
+      // Call edge function to create user (won't affect current session)
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-user`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${sessionData.session.access_token}`,
           },
-        },
-      });
-
-      if (authError) throw authError;
-      
-      if (!authData.user) {
-        throw new Error('Erro ao criar usuário');
-      }
-
-      // Update profile with unit
-      if (data.unit) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({ unit: data.unit })
-          .eq('user_id', authData.user.id);
-        
-        if (profileError) console.error('Error updating unit:', profileError);
-      }
-
-      // Update role (the trigger creates 'viewer' by default, so we update if different)
-      if (data.role !== 'viewer') {
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .update({ role: data.role as any })
-          .eq('user_id', authData.user.id);
-        
-        if (roleError) {
-          // If update fails, try insert
-          await supabase
-            .from('user_roles')
-            .insert({ user_id: authData.user.id, role: data.role as any });
+          body: JSON.stringify({
+            email: data.email,
+            password: data.password,
+            fullName: data.fullName,
+            unit: data.unit || null,
+            role: data.role,
+          }),
         }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Erro ao criar usuário');
       }
 
       queryClient.invalidateQueries({ queryKey: ['profiles'] });
