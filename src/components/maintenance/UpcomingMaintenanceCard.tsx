@@ -1,77 +1,107 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
   Wrench, 
   Calendar, 
-  AlertTriangle, 
   Clock, 
   CheckCircle2,
   Plus,
-  MoreHorizontal,
-  PlayCircle
+  ArrowRight,
+  AlertTriangle,
+  PlayCircle,
+  Pause,
+  XCircle
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { useUpcomingMaintenance, useCompleteMaintenance, type MaintenancePlan } from '@/hooks/useMaintenance';
-import { MaintenancePlanDialog } from './MaintenancePlanDialog';
-import { CompleteMaintenanceDialog } from './CompleteMaintenanceDialog';
+import { Progress } from '@/components/ui/progress';
+import { useMaintenanceRequests } from '@/hooks/useMaintenanceRequests';
+import { MaintenanceRequestDialog } from './MaintenanceRequestDialog';
+import { MaintenanceDetailDialog } from './MaintenanceDetailDialog';
+import { cn } from '@/lib/utils';
 
-const priorityConfig = {
-  low: { label: 'Baixa', color: 'bg-slate-500/15 text-slate-600 dark:text-slate-400' },
-  medium: { label: 'Média', color: 'bg-blue-500/15 text-blue-600 dark:text-blue-400' },
-  high: { label: 'Alta', color: 'bg-amber-500/15 text-amber-600 dark:text-amber-400' },
-  critical: { label: 'Crítica', color: 'bg-red-500/15 text-red-600 dark:text-red-400' },
+const statusConfig = {
+  pending: { 
+    label: 'Pendente', 
+    icon: Clock, 
+    color: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
+    dotColor: 'bg-amber-500'
+  },
+  approved: { 
+    label: 'Aprovada', 
+    icon: CheckCircle2, 
+    color: 'bg-blue-500/15 text-blue-600 dark:text-blue-400',
+    dotColor: 'bg-blue-500'
+  },
+  in_progress: { 
+    label: 'Em Execução', 
+    icon: PlayCircle, 
+    color: 'bg-primary/15 text-primary',
+    dotColor: 'bg-primary'
+  },
+  completed: { 
+    label: 'Concluída', 
+    icon: CheckCircle2, 
+    color: 'bg-green-500/15 text-green-600 dark:text-green-400',
+    dotColor: 'bg-green-500'
+  },
+  rejected: { 
+    label: 'Rejeitada', 
+    icon: XCircle, 
+    color: 'bg-red-500/15 text-red-600 dark:text-red-400',
+    dotColor: 'bg-red-500'
+  },
 };
 
-const frequencyLabels: Record<string, string> = {
-  daily: 'Diária',
-  weekly: 'Semanal',
-  monthly: 'Mensal',
-  quarterly: 'Trimestral',
-  yearly: 'Anual',
+const priorityConfig = {
+  low: { label: 'Baixa', color: 'text-slate-500' },
+  medium: { label: 'Média', color: 'text-blue-500' },
+  high: { label: 'Alta', color: 'text-amber-500' },
+  critical: { label: 'Crítica', color: 'text-red-500' },
 };
 
 export function UpcomingMaintenanceCard() {
-  const { data: maintenancePlans = [], isLoading } = useUpcomingMaintenance(30);
+  const navigate = useNavigate();
+  const { data: maintenanceRequests = [], isLoading } = useMaintenanceRequests();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<MaintenancePlan | null>(null);
-  const [showCompleteDialog, setShowCompleteDialog] = useState(false);
+  const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
 
   const today = new Date().toISOString().split('T')[0];
 
-  const getStatusInfo = (nextDueDate: string) => {
-    const daysUntilDue = Math.ceil(
-      (new Date(nextDueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-    );
+  // Filter active requests (not completed or rejected)
+  const activeRequests = maintenanceRequests.filter(
+    r => r.status !== 'completed' && r.status !== 'rejected'
+  );
 
-    if (daysUntilDue < 0) {
-      return { status: 'overdue', label: 'Atrasada', color: 'text-red-500' };
-    } else if (daysUntilDue === 0) {
-      return { status: 'due', label: 'Hoje', color: 'text-amber-500' };
-    } else if (daysUntilDue <= 7) {
-      return { status: 'soon', label: `${daysUntilDue}d`, color: 'text-amber-500' };
-    } else {
-      return { status: 'ok', label: `${daysUntilDue}d`, color: 'text-muted-foreground' };
-    }
+  // Stats
+  const stats = {
+    pending: maintenanceRequests.filter(r => r.status === 'pending').length,
+    approved: maintenanceRequests.filter(r => r.status === 'approved').length,
+    inProgress: maintenanceRequests.filter(r => r.status === 'in_progress').length,
+    completed: maintenanceRequests.filter(r => r.status === 'completed').length,
+    overdue: maintenanceRequests.filter(r => {
+      if (r.status === 'completed' || r.status === 'rejected') return false;
+      return r.due_date && r.due_date < today;
+    }).length,
   };
 
-  const handleComplete = (plan: MaintenancePlan) => {
-    setSelectedPlan(plan);
-    setShowCompleteDialog(true);
+  const totalActive = stats.pending + stats.approved + stats.inProgress;
+  const progressPercent = totalActive > 0 
+    ? Math.round((stats.inProgress / totalActive) * 100) 
+    : 0;
+
+  const isOverdue = (dueDate: string | null) => {
+    if (!dueDate) return false;
+    return dueDate < today;
   };
 
   return (
     <>
-      <Card>
+      <Card className="flex flex-col">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -79,80 +109,108 @@ export function UpcomingMaintenanceCard() {
                 <Wrench className="h-4 w-4 text-primary" />
               </div>
               <div>
-                <CardTitle className="text-base">Manutenções Preventivas</CardTitle>
-                <CardDescription>Próximos 30 dias</CardDescription>
+                <CardTitle className="text-base">Manutenções</CardTitle>
+                <CardDescription>Acompanhamento geral</CardDescription>
               </div>
             </div>
             <Button size="sm" variant="outline" onClick={() => setShowCreateDialog(true)}>
               <Plus className="h-4 w-4 mr-1" />
-              Novo
+              Nova
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-1 flex flex-col">
+          {/* Stats Summary */}
+          <div className="grid grid-cols-4 gap-2 mb-4">
+            <div className="text-center p-2 rounded-lg bg-amber-500/10">
+              <div className="text-lg font-bold text-amber-600 dark:text-amber-400">{stats.pending}</div>
+              <div className="text-[10px] text-muted-foreground">Pendentes</div>
+            </div>
+            <div className="text-center p-2 rounded-lg bg-blue-500/10">
+              <div className="text-lg font-bold text-blue-600 dark:text-blue-400">{stats.approved}</div>
+              <div className="text-[10px] text-muted-foreground">Aprovadas</div>
+            </div>
+            <div className="text-center p-2 rounded-lg bg-primary/10">
+              <div className="text-lg font-bold text-primary">{stats.inProgress}</div>
+              <div className="text-[10px] text-muted-foreground">Em Exec.</div>
+            </div>
+            <div className="text-center p-2 rounded-lg bg-green-500/10">
+              <div className="text-lg font-bold text-green-600 dark:text-green-400">{stats.completed}</div>
+              <div className="text-[10px] text-muted-foreground">Concluídas</div>
+            </div>
+          </div>
+
+          {/* Overdue Alert */}
+          {stats.overdue > 0 && (
+            <div className="flex items-center gap-2 p-2 mb-3 rounded-lg bg-red-500/10 border border-red-500/20">
+              <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />
+              <span className="text-xs text-red-600 dark:text-red-400 font-medium">
+                {stats.overdue} manutenção(ões) atrasada(s)
+              </span>
+            </div>
+          )}
+
+          {/* Active Requests List */}
           {isLoading ? (
-            <div className="space-y-3">
+            <div className="space-y-2 flex-1">
               {[1, 2, 3].map(i => (
-                <div key={i} className="h-16 bg-muted/50 rounded-lg animate-pulse" />
+                <div key={i} className="h-14 bg-muted/50 rounded-lg animate-pulse" />
               ))}
             </div>
-          ) : maintenancePlans.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Wrench className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">Nenhuma manutenção programada</p>
+          ) : activeRequests.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center py-6 text-muted-foreground">
+              <CheckCircle2 className="h-8 w-8 mb-2 text-green-500/50" />
+              <p className="text-sm font-medium">Nenhuma manutenção ativa</p>
+              <p className="text-xs">Todas as manutenções foram concluídas</p>
             </div>
           ) : (
-            <ScrollArea className="h-[280px]">
-              <div className="space-y-3 pr-4">
-                {maintenancePlans.map((plan) => {
-                  const statusInfo = getStatusInfo(plan.next_due_date);
-                  const priority = priorityConfig[plan.priority];
+            <ScrollArea className="flex-1 -mx-2 px-2" style={{ maxHeight: '200px' }}>
+              <div className="space-y-2">
+                {activeRequests.slice(0, 6).map((request) => {
+                  const status = statusConfig[request.status];
+                  const StatusIcon = status.icon;
+                  const priority = priorityConfig[request.priority];
+                  const overdue = isOverdue(request.due_date);
                   
                   return (
                     <div
-                      key={plan.id}
-                      className="p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                      key={request.id}
+                      onClick={() => setSelectedRequestId(request.id)}
+                      className={cn(
+                        "p-2.5 rounded-lg border cursor-pointer transition-all hover:shadow-sm",
+                        overdue 
+                          ? "border-red-500/30 bg-red-500/5" 
+                          : "border-border bg-card hover:bg-muted/50"
+                      )}
                     >
-                      <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <div className={cn("w-2 h-2 rounded-full shrink-0", status.dotColor)} />
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center gap-1.5">
                             <span className="font-medium text-sm truncate">
-                              {plan.title}
+                              {request.title}
                             </span>
-                            <Badge variant="outline" className={priority.color}>
-                              {priority.label}
-                            </Badge>
+                            {overdue && (
+                              <AlertTriangle className="h-3.5 w-3.5 text-red-500 shrink-0" />
+                            )}
                           </div>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {plan.equipment?.name} - {plan.equipment?.internal_code}
-                          </p>
-                          <div className="flex items-center gap-3 mt-2 text-xs">
-                            <span className="flex items-center gap-1 text-muted-foreground">
-                              <Calendar className="h-3 w-3" />
-                              {format(new Date(plan.next_due_date), 'dd/MM/yyyy', { locale: ptBR })}
-                            </span>
-                            <span className={`flex items-center gap-1 font-medium ${statusInfo.color}`}>
-                              <Clock className="h-3 w-3" />
-                              {statusInfo.label}
-                            </span>
-                            <span className="text-muted-foreground">
-                              {frequencyLabels[plan.frequency]}
-                            </span>
+                          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                            <span className="truncate">{request.equipment?.internal_code}</span>
+                            <span>•</span>
+                            <span className={priority.color}>{priority.label}</span>
+                            {request.due_date && (
+                              <>
+                                <span>•</span>
+                                <span className={overdue ? 'text-red-500' : ''}>
+                                  {format(new Date(request.due_date), 'dd/MM', { locale: ptBR })}
+                                </span>
+                              </>
+                            )}
                           </div>
                         </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleComplete(plan)}>
-                              <CheckCircle2 className="h-4 w-4 mr-2" />
-                              Registrar Execução
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <Badge variant="outline" className={cn("text-[10px] h-5 shrink-0", status.color)}>
+                          {status.label}
+                        </Badge>
                       </div>
                     </div>
                   );
@@ -160,21 +218,32 @@ export function UpcomingMaintenanceCard() {
               </div>
             </ScrollArea>
           )}
+
+          {/* View All Button */}
+          {activeRequests.length > 0 && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="mt-3 w-full text-xs"
+              onClick={() => navigate('/maintenance')}
+            >
+              Ver todas as manutenções
+              <ArrowRight className="h-3.5 w-3.5 ml-1" />
+            </Button>
+          )}
         </CardContent>
       </Card>
 
-      <MaintenancePlanDialog 
+      <MaintenanceRequestDialog 
         open={showCreateDialog} 
         onOpenChange={setShowCreateDialog}
       />
 
-      {selectedPlan && (
-        <CompleteMaintenanceDialog
-          open={showCompleteDialog}
-          onOpenChange={setShowCompleteDialog}
-          plan={selectedPlan}
-        />
-      )}
+      <MaintenanceDetailDialog
+        requestId={selectedRequestId}
+        open={!!selectedRequestId}
+        onOpenChange={(open) => !open && setSelectedRequestId(null)}
+      />
     </>
   );
 }
