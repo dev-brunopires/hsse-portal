@@ -17,7 +17,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription,
 } from '@/components/ui/form';
 import {
   Select,
@@ -28,12 +27,11 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Shield, User, Eye, Loader2, Crown, UserCheck, UserPlus, Ship } from 'lucide-react';
+import { Shield, User, Eye, Loader2, Crown, UserCheck, UserPlus, Info } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
-import { useShips } from '@/hooks/useShips';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface CreateUserDialogProps {
   open: boolean;
@@ -45,7 +43,6 @@ const createUserSchema = z.object({
   password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
   fullName: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
   role: z.enum(['admin_master', 'admin', 'supervisor', 'technician', 'viewer']),
-  shipIds: z.array(z.string()).optional(),
 });
 
 type CreateUserFormData = z.infer<typeof createUserSchema>;
@@ -92,7 +89,6 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { data: ships = [], isLoading: shipsLoading } = useShips();
 
   const form = useForm<CreateUserFormData>({
     resolver: zodResolver(createUserSchema),
@@ -101,24 +97,13 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
       password: '',
       fullName: '',
       role: 'viewer',
-      shipIds: [],
     },
   });
 
   const selectedRole = form.watch('role');
-  const selectedShipIds = form.watch('shipIds') || [];
   
   // Check if selected role has automatic access to all ships
   const roleHasAllShips = roleOptions.find(r => r.value === selectedRole)?.hasAllShips || false;
-
-  const handleShipToggle = (shipId: string, checked: boolean) => {
-    const current = form.getValues('shipIds') || [];
-    if (checked) {
-      form.setValue('shipIds', [...current, shipId]);
-    } else {
-      form.setValue('shipIds', current.filter(id => id !== shipId));
-    }
-  };
 
   const onSubmit = async (data: CreateUserFormData) => {
     setIsSubmitting(true);
@@ -131,7 +116,6 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
           password: data.password,
           fullName: data.fullName,
           role: data.role,
-          shipIds: roleHasAllShips ? [] : (data.shipIds || []), // Don't send ships for admin roles
         },
       });
 
@@ -144,12 +128,10 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
       }
 
       queryClient.invalidateQueries({ queryKey: ['profiles'] });
-      queryClient.invalidateQueries({ queryKey: ['user-ships'] });
-      queryClient.invalidateQueries({ queryKey: ['all-user-ships'] });
 
       toast({
         title: 'Usuário Criado',
-        description: `${data.fullName} foi cadastrado com sucesso.`,
+        description: `${data.fullName} foi cadastrado com sucesso. Atribua os navios em "Gerenciar Navios".`,
       });
 
       form.reset();
@@ -257,61 +239,23 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
               </p>
             </div>
 
-            {/* Ship Selection */}
-            <FormField
-              control={form.control}
-              name="shipIds"
-              render={() => (
-                <FormItem>
-                  <FormLabel className="flex items-center gap-2">
-                    <Ship className="h-4 w-4" />
-                    Navios Atribuídos
-                  </FormLabel>
-                  {roleHasAllShips ? (
-                    <div className="rounded-lg border border-border bg-muted/50 p-3">
-                      <p className="text-sm text-muted-foreground">
-                        Este perfil tem acesso automático a todos os navios.
-                      </p>
-                    </div>
-                  ) : (
-                    <>
-                      <FormDescription>
-                        Selecione os navios que este usuário terá acesso
-                      </FormDescription>
-                      <div className="space-y-2 max-h-40 overflow-y-auto border border-border rounded-md p-3">
-                        {shipsLoading ? (
-                          <p className="text-sm text-muted-foreground">Carregando navios...</p>
-                        ) : ships.length === 0 ? (
-                          <p className="text-sm text-muted-foreground">Nenhum navio cadastrado</p>
-                        ) : (
-                          ships.map((ship) => (
-                            <div key={ship.id} className="flex items-center space-x-2">
-                              <Checkbox
-                                id={`ship-${ship.id}`}
-                                checked={selectedShipIds.includes(ship.id)}
-                                onCheckedChange={(checked) => handleShipToggle(ship.id, checked as boolean)}
-                              />
-                              <label
-                                htmlFor={`ship-${ship.id}`}
-                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                              >
-                                {ship.name} {ship.code ? `(${ship.code})` : ''}
-                              </label>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                      {!roleHasAllShips && selectedShipIds.length === 0 && (
-                        <p className="text-xs text-amber-600">
-                          Atenção: Usuário sem navio não poderá ver equipamentos ou criar inspeções.
-                        </p>
-                      )}
-                    </>
-                  )}
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Ship assignment info */}
+            {!roleHasAllShips && (
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertDescription>
+                  Após criar o usuário, atribua os navios através de "Gerenciar Navios" na lista de usuários.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {roleHasAllShips && (
+              <div className="rounded-lg border border-border bg-muted/50 p-3">
+                <p className="text-sm text-muted-foreground">
+                  Este perfil tem acesso automático a todos os navios.
+                </p>
+              </div>
+            )}
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
