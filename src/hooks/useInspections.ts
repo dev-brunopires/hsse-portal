@@ -142,8 +142,8 @@ export function useCreateInspection() {
         .update({
           last_inspection: inspection.inspection_date,
           next_inspection: inspection.next_inspection_date,
-          status: inspection.status === 'approved' ? 'active' : 
-                  inspection.status === 'rejected' ? 'rejected' : 'maintenance',
+          status: inspection.status === 'compliant' ? 'active' : 
+                  inspection.status === 'non-compliant' ? 'rejected' : 'maintenance',
         })
         .eq('id', inspection.equipment_id);
 
