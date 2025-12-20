@@ -152,10 +152,10 @@ export function useCreateInspection() {
 
   return useMutation({
     mutationFn: async ({ inspection, checklistItems, photos }: CreateInspectionData) => {
-      // First, fetch the equipment to get its category frequency
+      // First, fetch the equipment to get its category frequency and ship_id
       const { data: equipmentData, error: equipmentFetchError } = await supabase
         .from('equipment')
-        .select('id, category_id, categories:category_id(inspection_frequency)')
+        .select('id, category_id, ship_id, categories:category_id(inspection_frequency)')
         .eq('id', inspection.equipment_id)
         .single();
       
@@ -171,11 +171,12 @@ export function useCreateInspection() {
       // Use calculated date (override any manually provided date)
       const nextInspectionDate = calculatedNextDate;
 
-      // Create inspection with calculated next date
+      // Create inspection with calculated next date and ship_id from equipment
       const { data: inspectionData, error: inspectionError } = await supabase
         .from('inspections')
         .insert({
           ...inspection,
+          ship_id: equipmentData.ship_id, // Link inspection to equipment's ship
           next_inspection_date: nextInspectionDate,
         })
         .select()
