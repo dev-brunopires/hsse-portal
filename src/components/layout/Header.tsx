@@ -16,8 +16,11 @@ import {
   AlertCircle,
   Clock,
   Check,
-  Menu
+  Menu,
+  Moon,
+  Sun
 } from 'lucide-react';
+import { useTheme } from '@/hooks/useTheme';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -66,6 +69,7 @@ interface HeaderProps {
 export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
   const { user, profile, role, signOut } = useAuth();
   const { selectedShipId, setSelectedShipId, isFilterEnabled } = useShipFilter();
+  const { resolvedTheme, setTheme } = useTheme();
   const navigate = useNavigate();
   const { data: ships = [] } = useShips();
   const { data: userShips = [] } = useUserShips(user?.id);
@@ -74,6 +78,10 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
   const unreadNotifications = useUnreadNotifications();
   const markAsRead = useMarkNotificationAsRead();
   const markAllAsRead = useMarkAllNotificationsAsRead();
+
+  const toggleTheme = () => {
+    setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
+  };
 
   // Get the selected ship name for display
   const selectedShipName = useMemo(() => {
@@ -404,6 +412,17 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* Theme Toggle */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleTheme}
+          className="text-muted-foreground hover:text-foreground"
+          title={resolvedTheme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
+        >
+          {resolvedTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+        </Button>
 
         {/* User Menu */}
         <DropdownMenu>

@@ -13,17 +13,13 @@ import {
   ChevronRight,
   User,
   AlertCircle,
-  Moon,
-  Sun,
   History,
   Wrench,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTheme } from '@/hooks/useTheme';
 import sbmLogoWhite from '@/assets/sbm-logo-white.svg';
-import sbmLogoColor from '@/assets/sbm-logo.svg';
 
 interface NavItemProps {
   to: string;
@@ -63,11 +59,6 @@ const NavItem = ({ to, icon, label, collapsed }: NavItemProps) => {
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const { isAdmin } = useAuth();
-  const { resolvedTheme, setTheme } = useTheme();
-
-  const toggleTheme = () => {
-    setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
-  };
 
   return (
     <aside
@@ -116,25 +107,6 @@ export function AppSidebar() {
 
       {/* Bottom Section */}
       <div className="border-t border-sidebar-border p-3 space-y-1">
-        {/* Theme Toggle */}
-        <button
-          onClick={toggleTheme}
-          className={cn(
-            'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 w-full',
-            'hover:bg-sidebar-accent text-sidebar-foreground',
-            collapsed && 'justify-center px-2'
-          )}
-        >
-          <span className="flex-shrink-0">
-            {resolvedTheme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-          </span>
-          {!collapsed && (
-            <span className="text-sm">
-              {resolvedTheme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
-            </span>
-          )}
-        </button>
-        
         <div data-tour="profile">
           <NavItem to="/profile" icon={<User size={20} />} label="Meu Perfil" collapsed={collapsed} />
         </div>

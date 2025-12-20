@@ -98,15 +98,6 @@ export function useOnboarding() {
       },
     },
     {
-      element: '[data-tour="ship-filter"]',
-      popover: {
-        title: 'Filtro por Embarcação',
-        description: 'Selecione uma embarcação para filtrar todos os dados do sistema. Os dados são automaticamente filtrados em todas as páginas.',
-        side: 'bottom',
-        align: 'center',
-      },
-    },
-    {
       element: '[data-tour="profile"]',
       popover: {
         title: 'Seu Perfil',
