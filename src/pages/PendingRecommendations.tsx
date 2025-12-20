@@ -1,0 +1,693 @@
+import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  AlertTriangle,
+  Calendar,
+  CheckCircle2,
+  ClipboardCheck,
+  Clock,
+  Download,
+  Eye,
+  FileText,
+  Filter,
+  MessageSquare,
+  Package,
+  Search,
+  X,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
+import { useEquipment, type EquipmentWithCategory } from '@/hooks/useEquipment';
+import { useInspections, type InspectionWithDetails } from '@/hooks/useInspections';
+import { useCategories } from '@/hooks/useCategories';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
+interface PendingItem {
+  equipment: EquipmentWithCategory;
+  lastInspection: InspectionWithDetails;
+  hasUnresolvedRecommendations: boolean;
+  hasCriticalStatus: boolean;
+  isCertificateExpired: boolean;
+  isInspectionOverdue: boolean;
+  daysOverdue: number;
+}
+
+export default function PendingRecommendations() {
+  const navigate = useNavigate();
+  const { data: equipment = [], isLoading: equipmentLoading } = useEquipment();
+  const { data: inspections = [], isLoading: inspectionsLoading } = useInspections();
+  const { data: categories = [] } = useCategories();
+  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [issueTypeFilter, setIssueTypeFilter] = useState<string>('all');
+  const [selectedItem, setSelectedItem] = useState<PendingItem | null>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+
+  const isLoading = equipmentLoading || inspectionsLoading;
+
+  // Process equipment and inspections to find pending items
+  const pendingItems = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const items: PendingItem[] = [];
+
+    equipment.forEach((eq) => {
+      // Find the last inspection for this equipment
+      const equipmentInspections = inspections.filter(i => i.equipment_id === eq.id);
+      const lastInspection = equipmentInspections.sort((a, b) => 
+        new Date(b.inspection_date).getTime() - new Date(a.inspection_date).getTime()
+      )[0];
+
+      // Check for issues
+      const isCertificateExpired = !!(eq.certificate_expiry && eq.certificate_expiry < today);
+      const isInspectionOverdue = !!(eq.next_inspection && eq.next_inspection < today);
+      const hasCriticalStatus = eq.status === 'expired' || eq.status === 'rejected';
+      
+      // Check for unresolved recommendations
+      const hasRecommendations = !!(lastInspection?.recommendations && lastInspection.recommendations.trim().length > 0);
+      const hasActionsTaken = !!(lastInspection?.actions_taken && lastInspection.actions_taken.trim().length > 0);
+      const hasUnresolvedRecommendations = hasRecommendations && !hasActionsTaken;
+      
+      // Check if last inspection had issues
+      const lastInspectionHadIssues = lastInspection?.status === 'attention' || lastInspection?.status === 'non-compliant';
+
+      // Calculate days overdue
+      let daysOverdue = 0;
+      if (isInspectionOverdue && eq.next_inspection) {
+        daysOverdue = Math.floor((new Date().getTime() - new Date(eq.next_inspection).getTime()) / (1000 * 60 * 60 * 24));
+      }
+
+      // Add to pending items if any issue exists
+      if (hasUnresolvedRecommendations || isCertificateExpired || isInspectionOverdue || hasCriticalStatus || lastInspectionHadIssues) {
+        items.push({
+          equipment: eq,
+          lastInspection,
+          hasUnresolvedRecommendations,
+          hasCriticalStatus,
+          isCertificateExpired,
+          isInspectionOverdue,
+          daysOverdue,
+        });
+      }
+    });
+
+    // Sort by severity: certificate expired > inspection overdue > unresolved recommendations > critical status
+    return items.sort((a, b) => {
+      if (a.isCertificateExpired !== b.isCertificateExpired) return a.isCertificateExpired ? -1 : 1;
+      if (a.isInspectionOverdue !== b.isInspectionOverdue) return a.isInspectionOverdue ? -1 : 1;
+      if (a.hasUnresolvedRecommendations !== b.hasUnresolvedRecommendations) return a.hasUnresolvedRecommendations ? -1 : 1;
+      return b.daysOverdue - a.daysOverdue;
+    });
+  }, [equipment, inspections]);
+
+  // Filter items
+  const filteredItems = useMemo(() => {
+    return pendingItems.filter(item => {
+      const matchesSearch = 
+        item.equipment.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.equipment.internal_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.equipment.location.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesCategory = categoryFilter === 'all' || item.equipment.category_id === categoryFilter;
+      
+      let matchesIssueType = true;
+      if (issueTypeFilter === 'recommendations') {
+        matchesIssueType = item.hasUnresolvedRecommendations;
+      } else if (issueTypeFilter === 'certificate') {
+        matchesIssueType = item.isCertificateExpired;
+      } else if (issueTypeFilter === 'inspection') {
+        matchesIssueType = item.isInspectionOverdue;
+      } else if (issueTypeFilter === 'status') {
+        matchesIssueType = item.hasCriticalStatus;
+      }
+      
+      return matchesSearch && matchesCategory && matchesIssueType;
+    });
+  }, [pendingItems, searchTerm, categoryFilter, issueTypeFilter]);
+
+  // Statistics
+  const stats = useMemo(() => ({
+    total: pendingItems.length,
+    unresolvedRecommendations: pendingItems.filter(i => i.hasUnresolvedRecommendations).length,
+    expiredCertificates: pendingItems.filter(i => i.isCertificateExpired).length,
+    overdueInspections: pendingItems.filter(i => i.isInspectionOverdue).length,
+    criticalStatus: pendingItems.filter(i => i.hasCriticalStatus).length,
+  }), [pendingItems]);
+
+  const hasActiveFilters = categoryFilter !== 'all' || issueTypeFilter !== 'all' || searchTerm;
+
+  const clearFilters = () => {
+    setCategoryFilter('all');
+    setIssueTypeFilter('all');
+    setSearchTerm('');
+  };
+
+  const openDetailDialog = (item: PendingItem) => {
+    setSelectedItem(item);
+    setDetailDialogOpen(true);
+  };
+
+  const handleStartInspection = (equipmentId: string) => {
+    navigate(`/inspections?scan=${equipmentId}`);
+  };
+
+  const exportToPDF = () => {
+    const doc = new jsPDF('landscape');
+    const pageWidth = doc.internal.pageSize.getWidth();
+    let yPos = 15;
+
+    // Header
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('RELATÓRIO DE PENDÊNCIAS', pageWidth / 2, yPos, { align: 'center' });
+    
+    yPos += 7;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Gerado em ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, pageWidth / 2, yPos, { align: 'center' });
+
+    // Summary
+    yPos += 10;
+    doc.setFontSize(10);
+    doc.text(`Total de Pendências: ${stats.total} | Recomendações: ${stats.unresolvedRecommendations} | Certificados Vencidos: ${stats.expiredCertificates} | Inspeções Atrasadas: ${stats.overdueInspections}`, 14, yPos);
+
+    // Table
+    yPos += 5;
+    const tableBody = filteredItems.map(item => {
+      const issues: string[] = [];
+      if (item.isCertificateExpired) issues.push('Cert. Vencido');
+      if (item.isInspectionOverdue) issues.push(`Insp. Atrasada (${item.daysOverdue}d)`);
+      if (item.hasUnresolvedRecommendations) issues.push('Recomend. Pendente');
+      if (item.hasCriticalStatus) issues.push('Status Crítico');
+
+      return [
+        item.equipment.internal_code,
+        item.equipment.name,
+        item.equipment.categories?.name || '-',
+        item.equipment.location,
+        item.lastInspection ? format(new Date(item.lastInspection.inspection_date), 'dd/MM/yyyy') : '-',
+        issues.join(', '),
+        item.lastInspection?.recommendations?.substring(0, 50) + (item.lastInspection?.recommendations?.length > 50 ? '...' : '') || '-',
+      ];
+    });
+
+    autoTable(doc, {
+      startY: yPos,
+      head: [['Código', 'Equipamento', 'Categoria', 'Localização', 'Última Insp.', 'Pendências', 'Recomendações']],
+      body: tableBody,
+      theme: 'striped',
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [59, 130, 246] },
+      columnStyles: {
+        0: { cellWidth: 25 },
+        1: { cellWidth: 40 },
+        2: { cellWidth: 25 },
+        3: { cellWidth: 30 },
+        4: { cellWidth: 22 },
+        5: { cellWidth: 45 },
+        6: { cellWidth: 'auto' },
+      },
+    });
+
+    // Footer
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.text(
+        `Página ${i} de ${pageCount}`,
+        pageWidth / 2,
+        doc.internal.pageSize.getHeight() - 10,
+        { align: 'center' }
+      );
+    }
+
+    doc.save(`relatorio_pendencias_${format(new Date(), 'yyyyMMdd_HHmm')}.pdf`);
+  };
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Pendências</h1>
+          <p className="text-muted-foreground">
+            Equipamentos com recomendações não resolvidas e alertas críticos
+          </p>
+        </div>
+        <Button className="gap-2" onClick={exportToPDF}>
+          <Download className="h-4 w-4" />
+          Exportar PDF
+        </Button>
+      </div>
+
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <AlertTriangle className="h-5 w-5 text-status-danger" />
+              Total
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="h-9 w-16" />
+            ) : (
+              <p className="text-3xl font-bold">{stats.total}</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-primary/30">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <MessageSquare className="h-5 w-5 text-primary" />
+              Recomendações
+            </CardTitle>
+            <CardDescription>Não resolvidas</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="h-9 w-16" />
+            ) : (
+              <p className="text-3xl font-bold text-primary">{stats.unresolvedRecommendations}</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-status-danger/30">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <FileText className="h-5 w-5 text-status-danger" />
+              Certificados
+            </CardTitle>
+            <CardDescription>Vencidos</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="h-9 w-16" />
+            ) : (
+              <p className="text-3xl font-bold text-status-danger">{stats.expiredCertificates}</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-status-warning/30">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Clock className="h-5 w-5 text-status-warning" />
+              Inspeções
+            </CardTitle>
+            <CardDescription>Atrasadas</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="h-9 w-16" />
+            ) : (
+              <p className="text-3xl font-bold text-status-warning">{stats.overdueInspections}</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-destructive/30">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <X className="h-5 w-5 text-destructive" />
+              Status Crítico
+            </CardTitle>
+            <CardDescription>Reprovado/Vencido</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="h-9 w-16" />
+            ) : (
+              <p className="text-3xl font-bold text-destructive">{stats.criticalStatus}</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filters and Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Lista de Pendências</CardTitle>
+          <CardDescription>
+            Equipamentos que requerem atenção ou ação imediata
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Filters */}
+          <div className="flex flex-col lg:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por código, nome ou localização..."
+                className="pl-10"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-full lg:w-[180px]">
+                <SelectValue placeholder="Categoria" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border border-border shadow-lg z-50">
+                <SelectItem value="all">Todas Categorias</SelectItem>
+                {categories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={issueTypeFilter} onValueChange={setIssueTypeFilter}>
+              <SelectTrigger className="w-full lg:w-[200px]">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Tipo de Pendência" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border border-border shadow-lg z-50">
+                <SelectItem value="all">Todas Pendências</SelectItem>
+                <SelectItem value="recommendations">Recomendações Pendentes</SelectItem>
+                <SelectItem value="certificate">Certificado Vencido</SelectItem>
+                <SelectItem value="inspection">Inspeção Atrasada</SelectItem>
+                <SelectItem value="status">Status Crítico</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {hasActiveFilters && (
+              <Button variant="ghost" size="icon" onClick={clearFilters}>
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+
+          {hasActiveFilters && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Filter className="h-4 w-4" />
+              Mostrando {filteredItems.length} de {pendingItems.length} pendências
+            </div>
+          )}
+
+          {/* Table */}
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Equipamento</TableHead>
+                  <TableHead>Categoria</TableHead>
+                  <TableHead>Localização</TableHead>
+                  <TableHead>Última Inspeção</TableHead>
+                  <TableHead>Pendências</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                    </TableRow>
+                  ))
+                ) : filteredItems.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                      <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-status-success" />
+                      <p>Nenhuma pendência encontrada</p>
+                      <p className="text-sm">Todos os equipamentos estão em conformidade!</p>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredItems.map((item) => (
+                    <TableRow key={item.equipment.id} className="hover:bg-muted/50">
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                            item.isCertificateExpired || item.hasCriticalStatus 
+                              ? 'bg-status-danger/10' 
+                              : item.isInspectionOverdue 
+                                ? 'bg-status-warning/10'
+                                : 'bg-primary/10'
+                          }`}>
+                            <Package className={`h-4 w-4 ${
+                              item.isCertificateExpired || item.hasCriticalStatus 
+                                ? 'text-status-danger' 
+                                : item.isInspectionOverdue 
+                                  ? 'text-status-warning'
+                                  : 'text-primary'
+                            }`} />
+                          </div>
+                          <div>
+                            <p className="font-medium">{item.equipment.name}</p>
+                            <p className="text-xs text-muted-foreground font-mono">
+                              {item.equipment.internal_code}
+                            </p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {item.equipment.categories?.name || '-'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {item.equipment.location}
+                      </TableCell>
+                      <TableCell>
+                        {item.lastInspection ? (
+                          <div className="flex items-center gap-1 text-sm">
+                            <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                            {format(new Date(item.lastInspection.inspection_date), 'dd/MM/yyyy')}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {item.isCertificateExpired && (
+                            <Badge variant="destructive" className="text-xs">
+                              Cert. Vencido
+                            </Badge>
+                          )}
+                          {item.isInspectionOverdue && (
+                            <Badge className="text-xs bg-status-warning text-status-warning-foreground">
+                              Insp. Atrasada ({item.daysOverdue}d)
+                            </Badge>
+                          )}
+                          {item.hasUnresolvedRecommendations && (
+                            <Badge variant="outline" className="text-xs border-primary text-primary">
+                              Recomend. Pendente
+                            </Badge>
+                          )}
+                          {item.hasCriticalStatus && (
+                            <Badge variant="destructive" className="text-xs">
+                              {item.equipment.status === 'rejected' ? 'Reprovado' : 'Vencido'}
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => openDetailDialog(item)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            size="sm"
+                            onClick={() => handleStartInspection(item.equipment.id)}
+                          >
+                            Inspecionar
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Detail Dialog */}
+      <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-status-warning" />
+              Detalhes da Pendência
+            </DialogTitle>
+            <DialogDescription>
+              {selectedItem?.equipment.internal_code} - {selectedItem?.equipment.name}
+            </DialogDescription>
+          </DialogHeader>
+
+          <ScrollArea className="flex-1 pr-4">
+            {selectedItem && (
+              <div className="space-y-4 py-2">
+                {/* Equipment Info */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Localização</p>
+                    <p className="font-medium">{selectedItem.equipment.location}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Categoria</p>
+                    <p className="font-medium">{selectedItem.equipment.categories?.name || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Última Inspeção</p>
+                    <p className="font-medium">
+                      {selectedItem.lastInspection 
+                        ? format(new Date(selectedItem.lastInspection.inspection_date), "dd/MM/yyyy", { locale: ptBR })
+                        : 'Nunca inspecionado'
+                      }
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Próxima Inspeção</p>
+                    <p className={`font-medium ${selectedItem.isInspectionOverdue ? 'text-status-danger' : ''}`}>
+                      {selectedItem.equipment.next_inspection 
+                        ? format(new Date(selectedItem.equipment.next_inspection), "dd/MM/yyyy", { locale: ptBR })
+                        : '-'
+                      }
+                      {selectedItem.isInspectionOverdue && ` (${selectedItem.daysOverdue} dias atrasada)`}
+                    </p>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Issues */}
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-status-danger flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4" />
+                    Pendências Identificadas
+                  </h4>
+
+                  {selectedItem.isCertificateExpired && (
+                    <div className="p-3 rounded-lg bg-status-danger/10 border border-status-danger/30">
+                      <p className="font-medium text-status-danger">Certificado Vencido</p>
+                      <p className="text-sm">
+                        Venceu em {format(new Date(selectedItem.equipment.certificate_expiry + 'T00:00:00'), "dd/MM/yyyy", { locale: ptBR })}
+                      </p>
+                    </div>
+                  )}
+
+                  {selectedItem.isInspectionOverdue && (
+                    <div className="p-3 rounded-lg bg-status-warning/10 border border-status-warning/30">
+                      <p className="font-medium text-status-warning">Inspeção Atrasada</p>
+                      <p className="text-sm">
+                        Era prevista para {format(new Date(selectedItem.equipment.next_inspection + 'T00:00:00'), "dd/MM/yyyy", { locale: ptBR })} 
+                        {' '}({selectedItem.daysOverdue} dias de atraso)
+                      </p>
+                    </div>
+                  )}
+
+                  {selectedItem.hasCriticalStatus && (
+                    <div className="p-3 rounded-lg bg-status-danger/10 border border-status-danger/30">
+                      <p className="font-medium text-status-danger">
+                        Status: {selectedItem.equipment.status === 'rejected' ? 'Reprovado' : 'Vencido'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Recommendations */}
+                {selectedItem.lastInspection?.recommendations && (
+                  <>
+                    <Separator />
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-primary flex items-center gap-2">
+                        <MessageSquare className="h-4 w-4" />
+                        Recomendações da Última Inspeção
+                      </h4>
+                      <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                        <p className="text-sm whitespace-pre-wrap">{selectedItem.lastInspection.recommendations}</p>
+                        <p className="text-xs text-muted-foreground mt-3">
+                          Registrado em {format(new Date(selectedItem.lastInspection.inspection_date), "dd/MM/yyyy", { locale: ptBR })}
+                        </p>
+                      </div>
+
+                      {selectedItem.lastInspection.actions_taken ? (
+                        <div className="p-4 rounded-lg bg-status-success/5 border border-status-success/20">
+                          <div className="flex items-center gap-2 text-status-success font-medium text-sm mb-2">
+                            <CheckCircle2 className="h-4 w-4" />
+                            Ações Tomadas:
+                          </div>
+                          <p className="text-sm whitespace-pre-wrap">{selectedItem.lastInspection.actions_taken}</p>
+                        </div>
+                      ) : (
+                        <div className="p-4 rounded-lg bg-status-warning/10 border border-status-warning/30">
+                          <div className="flex items-center gap-2 text-status-warning font-medium text-sm">
+                            <AlertTriangle className="h-4 w-4" />
+                            Nenhuma ação registrada para estas recomendações
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {/* Actions */}
+                <div className="pt-4">
+                  <Button 
+                    className="w-full gap-2" 
+                    onClick={() => {
+                      setDetailDialogOpen(false);
+                      handleStartInspection(selectedItem.equipment.id);
+                    }}
+                  >
+                    <ClipboardCheck className="h-4 w-4" />
+                    Iniciar Inspeção
+                  </Button>
+                </div>
+              </div>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

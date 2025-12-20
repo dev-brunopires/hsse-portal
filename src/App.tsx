@@ -16,6 +16,7 @@ import Categories from "./pages/Categories";
 import Users from "./pages/Users";
 import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
+import PendingRecommendations from "./pages/PendingRecommendations";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -86,6 +87,16 @@ function App() {
                   <ProtectedRoute>
                     <AppLayout>
                       <Alerts />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/pending"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <PendingRecommendations />
                     </AppLayout>
                   </ProtectedRoute>
                 }

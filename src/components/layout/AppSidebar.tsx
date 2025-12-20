@@ -18,6 +18,7 @@ import {
   ArrowUp,
   Waves,
   User,
+  AlertCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -109,6 +110,7 @@ export function AppSidebar() {
         <NavItem to="/" icon={<LayoutDashboard size={20} />} label="Dashboard" collapsed={collapsed} />
         <NavItem to="/equipment" icon={<Package size={20} />} label="Equipamentos" collapsed={collapsed} />
         <NavItem to="/inspections" icon={<ClipboardCheck size={20} />} label="Inspeções" collapsed={collapsed} />
+        <NavItem to="/pending" icon={<AlertCircle size={20} />} label="Pendências" collapsed={collapsed} />
         <NavItem to="/reports" icon={<FileText size={20} />} label="Relatórios" collapsed={collapsed} />
         <NavItem to="/alerts" icon={<Bell size={20} />} label="Alertas" collapsed={collapsed} />
         <NavItem to="/categories" icon={<FolderOpen size={20} />} label="Categorias" collapsed={collapsed} />
