@@ -43,32 +43,27 @@ export function useProfiles() {
 
 export function useTechniciansAndAdmins() {
   return useQuery({
-    queryKey: ['profiles', 'technicians-admins'],
+    queryKey: ['profiles', 'inspectors'],
     queryFn: async () => {
-      // First get user_ids that are technicians, admins, admin_master, or supervisors
-      const { data: roleData, error: roleError } = await supabase
-        .from('user_roles')
-        .select('user_id, role')
-        .in('role', ['admin', 'admin_master', 'technician', 'supervisor']);
-      
-      if (roleError) throw roleError;
-      
-      if (!roleData || roleData.length === 0) return [];
-      
-      const userIds = roleData.map(r => r.user_id);
-      
+      // Fetch all profiles - all users can be inspectors
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .in('user_id', userIds)
         .order('full_name');
       
       if (error) throw error;
       
+      // Fetch roles for all users
+      const userIds = data.map(p => p.user_id);
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('user_id, role')
+        .in('user_id', userIds);
+      
       // Combine with role info
       return (data as Profile[]).map(profile => ({
         ...profile,
-        role: roleData.find(r => r.user_id === profile.user_id)?.role,
+        role: roleData?.find(r => r.user_id === profile.user_id)?.role,
       }));
     },
   });
