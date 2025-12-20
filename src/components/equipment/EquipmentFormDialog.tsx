@@ -476,7 +476,7 @@ export function EquipmentFormDialog({
               <div className="flex-1 overflow-y-auto px-1">
                 {/* General Tab */}
                 <TabsContent value="general" className="space-y-4 mt-0">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
                       name="internalCode"
@@ -498,7 +498,7 @@ export function EquipmentFormDialog({
                       control={form.control}
                       name="categoryId"
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className="flex flex-col">
                           <FormLabel>Categoria *</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value} disabled={categoriesLoading}>
                             <FormControl>
@@ -514,6 +514,9 @@ export function EquipmentFormDialog({
                               ))}
                             </SelectContent>
                           </Select>
+                          <FormDescription className="invisible">
+                            Placeholder para alinhar
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
