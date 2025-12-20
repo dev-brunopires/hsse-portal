@@ -1,5 +1,5 @@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, Info, Calendar, MessageSquare } from 'lucide-react';
+import { AlertTriangle, Info, Calendar, MessageSquare, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Inspection } from '@/hooks/useInspections';
@@ -16,8 +16,14 @@ export function EquipmentWarningAlert({ equipment, lastInspection }: EquipmentWa
   // Check if certificate is expired
   const isCertificateExpired = equipment.certificate_expiry && equipment.certificate_expiry < today;
   
-  // Check if equipment is expired/rejected status
-  const isEquipmentExpired = equipment.status === 'expired' || equipment.status === 'rejected';
+  // Check if inspection is overdue (next_inspection date has passed)
+  const isInspectionOverdue = equipment.next_inspection && equipment.next_inspection < today;
+  
+  // Check if equipment expiry date has passed
+  const isEquipmentExpired = equipment.expiry_date && equipment.expiry_date < today;
+  
+  // Check if equipment status is expired/rejected
+  const isStatusExpiredOrRejected = equipment.status === 'expired' || equipment.status === 'rejected';
   
   // Check if there are recommendations from last inspection
   const hasRecommendations = lastInspection?.recommendations && lastInspection.recommendations.trim().length > 0;
@@ -26,7 +32,7 @@ export function EquipmentWarningAlert({ equipment, lastInspection }: EquipmentWa
   // Check if last inspection had issues
   const lastInspectionHadIssues = lastInspection?.status === 'attention' || lastInspection?.status === 'non-compliant';
 
-  const hasAnyWarning = isCertificateExpired || isEquipmentExpired || hasRecommendations || hasObservations || lastInspectionHadIssues;
+  const hasAnyWarning = isCertificateExpired || isInspectionOverdue || isEquipmentExpired || isStatusExpiredOrRejected || hasRecommendations || hasObservations || lastInspectionHadIssues;
 
   if (!hasAnyWarning) return null;
 
@@ -54,8 +60,49 @@ export function EquipmentWarningAlert({ equipment, lastInspection }: EquipmentWa
         </Alert>
       )}
 
+      {/* Inspection Overdue Alert */}
+      {isInspectionOverdue && (
+        <Alert variant="destructive" className="border-destructive/50 bg-destructive/10">
+          <Clock className="h-4 w-4" />
+          <AlertTitle className="font-semibold">Inspeção Atrasada</AlertTitle>
+          <AlertDescription className="mt-1">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-3.5 w-3.5" />
+              <span>
+                A inspeção estava prevista para{' '}
+                <strong>
+                  {format(new Date(equipment.next_inspection + 'T00:00:00'), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                </strong>
+              </span>
+            </div>
+            <p className="mt-1 text-sm opacity-90">
+              Este equipamento está com a inspeção periódica atrasada.
+            </p>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Equipment Expiry Date Alert */}
+      {isEquipmentExpired && (
+        <Alert variant="destructive" className="border-destructive/50 bg-destructive/10">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle className="font-semibold">Equipamento com Validade Expirada</AlertTitle>
+          <AlertDescription className="mt-1">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-3.5 w-3.5" />
+              <span>
+                A validade deste equipamento expirou em{' '}
+                <strong>
+                  {format(new Date(equipment.expiry_date + 'T00:00:00'), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                </strong>
+              </span>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Equipment Status Alert */}
-      {isEquipmentExpired && !isCertificateExpired && (
+      {isStatusExpiredOrRejected && !isCertificateExpired && !isEquipmentExpired && (
         <Alert variant="destructive" className="border-destructive/50 bg-destructive/10">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle className="font-semibold">
