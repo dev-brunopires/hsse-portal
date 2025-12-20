@@ -314,7 +314,7 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
 
   return (
     <>
-      <Card className="border-primary/20 flex flex-col max-h-[calc(100vh-200px)] md:max-h-none">
+      <Card className="border-primary/20 flex flex-col min-h-0 max-h-[calc(100vh-200px)]">
         <CardHeader className="pb-4 flex-shrink-0">
           <CardTitle className="flex items-center gap-2">
             <ClipboardCheck className="h-5 w-5 text-primary" />
@@ -324,8 +324,8 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
             Preencha os dados para registrar uma nova inspeção
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 overflow-hidden">
-          <ScrollArea className="h-full max-h-[calc(100vh-350px)] md:max-h-[600px] pr-4">
+        <CardContent className="flex-1 overflow-hidden min-h-0">
+          <ScrollArea className="h-full min-h-0 pr-4">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 {/* Equipment Section with QR Scanner */}
