@@ -135,14 +135,14 @@ export function EditInspectionDialog({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-hidden flex flex-col">
-            <ScrollArea className="flex-1 pr-4">
-              <div className="space-y-4 py-4">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <ScrollArea className="flex-1">
+              <div className="space-y-4 py-4 px-1">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
                   <FormField
                     control={form.control}
                     name="status"
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="space-y-2">
                         <FormLabel>Status *</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
@@ -167,7 +167,7 @@ export function EditInspectionDialog({
                     control={form.control}
                     name="inspection_date"
                     render={({ field }) => (
-                      <FormItem className="flex flex-col">
+                      <FormItem className="space-y-2">
                         <FormLabel>Data *</FormLabel>
                         <FormControl>
                           <DatePickerField
@@ -187,7 +187,7 @@ export function EditInspectionDialog({
                     control={form.control}
                     name="next_inspection_date"
                     render={({ field }) => (
-                      <FormItem className="flex flex-col">
+                      <FormItem className="space-y-2">
                         <FormLabel>Próxima</FormLabel>
                         <FormControl>
                           <DatePickerField
