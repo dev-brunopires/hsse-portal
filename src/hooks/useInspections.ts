@@ -111,11 +111,11 @@ function calculateNextInspectionDate(inspectionDate: string, frequency: string):
 function mapInspectionToEquipmentStatus(inspectionStatus: string): string {
   switch (inspectionStatus) {
     case 'compliant':
-      return 'active';
+      return 'active'; // Conforme → Ativo
     case 'attention':
-      return 'active'; // Equipment still functional but needs attention
+      return 'maintenance'; // Atenção → Em Manutenção
     case 'non-compliant':
-      return 'inactive'; // Equipment should not be used
+      return 'rejected'; // Não Conforme → Reprovado
     default:
       return 'active';
   }
