@@ -74,8 +74,8 @@ const equipmentSchema = z.object({
   shipId: z.string().min(1, 'Selecione um navio'),
   location: z.string().min(1, 'Localização é obrigatória'),
   // Datas
-  manufacturingDate: z.string().min(1, 'Data de fabricação é obrigatória'),
-  acquisitionDate: z.string().min(1, 'Data de aquisição é obrigatória'),
+  manufacturingDate: z.string().optional(),
+  acquisitionDate: z.string().optional(),
   expiryDate: z.string().optional(),
   certificateExpiry: z.string().optional(),
   // Observações
@@ -352,8 +352,8 @@ export function EquipmentFormDialog({
         ship_id: data.shipId,
         unit: unitName, // Keep unit for backwards compatibility
         location: data.location,
-        manufacturing_date: data.manufacturingDate,
-        acquisition_date: data.acquisitionDate,
+        manufacturing_date: data.manufacturingDate || null,
+        acquisition_date: data.acquisitionDate || null,
         expiry_date: data.expiryDate || null,
         certificate_expiry: data.certificateExpiry || null,
         observations: data.observations || null,
@@ -420,7 +420,7 @@ export function EquipmentFormDialog({
   const tabProgress = {
     general: form.watch('name') && form.watch('categoryId') && form.watch('internalCode'),
     location: form.watch('shipId') && form.watch('location'),
-    dates: form.watch('manufacturingDate') && form.watch('acquisitionDate'),
+    dates: true, // Dates are all optional now
     documents: true,
   };
 
@@ -719,7 +719,7 @@ export function EquipmentFormDialog({
                       name="manufacturingDate"
                       render={({ field }) => (
                         <FormItem className="flex flex-col">
-                          <FormLabel>Data de Fabricação *</FormLabel>
+                          <FormLabel>Data de Fabricação</FormLabel>
                           <FormControl>
                             <DatePickerField
                               value={field.value}
@@ -739,7 +739,7 @@ export function EquipmentFormDialog({
                       name="acquisitionDate"
                       render={({ field }) => (
                         <FormItem className="flex flex-col">
-                          <FormLabel>Data de Aquisição *</FormLabel>
+                          <FormLabel>Data de Aquisição</FormLabel>
                           <FormControl>
                             <DatePickerField
                               value={field.value}
