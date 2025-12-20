@@ -40,6 +40,7 @@ import {
   File,
   CheckCircle2,
   Loader2,
+  Ship,
 } from 'lucide-react';
 import { useCategories } from '@/hooks/useCategories';
 import { useCreateEquipment, useUpdateEquipment } from '@/hooks/useEquipment';
@@ -462,39 +463,47 @@ export function EquipmentFormDialog({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Navio / FPSO *</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
-                          value={field.value} 
-                          disabled={isLoadingShips || availableShips.length === 0 || isShipLocked}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder={isLoadingShips ? 'Carregando...' : 'Selecione o navio'} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent className="bg-popover border border-border shadow-lg z-50">
-                            {availableShips.length === 0 ? (
-                              <SelectItem value="__no_ships__" disabled>
-                                {isAdmin ? 'Nenhum navio cadastrado' : 'Você não tem navios atribuídos'}
-                              </SelectItem>
-                            ) : (
-                              availableShips.map((ship) => (
-                                <SelectItem key={ship.id} value={ship.id}>
-                                  {ship.name} {ship.code ? `(${ship.code})` : ''}
-                                </SelectItem>
-                              ))
+                        {isShipLocked && defaultUserShip ? (
+                          // Technician/Supervisor: show locked ship badge instead of dropdown
+                          <div className="flex items-center gap-2 p-3 rounded-md border border-border bg-muted/50">
+                            <Ship className="h-4 w-4 text-primary" />
+                            <span className="font-medium">{defaultUserShip.name}</span>
+                            {defaultUserShip.code && (
+                              <span className="text-muted-foreground text-sm">({defaultUserShip.code})</span>
                             )}
-                          </SelectContent>
-                        </Select>
-                        {isShipLocked ? (
+                          </div>
+                        ) : (
+                          // Admin/Admin Master: show dropdown to select ship
+                          <Select 
+                            onValueChange={field.onChange} 
+                            value={field.value} 
+                            disabled={isLoadingShips || availableShips.length === 0}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder={isLoadingShips ? 'Carregando...' : 'Selecione o navio'} />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent className="bg-popover border border-border shadow-lg z-50">
+                              {availableShips.length === 0 ? (
+                                <SelectItem value="__no_ships__" disabled>
+                                  Nenhum navio cadastrado
+                                </SelectItem>
+                              ) : (
+                                availableShips.map((ship) => (
+                                  <SelectItem key={ship.id} value={ship.id}>
+                                    {ship.name} {ship.code ? `(${ship.code})` : ''}
+                                  </SelectItem>
+                                ))
+                              )}
+                            </SelectContent>
+                          </Select>
+                        )}
+                        {isShipLocked && (
                           <FormDescription>
-                            Navio padrão da conta (Técnico/Supervisor).
+                            Navio padrão da sua conta
                           </FormDescription>
-                        ) : (!isAdmin && availableShips.length > 0) ? (
-                          <FormDescription>
-                            Apenas navios atribuídos ao seu perfil estão disponíveis
-                          </FormDescription>
-                        ) : null}
+                        )}
                         <FormMessage />
                       </FormItem>
                     )}
