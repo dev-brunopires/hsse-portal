@@ -103,24 +103,24 @@ export function InspectionHeatmapCard() {
       <CardContent className="pt-2">
         <div className="flex gap-2">
           {/* Day labels */}
-          <div className="flex flex-col gap-[3px] text-xs text-muted-foreground mr-1">
-            {dayLabels.map((day) => (
-              <div key={day} className="h-5 flex items-center justify-end pr-1">
+          <div className="flex flex-col gap-[3px] text-xs text-muted-foreground shrink-0">
+            {dayLabels.map((day, index) => (
+              <div key={day} className="h-6 flex items-center justify-end pr-2 w-8">
                 {day}
               </div>
             ))}
           </div>
 
           {/* Heatmap grid */}
-          <div className="flex gap-[3px] flex-1">
+          <div className="flex gap-[3px]">
             {heatmapData.weeks.map((week, weekIndex) => (
-              <div key={weekIndex} className="flex flex-col gap-[3px] flex-1">
+              <div key={weekIndex} className="flex flex-col gap-[3px]">
                 {week.map((day, dayIndex) => (
                   <Tooltip key={dayIndex}>
                     <TooltipTrigger asChild>
                       <div
                         className={cn(
-                          'w-full aspect-square min-h-5 rounded-sm cursor-pointer transition-colors hover:ring-1 hover:ring-primary',
+                          'w-6 h-6 rounded-sm cursor-pointer transition-colors hover:ring-1 hover:ring-primary',
                           getIntensityClass(day.count, heatmapData.maxCount)
                         )}
                       />
