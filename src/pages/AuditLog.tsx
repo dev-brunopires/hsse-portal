@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { History, Search, Filter, ChevronDown, ChevronUp, Package, ClipboardCheck, User, Calendar, ArrowRight } from 'lucide-react';
+import { History, Search, Filter, ChevronDown, ChevronUp, Package, ClipboardCheck, User, Calendar, ArrowRight, Ship, Settings, UserCircle, Download, FileSpreadsheet, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,8 +9,12 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useAuditLogs, AuditLog } from '@/hooks/useAuditLogs';
+import { useShips } from '@/hooks/useShips';
 import { Skeleton } from '@/components/ui/skeleton';
+import { exportAuditLogsPDF, exportAuditLogsExcel } from '@/utils/exportAuditLogs';
+import { toast } from 'sonner';
 
 const actionLabels: Record<string, { label: string; color: string }> = {
   INSERT: { label: 'Criação', color: 'bg-green-500/20 text-green-600 border-green-500/30' },
@@ -21,6 +25,9 @@ const actionLabels: Record<string, { label: string; color: string }> = {
 const tableLabels: Record<string, { label: string; icon: typeof Package }> = {
   equipment: { label: 'Equipamento', icon: Package },
   inspections: { label: 'Inspeção', icon: ClipboardCheck },
+  categories: { label: 'Categoria', icon: Settings },
+  ships: { label: 'Embarcação', icon: Ship },
+  profiles: { label: 'Perfil', icon: UserCircle },
 };
 
 const fieldLabels: Record<string, string> = {
@@ -44,6 +51,15 @@ const fieldLabels: Record<string, string> = {
   inspector_id: 'Inspetor',
   recommendations: 'Recomendações',
   actions_taken: 'Ações Tomadas',
+  full_name: 'Nome Completo',
+  email: 'Email',
+  phone: 'Telefone',
+  position: 'Cargo',
+  department: 'Departamento',
+  description: 'Descrição',
+  icon: 'Ícone',
+  inspection_frequency: 'Frequência de Inspeção',
+  code: 'Código',
 };
 
 function AuditLogItem({ log }: { log: AuditLog }) {
@@ -184,8 +200,20 @@ export default function AuditLogPage() {
   const [search, setSearch] = useState('');
   const [tableFilter, setTableFilter] = useState<string>('all');
   const [actionFilter, setActionFilter] = useState<string>('all');
+  const [shipFilter, setShipFilter] = useState<string>('all');
+  const [isExporting, setIsExporting] = useState(false);
   
   const { data: logs = [], isLoading } = useAuditLogs({ limit: 200 });
+  const { data: ships = [] } = useShips();
+
+  // Create a map of ship IDs to names for filtering
+  const shipMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    ships.forEach(ship => {
+      map[ship.id] = ship.name;
+    });
+    return map;
+  }, [ships]);
 
   const filteredLogs = useMemo(() => {
     return logs.filter(log => {
@@ -194,6 +222,17 @@ export default function AuditLogPage() {
       
       // Action filter
       if (actionFilter !== 'all' && log.action !== actionFilter) return false;
+      
+      // Ship filter - check ship_id in old_data or new_data
+      if (shipFilter !== 'all') {
+        const logShipId = log.new_data?.ship_id || log.old_data?.ship_id;
+        // For ships table, check the record_id
+        if (log.table_name === 'ships') {
+          if (log.record_id !== shipFilter) return false;
+        } else if (logShipId !== shipFilter) {
+          return false;
+        }
+      }
       
       // Search filter
       if (search) {
@@ -205,7 +244,7 @@ export default function AuditLogPage() {
       
       return true;
     });
-  }, [logs, tableFilter, actionFilter, search]);
+  }, [logs, tableFilter, actionFilter, shipFilter, search]);
 
   const stats = useMemo(() => {
     const today = new Date();
@@ -218,6 +257,39 @@ export default function AuditLogPage() {
       inspections: logs.filter(l => l.table_name === 'inspections').length,
     };
   }, [logs]);
+
+  const handleExportPDF = async () => {
+    setIsExporting(true);
+    try {
+      const filters = {
+        ship: shipFilter !== 'all' ? shipMap[shipFilter] : undefined,
+        table: tableFilter !== 'all' ? tableFilter : undefined,
+        action: actionFilter !== 'all' ? actionFilter : undefined,
+      };
+      await exportAuditLogsPDF(filteredLogs, filters);
+      toast.success('PDF exportado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar PDF:', error);
+      toast.error('Erro ao exportar PDF');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportExcel = () => {
+    try {
+      const filters = {
+        ship: shipFilter !== 'all' ? shipMap[shipFilter] : undefined,
+        table: tableFilter !== 'all' ? tableFilter : undefined,
+        action: actionFilter !== 'all' ? actionFilter : undefined,
+      };
+      exportAuditLogsExcel(filteredLogs, filters);
+      toast.success('Excel exportado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar Excel:', error);
+      toast.error('Erro ao exportar Excel');
+    }
+  };
 
   if (isLoading) {
     return (
@@ -252,6 +324,26 @@ export default function AuditLogPage() {
             <p className="text-muted-foreground mt-1">Auditoria completa de todas as modificações no sistema</p>
           </div>
         </div>
+        
+        {/* Export buttons */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" disabled={isExporting || filteredLogs.length === 0}>
+              <Download className="h-4 w-4 mr-2" />
+              Exportar
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleExportPDF}>
+              <FileText className="h-4 w-4 mr-2" />
+              Exportar PDF
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleExportExcel}>
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Exportar Excel
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Stats */}
@@ -291,7 +383,7 @@ export default function AuditLogPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -301,6 +393,18 @@ export default function AuditLogPage() {
                 className="pl-9"
               />
             </div>
+            <Select value={shipFilter} onValueChange={setShipFilter}>
+              <SelectTrigger>
+                <Ship className="h-4 w-4 mr-2 text-muted-foreground" />
+                <SelectValue placeholder="Embarcação" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as embarcações</SelectItem>
+                {ships.map(ship => (
+                  <SelectItem key={ship.id} value={ship.id}>{ship.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={tableFilter} onValueChange={setTableFilter}>
               <SelectTrigger>
                 <SelectValue placeholder="Tipo de registro" />
@@ -309,6 +413,9 @@ export default function AuditLogPage() {
                 <SelectItem value="all">Todos os tipos</SelectItem>
                 <SelectItem value="equipment">Equipamentos</SelectItem>
                 <SelectItem value="inspections">Inspeções</SelectItem>
+                <SelectItem value="categories">Categorias</SelectItem>
+                <SelectItem value="ships">Embarcações</SelectItem>
+                <SelectItem value="profiles">Perfis</SelectItem>
               </SelectContent>
             </Select>
             <Select value={actionFilter} onValueChange={setActionFilter}>
