@@ -38,12 +38,11 @@ export function InspectionTrendChart() {
     return months;
   }, [inspections]);
 
-  const trend = useMemo(() => {
-    if (chartData.length < 2) return 0;
-    const lastMonth = chartData[chartData.length - 1].total;
-    const prevMonth = chartData[chartData.length - 2].total;
-    if (prevMonth === 0) return lastMonth > 0 ? 100 : 0;
-    return ((lastMonth - prevMonth) / prevMonth) * 100;
+  const complianceRate = useMemo(() => {
+    const totalCompliant = chartData.reduce((sum, m) => sum + m.compliant, 0);
+    const total = chartData.reduce((sum, m) => sum + m.total, 0);
+    if (total === 0) return 0;
+    return (totalCompliant / total) * 100;
   }, [chartData]);
 
   const totalInspections = chartData.reduce((sum, m) => sum + m.total, 0);
@@ -103,14 +102,14 @@ export function InspectionTrendChart() {
               <p className="text-xs text-muted-foreground">Total período</p>
             </div>
             <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-              trend > 0 ? 'bg-emerald-500/10 text-emerald-600' : 
-              trend < 0 ? 'bg-red-500/10 text-red-600' : 
-              'bg-muted text-muted-foreground'
+              complianceRate >= 80 ? 'bg-emerald-500/10 text-emerald-600' : 
+              complianceRate >= 50 ? 'bg-yellow-500/10 text-yellow-600' : 
+              'bg-red-500/10 text-red-600'
             }`}>
-              {trend > 0 ? <TrendingUp className="h-3 w-3" /> : 
-               trend < 0 ? <TrendingDown className="h-3 w-3" /> : 
+              {complianceRate >= 80 ? <TrendingUp className="h-3 w-3" /> : 
+               complianceRate < 50 ? <TrendingDown className="h-3 w-3" /> : 
                <Minus className="h-3 w-3" />}
-              {Math.abs(trend).toFixed(0)}%
+              {complianceRate.toFixed(0)}%
             </div>
           </div>
         </div>
