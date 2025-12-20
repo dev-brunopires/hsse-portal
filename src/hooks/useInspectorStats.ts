@@ -79,9 +79,9 @@ export function useInspectorStats(startDate?: Date, endDate?: Date) {
         };
 
         current.total++;
-        if (inspection.status === 'approved') current.approved++;
+        if (inspection.status === 'compliant') current.approved++;
         else if (inspection.status === 'attention') current.attention++;
-        else if (inspection.status === 'rejected') current.rejected++;
+        else if (inspection.status === 'rejected' || inspection.status === 'non-compliant') current.rejected++;
         
         current.createdTimes.push(new Date(inspection.created_at));
         statsMap.set(inspection.inspector_id, current);
