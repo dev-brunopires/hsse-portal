@@ -83,16 +83,76 @@ interface CreateInspectionData {
   photos: File[];
 }
 
+// Calculate next inspection date based on category frequency
+function calculateNextInspectionDate(inspectionDate: string, frequency: string): string {
+  const date = new Date(inspectionDate);
+  
+  switch (frequency) {
+    case 'monthly':
+      date.setDate(date.getDate() + 30);
+      break;
+    case 'quarterly':
+      date.setDate(date.getDate() + 90);
+      break;
+    case 'semi-annual':
+      date.setDate(date.getDate() + 180);
+      break;
+    case 'annual':
+      date.setDate(date.getDate() + 365);
+      break;
+    default:
+      date.setDate(date.getDate() + 30); // Default to monthly
+  }
+  
+  return date.toISOString().split('T')[0];
+}
+
+// Map inspection status to equipment status
+function mapInspectionToEquipmentStatus(inspectionStatus: string): string {
+  switch (inspectionStatus) {
+    case 'compliant':
+      return 'active';
+    case 'attention':
+      return 'active'; // Equipment still functional but needs attention
+    case 'non-compliant':
+      return 'inactive'; // Equipment should not be used
+    default:
+      return 'active';
+  }
+}
+
 export function useCreateInspection() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ inspection, checklistItems, photos }: CreateInspectionData) => {
-      // Create inspection
+      // First, fetch the equipment to get its category frequency
+      const { data: equipmentData, error: equipmentFetchError } = await supabase
+        .from('equipment')
+        .select('id, category_id, categories:category_id(inspection_frequency)')
+        .eq('id', inspection.equipment_id)
+        .single();
+      
+      if (equipmentFetchError) throw equipmentFetchError;
+      
+      // Calculate next inspection date based on category frequency
+      const frequency = (equipmentData.categories as any)?.inspection_frequency || 'monthly';
+      const calculatedNextDate = calculateNextInspectionDate(
+        inspection.inspection_date || new Date().toISOString().split('T')[0],
+        frequency
+      );
+      
+      // Use calculated date (override any manually provided date)
+      const nextInspectionDate = calculatedNextDate;
+
+      // Create inspection with calculated next date
       const { data: inspectionData, error: inspectionError } = await supabase
         .from('inspections')
-        .insert(inspection)
+        .insert({
+          ...inspection,
+          next_inspection_date: nextInspectionDate,
+        })
         .select()
         .single();
       
@@ -136,14 +196,15 @@ export function useCreateInspection() {
         }
       }
 
-      // Update equipment with last inspection date
+      // Update equipment with correct status mapping
+      const equipmentStatus = mapInspectionToEquipmentStatus(inspection.status);
+      
       await supabase
         .from('equipment')
         .update({
           last_inspection: inspection.inspection_date,
-          next_inspection: inspection.next_inspection_date,
-          status: inspection.status === 'compliant' ? 'active' : 
-                  inspection.status === 'non-compliant' ? 'rejected' : 'maintenance',
+          next_inspection: nextInspectionDate,
+          status: equipmentStatus,
         })
         .eq('id', inspection.equipment_id);
 
@@ -154,7 +215,7 @@ export function useCreateInspection() {
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
       toast({
         title: 'Inspeção Registrada',
-        description: 'A inspeção foi registrada com sucesso.',
+        description: 'A inspeção foi registrada com sucesso e a próxima data foi calculada automaticamente.',
       });
     },
     onError: (error: Error) => {
