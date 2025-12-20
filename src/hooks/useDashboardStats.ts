@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { addDays, isAfter, isBefore, startOfMonth, endOfMonth } from 'date-fns';
 import type { DashboardStats, Alert, CategoryStats, StatusStats, EquipmentStatus } from '@/types/equipment';
+import { getEffectiveEquipmentStatus } from '@/utils/equipmentStatus';
 
 export function useDashboardStats() {
   return useQuery({
@@ -39,8 +40,21 @@ export function useDashboardStats() {
       const todayStr = today.toISOString().split('T')[0];
       
       const totalEquipment = equipment?.length || 0;
-      const activeEquipment = equipment?.filter(e => e.status === 'active').length || 0;
-      const expiredEquipment = equipment?.filter(e => e.status === 'expired' || e.status === 'rejected').length || 0;
+      
+      // Calculate effective status for each equipment
+      const equipmentWithEffectiveStatus = equipment?.map(e => ({
+        ...e,
+        effectiveResult: getEffectiveEquipmentStatus(e)
+      })) || [];
+
+      const activeEquipment = equipmentWithEffectiveStatus.filter(e => 
+        e.effectiveResult.effectiveStatus === 'active'
+      ).length;
+      
+      const expiredEquipment = equipmentWithEffectiveStatus.filter(e => 
+        e.effectiveResult.effectiveStatus === 'expired' || 
+        e.effectiveResult.effectiveStatus === 'rejected'
+      ).length;
       
       // Count equipment with expired certificates (regardless of status)
       const expiredCertificates = equipment?.filter(e => {
@@ -50,27 +64,25 @@ export function useDashboardStats() {
       
       const pendingInspections = pendingInspectionsData?.length || 0;
 
-      // Calculate compliance rate - consider certificate expiry too
-      const nonCompliantEquipment = equipment?.filter(e => {
-        // Status-based non-compliance
-        if (e.status === 'expired' || e.status === 'rejected' || e.status === 'inactive') return true;
-        // Certificate expired
-        if (e.certificate_expiry && e.certificate_expiry < todayStr) return true;
-        return false;
-      }).length || 0;
+      // Calculate compliance rate - using effective status
+      const nonCompliantEquipment = equipmentWithEffectiveStatus.filter(e => {
+        const effectiveStatus = e.effectiveResult.effectiveStatus;
+        return effectiveStatus === 'expired' || effectiveStatus === 'rejected' || effectiveStatus === 'inactive';
+      }).length;
       
       const compliantEquipment = totalEquipment - nonCompliantEquipment;
       const complianceRate = totalEquipment > 0 
         ? Number(((compliantEquipment / totalEquipment) * 100).toFixed(1))
         : 0;
 
-      // Group by category
+      // Group by category (using effective status)
       const categoryMap = new Map<string, { count: number; compliant: number; nonCompliant: number }>();
-      equipment?.forEach(eq => {
+      equipmentWithEffectiveStatus.forEach(eq => {
         const categoryName = eq.categories?.name || 'Sem Categoria';
         const current = categoryMap.get(categoryName) || { count: 0, compliant: 0, nonCompliant: 0 };
         current.count++;
-        if (eq.status === 'active' || eq.status === 'maintenance') {
+        const effectiveStatus = eq.effectiveResult.effectiveStatus;
+        if (effectiveStatus === 'active' || effectiveStatus === 'maintenance') {
           current.compliant++;
         } else {
           current.nonCompliant++;
@@ -85,14 +97,14 @@ export function useDashboardStats() {
         nonCompliant: stats.nonCompliant,
       }));
 
-      // Group by status
+      // Group by effective status
       const statusMap = new Map<EquipmentStatus, number>();
       const statusList: EquipmentStatus[] = ['active', 'maintenance', 'expired', 'rejected', 'inactive'];
       statusList.forEach(s => statusMap.set(s, 0));
       
-      equipment?.forEach(eq => {
-        const status = eq.status as EquipmentStatus;
-        statusMap.set(status, (statusMap.get(status) || 0) + 1);
+      equipmentWithEffectiveStatus.forEach(eq => {
+        const effectiveStatus = eq.effectiveResult.effectiveStatus;
+        statusMap.set(effectiveStatus, (statusMap.get(effectiveStatus) || 0) + 1);
       });
 
       const byStatus: StatusStats[] = statusList.map(status => ({
@@ -100,38 +112,41 @@ export function useDashboardStats() {
         count: statusMap.get(status) || 0,
       }));
 
-      // Generate alerts
+      // Generate alerts (using effective status)
       const alerts: Alert[] = [];
 
-      equipment?.forEach(eq => {
-        // Expired certificates
-        if (eq.certificate_expiry) {
-          const certExpiry = new Date(eq.certificate_expiry);
-          if (isBefore(certExpiry, today)) {
-            alerts.push({
-              id: `alert-expired-${eq.id}`,
-              type: 'expired',
-              message: 'Certificado vencido',
-              equipmentId: eq.id,
-              equipmentName: `${eq.name} ${eq.internal_code}`,
-              date: eq.certificate_expiry,
-              severity: 'high',
-            });
-          } else if (isBefore(certExpiry, thirtyDaysFromNow)) {
-            alerts.push({
-              id: `alert-expiring-${eq.id}`,
-              type: 'expiring',
-              message: 'Certificado expira em breve',
-              equipmentId: eq.id,
-              equipmentName: `${eq.name} ${eq.internal_code}`,
-              date: eq.certificate_expiry,
-              severity: 'medium',
-            });
+      equipmentWithEffectiveStatus.forEach(eq => {
+        // Auto-rejected equipment (expired certificate/hydrostatic test)
+        if (eq.effectiveResult.isAutoRejected) {
+          alerts.push({
+            id: `alert-auto-rejected-${eq.id}`,
+            type: 'non_compliant',
+            message: `Reprovado: ${eq.effectiveResult.reasons.join(', ')}`,
+            equipmentId: eq.id,
+            equipmentName: `${eq.name} ${eq.internal_code}`,
+            date: today.toISOString().split('T')[0],
+            severity: 'high',
+          });
+        } else {
+          // Expiring certificates (only if not already expired)
+          if (eq.certificate_expiry) {
+            const certExpiry = new Date(eq.certificate_expiry);
+            if (isBefore(certExpiry, thirtyDaysFromNow) && isAfter(certExpiry, today)) {
+              alerts.push({
+                id: `alert-expiring-${eq.id}`,
+                type: 'expiring',
+                message: 'Certificado expira em breve',
+                equipmentId: eq.id,
+                equipmentName: `${eq.name} ${eq.internal_code}`,
+                date: eq.certificate_expiry,
+                severity: 'medium',
+              });
+            }
           }
         }
 
-        // Rejected equipment
-        if (eq.status === 'rejected') {
+        // Rejected equipment (stored status)
+        if (eq.status === 'rejected' && !eq.effectiveResult.isAutoRejected) {
           alerts.push({
             id: `alert-rejected-${eq.id}`,
             type: 'non_compliant',
