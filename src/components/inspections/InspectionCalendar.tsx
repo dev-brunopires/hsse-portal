@@ -9,14 +9,12 @@ import {
   isToday,
   addMonths,
   subMonths,
-  parseISO,
   startOfWeek,
   endOfWeek,
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, CheckCircle, AlertTriangle, XCircle, Clock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle, AlertTriangle, XCircle, Clock, CalendarDays, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
@@ -33,11 +31,35 @@ interface InspectionCalendarProps {
   onInspectionClick: (inspection: InspectionWithDetails) => void;
 }
 
-const statusConfig: Record<string, { label: string; color: string; bgColor: string; icon: typeof CheckCircle }> = {
-  compliant: { label: 'Conforme', color: 'text-status-success', bgColor: 'bg-status-success', icon: CheckCircle },
-  attention: { label: 'Atenção', color: 'text-status-warning', bgColor: 'bg-status-warning', icon: AlertTriangle },
-  'non-compliant': { label: 'Não Conforme', color: 'text-status-danger', bgColor: 'bg-status-danger', icon: XCircle },
-  pending: { label: 'Pendente', color: 'text-muted-foreground', bgColor: 'bg-muted', icon: Clock },
+const statusConfig: Record<string, { label: string; color: string; bgColor: string; borderColor: string; icon: typeof CheckCircle }> = {
+  compliant: { 
+    label: 'Conforme', 
+    color: 'text-emerald-600 dark:text-emerald-400', 
+    bgColor: 'bg-emerald-500', 
+    borderColor: 'border-emerald-500/30',
+    icon: CheckCircle 
+  },
+  attention: { 
+    label: 'Atenção', 
+    color: 'text-amber-600 dark:text-amber-400', 
+    bgColor: 'bg-amber-500', 
+    borderColor: 'border-amber-500/30',
+    icon: AlertTriangle 
+  },
+  'non-compliant': { 
+    label: 'Não Conforme', 
+    color: 'text-red-600 dark:text-red-400', 
+    bgColor: 'bg-red-500', 
+    borderColor: 'border-red-500/30',
+    icon: XCircle 
+  },
+  pending: { 
+    label: 'Pendente', 
+    color: 'text-slate-600 dark:text-slate-400', 
+    bgColor: 'bg-slate-400', 
+    borderColor: 'border-slate-400/30',
+    icon: Clock 
+  },
 };
 
 export function InspectionCalendar({ inspections, onInspectionClick }: InspectionCalendarProps) {
@@ -71,7 +93,6 @@ export function InspectionCalendar({ inspections, onInspectionClick }: Inspectio
         if (!grouped.has(dateKey)) {
           grouped.set(dateKey, []);
         }
-        // Add as upcoming (with a marker)
         const existing = grouped.get(dateKey)!;
         if (!existing.some(i => i.id === inspection.id)) {
           grouped.get(dateKey)!.push({
@@ -117,44 +138,65 @@ export function InspectionCalendar({ inspections, onInspectionClick }: Inspectio
 
   return (
     <>
-      <Card>
-        <CardHeader className="pb-4">
+      <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 sm:p-6 border-b">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">
-              {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
-            </CardTitle>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-primary/10 rounded-lg">
+                <CalendarDays className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-xl sm:text-2xl font-semibold capitalize">
+                  {format(currentMonth, 'MMMM', { locale: ptBR })}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {format(currentMonth, 'yyyy')}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 sm:gap-2">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="icon"
+                className="h-9 w-9 rounded-lg hover:bg-primary/10"
                 onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-5 w-5" />
               </Button>
               <Button
                 variant="outline"
                 size="sm"
+                className="h-9 px-3 rounded-lg font-medium hidden sm:flex"
                 onClick={() => setCurrentMonth(new Date())}
               >
                 Hoje
               </Button>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="icon"
+                className="h-9 w-9 rounded-lg hover:bg-primary/10"
                 onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-5 w-5" />
               </Button>
             </div>
           </div>
-        </CardHeader>
-        <CardContent>
+        </div>
+
+        {/* Calendar Content */}
+        <div className="p-3 sm:p-5">
           {/* Week days header */}
-          <div className="grid grid-cols-7 mb-2">
-            {weekDays.map((day) => (
+          <div className="grid grid-cols-7 mb-3">
+            {weekDays.map((day, index) => (
               <div
                 key={day}
-                className="text-center text-sm font-medium text-muted-foreground py-2"
+                className={cn(
+                  "text-center text-xs sm:text-sm font-semibold py-2 sm:py-3",
+                  index === 0 || index === 6 
+                    ? "text-muted-foreground/60" 
+                    : "text-muted-foreground"
+                )}
               >
                 {day}
               </div>
@@ -162,12 +204,14 @@ export function InspectionCalendar({ inspections, onInspectionClick }: Inspectio
           </div>
 
           {/* Calendar grid */}
-          <div className="grid grid-cols-7 gap-1">
-            {calendarDays.map((day) => {
+          <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
+            {calendarDays.map((day, index) => {
               const dayInspections = getInspectionsForDay(day);
               const dayStatus = getDayStatus(dayInspections);
               const isCurrentMonth = isSameMonth(day, currentMonth);
               const isTodayDate = isToday(day);
+              const isWeekend = index % 7 === 0 || index % 7 === 6;
+              const statusStyle = dayStatus ? statusConfig[dayStatus] : null;
 
               return (
                 <button
@@ -175,45 +219,74 @@ export function InspectionCalendar({ inspections, onInspectionClick }: Inspectio
                   onClick={() => handleDayClick(day)}
                   disabled={dayInspections.length === 0}
                   className={cn(
-                    "relative h-12 sm:h-16 p-1 rounded-lg border transition-colors text-sm",
-                    isCurrentMonth ? "bg-card" : "bg-muted/30 text-muted-foreground",
-                    isTodayDate && "ring-2 ring-primary",
-                    dayInspections.length > 0 && "cursor-pointer hover:bg-accent",
-                    dayInspections.length === 0 && "cursor-default"
+                    "relative aspect-square sm:aspect-[4/3] p-1 sm:p-2 rounded-lg transition-all duration-200 group",
+                    "flex flex-col items-center justify-start",
+                    // Base styles
+                    isCurrentMonth 
+                      ? "bg-background hover:bg-accent/50" 
+                      : "bg-muted/20 text-muted-foreground/40",
+                    // Weekend styling
+                    isWeekend && isCurrentMonth && "bg-muted/30",
+                    // Today styling
+                    isTodayDate && "ring-2 ring-primary ring-offset-2 ring-offset-background",
+                    // Has inspections
+                    dayInspections.length > 0 && [
+                      "cursor-pointer border-2",
+                      statusStyle?.borderColor,
+                      "hover:shadow-md hover:scale-[1.02]"
+                    ],
+                    dayInspections.length === 0 && "cursor-default border border-transparent"
                   )}
                 >
+                  {/* Day number */}
                   <span className={cn(
-                    "block text-xs sm:text-sm font-medium",
-                    isTodayDate && "text-primary font-bold"
+                    "text-xs sm:text-sm font-medium leading-none mt-0.5 sm:mt-1",
+                    isTodayDate && "bg-primary text-primary-foreground rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center text-[10px] sm:text-xs font-bold",
+                    !isCurrentMonth && "opacity-40"
                   )}>
                     {format(day, 'd')}
                   </span>
                   
+                  {/* Inspection indicators */}
                   {dayInspections.length > 0 && (
-                    <div className="absolute bottom-1 left-1 right-1 flex justify-center gap-0.5">
-                      {dayInspections.length <= 3 ? (
-                        dayInspections.map((_, i) => (
-                          <div
-                            key={i}
-                            className={cn(
-                              "w-1.5 h-1.5 rounded-full",
-                              statusConfig[dayStatus || 'pending'].bgColor
-                            )}
-                          />
-                        ))
+                    <div className="flex-1 flex flex-col items-center justify-center w-full mt-1">
+                      {dayInspections.length === 1 ? (
+                        <div className={cn(
+                          "w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full",
+                          statusStyle?.bgColor
+                        )} />
+                      ) : dayInspections.length <= 3 ? (
+                        <div className="flex gap-0.5 flex-wrap justify-center">
+                          {dayInspections.map((insp, i) => {
+                            const inspStatus = statusConfig[insp.status] || statusConfig.pending;
+                            return (
+                              <div
+                                key={i}
+                                className={cn(
+                                  "w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full",
+                                  inspStatus.bgColor
+                                )}
+                              />
+                            );
+                          })}
+                        </div>
                       ) : (
-                        <Badge 
-                          variant="secondary" 
-                          className={cn(
-                            "text-[10px] px-1 py-0 h-4",
-                            statusConfig[dayStatus || 'pending'].bgColor,
-                            "text-white"
-                          )}
-                        >
+                        <div className={cn(
+                          "flex items-center justify-center",
+                          "text-[10px] sm:text-xs font-bold",
+                          "w-5 h-5 sm:w-6 sm:h-6 rounded-full",
+                          statusStyle?.bgColor,
+                          "text-white shadow-sm"
+                        )}>
                           {dayInspections.length}
-                        </Badge>
+                        </div>
                       )}
                     </div>
+                  )}
+
+                  {/* Hover overlay for days with inspections */}
+                  {dayInspections.length > 0 && (
+                    <div className="absolute inset-0 rounded-lg bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                   )}
                 </button>
               );
@@ -221,27 +294,38 @@ export function InspectionCalendar({ inspections, onInspectionClick }: Inspectio
           </div>
 
           {/* Legend */}
-          <div className="flex flex-wrap gap-4 mt-4 pt-4 border-t">
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mt-5 pt-5 border-t">
             {Object.entries(statusConfig).map(([key, config]) => (
-              <div key={key} className="flex items-center gap-1.5 text-xs">
-                <div className={cn("w-2.5 h-2.5 rounded-full", config.bgColor)} />
-                <span className="text-muted-foreground">{config.label}</span>
+              <div key={key} className="flex items-center gap-2">
+                <div className={cn(
+                  "w-3 h-3 rounded-full shadow-sm",
+                  config.bgColor
+                )} />
+                <span className="text-xs sm:text-sm text-muted-foreground font-medium">
+                  {config.label}
+                </span>
               </div>
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Day Details Dialog */}
       <Dialog open={dayDialogOpen} onOpenChange={setDayDialogOpen}>
         <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>
-              Inspeções - {selectedDate && format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+          <DialogHeader className="pb-4 border-b">
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarDays className="h-5 w-5 text-primary" />
+              <span>
+                {selectedDate && format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+              </span>
             </DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              {selectedDateInspections.length} inspeção(ões) neste dia
+            </p>
           </DialogHeader>
-          <ScrollArea className="max-h-[60vh]">
-            <div className="space-y-3">
+          <ScrollArea className="max-h-[60vh] pr-4">
+            <div className="space-y-3 py-2">
               {selectedDateInspections.map((inspection) => {
                 const config = statusConfig[inspection.status] || statusConfig.pending;
                 const Icon = config.icon;
@@ -254,34 +338,52 @@ export function InspectionCalendar({ inspections, onInspectionClick }: Inspectio
                       onInspectionClick(inspection);
                       setDayDialogOpen(false);
                     }}
-                    className="w-full p-3 rounded-lg border bg-card hover:bg-accent transition-colors text-left"
+                    className={cn(
+                      "w-full p-4 rounded-xl border-2 transition-all duration-200 text-left group",
+                      "hover:shadow-lg hover:scale-[1.01] hover:border-primary/30",
+                      "bg-gradient-to-r from-card to-card/80",
+                      config.borderColor
+                    )}
                   >
-                    <div className="flex items-start gap-3">
-                      <div className={cn("p-2 rounded-full", config.bgColor + '/20')}>
-                        <Icon className={cn("h-4 w-4", config.color)} />
+                    <div className="flex items-start gap-4">
+                      <div className={cn(
+                        "p-2.5 rounded-xl shrink-0",
+                        config.bgColor + '/15'
+                      )}>
+                        <Icon className={cn("h-5 w-5", config.color)} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium truncate">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-semibold truncate text-foreground">
                             {inspection.equipment?.name || 'Equipamento'}
                           </p>
                           {isUpcoming && (
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-xs bg-primary/5 border-primary/20 text-primary">
                               Agendada
                             </Badge>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-muted-foreground font-mono">
                           {inspection.equipment?.internal_code}
                         </p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="secondary" className="text-xs">
+                        <div className="flex items-center gap-3 mt-2.5">
+                          <Badge 
+                            className={cn(
+                              "text-xs font-medium",
+                              config.bgColor,
+                              "text-white border-0"
+                            )}
+                          >
                             {config.label}
                           </Badge>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
                             {inspection.profiles?.full_name}
                           </span>
                         </div>
+                      </div>
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Eye className="h-5 w-5 text-muted-foreground" />
                       </div>
                     </div>
                   </button>
