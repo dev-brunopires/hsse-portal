@@ -225,8 +225,8 @@ export function InspectionDetailDialog({
           </div>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 pr-4">
-          <div className="space-y-6 py-4">
+        <ScrollArea className="flex-1 pr-4 min-h-0">
+          <div className="space-y-6 py-4 pr-1">
             {/* Inspector & Equipment Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
@@ -336,15 +336,17 @@ export function InspectionDetailDialog({
                   ))}
                 </div>
               ) : checklistItems.length > 0 ? (
-                <ScrollArea className={cn(
-                  "pl-6",
-                  checklistItems.length > 4 && "max-h-[280px]"
-                )}>
-                  <div className="space-y-2 pr-4">
+                <ScrollArea
+                  className={cn(
+                    "pl-6 pr-2",
+                    checklistItems.length > 4 && "h-72",
+                  )}
+                >
+                  <div className="space-y-2 pr-3">
                     {checklistItems.map((item) => {
                       const statusConfig = checklistStatusLabels[item.status] || checklistStatusLabels.attention;
                       return (
-                        <div 
+                        <div
                           key={item.id}
                           className="flex items-start gap-3 p-3 rounded-lg border border-border bg-muted/30"
                         >
