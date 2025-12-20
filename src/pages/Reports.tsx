@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { FileText, Download, Calendar, Filter, AlertTriangle, Ship, Loader2, BarChart3, Wrench } from 'lucide-react';
+import { FileText, Download, Calendar, Filter, AlertTriangle, Ship, Loader2, BarChart3, Wrench, ClipboardCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -12,8 +12,11 @@ import { useInspections } from '@/hooks/useInspections';
 import { useCategories } from '@/hooks/useCategories';
 import { useShips } from '@/hooks/useShips';
 import { useMaintenanceRequests } from '@/hooks/useMaintenanceRequests';
+import { useAuth } from '@/contexts/AuthContext';
+import { useProfiles } from '@/hooks/useProfiles';
 import { exportToExcel, exportToPDF } from '@/utils/exportEquipment';
 import { exportInspectionsToExcel, exportInspectionsToPDF } from '@/utils/exportInspections';
+import { exportCategoryInspectionPDF } from '@/utils/exportCategoryInspection';
 import { toast } from 'sonner';
 import { format, isAfter, isBefore, addDays, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -50,11 +53,18 @@ const maintenanceTypeLabels: Record<string, string> = {
 };
 
 export default function Reports() {
+  const { user } = useAuth();
+  const { data: profiles = [] } = useProfiles();
   const { data: equipment = [], isLoading: equipmentLoading } = useEquipment();
   const { data: inspections = [], isLoading: inspectionsLoading } = useInspections();
   const { data: categories = [] } = useCategories();
   const { data: ships = [] } = useShips();
   const { data: maintenanceRequests = [], isLoading: maintenanceLoading } = useMaintenanceRequests();
+
+  // Get full profile with position
+  const currentUserProfile = useMemo(() => {
+    return profiles.find(p => p.user_id === user?.id);
+  }, [profiles, user?.id]);
 
   // Filters
   const [shipFilter, setShipFilter] = useState<string>('all');
@@ -427,6 +437,103 @@ export default function Reports() {
     toast.success('Relatório de manutenções exportado em Excel');
   };
 
+  // Report 6: Category Inspection Report (like batch inspection)
+  const categoryInspectionData = useMemo(() => {
+    // Get latest inspection per equipment in the filtered set
+    const equipmentInspections = new Map<string, {
+      equipment: typeof equipment[0];
+      status: 'compliant' | 'attention' | 'non-compliant';
+      inspectionDate: string;
+    }>();
+
+    // Sort inspections by date descending
+    const sortedInspections = [...filteredInspections].sort(
+      (a, b) => new Date(b.inspection_date).getTime() - new Date(a.inspection_date).getTime()
+    );
+
+    // Get the latest inspection status for each equipment
+    sortedInspections.forEach(insp => {
+      if (!equipmentInspections.has(insp.equipment_id)) {
+        const eq = equipment.find(e => e.id === insp.equipment_id);
+        if (eq) {
+          const status = insp.status === 'compliant' ? 'compliant' : 
+                        insp.status === 'attention' ? 'attention' : 'non-compliant';
+          equipmentInspections.set(insp.equipment_id, {
+            equipment: eq,
+            status: status as 'compliant' | 'attention' | 'non-compliant',
+            inspectionDate: insp.inspection_date,
+          });
+        }
+      }
+    });
+
+    return Array.from(equipmentInspections.values());
+  }, [filteredInspections, equipment]);
+
+  const handleCategoryInspectionReportPDF = async () => {
+    if (categoryInspectionData.length === 0) {
+      toast.error('Nenhuma inspeção encontrada para exportar');
+      return;
+    }
+
+    const selectedCategory = categoryFilter !== 'all' 
+      ? categories.find(c => c.id === categoryFilter)
+      : { id: 'all', name: 'Todas as Categorias', description: '', icon: '', inspection_frequency: 'monthly', created_at: '', updated_at: '' };
+    
+    const selectedShip = shipFilter !== 'all'
+      ? ships.find(s => s.id === shipFilter)
+      : undefined;
+
+    const results = categoryInspectionData.map(item => ({
+      equipment: item.equipment,
+      status: item.status,
+    }));
+
+    await exportCategoryInspectionPDF({
+      category: selectedCategory!,
+      ship: selectedShip,
+      results,
+      inspector: {
+        name: currentUserProfile?.full_name || 'Usuário',
+        position: currentUserProfile?.position || undefined,
+        email: currentUserProfile?.email || '',
+      },
+      inspectionDate: new Date().toISOString().split('T')[0],
+    });
+
+    toast.success('Relatório de inspeção por categoria exportado em PDF');
+  };
+
+  const handleCategoryInspectionReportExcel = () => {
+    if (categoryInspectionData.length === 0) {
+      toast.error('Nenhuma inspeção encontrada para exportar');
+      return;
+    }
+
+    const statusLabels: Record<string, string> = {
+      'compliant': 'Conforme',
+      'attention': 'Atenção',
+      'non-compliant': 'Não Conforme',
+    };
+
+    const data = categoryInspectionData.map((item, index) => ({
+      '#': index + 1,
+      'Código': item.equipment.internal_code,
+      'Equipamento': item.equipment.name,
+      'Tipo': item.equipment.type,
+      'Categoria': item.equipment.categories?.name || '—',
+      'Localização': item.equipment.location,
+      'Status': statusLabels[item.status] || item.status,
+      'Data Inspeção': format(new Date(item.inspectionDate), 'dd/MM/yyyy', { locale: ptBR }),
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Inspeção Categoria');
+    XLSX.writeFile(wb, `relatorio_inspecao_categoria_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+    toast.success('Relatório de inspeção por categoria exportado em Excel');
+  };
+
   const clearFilters = () => {
     setShipFilter('all');
     setCategoryFilter('all');
@@ -437,6 +544,17 @@ export default function Reports() {
   const hasFilters = shipFilter !== 'all' || categoryFilter !== 'all' || startDateStr || endDateStr;
 
   const reportTypes = [
+    {
+      id: 'category-inspection',
+      title: 'Relatório de Inspeção por Categoria',
+      description: 'Relatório no formato de inspeção em lote com status de conformidade',
+      icon: ClipboardCheck,
+      count: categoryInspectionData.length,
+      onPDF: handleCategoryInspectionReportPDF,
+      onExcel: handleCategoryInspectionReportExcel,
+      iconColor: 'text-white',
+      bgColor: 'bg-emerald-600',
+    },
     {
       id: 'inspections',
       title: 'Relatório de Inspeções',
