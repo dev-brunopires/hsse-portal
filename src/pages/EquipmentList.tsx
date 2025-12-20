@@ -3,27 +3,80 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EquipmentTable } from '@/components/equipment/EquipmentTable';
 import { useEquipment } from '@/hooks/useEquipment';
 import { useCategories } from '@/hooks/useCategories';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { 
-  Flame, 
-  Wind, 
-  Shield, 
-  Waves, 
-  Gauge, 
-  ArrowUp, 
-  Package,
-  FolderOpen,
-  Loader2
+  Flame, Wind, Shield, Waves, Gauge, ArrowUp, Package, FolderOpen, Loader2,
+  FireExtinguisher, Siren, AlertTriangle, Zap, Droplets, Thermometer, Activity, Radio, Bell,
+  Construction, Wrench, Settings, Cog, Truck, Building, Factory, Warehouse, Cylinder, CircleDot,
+  ShieldCheck, ShieldAlert, Eye, Camera, Lock, Key, Plug, Power, BatteryCharging,
+  TriangleAlert, OctagonAlert, CircleAlert, Megaphone, Volume2, Flashlight, Lightbulb,
+  HardHat, LifeBuoy, Anchor
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const iconMap: Record<string, React.ElementType> = {
-  flame: Flame,
-  wind: Wind,
-  shield: Shield,
-  waves: Waves,
-  gauge: Gauge,
+  // Combate a incêndio
+  'fire-extinguisher': FireExtinguisher,
+  'flame': Flame,
+  'droplets': Droplets,
+  'waves': Waves,
+  'siren': Siren,
+  'megaphone': Megaphone,
+  
+  // Segurança e alertas
+  'shield': Shield,
+  'shield-check': ShieldCheck,
+  'shield-alert': ShieldAlert,
+  'alert-triangle': AlertTriangle,
+  'triangle-alert': TriangleAlert,
+  'octagon-alert': OctagonAlert,
+  'circle-alert': CircleAlert,
+  
+  // Equipamentos industriais
+  'cylinder': Cylinder,
+  'gauge': Gauge,
+  'thermometer': Thermometer,
+  'activity': Activity,
+  
+  // EPIs e proteção
+  'hard-hat': HardHat,
+  'eye': Eye,
+  'life-buoy': LifeBuoy,
+  
+  // Elétrica e energia
+  'zap': Zap,
+  'plug': Plug,
+  'power': Power,
+  'battery-charging': BatteryCharging,
+  'lightbulb': Lightbulb,
+  'flashlight': Flashlight,
+  
+  // Ferramentas e manutenção
+  'wrench': Wrench,
+  'settings': Settings,
+  'cog': Cog,
+  'construction': Construction,
+  
+  // Comunicação e monitoramento
+  'radio': Radio,
+  'bell': Bell,
+  'volume-2': Volume2,
+  'camera': Camera,
+  
+  // Estruturas e locais
+  'building': Building,
+  'factory': Factory,
+  'warehouse': Warehouse,
+  'truck': Truck,
+  
+  // Outros
+  'wind': Wind,
   'arrow-up': ArrowUp,
-  package: Package,
+  'package': Package,
+  'anchor': Anchor,
+  'lock': Lock,
+  'key': Key,
+  'circle-dot': CircleDot,
 };
 
 export default function EquipmentList() {
@@ -39,10 +92,6 @@ export default function EquipmentList() {
   const getCategoryCount = (categoryId: string) => {
     if (categoryId === 'all') return equipment.length;
     return equipment.filter(eq => eq.category_id === categoryId).length;
-  };
-
-  const getCategory = (categoryId: string) => {
-    return categories.find(c => c.id === categoryId);
   };
 
   const isLoading = equipmentLoading || categoriesLoading;
@@ -69,54 +118,66 @@ export default function EquipmentList() {
 
       {/* Category Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="border-b border-border">
-          <TabsList className="h-auto p-0 bg-transparent flex flex-wrap gap-1">
-            {/* All Equipment Tab */}
-            <TabsTrigger
-              value="all"
-              className={cn(
-                'px-4 py-3 rounded-t-lg rounded-b-none border-b-2 border-transparent',
-                'data-[state=active]:border-primary data-[state=active]:bg-primary/5',
-                'data-[state=active]:shadow-none',
-                'hover:bg-muted/50 transition-all'
-              )}
-            >
-              <div className="flex items-center gap-2">
+        <div className="bg-card border border-border rounded-lg p-2">
+          <ScrollArea className="w-full">
+            <div className="flex gap-2 pb-2">
+              {/* All Equipment Tab */}
+              <button
+                onClick={() => setActiveTab('all')}
+                className={cn(
+                  'flex items-center gap-2 px-4 py-2.5 rounded-lg whitespace-nowrap transition-all',
+                  'text-sm font-medium',
+                  activeTab === 'all'
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
+                )}
+              >
                 <Package className="h-4 w-4" />
-                <span className="font-medium">Todos</span>
-                <span className="ml-1 px-2 py-0.5 text-xs rounded-full bg-muted">
+                <span>Todos</span>
+                <span className={cn(
+                  'px-2 py-0.5 text-xs rounded-full',
+                  activeTab === 'all'
+                    ? 'bg-primary-foreground/20 text-primary-foreground'
+                    : 'bg-background text-foreground'
+                )}>
                   {getCategoryCount('all')}
                 </span>
-              </div>
-            </TabsTrigger>
+              </button>
 
-            {/* Category Tabs */}
-            {categories.map((category) => {
-              const IconComponent = iconMap[category.icon || 'package'] || FolderOpen;
-              const count = getCategoryCount(category.id);
-              
-              return (
-                <TabsTrigger
-                  key={category.id}
-                  value={category.id}
-                  className={cn(
-                    'px-4 py-3 rounded-t-lg rounded-b-none border-b-2 border-transparent',
-                    'data-[state=active]:border-primary data-[state=active]:bg-primary/5',
-                    'data-[state=active]:shadow-none',
-                    'hover:bg-muted/50 transition-all'
-                  )}
-                >
-                  <div className="flex items-center gap-2">
+              {/* Category Tabs */}
+              {categories.map((category) => {
+                const IconComponent = iconMap[category.icon || 'package'] || FolderOpen;
+                const count = getCategoryCount(category.id);
+                const isActive = activeTab === category.id;
+                
+                return (
+                  <button
+                    key={category.id}
+                    onClick={() => setActiveTab(category.id)}
+                    className={cn(
+                      'flex items-center gap-2 px-4 py-2.5 rounded-lg whitespace-nowrap transition-all',
+                      'text-sm font-medium',
+                      isActive
+                        ? 'bg-primary text-primary-foreground shadow-sm'
+                        : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
+                    )}
+                  >
                     <IconComponent className="h-4 w-4" />
-                    <span className="font-medium">{category.name}</span>
-                    <span className="ml-1 px-2 py-0.5 text-xs rounded-full bg-muted">
+                    <span>{category.name}</span>
+                    <span className={cn(
+                      'px-2 py-0.5 text-xs rounded-full',
+                      isActive
+                        ? 'bg-primary-foreground/20 text-primary-foreground'
+                        : 'bg-background text-foreground'
+                    )}>
                       {count}
                     </span>
-                  </div>
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
+                  </button>
+                );
+              })}
+            </div>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
         </div>
 
         {/* All Equipment Content */}
