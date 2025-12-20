@@ -1,8 +1,8 @@
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import type { DashboardStats, CategoryStats, StatusStats } from '@/types/equipment';
+import type { DashboardStats } from '@/types/equipment';
 
 interface ExportFilters {
   shipName?: string;
@@ -24,10 +24,10 @@ export function exportDashboardPDF(stats: DashboardStats, filters: ExportFilters
   const pageWidth = doc.internal.pageSize.getWidth();
   
   // Colors
-  const primaryColor: [number, number, number] = [30, 58, 138]; // Dark blue
-  const successColor: [number, number, number] = [34, 197, 94]; // Green
-  const warningColor: [number, number, number] = [245, 158, 11]; // Amber
-  const dangerColor: [number, number, number] = [239, 68, 68]; // Red
+  const primaryColor: [number, number, number] = [30, 58, 138];
+  const successColor: [number, number, number] = [34, 197, 94];
+  const warningColor: [number, number, number] = [245, 158, 11];
+  const dangerColor: [number, number, number] = [239, 68, 68];
   
   let yPos = 20;
   
@@ -128,9 +128,11 @@ export function exportDashboardPDF(stats: DashboardStats, filters: ExportFilters
   const progressX = pageWidth - 28 - progressWidth;
   const progressY = yPos + 12;
   
-  doc.setFillColor(255, 255, 255, 0.3);
+  doc.setFillColor(255, 255, 255);
+  doc.setGState(new (doc as any).GState({ opacity: 0.3 }));
   doc.roundedRect(progressX, progressY, progressWidth, progressHeight, 2, 2, 'F');
   
+  doc.setGState(new (doc as any).GState({ opacity: 1 }));
   doc.setFillColor(255, 255, 255);
   doc.roundedRect(progressX, progressY, progressWidth * (stats.complianceRate / 100), progressHeight, 2, 2, 'F');
   
@@ -154,7 +156,7 @@ export function exportDashboardPDF(stats: DashboardStats, filters: ExportFilters
       `${stats.totalEquipment > 0 ? ((s.count / stats.totalEquipment) * 100).toFixed(1) : 0}%`
     ]);
   
-  (doc as any).autoTable({
+  autoTable(doc, {
     startY: yPos,
     head: [['Status', 'Quantidade', 'Percentual']],
     body: statusData,
@@ -187,7 +189,7 @@ export function exportDashboardPDF(stats: DashboardStats, filters: ExportFilters
       `${c.count > 0 ? ((c.compliant / c.count) * 100).toFixed(1) : 0}%`
     ]);
     
-    (doc as any).autoTable({
+    autoTable(doc, {
       startY: yPos,
       head: [['Categoria', 'Total', 'Conforme', 'Não Conforme', '% Conform.']],
       body: categoryData,
@@ -221,7 +223,7 @@ export function exportDashboardPDF(stats: DashboardStats, filters: ExportFilters
       a.severity === 'high' ? 'Alta' : a.severity === 'medium' ? 'Média' : 'Baixa'
     ]);
     
-    (doc as any).autoTable({
+    autoTable(doc, {
       startY: yPos,
       head: [['Alerta', 'Equipamento', 'Prioridade']],
       body: alertData,
