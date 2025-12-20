@@ -8,12 +8,14 @@ import {
   FileText,
   ClipboardCheck,
   AlertTriangle,
-  Ship
+  Ship,
+  Search
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -98,6 +100,7 @@ export function CategoryInspectionTab() {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedShip, setSelectedShip] = useState<string>('');
   const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSignatureDialog, setShowSignatureDialog] = useState(false);
   const [signatureData, setSignatureData] = useState<string | null>(null);
@@ -114,14 +117,19 @@ export function CategoryInspectionTab() {
     }
   }, [availableShips, selectedShip, selectedShipId]);
 
-  // Filter equipment by category and ship
+  // Filter equipment by category, ship, and search query
   const filteredEquipment = useMemo(() => {
     return equipment.filter(eq => {
       const matchesCategory = !selectedCategory || eq.category_id === selectedCategory;
       const matchesShip = !selectedShip || eq.ship_id === selectedShip;
-      return matchesCategory && matchesShip;
+      const searchLower = searchQuery.toLowerCase().trim();
+      const matchesSearch = !searchLower || 
+        eq.internal_code.toLowerCase().includes(searchLower) ||
+        eq.location.toLowerCase().includes(searchLower) ||
+        eq.name.toLowerCase().includes(searchLower);
+      return matchesCategory && matchesShip && matchesSearch;
     });
-  }, [equipment, selectedCategory, selectedShip]);
+  }, [equipment, selectedCategory, selectedShip, searchQuery]);
 
   const selectedCategory$ = categories.find(c => c.id === selectedCategory);
   const selectedShip$ = availableShips.find(s => s.id === selectedShip);
@@ -280,6 +288,7 @@ export function CategoryInspectionTab() {
               <Select value={selectedCategory} onValueChange={(value) => {
                 setSelectedCategory(value);
                 setSelectedEquipmentIds(new Set());
+                setSearchQuery('');
               }}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione uma categoria" />
@@ -306,6 +315,7 @@ export function CategoryInspectionTab() {
                 onValueChange={(value) => {
                   setSelectedShip(value);
                   setSelectedEquipmentIds(new Set());
+                  setSearchQuery('');
                 }}
                 disabled={availableShips.length === 1 && !isAdmin && !isAdminMaster}
               >
@@ -325,6 +335,22 @@ export function CategoryInspectionTab() {
               )}
             </div>
           </div>
+
+          {/* Search filter */}
+          {selectedCategory && selectedShip && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Filtrar Equipamentos</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por código, nome ou localização..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Auto-sign indicator */}
           {userSignatureSettings?.auto_sign_inspections && userSignatureSettings?.default_signature && (
