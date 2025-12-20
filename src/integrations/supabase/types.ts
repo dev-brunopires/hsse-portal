@@ -64,6 +64,7 @@ export type Database = {
           next_inspection: string | null
           observations: string | null
           serial_number: string
+          ship_id: string | null
           status: string
           type: string
           unit: string
@@ -88,6 +89,7 @@ export type Database = {
           next_inspection?: string | null
           observations?: string | null
           serial_number: string
+          ship_id?: string | null
           status?: string
           type: string
           unit: string
@@ -112,6 +114,7 @@ export type Database = {
           next_inspection?: string | null
           observations?: string | null
           serial_number?: string
+          ship_id?: string | null
           status?: string
           type?: string
           unit?: string
@@ -123,6 +126,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_ship_id_fkey"
+            columns: ["ship_id"]
+            isOneToOne: false
+            referencedRelation: "ships"
             referencedColumns: ["id"]
           },
         ]
@@ -245,6 +255,7 @@ export type Database = {
           next_inspection_date: string | null
           observations: string | null
           recommendations: string | null
+          ship_id: string | null
           status: string
         }
         Insert: {
@@ -256,6 +267,7 @@ export type Database = {
           next_inspection_date?: string | null
           observations?: string | null
           recommendations?: string | null
+          ship_id?: string | null
           status: string
         }
         Update: {
@@ -267,6 +279,7 @@ export type Database = {
           next_inspection_date?: string | null
           observations?: string | null
           recommendations?: string | null
+          ship_id?: string | null
           status?: string
         }
         Relationships: [
@@ -275,6 +288,13 @@ export type Database = {
             columns: ["equipment_id"]
             isOneToOne: false
             referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspections_ship_id_fkey"
+            columns: ["ship_id"]
+            isOneToOne: false
+            referencedRelation: "ships"
             referencedColumns: ["id"]
           },
         ]
@@ -312,6 +332,33 @@ export type Database = {
         }
         Relationships: []
       }
+      ships: {
+        Row: {
+          code: string | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -333,6 +380,35 @@ export type Database = {
         }
         Relationships: []
       }
+      user_ships: {
+        Row: {
+          created_at: string
+          id: string
+          ship_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ship_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ship_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_ships_ship_id_fkey"
+            columns: ["ship_id"]
+            isOneToOne: false
+            referencedRelation: "ships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -343,6 +419,7 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      get_user_ship_ids: { Args: { _user_id: string }; Returns: string[] }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -352,6 +429,10 @@ export type Database = {
       }
       is_admin_master: { Args: { _user_id: string }; Returns: boolean }
       is_admin_or_technician: { Args: { _user_id: string }; Returns: boolean }
+      user_has_ship_access: {
+        Args: { _ship_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role:
