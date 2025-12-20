@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
@@ -290,6 +290,28 @@ export function EquipmentFormDialog({
     }
   };
 
+  const tabFields: Record<'general' | 'location' | 'dates' | 'documents', Array<keyof EquipmentFormData>> = {
+    general: ['internalCode', 'name', 'categoryId', 'type', 'manufacturer', 'model', 'serialNumber'],
+    location: ['shipId', 'location'],
+    dates: ['manufacturingDate', 'acquisitionDate'],
+    documents: [],
+  };
+
+  const onInvalid = (errors: FieldErrors<EquipmentFormData>) => {
+    const hasErrors = (fields: Array<keyof EquipmentFormData>) =>
+      fields.some((f) => !!(errors as any)[f]);
+
+    if (hasErrors(tabFields.general)) setActiveTab('general');
+    else if (hasErrors(tabFields.location)) setActiveTab('location');
+    else if (hasErrors(tabFields.dates)) setActiveTab('dates');
+
+    toast({
+      title: 'Campos obrigatórios',
+      description: 'Revise os campos marcados com * antes de cadastrar.',
+      variant: 'destructive',
+    });
+  };
+
   const tabProgress = {
     general: form.watch('name') && form.watch('categoryId') && form.watch('internalCode'),
     location: form.watch('shipId') && form.watch('location'),
@@ -311,7 +333,7 @@ export function EquipmentFormDialog({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-hidden flex flex-col">
+          <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="flex-1 overflow-hidden flex flex-col">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
               <TabsList className="grid w-full grid-cols-4 mb-4">
                 <TabsTrigger value="general" className="gap-2 relative">
@@ -759,9 +781,21 @@ export function EquipmentFormDialog({
                 {activeTab !== 'documents' ? (
                   <Button
                     type="button"
-                    onClick={() => {
-                      const tabs = ['general', 'location', 'dates', 'documents'];
-                      const currentIndex = tabs.indexOf(activeTab);
+                    onClick={async () => {
+                      const tabs = ['general', 'location', 'dates', 'documents'] as const;
+                      const currentIndex = tabs.indexOf(activeTab as (typeof tabs)[number]);
+                      const currentTab = tabs[currentIndex] ?? 'general';
+
+                      const ok = await form.trigger(tabFields[currentTab]);
+                      if (!ok) {
+                        toast({
+                          title: 'Campos obrigatórios',
+                          description: 'Complete os campos marcados com * para avançar.',
+                          variant: 'destructive',
+                        });
+                        return;
+                      }
+
                       if (currentIndex < tabs.length - 1) setActiveTab(tabs[currentIndex + 1]);
                     }}
                   >
