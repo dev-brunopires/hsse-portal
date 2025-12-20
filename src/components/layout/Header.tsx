@@ -130,21 +130,28 @@ export function Header() {
 
   const unreadCount = combinedNotifications.filter(n => !n.isRead).length;
 
-  const handleMarkAsRead = useCallback((notificationId: string, isSystem: boolean) => {
-    if (isSystem) {
-      if (notificationId === 'system-ship-filter') {
-        localStorage.setItem('ship-filter-reminder-dismissed', 'true');
-        setDismissedSystemNotifications(prev => new Set([...prev, 'system-ship-filter']));
+  const handleMarkAsRead = useCallback(
+    (notificationId: string, isSystem: boolean) => {
+      if (isSystem) {
+        if (notificationId === 'system-ship-filter') {
+          localStorage.setItem('ship-filter-reminder-dismissed', 'true');
+          setDismissedSystemNotifications(
+            (prev) => new Set([...prev, 'system-ship-filter'])
+          );
+        }
+        return;
       }
-      return;
-    }
-    markAsRead.mutate(notificationId);
-  }, [markAsRead]);
+      markAsRead.mutate(notificationId);
+    },
+    [markAsRead]
+  );
 
   const handleMarkAllAsRead = useCallback(() => {
     // Dismiss system notifications
     localStorage.setItem('ship-filter-reminder-dismissed', 'true');
-    setDismissedSystemNotifications(prev => new Set([...prev, 'system-ship-filter']));
+    setDismissedSystemNotifications(
+      (prev) => new Set([...prev, 'system-ship-filter'])
+    );
     // Mark database notifications as read
     markAllAsRead.mutate();
   }, [markAllAsRead]);
@@ -256,7 +263,7 @@ export function Header() {
                   variant="ghost"
                   size="sm"
                   className="h-auto py-1 px-2 text-xs gap-1"
-                  onClick={(e) => {
+                  onPointerDown={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     handleMarkAllAsRead();
@@ -315,7 +322,7 @@ export function Header() {
                                 variant="ghost"
                                 size="sm"
                                 className="h-6 px-2 text-xs gap-1"
-                                onClick={(e) => {
+                                onPointerDown={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
                                   handleMarkAsRead(notification.id, notification.isSystem || false);
