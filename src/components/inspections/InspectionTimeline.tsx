@@ -9,7 +9,9 @@ import {
   User,
   FileText,
   Camera,
-  PenTool
+  PenTool,
+  Edit,
+  Trash2,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -60,12 +62,16 @@ const statusConfig: Record<string, {
 interface InspectionTimelineProps {
   inspections: InspectionWithDetails[];
   onViewDetails?: (inspection: InspectionWithDetails) => void;
+  onEdit?: (inspection: InspectionWithDetails) => void;
+  onDelete?: (inspection: InspectionWithDetails) => void;
   maxItems?: number;
 }
 
 export function InspectionTimeline({ 
   inspections, 
   onViewDetails,
+  onEdit,
+  onDelete,
   maxItems 
 }: InspectionTimelineProps) {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
@@ -225,19 +231,49 @@ export function InspectionTimeline({
                           </div>
                         )}
 
-                        {onViewDetails && (
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="w-full"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onViewDetails(inspection);
-                            }}
-                          >
-                            Ver Detalhes Completos
-                          </Button>
-                        )}
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          {onViewDetails && (
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="flex-1"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onViewDetails(inspection);
+                              }}
+                            >
+                              Ver Detalhes
+                            </Button>
+                          )}
+                          {onEdit && (
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="flex-1 gap-1"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEdit(inspection);
+                              }}
+                            >
+                              <Edit className="h-3 w-3" />
+                              Editar
+                            </Button>
+                          )}
+                          {onDelete && (
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="flex-1 gap-1 text-destructive hover:text-destructive"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDelete(inspection);
+                              }}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              Excluir
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </CollapsibleContent>

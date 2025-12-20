@@ -20,6 +20,9 @@ import {
   CalendarDays,
   List,
   GitCommitHorizontal,
+  Edit,
+  MoreHorizontal,
+  Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -55,6 +58,7 @@ import { isAfter, isBefore, addDays, startOfMonth, endOfMonth, parseISO } from '
 import { formatDate, formatWeekday } from '@/utils/dateFormat';
 import { InspectionDetailDialog } from '@/components/inspections/InspectionDetailDialog';
 import { NewInspectionDialog } from '@/components/inspections/NewInspectionDialog';
+import { EditInspectionDialog } from '@/components/inspections/EditInspectionDialog';
 import { QRCodeScannerDialog } from '@/components/equipment/QRCodeScannerDialog';
 import { InspectionCalendar } from '@/components/inspections/InspectionCalendar';
 import { InspectionTimeline } from '@/components/inspections/InspectionTimeline';
@@ -89,6 +93,7 @@ export default function Inspections() {
   const [dateTo, setDateTo] = useState<string>('');
   const [selectedInspection, setSelectedInspection] = useState<InspectionWithDetails | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [showNewInspectionForm, setShowNewInspectionForm] = useState(false);
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'calendar' | 'timeline'>('list');
@@ -193,6 +198,17 @@ export default function Inspections() {
   const openDetailDialog = (inspection: InspectionWithDetails) => {
     setSelectedInspection(inspection);
     setDetailDialogOpen(true);
+  };
+
+  const handleEditInspection = (inspection: InspectionWithDetails) => {
+    setSelectedInspection(inspection);
+    setDetailDialogOpen(false);
+    setEditDialogOpen(true);
+  };
+
+  const handleEditSuccess = () => {
+    setEditDialogOpen(false);
+    setSelectedInspection(null);
   };
 
   const handleExportExcel = () => {
@@ -509,13 +525,36 @@ export default function Inspections() {
                           : '-'}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => openDetailDialog(inspection)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="bg-popover border border-border shadow-lg">
+                            <DropdownMenuItem 
+                              onClick={() => openDetailDialog(inspection)}
+                              className="gap-2 cursor-pointer"
+                            >
+                              <Eye className="h-4 w-4" />
+                              Ver Detalhes
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleEditInspection(inspection)}
+                              className="gap-2 cursor-pointer"
+                            >
+                              <Edit className="h-4 w-4" />
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => openDetailDialog(inspection)}
+                              className="gap-2 cursor-pointer text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Excluir
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))
@@ -542,6 +581,7 @@ export default function Inspections() {
               <InspectionTimeline 
                 inspections={filteredInspections}
                 onViewDetails={openDetailDialog}
+                onEdit={handleEditInspection}
                 maxItems={10}
               />
             </CardContent>
@@ -607,6 +647,15 @@ export default function Inspections() {
         open={detailDialogOpen}
         onOpenChange={setDetailDialogOpen}
         inspection={selectedInspection}
+        onEdit={handleEditInspection}
+      />
+
+      {/* Edit Dialog */}
+      <EditInspectionDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        inspection={selectedInspection}
+        onSuccess={handleEditSuccess}
       />
 
     </div>
