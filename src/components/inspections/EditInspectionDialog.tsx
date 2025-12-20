@@ -122,13 +122,13 @@ export function EditInspectionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col bg-card border border-border">
-        <DialogHeader className="pb-4 border-b border-border">
-          <DialogTitle className="flex items-center gap-2 text-xl">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-hidden flex flex-col bg-card border border-border" hideCloseButton>
+        <DialogHeader className="pb-4 border-b border-border pr-0">
+          <DialogTitle className="flex items-center gap-2 text-lg">
             <ClipboardCheck className="h-5 w-5 text-primary" />
             Editar Inspeção
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-sm">
             {inspection.equipment?.internal_code} - {inspection.equipment?.name}
           </DialogDescription>
         </DialogHeader>
@@ -136,18 +136,18 @@ export function EditInspectionDialog({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-hidden flex flex-col">
             <ScrollArea className="flex-1 pr-4">
-              <div className="space-y-6 py-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="status"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Status da Inspeção *</FormLabel>
+                        <FormLabel>Status *</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Selecione o status" />
+                              <SelectValue placeholder="Selecione" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent className="bg-popover border border-border shadow-lg z-50">
@@ -168,12 +168,12 @@ export function EditInspectionDialog({
                     name="inspection_date"
                     render={({ field }) => (
                       <FormItem className="flex flex-col">
-                        <FormLabel>Data da Inspeção *</FormLabel>
+                        <FormLabel>Data *</FormLabel>
                         <FormControl>
                           <DatePickerField
                             value={field.value}
                             onChange={field.onChange}
-                            placeholder="Selecione a data"
+                            placeholder="Selecione"
                             fromYear={new Date().getFullYear() - 5}
                             toYear={new Date().getFullYear() + 1}
                           />
@@ -188,7 +188,7 @@ export function EditInspectionDialog({
                   control={form.control}
                   name="next_inspection_date"
                   render={({ field }) => (
-                    <FormItem className="flex flex-col max-w-xs">
+                    <FormItem className="flex flex-col">
                       <FormLabel>Próxima Inspeção</FormLabel>
                       <FormControl>
                         <DatePickerField
@@ -212,8 +212,8 @@ export function EditInspectionDialog({
                       <FormLabel>Ações Tomadas</FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder="Descreva as ações realizadas durante a inspeção..."
-                          className="min-h-[80px] resize-none"
+                          placeholder="Descreva as ações realizadas..."
+                          className="min-h-[60px] resize-none"
                           {...field}
                         />
                       </FormControl>
@@ -230,8 +230,8 @@ export function EditInspectionDialog({
                       <FormLabel>Observações</FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder="Observações gerais sobre a inspeção..."
-                          className="min-h-[80px] resize-none"
+                          placeholder="Observações gerais..."
+                          className="min-h-[60px] resize-none"
                           {...field}
                         />
                       </FormControl>
@@ -248,8 +248,8 @@ export function EditInspectionDialog({
                       <FormLabel>Recomendações</FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder="Recomendações para manutenção ou próxima inspeção..."
-                          className="min-h-[80px] resize-none"
+                          placeholder="Recomendações para próxima inspeção..."
+                          className="min-h-[60px] resize-none"
                           {...field}
                         />
                       </FormControl>
