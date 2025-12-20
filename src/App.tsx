@@ -21,6 +21,7 @@ import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
 import PendingRecommendations from "./pages/PendingRecommendations";
 import AuditLog from "./pages/AuditLog";
+import Maintenance from "./pages/Maintenance";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -104,6 +105,16 @@ function App() {
                   <ProtectedRoute>
                     <AppLayout>
                       <PendingRecommendations />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/maintenance"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <Maintenance />
                     </AppLayout>
                   </ProtectedRoute>
                 }

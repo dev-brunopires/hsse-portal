@@ -16,6 +16,7 @@ import {
   Moon,
   Sun,
   History,
+  Wrench,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -99,6 +100,9 @@ export function AppSidebar() {
         </div>
         <div data-tour="inspections">
           <NavItem to="/inspections" icon={<ClipboardCheck size={20} />} label="Inspeções" collapsed={collapsed} />
+        </div>
+        <div data-tour="maintenance">
+          <NavItem to="/maintenance" icon={<Wrench size={20} />} label="Manutenção" collapsed={collapsed} />
         </div>
         <NavItem to="/pending" icon={<AlertCircle size={20} />} label="Pendências" collapsed={collapsed} />
         <div data-tour="reports">
