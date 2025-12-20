@@ -8,8 +8,8 @@
 @layer base {
   :root {
     /* SBM Offshore Brand Colors */
-    /* Primary: Orange #F26522 → HSL 18 89% 54% */
-    /* Secondary: Blue #003366 → HSL 210 100% 20% */
+    /* Primary: Blue #003366 → HSL 210 100% 20% */
+    /* Accent: Orange #F26522 → HSL 18 89% 54% (used sparingly) */
     
     --background: 210 15% 98%;
     --foreground: 210 50% 10%;
@@ -20,25 +20,25 @@
     --popover: 0 0% 100%;
     --popover-foreground: 210 50% 10%;
 
-    /* SBM Orange - Primary Brand Color */
-    --primary: 18 89% 54%;
+    /* SBM Blue - Primary Brand Color */
+    --primary: 210 100% 25%;
     --primary-foreground: 0 0% 100%;
 
-    /* SBM Blue - Secondary Brand Color */
-    --secondary: 210 100% 20%;
-    --secondary-foreground: 0 0% 100%;
+    /* Light Blue - Secondary */
+    --secondary: 210 30% 94%;
+    --secondary-foreground: 210 100% 25%;
 
     --muted: 210 15% 94%;
     --muted-foreground: 210 20% 45%;
 
-    /* Blue accent */
-    --accent: 210 100% 30%;
+    /* Orange accent - used sparingly */
+    --accent: 18 89% 54%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Status Colors - SBM Aligned */
+    /* Status Colors */
     --status-success: 145 65% 38%;
     --status-success-foreground: 0 0% 100%;
     --status-warning: 38 92% 50%;
@@ -52,25 +52,25 @@
 
     --border: 210 20% 88%;
     --input: 210 20% 88%;
-    --ring: 18 89% 54%;
+    --ring: 210 100% 25%;
 
     --radius: 0.5rem;
 
     /* Sidebar - Deep Blue */
     --sidebar-background: 210 100% 15%;
     --sidebar-foreground: 210 15% 95%;
-    --sidebar-primary: 18 89% 54%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 80% 25%;
+    --sidebar-primary: 210 60% 70%;
+    --sidebar-primary-foreground: 210 100% 15%;
+    --sidebar-accent: 210 80% 22%;
     --sidebar-accent-foreground: 210 15% 98%;
     --sidebar-border: 210 60% 25%;
-    --sidebar-ring: 18 89% 54%;
+    --sidebar-ring: 210 100% 50%;
 
     /* Chart colors - SBM Brand */
-    --chart-1: 18 89% 54%;
-    --chart-2: 210 100% 30%;
+    --chart-1: 210 100% 30%;
+    --chart-2: 210 60% 50%;
     --chart-3: 145 65% 38%;
-    --chart-4: 38 92% 50%;
+    --chart-4: 18 89% 54%;
     --chart-5: 210 100% 20%;
   }
 
@@ -84,18 +84,18 @@
     --popover: 210 40% 11%;
     --popover-foreground: 210 15% 95%;
 
-    /* SBM Orange - Primary */
-    --primary: 18 89% 58%;
+    /* SBM Blue - Primary */
+    --primary: 210 80% 55%;
     --primary-foreground: 210 40% 8%;
 
-    /* Dark mode blue */
-    --secondary: 210 60% 25%;
+    /* Dark mode secondary */
+    --secondary: 210 30% 18%;
     --secondary-foreground: 210 15% 95%;
 
     --muted: 210 30% 18%;
     --muted-foreground: 210 15% 60%;
 
-    --accent: 210 80% 40%;
+    --accent: 18 89% 58%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 62% 50%;
@@ -114,16 +114,16 @@
 
     --border: 210 30% 20%;
     --input: 210 30% 20%;
-    --ring: 18 89% 58%;
+    --ring: 210 80% 55%;
 
     --sidebar-background: 210 50% 6%;
     --sidebar-foreground: 210 15% 92%;
-    --sidebar-primary: 18 89% 58%;
+    --sidebar-primary: 210 60% 70%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 210 40% 15%;
     --sidebar-accent-foreground: 210 15% 95%;
     --sidebar-border: 210 30% 18%;
-    --sidebar-ring: 18 89% 58%;
+    --sidebar-ring: 210 80% 55%;
   }
 }
 
