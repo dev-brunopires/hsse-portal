@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 import { useShipFilter } from '@/contexts/ShipFilterContext';
+import { useEffect } from 'react';
 
 export type Equipment = Tables<'equipment'>;
 export type EquipmentInsert = TablesInsert<'equipment'>;
@@ -13,10 +14,42 @@ export interface EquipmentWithCategory extends Equipment {
   ships?: { id: string; name: string; code: string | null } | null;
 }
 
+const OFFLINE_EQUIPMENT_KEY = 'safeship_offline_equipment';
+
+// Cache equipment data for offline use
+const cacheEquipmentData = (data: EquipmentWithCategory[]) => {
+  try {
+    localStorage.setItem(OFFLINE_EQUIPMENT_KEY, JSON.stringify({
+      data,
+      timestamp: Date.now(),
+    }));
+  } catch (e) {
+    console.error('Error caching equipment data:', e);
+  }
+};
+
+// Get cached equipment data
+const getCachedEquipment = (): EquipmentWithCategory[] | null => {
+  try {
+    const cached = localStorage.getItem(OFFLINE_EQUIPMENT_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      // Cache valid for 24 hours
+      if (Date.now() - parsed.timestamp < 24 * 60 * 60 * 1000) {
+        return parsed.data;
+      }
+    }
+    return null;
+  } catch (e) {
+    console.error('Error getting cached equipment:', e);
+    return null;
+  }
+};
+
 export function useEquipment() {
   const { selectedShipId, isFilterEnabled } = useShipFilter();
   
-  return useQuery({
+  const query = useQuery({
     queryKey: ['equipment', selectedShipId],
     queryFn: async () => {
       let query = supabase
@@ -35,10 +68,43 @@ export function useEquipment() {
       
       const { data, error } = await query;
       
-      if (error) throw error;
+      if (error) {
+        // If offline, return cached data
+        if (!navigator.onLine) {
+          const cached = getCachedEquipment();
+          if (cached) {
+            return selectedShipId 
+              ? cached.filter(e => e.ship_id === selectedShipId)
+              : cached;
+          }
+        }
+        throw error;
+      }
+      
       return data as EquipmentWithCategory[];
     },
+    // Use cached data as initial data when offline
+    initialData: () => {
+      if (!navigator.onLine) {
+        const cached = getCachedEquipment();
+        if (cached) {
+          return selectedShipId 
+            ? cached.filter(e => e.ship_id === selectedShipId)
+            : cached;
+        }
+      }
+      return undefined;
+    },
   });
+
+  // Cache data when successfully fetched
+  useEffect(() => {
+    if (query.data && navigator.onLine) {
+      cacheEquipmentData(query.data);
+    }
+  }, [query.data]);
+
+  return query;
 }
 
 export function useEquipmentById(id: string | undefined) {
