@@ -118,9 +118,10 @@ const getChecklistForCategory = (categoryId: string): ChecklistItem[] => {
 interface InspectionFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
+  preSelectedEquipmentId?: string | null;
 }
 
-export function InspectionForm({ onSuccess, onCancel }: InspectionFormProps) {
+export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: InspectionFormProps) {
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
   const [uploadedPhotos, setUploadedPhotos] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -154,6 +155,17 @@ export function InspectionForm({ onSuccess, onCancel }: InspectionFormProps) {
       form.setValue('inspectorId', user.id);
     }
   }, [user, form]);
+
+  // Pre-select equipment from QR code scan
+  useEffect(() => {
+    if (preSelectedEquipmentId && equipment.length > 0 && !selectedEquipment) {
+      const equip = equipment.find(e => e.id === preSelectedEquipmentId);
+      if (equip) {
+        setSelectedEquipment(equip);
+        form.setValue('equipmentId', equip.id);
+      }
+    }
+  }, [preSelectedEquipmentId, equipment, selectedEquipment, form]);
 
   useEffect(() => {
     if (selectedEquipment) {

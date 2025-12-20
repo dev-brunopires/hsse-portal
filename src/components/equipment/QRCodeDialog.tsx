@@ -6,8 +6,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Download, Printer, QrCode } from 'lucide-react';
-import { useRef } from 'react';
+import { Download, Printer, QrCode, Copy, Check } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 interface QRCodeDialogProps {
   open: boolean;
@@ -16,19 +17,21 @@ interface QRCodeDialogProps {
     id: string;
     name: string;
     internalCode: string;
+    categoryName?: string;
+    location?: string;
   } | null;
 }
 
 export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProps) {
   const qrRef = useRef<HTMLDivElement>(null);
+  const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
 
   if (!equipment) return null;
 
-  const qrValue = JSON.stringify({
-    id: equipment.id,
-    code: equipment.internalCode,
-    name: equipment.name,
-  });
+  // URL que abre diretamente o formulário de inspeção
+  const baseUrl = window.location.origin;
+  const inspectionUrl = `${baseUrl}/inspections?scan=${equipment.id}`;
 
   const handleDownload = () => {
     const svg = qrRef.current?.querySelector('svg');
@@ -51,9 +54,136 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
     };
     
     img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(data)));
+    
+    toast({
+      title: 'Download iniciado',
+      description: `QR Code do equipamento ${equipment.internalCode} baixado.`,
+    });
   };
 
-  const handlePrint = () => {
+  const handleCopyUrl = async () => {
+    await navigator.clipboard.writeText(inspectionUrl);
+    setCopied(true);
+    toast({
+      title: 'Link copiado',
+      description: 'Link de inspeção copiado para a área de transferência.',
+    });
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handlePrintLabel = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const svg = qrRef.current?.querySelector('svg');
+    if (!svg) return;
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Etiqueta QR - ${equipment.internalCode}</title>
+          <style>
+            @page {
+              size: 60mm 40mm;
+              margin: 0;
+            }
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            body { 
+              display: flex; 
+              align-items: center; 
+              justify-content: center; 
+              width: 60mm;
+              height: 40mm;
+              font-family: Arial, sans-serif;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+            .label {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              padding: 4px;
+              width: 100%;
+              height: 100%;
+              border: 1px solid #ddd;
+            }
+            .qr-container {
+              flex-shrink: 0;
+            }
+            .qr-container svg {
+              width: 32mm !important;
+              height: 32mm !important;
+            }
+            .info {
+              flex: 1;
+              display: flex;
+              flex-direction: column;
+              justify-content: center;
+              overflow: hidden;
+            }
+            .code {
+              font-size: 11pt;
+              font-weight: bold;
+              margin-bottom: 2px;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+            }
+            .name {
+              font-size: 8pt;
+              color: #333;
+              margin-bottom: 2px;
+              display: -webkit-box;
+              -webkit-line-clamp: 2;
+              -webkit-box-orient: vertical;
+              overflow: hidden;
+            }
+            .location {
+              font-size: 7pt;
+              color: #666;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+            }
+            .scan-text {
+              font-size: 6pt;
+              color: #999;
+              margin-top: 2px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="label">
+            <div class="qr-container">
+              ${svg.outerHTML}
+            </div>
+            <div class="info">
+              <div class="code">${equipment.internalCode}</div>
+              <div class="name">${equipment.name}</div>
+              ${equipment.location ? `<div class="location">📍 ${equipment.location}</div>` : ''}
+              <div class="scan-text">Escaneie para inspeção</div>
+            </div>
+          </div>
+          <script>
+            window.onload = () => {
+              setTimeout(() => {
+                window.print();
+                window.close();
+              }, 100);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
+  const handlePrintFull = () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
@@ -73,24 +203,57 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
               justify-content: center; 
               min-height: 100vh; 
               margin: 0; 
-              font-family: system-ui, sans-serif;
+              font-family: Arial, sans-serif;
             }
-            .container { text-align: center; }
-            h1 { font-size: 18px; margin-bottom: 8px; }
-            p { font-size: 14px; color: #666; margin: 4px 0; }
-            svg { margin: 20px 0; }
+            .container { 
+              text-align: center;
+              padding: 40px;
+              border: 2px solid #000;
+              border-radius: 16px;
+            }
+            h1 { 
+              font-size: 24px; 
+              margin-bottom: 4px; 
+            }
+            .name { 
+              font-size: 18px; 
+              color: #333; 
+              margin-bottom: 16px;
+            }
+            .location { 
+              font-size: 14px; 
+              color: #666; 
+              margin-bottom: 8px;
+            }
+            svg { 
+              margin: 20px 0; 
+            }
+            .instructions {
+              font-size: 14px;
+              color: #666;
+              margin-top: 16px;
+              padding: 12px;
+              background: #f5f5f5;
+              border-radius: 8px;
+            }
           </style>
         </head>
         <body>
           <div class="container">
-            <h1>${equipment.name}</h1>
-            <p>${equipment.internalCode}</p>
+            <h1>${equipment.internalCode}</h1>
+            <div class="name">${equipment.name}</div>
+            ${equipment.location ? `<div class="location">📍 ${equipment.location}</div>` : ''}
             ${svg.outerHTML}
+            <div class="instructions">
+              📱 Escaneie o QR Code para registrar inspeção
+            </div>
           </div>
           <script>
             window.onload = () => {
-              window.print();
-              window.close();
+              setTimeout(() => {
+                window.print();
+                window.close();
+              }, 100);
             };
           </script>
         </body>
@@ -101,7 +264,7 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <QrCode className="h-5 w-5 text-primary" />
@@ -109,27 +272,52 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col items-center py-6">
-          <div ref={qrRef} className="bg-white p-4 rounded-lg">
+        <div className="flex flex-col items-center py-4">
+          <div ref={qrRef} className="bg-white p-4 rounded-lg border shadow-sm">
             <QRCodeSVG 
-              value={qrValue} 
-              size={200}
+              value={inspectionUrl} 
+              size={180}
               level="H"
               includeMargin
             />
           </div>
           <p className="font-mono text-lg font-bold mt-4">{equipment.internalCode}</p>
-          <p className="text-muted-foreground">{equipment.name}</p>
+          <p className="text-muted-foreground text-center">{equipment.name}</p>
+          {equipment.location && (
+            <p className="text-sm text-muted-foreground mt-1">📍 {equipment.location}</p>
+          )}
         </div>
 
-        <div className="flex gap-2">
-          <Button variant="outline" className="flex-1 gap-2" onClick={handleDownload}>
+        <div className="bg-muted/50 p-3 rounded-lg text-center">
+          <p className="text-xs text-muted-foreground mb-2">
+            Ao escanear, abre o formulário de inspeção deste equipamento
+          </p>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="gap-2 text-xs h-7"
+            onClick={handleCopyUrl}
+          >
+            {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+            {copied ? 'Copiado!' : 'Copiar link'}
+          </Button>
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-muted-foreground">Opções de impressão:</p>
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="outline" className="gap-2" onClick={handlePrintLabel}>
+              <Printer className="h-4 w-4" />
+              Etiqueta (60x40mm)
+            </Button>
+            <Button variant="outline" className="gap-2" onClick={handlePrintFull}>
+              <Printer className="h-4 w-4" />
+              Página Completa
+            </Button>
+          </div>
+          <Button variant="secondary" className="w-full gap-2" onClick={handleDownload}>
             <Download className="h-4 w-4" />
             Baixar PNG
-          </Button>
-          <Button variant="outline" className="flex-1 gap-2" onClick={handlePrint}>
-            <Printer className="h-4 w-4" />
-            Imprimir
           </Button>
         </div>
       </DialogContent>
