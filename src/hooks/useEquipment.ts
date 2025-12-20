@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
+import { useShipFilter } from '@/contexts/ShipFilterContext';
 
 export type Equipment = Tables<'equipment'>;
 export type EquipmentInsert = TablesInsert<'equipment'>;
@@ -13,10 +14,12 @@ export interface EquipmentWithCategory extends Equipment {
 }
 
 export function useEquipment() {
+  const { selectedShipId, isFilterEnabled } = useShipFilter();
+  
   return useQuery({
-    queryKey: ['equipment'],
+    queryKey: ['equipment', selectedShipId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('equipment')
         .select(`
           *,
@@ -24,6 +27,13 @@ export function useEquipment() {
           ships (id, name, code)
         `)
         .order('created_at', { ascending: false });
+      
+      // Apply ship filter for admin/admin_master when a specific ship is selected
+      if (isFilterEnabled && selectedShipId) {
+        query = query.eq('ship_id', selectedShipId);
+      }
+      
+      const { data, error } = await query;
       
       if (error) throw error;
       return data as EquipmentWithCategory[];

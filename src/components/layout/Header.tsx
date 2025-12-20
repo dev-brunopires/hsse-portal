@@ -14,7 +14,8 @@ import {
   Filter,
   CheckCheck,
   AlertCircle,
-  Clock
+  Clock,
+  Check
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,8 +30,9 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/contexts/AuthContext';
+import { useShipFilter } from '@/contexts/ShipFilterContext';
 import { useNavigate } from 'react-router-dom';
-import { useUnits } from '@/hooks/useUnits';
+import { useShips } from '@/hooks/useShips';
 import { useUserShips } from '@/hooks/useUserShips';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { 
@@ -57,14 +59,22 @@ const roleLabels: Record<string, string> = {
 
 export function Header() {
   const { user, profile, role, signOut } = useAuth();
+  const { selectedShipId, setSelectedShipId, isFilterEnabled } = useShipFilter();
   const navigate = useNavigate();
-  const { data: units = [] } = useUnits();
+  const { data: ships = [] } = useShips();
   const { data: userShips = [] } = useUserShips(user?.id);
   const { data: stats } = useDashboardStats();
   const { data: allNotifications = [] } = useNotifications();
   const unreadNotifications = useUnreadNotifications();
   const markAsRead = useMarkNotificationAsRead();
   const markAllAsRead = useMarkAllNotificationsAsRead();
+
+  // Get the selected ship name for display
+  const selectedShipName = useMemo(() => {
+    if (!selectedShipId) return 'Todas as Unidades';
+    const ship = ships.find(s => s.id === selectedShipId);
+    return ship?.name || 'Todas as Unidades';
+  }, [selectedShipId, ships]);
 
   const [systemRead, setSystemRead] = useState<Record<string, string>>(() =>
     readSystemNotificationsRead()
@@ -233,24 +243,46 @@ export function Header() {
           </div>
         )}
 
-        {/* Unit Selector */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="gap-2">
-              <span className="text-sm">{profile?.unit || 'Todas as Unidades'}</span>
-              <ChevronDown className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 bg-popover border border-border shadow-lg z-50">
-            <DropdownMenuLabel>Selecionar Unidade</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {units.map((unit) => (
-              <DropdownMenuItem key={unit}>{unit}</DropdownMenuItem>
-            ))}
-            {units.length > 0 && <DropdownMenuSeparator />}
-            <DropdownMenuItem>Todas as Unidades</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* Ship Selector - Only for Admin/Admin Master */}
+        {isFilterEnabled && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Ship className="h-4 w-4" />
+                <span className="text-sm max-w-[180px] truncate">{selectedShipName}</span>
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64 bg-popover border border-border shadow-lg z-50">
+              <DropdownMenuLabel>Filtrar por Unidade</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <ScrollArea className="max-h-64">
+                <DropdownMenuItem 
+                  onClick={() => setSelectedShipId(null)}
+                  className="gap-2"
+                >
+                  {selectedShipId === null && <Check className="h-4 w-4 text-primary" />}
+                  <span className={selectedShipId === null ? 'font-medium' : ''}>
+                    Todas as Unidades
+                  </span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                {ships.map((ship) => (
+                  <DropdownMenuItem 
+                    key={ship.id}
+                    onClick={() => setSelectedShipId(ship.id)}
+                    className="gap-2"
+                  >
+                    {selectedShipId === ship.id && <Check className="h-4 w-4 text-primary" />}
+                    <span className={selectedShipId === ship.id ? 'font-medium' : ''}>
+                      {ship.name}
+                    </span>
+                  </DropdownMenuItem>
+                ))}
+              </ScrollArea>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
 
         {/* Notifications Dropdown */}
         <DropdownMenu>
