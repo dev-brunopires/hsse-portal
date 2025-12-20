@@ -69,11 +69,7 @@ export function DatePicker({
           selected={dateValue}
           onSelect={handleSelect}
           initialFocus
-          className="p-3 pointer-events-auto"
           locale={ptBR}
-          captionLayout="dropdown-buttons"
-          fromYear={fromYear}
-          toYear={toYear}
         />
       </PopoverContent>
     </Popover>
