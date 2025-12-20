@@ -73,13 +73,14 @@ export function exportDashboardPDF(stats: DashboardStats, filters: ExportFilters
   yPos += 8;
   
   // KPI Cards - Using more horizontal space in landscape
-  const kpiWidth = (pageWidth - 70) / 5;
+  const kpiWidth = (pageWidth - 84) / 6;
   const kpis = [
     { label: 'Total Equipamentos', value: stats.totalEquipment.toString(), color: primaryColor },
     { label: 'Ativos', value: stats.activeEquipment.toString(), color: successColor },
-    { label: 'Vencidos/Reprovados', value: stats.expiredEquipment.toString(), color: dangerColor },
-    { label: 'Inspeções Pendentes', value: stats.pendingInspections.toString(), color: warningColor },
-    { label: 'Taxa Conformidade', value: `${stats.complianceRate}%`, color: primaryColor },
+    { label: 'Cert. Vencidos', value: stats.expiredCertificates.toString(), color: dangerColor },
+    { label: 'Status Vencido', value: stats.expiredEquipment.toString(), color: dangerColor },
+    { label: 'Insp. Pendentes', value: stats.pendingInspections.toString(), color: warningColor },
+    { label: 'Conformidade', value: `${stats.complianceRate}%`, color: primaryColor },
   ];
   
   kpis.forEach((kpi, index) => {

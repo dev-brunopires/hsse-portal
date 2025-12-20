@@ -76,6 +76,7 @@ export interface DashboardStats {
   totalEquipment: number;
   activeEquipment: number;
   expiredEquipment: number;
+  expiredCertificates: number;
   pendingInspections: number;
   complianceRate: number;
   byCategory: CategoryStats[];

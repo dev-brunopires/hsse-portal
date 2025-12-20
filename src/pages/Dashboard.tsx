@@ -159,7 +159,7 @@ export default function Dashboard() {
       />
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <ModernKPICard
           title="Total de Equipamentos"
           value={stats.totalEquipment}
@@ -175,7 +175,14 @@ export default function Dashboard() {
           variant="success"
         />
         <ModernKPICard
-          title="Vencidos / Reprovados"
+          title="Certificados Vencidos"
+          value={stats.expiredCertificates}
+          subtitle="Certificados expirados"
+          icon={AlertTriangle}
+          variant="danger"
+        />
+        <ModernKPICard
+          title="Status Vencido/Reprovado"
           value={stats.expiredEquipment}
           subtitle="Requerem ação imediata"
           icon={AlertTriangle}
