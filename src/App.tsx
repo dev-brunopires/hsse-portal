@@ -19,6 +19,7 @@ import Users from "./pages/Users";
 import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
 import PendingRecommendations from "./pages/PendingRecommendations";
+import AuditLog from "./pages/AuditLog";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -131,6 +132,16 @@ function App() {
                   <ProtectedRoute requiredRole="admin">
                     <AppLayout>
                       <Settings />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/audit-log"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AppLayout>
+                      <AuditLog />
                     </AppLayout>
                   </ProtectedRoute>
                 }

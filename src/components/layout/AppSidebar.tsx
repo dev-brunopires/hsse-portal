@@ -15,6 +15,7 @@ import {
   AlertCircle,
   Moon,
   Sun,
+  History,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -123,6 +124,7 @@ export function AppSidebar() {
         {isAdmin && (
           <>
             <NavItem to="/users" icon={<Users size={20} />} label="Usuários" collapsed={collapsed} />
+            <NavItem to="/audit-log" icon={<History size={20} />} label="Histórico" collapsed={collapsed} />
             <NavItem to="/settings" icon={<Settings size={20} />} label="Configurações" collapsed={collapsed} />
           </>
         )}
