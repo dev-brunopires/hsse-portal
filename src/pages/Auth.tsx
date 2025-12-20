@@ -89,9 +89,9 @@ export default function Auth() {
           {/* Form Header */}
           <div className="mb-8">
             <img src={sbmLogo} alt="SBM Offshore" className="h-10 mb-4 hidden lg:block" />
-            <p className="text-sm font-medium text-primary mb-1">
+            <h2 className="text-lg font-semibold text-primary mb-2">
               Sistema de Gestão de Equipamentos
-            </p>
+            </h2>
             <h1 className="text-2xl font-bold text-foreground mb-2">
               Bem-vindo de volta
             </h1>
