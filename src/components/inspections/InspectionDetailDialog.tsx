@@ -336,27 +336,32 @@ export function InspectionDetailDialog({
                   ))}
                 </div>
               ) : checklistItems.length > 0 ? (
-                <div className="space-y-2 pl-6">
-                  {checklistItems.map((item) => {
-                    const statusConfig = checklistStatusLabels[item.status] || checklistStatusLabels.attention;
-                    return (
-                      <div 
-                        key={item.id}
-                        className="flex items-start gap-3 p-3 rounded-lg border border-border bg-muted/30"
-                      >
-                        <span className={cn('text-xs font-medium px-2 py-1 rounded', statusConfig.color)}>
-                          {statusConfig.label}
-                        </span>
-                        <div className="flex-1">
-                          <p className="font-medium">{item.description}</p>
-                          {item.notes && (
-                            <p className="text-sm text-muted-foreground mt-1">{item.notes}</p>
-                          )}
+                <ScrollArea className={cn(
+                  "pl-6",
+                  checklistItems.length > 4 && "max-h-[280px]"
+                )}>
+                  <div className="space-y-2 pr-4">
+                    {checklistItems.map((item) => {
+                      const statusConfig = checklistStatusLabels[item.status] || checklistStatusLabels.attention;
+                      return (
+                        <div 
+                          key={item.id}
+                          className="flex items-start gap-3 p-3 rounded-lg border border-border bg-muted/30"
+                        >
+                          <span className={cn('text-xs font-medium px-2 py-1 rounded', statusConfig.color)}>
+                            {statusConfig.label}
+                          </span>
+                          <div className="flex-1">
+                            <p className="font-medium">{item.description}</p>
+                            {item.notes && (
+                              <p className="text-sm text-muted-foreground mt-1">{item.notes}</p>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
               ) : (
                 <p className="pl-6 text-muted-foreground">Nenhum item de checklist registrado.</p>
               )}
