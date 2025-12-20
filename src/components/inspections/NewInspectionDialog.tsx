@@ -37,6 +37,7 @@ import type { Equipment } from '@/types/equipment';
 interface NewInspectionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  preSelectedEquipmentId?: string | null;
 }
 
 const statusLabels: Record<string, string> = {
@@ -53,7 +54,7 @@ const statusColors: Record<string, string> = {
   rejected: 'bg-status-danger/10 text-status-danger border-status-danger/30',
 };
 
-export function NewInspectionDialog({ open, onOpenChange }: NewInspectionDialogProps) {
+export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId }: NewInspectionDialogProps) {
   const { data: equipmentList = [], isLoading } = useEquipment();
   const { data: categories = [] } = useCategories();
   const [selectedEquipment, setSelectedEquipment] = useState<EquipmentWithCategory | null>(null);
@@ -62,9 +63,29 @@ export function NewInspectionDialog({ open, onOpenChange }: NewInspectionDialogP
   const [warningDialogOpen, setWarningDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [hasAutoSelected, setHasAutoSelected] = useState(false);
 
   // Fetch last inspection for pending equipment to check for warnings
   const { data: lastInspection } = useLastInspection(pendingEquipment?.id);
+
+  // Auto-select equipment when preSelectedEquipmentId is provided (from QR scan)
+  useEffect(() => {
+    if (open && preSelectedEquipmentId && equipmentList.length > 0 && !hasAutoSelected) {
+      const equipment = equipmentList.find(eq => eq.id === preSelectedEquipmentId);
+      if (equipment) {
+        setHasAutoSelected(true);
+        // Trigger the selection flow (which will check for warnings)
+        setPendingEquipment(equipment);
+      }
+    }
+  }, [open, preSelectedEquipmentId, equipmentList, hasAutoSelected]);
+
+  // Reset auto-selection flag when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setHasAutoSelected(false);
+    }
+  }, [open]);
 
   const filteredEquipment = useMemo(() => {
     return equipmentList.filter(eq => {
