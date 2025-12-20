@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
 import sbmLogoWhite from '@/assets/sbm-logo-white.png';
+import sbmLogoColor from '@/assets/sbm-logo.svg';
 
 interface NavItemProps {
   to: string;
@@ -78,8 +79,8 @@ export function AppSidebar() {
         collapsed && 'justify-center px-2'
       )}>
         {collapsed ? (
-          <div className="w-9 h-9 flex items-center justify-center">
-            <span className="text-sidebar-foreground font-bold text-sm">SBM</span>
+          <div className="w-10 h-10 flex items-center justify-center">
+            <img src={sbmLogoColor} alt="SBM" className="w-9 h-9 object-contain" />
           </div>
         ) : (
           <img src={sbmLogoWhite} alt="SBM Offshore" className="h-8" />
