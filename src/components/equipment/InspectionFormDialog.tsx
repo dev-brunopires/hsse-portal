@@ -47,6 +47,7 @@ import {
   ImageIcon,
   Info,
   PenTool,
+  WifiOff,
 } from 'lucide-react';
 import { SignaturePad } from '@/components/inspections/SignaturePad';
 import { Equipment } from '@/types/equipment';
@@ -56,6 +57,7 @@ import { useTechniciansAndAdmins } from '@/hooks/useProfiles';
 import { useCreateInspection } from '@/hooks/useInspections';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserSignature } from '@/hooks/useUserSignature';
+import { useOfflineSync } from '@/hooks/useOfflineSync';
 
 const inspectionSchema = z.object({
   inspectorId: z.string().min(1, 'Selecione o inspetor responsável'),
@@ -132,6 +134,7 @@ export function InspectionFormDialog({
   const { data: inspectors = [], isLoading: inspectorsLoading } = useTechniciansAndAdmins();
   const { data: userSignatureSettings } = useUserSignature();
   const createInspection = useCreateInspection();
+  const { isOnline, addPendingInspection } = useOfflineSync();
 
   const form = useForm<InspectionFormData>({
     resolver: zodResolver(inspectionSchema),
@@ -215,6 +218,40 @@ export function InspectionFormDialog({
     setIsSubmitting(true);
     
     try {
+      // If offline, save locally
+      if (!isOnline) {
+        addPendingInspection({
+          equipment_id: equipment.id,
+          equipment_name: equipment.name,
+          equipment_code: equipment.internalCode,
+          status: calculateOverallStatus(),
+          observations: data.observations || null,
+          recommendations: data.recommendations || null,
+          checklist_items: checklist.map(item => ({
+            description: item.description,
+            status: item.status,
+            notes: item.notes,
+          })),
+          signature_data: signatureData,
+          inspector_id: data.inspectorId,
+          ship_id: null, // Will be set from equipment when syncing
+        });
+        
+        toast({
+          title: 'Inspeção Salva Offline',
+          description: 'Será sincronizada automaticamente quando a conexão for restaurada.',
+        });
+        
+        onOpenChange(false);
+        form.reset();
+        setChecklist([]);
+        setUploadedPhotos([]);
+        setSignatureData(null);
+        onSuccess?.();
+        return;
+      }
+
+      // Online mode - save directly
       await createInspection.mutateAsync({
         inspection: {
           equipment_id: equipment.id,
@@ -243,6 +280,13 @@ export function InspectionFormDialog({
       onSuccess?.();
     } catch (error) {
       console.error('Error creating inspection:', error);
+      
+      // If online request fails, offer to save offline
+      toast({
+        title: 'Erro ao salvar',
+        description: 'Deseja salvar localmente para sincronizar depois?',
+        variant: 'destructive',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -264,6 +308,12 @@ export function InspectionFormDialog({
           <DialogTitle className="flex items-center gap-2 text-xl">
             <ClipboardCheck className="h-5 w-5 text-primary" />
             Registrar Inspeção
+            {!isOnline && (
+              <Badge variant="destructive" className="ml-2 gap-1">
+                <WifiOff className="h-3 w-3" />
+                Offline
+              </Badge>
+            )}
           </DialogTitle>
           <DialogDescription className="flex items-center gap-4">
             <span>
