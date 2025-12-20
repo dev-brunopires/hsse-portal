@@ -16,8 +16,6 @@ import {
   FileText,
   User,
   X,
-  ChevronDown,
-  ChevronUp,
   QrCode,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -46,18 +44,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
 import { useInspections, type InspectionWithDetails } from '@/hooks/useInspections';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useEquipmentById } from '@/hooks/useEquipment';
 import { format, isAfter, isBefore, addDays, startOfMonth, endOfMonth, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { InspectionDetailDialog } from '@/components/inspections/InspectionDetailDialog';
-import { InspectionForm } from '@/components/inspections/InspectionForm';
+import { NewInspectionDialog } from '@/components/inspections/NewInspectionDialog';
 import { exportInspectionsToExcel, exportInspectionsToPDF } from '@/utils/exportInspections';
 import { useToast } from '@/hooks/use-toast';
 
@@ -228,18 +221,9 @@ export default function Inspections() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button className="gap-2" onClick={() => setShowNewInspectionForm(!showNewInspectionForm)}>
-            {showNewInspectionForm ? (
-              <>
-                <ChevronUp className="h-4 w-4" />
-                Ocultar Formulário
-              </>
-            ) : (
-              <>
-                <Plus className="h-4 w-4" />
-                Nova Inspeção
-              </>
-            )}
+          <Button className="gap-2" onClick={() => setShowNewInspectionForm(true)}>
+            <Plus className="h-4 w-4" />
+            Nova Inspeção
           </Button>
         </div>
       </div>
@@ -262,16 +246,14 @@ export default function Inspections() {
         </Card>
       )}
 
-      {/* New Inspection Form */}
-      <Collapsible open={showNewInspectionForm} onOpenChange={setShowNewInspectionForm}>
-        <CollapsibleContent>
-          <InspectionForm 
-            onSuccess={handleFormSuccess}
-            onCancel={handleFormCancel}
-            preSelectedEquipmentId={scanEquipmentId}
-          />
-        </CollapsibleContent>
-      </Collapsible>
+      {/* New Inspection Dialog */}
+      <NewInspectionDialog
+        open={showNewInspectionForm}
+        onOpenChange={(open) => {
+          setShowNewInspectionForm(open);
+          if (!open) handleFormCancel();
+        }}
+      />
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
