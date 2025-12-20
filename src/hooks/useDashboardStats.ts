@@ -13,6 +13,7 @@ export function useDashboardStats() {
     queryFn: async (): Promise<DashboardStats> => {
       const today = new Date();
       const thirtyDaysFromNow = addDays(today, 30);
+      const todayStr = today.toISOString().split('T')[0];
 
       // Fetch all equipment with categories
       let equipmentQuery = supabase
@@ -54,8 +55,25 @@ export function useDashboardStats() {
 
       if (inspectionsError) throw inspectionsError;
 
-      const todayStr = today.toISOString().split('T')[0];
+      // Fetch maintenance requests
+      let maintenanceQuery = supabase
+        .from('maintenance_requests')
+        .select('id, status, due_date, type, priority, title, equipment_id, ship_id');
       
+      if (isFilterEnabled && selectedShipId) {
+        maintenanceQuery = maintenanceQuery.eq('ship_id', selectedShipId);
+      }
+
+      const { data: maintenanceData, error: maintenanceError } = await maintenanceQuery;
+      if (maintenanceError) throw maintenanceError;
+
+      // Fetch equipment names for maintenance alerts
+      const maintenanceEquipmentIds = [...new Set((maintenanceData || []).map(m => m.equipment_id))];
+      const { data: maintenanceEquipment } = maintenanceEquipmentIds.length > 0 
+        ? await supabase.from('equipment').select('id, name, internal_code').in('id', maintenanceEquipmentIds)
+        : { data: [] };
+      const maintenanceEquipmentMap = new Map((maintenanceEquipment || []).map(e => [e.id, e]));
+
       const totalEquipment = equipment?.length || 0;
       
       // Calculate effective status for each equipment
@@ -91,6 +109,15 @@ export function useDashboardStats() {
       const complianceRate = totalEquipment > 0 
         ? Number(((compliantEquipment / totalEquipment) * 100).toFixed(1))
         : 0;
+
+      // Maintenance stats
+      const pendingMaintenance = maintenanceData?.filter(m => m.status === 'pending' || m.status === 'approved').length || 0;
+      const inProgressMaintenance = maintenanceData?.filter(m => m.status === 'in_progress').length || 0;
+      const overdueMaintenance = maintenanceData?.filter(m => {
+        if (m.status === 'completed' || m.status === 'rejected') return false;
+        if (!m.due_date) return false;
+        return m.due_date < todayStr;
+      }).length || 0;
 
       // Group by category (using effective status)
       const categoryMap = new Map<string, { count: number; compliant: number; nonCompliant: number }>();
@@ -192,13 +219,48 @@ export function useDashboardStats() {
         }
       });
 
-      // Sort alerts by severity (high first) and limit to 10
+      // Add maintenance alerts
+      maintenanceData?.forEach(m => {
+        if (m.status === 'completed' || m.status === 'rejected') return;
+        
+        const equipmentInfo = maintenanceEquipmentMap.get(m.equipment_id);
+        const equipmentName = equipmentInfo ? `${equipmentInfo.name} ${equipmentInfo.internal_code}` : 'Equipamento';
+
+        // Overdue maintenance
+        if (m.due_date && m.due_date < todayStr) {
+          alerts.push({
+            id: `alert-maint-overdue-${m.id}`,
+            type: 'maintenance_overdue',
+            message: `Manutenção ${m.type === 'corrective' ? 'corretiva' : 'preventiva'} atrasada: ${m.title}`,
+            equipmentId: m.equipment_id,
+            equipmentName,
+            date: m.due_date,
+            severity: 'high',
+            maintenanceId: m.id,
+          });
+        }
+        // Pending critical/high priority maintenance
+        else if ((m.priority === 'critical' || m.priority === 'high') && m.status === 'pending') {
+          alerts.push({
+            id: `alert-maint-pending-${m.id}`,
+            type: 'maintenance_pending',
+            message: `Manutenção ${m.priority === 'critical' ? 'crítica' : 'alta prioridade'} pendente: ${m.title}`,
+            equipmentId: m.equipment_id,
+            equipmentName,
+            date: m.due_date || todayStr,
+            severity: m.priority === 'critical' ? 'high' : 'medium',
+            maintenanceId: m.id,
+          });
+        }
+      });
+
+      // Sort alerts by severity (high first) and limit to 15
       const sortedAlerts = alerts
         .sort((a, b) => {
           const severityOrder = { high: 0, medium: 1, low: 2 };
           return severityOrder[a.severity] - severityOrder[b.severity];
         })
-        .slice(0, 10);
+        .slice(0, 15);
 
       return {
         totalEquipment,
@@ -210,6 +272,9 @@ export function useDashboardStats() {
         byCategory,
         byStatus,
         recentAlerts: sortedAlerts,
+        pendingMaintenance,
+        overdueMaintenance,
+        inProgressMaintenance,
       };
     },
   });

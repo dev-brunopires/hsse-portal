@@ -29,6 +29,7 @@ export interface MaintenanceRequest {
   rejected_by: string | null;
   rejection_reason: string | null;
   scheduled_date: string | null;
+  due_date: string | null;
   work_performed: string | null;
   parts_used: string | null;
   observations: string | null;
@@ -82,6 +83,7 @@ export interface CreateMaintenanceRequestData {
   description: string;
   problem_identified?: string;
   scheduled_date?: string;
+  due_date?: string;
   requested_by: string;
 }
 

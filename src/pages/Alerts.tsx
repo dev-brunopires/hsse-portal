@@ -60,6 +60,22 @@ const alertTypeConfig = {
     label: 'Não Conforme',
     description: 'Equipamento não conforme'
   },
+  maintenance_overdue: {
+    icon: AlertTriangle,
+    color: 'text-status-danger',
+    bg: 'bg-status-danger/10',
+    border: 'border-status-danger/30',
+    label: 'Manutenção Atrasada',
+    description: 'Manutenção passou do prazo de conclusão'
+  },
+  maintenance_pending: {
+    icon: Clock,
+    color: 'text-status-warning',
+    bg: 'bg-status-warning/10',
+    border: 'border-status-warning/30',
+    label: 'Manutenção Pendente',
+    description: 'Manutenção aguardando execução'
+  },
 };
 
 const severityConfig = {
@@ -353,7 +369,7 @@ export default function Alerts() {
               </div>
               
               <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-full sm:w-[160px]">
+                <SelectTrigger className="w-full sm:w-[180px]">
                   <Filter className="h-4 w-4 mr-2" />
                   <SelectValue placeholder="Tipo" />
                 </SelectTrigger>
@@ -363,6 +379,8 @@ export default function Alerts() {
                   <SelectItem value="expiring">Expirando</SelectItem>
                   <SelectItem value="inspection_due">Inspeção</SelectItem>
                   <SelectItem value="non_compliant">Não Conforme</SelectItem>
+                  <SelectItem value="maintenance_overdue">Manutenção Atrasada</SelectItem>
+                  <SelectItem value="maintenance_pending">Manutenção Pendente</SelectItem>
                 </SelectContent>
               </Select>
             </div>
