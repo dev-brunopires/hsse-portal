@@ -78,13 +78,13 @@ export function AppSidebar() {
         collapsed && 'justify-center px-2'
       )}>
         {collapsed ? (
-          <div className="w-9 h-9 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center shadow-lg shadow-primary/20">
-            <span className="text-primary-foreground font-bold text-sm">SBM</span>
+          <div className="w-9 h-9 bg-sidebar-foreground/10 border border-sidebar-border rounded-lg flex items-center justify-center">
+            <span className="text-sidebar-foreground font-bold text-sm">SBM</span>
           </div>
         ) : (
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center shadow-lg shadow-primary/20">
-              <span className="text-primary-foreground font-bold text-xs">SBM</span>
+            <div className="w-9 h-9 bg-sidebar-foreground/10 border border-sidebar-border rounded-lg flex items-center justify-center">
+              <span className="text-sidebar-foreground font-bold text-xs">SBM</span>
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-bold text-sidebar-foreground tracking-tight">SBM Offshore</span>
