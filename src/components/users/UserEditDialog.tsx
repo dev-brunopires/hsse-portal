@@ -22,14 +22,11 @@ interface UserEditDialogProps {
 
 export function UserEditDialog({ open, onOpenChange, user }: UserEditDialogProps) {
   const [fullName, setFullName] = useState('');
-  const [unit, setUnit] = useState('');
   const updateProfile = useUpdateProfile();
-  const { data: units = [] } = useUnits();
 
   useEffect(() => {
     if (user) {
       setFullName(user.full_name);
-      setUnit(user.unit || '');
     }
   }, [user]);
 
@@ -39,7 +36,6 @@ export function UserEditDialog({ open, onOpenChange, user }: UserEditDialogProps
     await updateProfile.mutateAsync({
       userId: user.user_id,
       fullName,
-      unit: unit || undefined,
     });
     
     onOpenChange(false);
@@ -71,28 +67,6 @@ export function UserEditDialog({ open, onOpenChange, user }: UserEditDialogProps
               onChange={(e) => setFullName(e.target.value)}
               placeholder="Nome do usuário"
             />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="unit">Unidade</Label>
-            <Select value={unit} onValueChange={setUnit}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione uma unidade" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover border border-border shadow-lg z-50">
-                {units.length === 0 ? (
-                  <SelectItem value="_empty" disabled>
-                    Nenhuma unidade cadastrada
-                  </SelectItem>
-                ) : (
-                  units.map((u) => (
-                    <SelectItem key={u} value={u}>
-                      {u}
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
           </div>
         </div>
 
