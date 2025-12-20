@@ -24,6 +24,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
   isAdmin: boolean;
   isTechnician: boolean;
   canEdit: boolean;
@@ -191,6 +192,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const refreshProfile = async () => {
+    if (user) {
+      await fetchUserData(user.id);
+    }
+  };
+
   const isAdmin = role === 'admin';
   const isTechnician = role === 'technician';
   const canEdit = isAdmin || isTechnician;
@@ -206,6 +213,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signIn,
         signUp,
         signOut,
+        refreshProfile,
         isAdmin,
         isTechnician,
         canEdit,

@@ -66,7 +66,7 @@ interface ProfileData {
 }
 
 export default function Profile() {
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -186,6 +186,9 @@ export default function Profile() {
         .eq('user_id', user.id);
 
       if (error) throw error;
+
+      // Refresh the profile in AuthContext so navbar updates
+      await refreshProfile();
 
       toast({
         title: 'Perfil Atualizado',
