@@ -7,7 +7,8 @@ import {
   Calendar, 
   Download,
   RefreshCw,
-  LayoutDashboard
+  LayoutDashboard,
+  Wrench
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -180,7 +181,7 @@ export default function Dashboard() {
       />
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
         <ModernKPICard
           title="Total de Equipamentos"
           value={stats.totalEquipment}
@@ -215,6 +216,13 @@ export default function Dashboard() {
           subtitle="Próximos 30 dias"
           icon={ClipboardCheck}
           variant="warning"
+        />
+        <ModernKPICard
+          title="Manutenções Pendentes"
+          value={stats.pendingMaintenance + stats.overdueMaintenance}
+          subtitle={stats.overdueMaintenance > 0 ? `${stats.overdueMaintenance} atrasada(s)` : 'Em dia'}
+          icon={Wrench}
+          variant={stats.overdueMaintenance > 0 ? 'danger' : 'warning'}
         />
       </div>
 

@@ -292,4 +292,7 @@ export const mockDashboardStats: DashboardStats = {
     { status: 'inactive', count: 0 },
   ],
   recentAlerts: mockAlerts,
+  pendingMaintenance: 2,
+  overdueMaintenance: 1,
+  inProgressMaintenance: 1,
 };

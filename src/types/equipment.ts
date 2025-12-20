@@ -82,6 +82,10 @@ export interface DashboardStats {
   byCategory: CategoryStats[];
   byStatus: StatusStats[];
   recentAlerts: Alert[];
+  // Maintenance stats
+  pendingMaintenance: number;
+  overdueMaintenance: number;
+  inProgressMaintenance: number;
 }
 
 export interface CategoryStats {
@@ -98,10 +102,11 @@ export interface StatusStats {
 
 export interface Alert {
   id: string;
-  type: 'expired' | 'expiring' | 'inspection_due' | 'non_compliant';
+  type: 'expired' | 'expiring' | 'inspection_due' | 'non_compliant' | 'maintenance_overdue' | 'maintenance_pending';
   message: string;
   equipmentId: string;
   equipmentName: string;
   date: string;
   severity: 'low' | 'medium' | 'high';
+  maintenanceId?: string;
 }

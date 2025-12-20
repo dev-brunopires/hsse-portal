@@ -42,6 +42,7 @@ const formSchema = z.object({
   description: z.string().min(10, 'Descrição deve ter pelo menos 10 caracteres'),
   problem_identified: z.string().optional(),
   scheduled_date: z.string().optional(),
+  due_date: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -72,6 +73,7 @@ export function MaintenanceRequestDialog({
       description: '',
       problem_identified: '',
       scheduled_date: '',
+      due_date: '',
     },
   });
 
@@ -103,6 +105,7 @@ export function MaintenanceRequestDialog({
         description: data.description,
         problem_identified: data.problem_identified || undefined,
         scheduled_date: data.scheduled_date || undefined,
+        due_date: data.due_date || undefined,
         requested_by: user.id,
       },
       photos,
@@ -230,6 +233,28 @@ export function MaintenanceRequestDialog({
                   )}
                 />
               )}
+
+              {/* Due Date - Prazo de Conclusão */}
+              <FormField
+                control={form.control}
+                name="due_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Prazo de Conclusão {watchType === 'corrective' && <span className="text-status-warning">*</span>}</FormLabel>
+                    <FormControl>
+                      <DatePickerField
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Selecione o prazo limite"
+                      />
+                    </FormControl>
+                    <p className="text-xs text-muted-foreground">
+                      Data limite para conclusão desta manutenção
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               {/* Title */}
               <FormField

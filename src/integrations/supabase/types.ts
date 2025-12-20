@@ -652,6 +652,7 @@ export type Database = {
           completed_by: string | null
           created_at: string
           description: string
+          due_date: string | null
           equipment_id: string
           id: string
           observations: string | null
@@ -680,6 +681,7 @@ export type Database = {
           completed_by?: string | null
           created_at?: string
           description: string
+          due_date?: string | null
           equipment_id: string
           id?: string
           observations?: string | null
@@ -708,6 +710,7 @@ export type Database = {
           completed_by?: string | null
           created_at?: string
           description?: string
+          due_date?: string | null
           equipment_id?: string
           id?: string
           observations?: string | null
