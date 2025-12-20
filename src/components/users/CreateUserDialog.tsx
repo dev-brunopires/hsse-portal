@@ -17,6 +17,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form';
 import {
   Select,
@@ -27,11 +28,12 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Shield, User, Eye, Loader2, Crown, UserCheck, UserPlus } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Shield, User, Eye, Loader2, Crown, UserCheck, UserPlus, Ship } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
-import { useUnits } from '@/hooks/useUnits';
+import { useShips } from '@/hooks/useShips';
 
 interface CreateUserDialogProps {
   open: boolean;
@@ -42,8 +44,8 @@ const createUserSchema = z.object({
   email: z.string().email('E-mail inválido'),
   password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
   fullName: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
-  unit: z.string().optional(),
   role: z.enum(['admin_master', 'admin', 'supervisor', 'technician', 'viewer']),
+  shipIds: z.array(z.string()).optional(),
 });
 
 type CreateUserFormData = z.infer<typeof createUserSchema>;
@@ -53,31 +55,36 @@ const roleOptions = [
     value: 'admin_master', 
     label: 'Admin Master', 
     description: 'Acesso total e irrestrito ao sistema',
-    icon: Crown 
+    icon: Crown,
+    hasAllShips: true,
   },
   { 
     value: 'admin', 
     label: 'Administrador', 
     description: 'Acesso total ao sistema, pode gerenciar usuários e configurações',
-    icon: Shield 
+    icon: Shield,
+    hasAllShips: true,
   },
   { 
     value: 'supervisor', 
     label: 'Supervisor', 
     description: 'Pode supervisionar inspeções e aprovar relatórios',
-    icon: UserCheck 
+    icon: UserCheck,
+    hasAllShips: false,
   },
   { 
     value: 'technician', 
     label: 'Técnico', 
     description: 'Pode criar e editar equipamentos e inspeções',
-    icon: User 
+    icon: User,
+    hasAllShips: false,
   },
   { 
     value: 'viewer', 
     label: 'Visualizador', 
     description: 'Apenas visualização de dados',
-    icon: Eye 
+    icon: Eye,
+    hasAllShips: false,
   },
 ] as const;
 
@@ -85,7 +92,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { data: units = [] } = useUnits();
+  const { data: ships = [], isLoading: shipsLoading } = useShips();
 
   const form = useForm<CreateUserFormData>({
     resolver: zodResolver(createUserSchema),
@@ -93,10 +100,25 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
       email: '',
       password: '',
       fullName: '',
-      unit: '',
       role: 'viewer',
+      shipIds: [],
     },
   });
+
+  const selectedRole = form.watch('role');
+  const selectedShipIds = form.watch('shipIds') || [];
+  
+  // Check if selected role has automatic access to all ships
+  const roleHasAllShips = roleOptions.find(r => r.value === selectedRole)?.hasAllShips || false;
+
+  const handleShipToggle = (shipId: string, checked: boolean) => {
+    const current = form.getValues('shipIds') || [];
+    if (checked) {
+      form.setValue('shipIds', [...current, shipId]);
+    } else {
+      form.setValue('shipIds', current.filter(id => id !== shipId));
+    }
+  };
 
   const onSubmit = async (data: CreateUserFormData) => {
     setIsSubmitting(true);
@@ -108,8 +130,8 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
           email: data.email,
           password: data.password,
           fullName: data.fullName,
-          unit: data.unit || null,
           role: data.role,
+          shipIds: roleHasAllShips ? [] : (data.shipIds || []), // Don't send ships for admin roles
         },
       });
 
@@ -122,7 +144,8 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
       }
 
       queryClient.invalidateQueries({ queryKey: ['profiles'] });
-      queryClient.invalidateQueries({ queryKey: ['units'] });
+      queryClient.invalidateQueries({ queryKey: ['user-ships'] });
+      queryClient.invalidateQueries({ queryKey: ['all-user-ships'] });
 
       toast({
         title: 'Usuário Criado',
@@ -143,11 +166,9 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
     }
   };
 
-  const selectedRole = form.watch('role');
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5 text-primary" />
@@ -204,37 +225,6 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
 
             <FormField
               control={form.control}
-              name="unit"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Unidade</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma unidade" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent className="bg-popover border border-border shadow-lg z-50">
-                      {units.length === 0 ? (
-                        <SelectItem value="_empty" disabled>
-                          Nenhuma unidade cadastrada
-                        </SelectItem>
-                      ) : (
-                        units.map((unit) => (
-                          <SelectItem key={unit} value={unit}>
-                            {unit}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
               name="role"
               render={({ field }) => (
                 <FormItem>
@@ -266,6 +256,62 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                 {roleOptions.find(r => r.value === selectedRole)?.description}
               </p>
             </div>
+
+            {/* Ship Selection */}
+            <FormField
+              control={form.control}
+              name="shipIds"
+              render={() => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2">
+                    <Ship className="h-4 w-4" />
+                    Navios Atribuídos
+                  </FormLabel>
+                  {roleHasAllShips ? (
+                    <div className="rounded-lg border border-border bg-muted/50 p-3">
+                      <p className="text-sm text-muted-foreground">
+                        Este perfil tem acesso automático a todos os navios.
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <FormDescription>
+                        Selecione os navios que este usuário terá acesso
+                      </FormDescription>
+                      <div className="space-y-2 max-h-40 overflow-y-auto border border-border rounded-md p-3">
+                        {shipsLoading ? (
+                          <p className="text-sm text-muted-foreground">Carregando navios...</p>
+                        ) : ships.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">Nenhum navio cadastrado</p>
+                        ) : (
+                          ships.map((ship) => (
+                            <div key={ship.id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`ship-${ship.id}`}
+                                checked={selectedShipIds.includes(ship.id)}
+                                onCheckedChange={(checked) => handleShipToggle(ship.id, checked as boolean)}
+                              />
+                              <label
+                                htmlFor={`ship-${ship.id}`}
+                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                              >
+                                {ship.name} {ship.code ? `(${ship.code})` : ''}
+                              </label>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                      {!roleHasAllShips && selectedShipIds.length === 0 && (
+                        <p className="text-xs text-amber-600">
+                          Atenção: Usuário sem navio não poderá ver equipamentos ou criar inspeções.
+                        </p>
+                      )}
+                    </>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

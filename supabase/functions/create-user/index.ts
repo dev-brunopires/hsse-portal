@@ -54,7 +54,9 @@ Deno.serve(async (req) => {
     }
 
     // Parse request body
-    const { email, password, fullName, unit, role } = await req.json()
+    const { email, password, fullName, role, shipIds } = await req.json()
+
+    console.log('Creating user with data:', { email, fullName, role, shipIds })
 
     if (!email || !password || !fullName) {
       return new Response(
@@ -82,6 +84,7 @@ Deno.serve(async (req) => {
     })
 
     if (createError) {
+      console.error('Error creating auth user:', createError)
       return new Response(
         JSON.stringify({ error: createError.message }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -95,20 +98,41 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Update profile with unit if provided
-    if (unit) {
-      await adminClient
-        .from('profiles')
-        .update({ unit })
-        .eq('user_id', newUser.user.id)
-    }
+    console.log('User created with ID:', newUser.user.id)
 
     // Update role if different from default viewer
     if (role && role !== 'viewer') {
-      await adminClient
+      console.log('Updating user role to:', role)
+      const { error: roleError } = await adminClient
         .from('user_roles')
         .update({ role })
         .eq('user_id', newUser.user.id)
+      
+      if (roleError) {
+        console.error('Error updating role:', roleError)
+      } else {
+        console.log('Role updated successfully')
+      }
+    }
+
+    // Assign ships to user if provided
+    if (shipIds && Array.isArray(shipIds) && shipIds.length > 0) {
+      console.log('Assigning ships to user:', shipIds)
+      
+      const shipAssignments = shipIds.map((shipId: string) => ({
+        user_id: newUser.user.id,
+        ship_id: shipId,
+      }))
+
+      const { error: shipError } = await adminClient
+        .from('user_ships')
+        .insert(shipAssignments)
+
+      if (shipError) {
+        console.error('Error assigning ships:', shipError)
+      } else {
+        console.log('Ships assigned successfully')
+      }
     }
 
     return new Response(
