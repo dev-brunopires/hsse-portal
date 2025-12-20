@@ -78,7 +78,10 @@ export function useInspectionsByEquipment(equipmentId: string | undefined) {
 }
 
 interface CreateInspectionData {
-  inspection: InspectionInsert;
+  inspection: InspectionInsert & {
+    signature_data?: string | null;
+    signed_at?: string | null;
+  };
   checklistItems: { description: string; status: string; notes: string }[];
   photos: File[];
 }
