@@ -28,8 +28,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { DatePickerField } from '@/components/ui/date-picker';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Wrench, Upload, X, Loader2, Camera } from 'lucide-react';
+import { Wrench, X, Loader2, Camera } from 'lucide-react';
 import { useEquipment } from '@/hooks/useEquipment';
 import { useCreateMaintenanceRequest, type MaintenanceType, type MaintenancePriority } from '@/hooks/useMaintenanceRequests';
 import { useAuth } from '@/contexts/AuthContext';
@@ -135,7 +134,7 @@ export function MaintenanceRequestDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <ScrollArea className="flex-1 min-h-0">
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y">
             <div className="px-6 py-4">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 pb-4 pr-2">
@@ -338,9 +337,9 @@ export function MaintenanceRequestDialog({
             </form>
           </Form>
         </div>
-      </ScrollArea>
+      </div>
     </div>
   </DialogContent>
-    </Dialog>
+</Dialog>
   );
 }
