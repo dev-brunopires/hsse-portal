@@ -307,31 +307,52 @@ export type Database = {
       }
       profiles: {
         Row: {
+          auto_sign_inspections: boolean | null
           avatar_url: string | null
           created_at: string
+          default_signature: string | null
+          department: string | null
           email: string
           full_name: string
           id: string
+          notification_app: boolean | null
+          notification_email: boolean | null
+          phone: string | null
+          position: string | null
           unit: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          auto_sign_inspections?: boolean | null
           avatar_url?: string | null
           created_at?: string
+          default_signature?: string | null
+          department?: string | null
           email: string
           full_name: string
           id?: string
+          notification_app?: boolean | null
+          notification_email?: boolean | null
+          phone?: string | null
+          position?: string | null
           unit?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          auto_sign_inspections?: boolean | null
           avatar_url?: string | null
           created_at?: string
+          default_signature?: string | null
+          department?: string | null
           email?: string
           full_name?: string
           id?: string
+          notification_app?: boolean | null
+          notification_email?: boolean | null
+          phone?: string | null
+          position?: string | null
           unit?: string | null
           updated_at?: string
           user_id?: string

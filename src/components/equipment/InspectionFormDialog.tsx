@@ -55,6 +55,7 @@ import { cn } from '@/lib/utils';
 import { useTechniciansAndAdmins } from '@/hooks/useProfiles';
 import { useCreateInspection } from '@/hooks/useInspections';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserSignature } from '@/hooks/useUserSignature';
 
 const inspectionSchema = z.object({
   inspectorId: z.string().min(1, 'Selecione o inspetor responsável'),
@@ -129,6 +130,7 @@ export function InspectionFormDialog({
   const { user } = useAuth();
   
   const { data: inspectors = [], isLoading: inspectorsLoading } = useTechniciansAndAdmins();
+  const { data: userSignatureSettings } = useUserSignature();
   const createInspection = useCreateInspection();
 
   const form = useForm<InspectionFormData>({
@@ -154,8 +156,15 @@ export function InspectionFormDialog({
         recommendations: '',
         nextInspectionDate: '',
       });
+      
+      // Auto-apply default signature if enabled
+      if (userSignatureSettings?.auto_sign_inspections && userSignatureSettings?.default_signature) {
+        setSignatureData(userSignatureSettings.default_signature);
+      } else {
+        setSignatureData(null);
+      }
     }
-  }, [open, equipment, form, user]);
+  }, [open, equipment, form, user, userSignatureSettings]);
 
   const updateChecklistItem = (itemId: string, field: 'status' | 'notes', value: string) => {
     setChecklist(prev => prev.map(item => 

@@ -17,6 +17,7 @@ import {
   Gauge,
   ArrowUp,
   Waves,
+  User,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -129,6 +130,7 @@ export function AppSidebar() {
 
       {/* Bottom Section */}
       <div className="border-t border-sidebar-border p-3 space-y-1">
+        <NavItem to="/profile" icon={<User size={20} />} label="Meu Perfil" collapsed={collapsed} />
         <NavItem to="/categories" icon={<FolderOpen size={20} />} label="Categorias" collapsed={collapsed} />
         <NavItem to="/users" icon={<Users size={20} />} label="Usuários" collapsed={collapsed} />
         <NavItem to="/settings" icon={<Settings size={20} />} label="Configurações" collapsed={collapsed} />
