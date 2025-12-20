@@ -102,13 +102,18 @@ export function EquipmentFormDialog({
   const createEquipment = useCreateEquipment();
   const updateEquipment = useUpdateEquipment();
 
-  // Debug logging
-  console.log('EquipmentFormDialog - role:', role, 'isAdmin:', isAdmin, 'allShips:', allShips.length, 'userShips:', userShips.length);
+  // Technician/Supervisor: lock to default ship (first ship assigned to the user)
+  const isShipLocked = role === 'technician' || role === 'supervisor';
+  const defaultUserShip = userShips.find((us) => us.ship)?.ship ?? null;
 
   // Determine which ships to show based on user role
-  const availableShips = isAdmin 
-    ? allShips 
-    : userShips.map(us => us.ship).filter(Boolean) as Array<{ id: string; name: string; code: string | null }>;
+  const availableShips = isAdmin
+    ? allShips
+    : isShipLocked && defaultUserShip
+      ? [defaultUserShip]
+      : (userShips
+          .map((us) => us.ship)
+          .filter(Boolean) as Array<{ id: string; name: string; code: string | null }>);
   
   const isLoadingShips = shipsLoading || userShipsLoading;
 
@@ -153,8 +158,16 @@ export function EquipmentFormDialog({
         observations: initialData.observations || '',
       });
     } else if (open && !initialData) {
-      // Auto-select ship if user has only one ship assigned
-      const defaultShipId = availableShips.length === 1 ? availableShips[0].id : '';
+      // Default ship behavior:
+      // - Technician/Supervisor: lock to the account default ship
+      // - Others (non-admin): auto-select only if they have a single ship
+      let defaultShipId = '';
+      if (isShipLocked) {
+        defaultShipId = defaultUserShip?.id || '';
+      } else if (!isAdmin && availableShips.length === 1) {
+        defaultShipId = availableShips[0].id;
+      }
+
       form.reset({
         internalCode: '',
         name: '',
@@ -173,7 +186,7 @@ export function EquipmentFormDialog({
         observations: '',
       });
     }
-  }, [open, initialData, form, availableShips]);
+  }, [open, initialData, form, availableShips, isShipLocked, defaultUserShip?.id, isAdmin]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -237,8 +250,13 @@ export function EquipmentFormDialog({
       form.reset();
       setUploadedFiles([]);
       onSuccess?.();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving equipment:', error);
+      toast({
+        title: 'Erro ao salvar equipamento',
+        description: error?.message || 'Não foi possível salvar o equipamento. Verifique suas permissões e o navio selecionado.',
+        variant: 'destructive',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -447,7 +465,7 @@ export function EquipmentFormDialog({
                         <Select 
                           onValueChange={field.onChange} 
                           value={field.value} 
-                          disabled={isLoadingShips || availableShips.length === 0}
+                          disabled={isLoadingShips || availableShips.length === 0 || isShipLocked}
                         >
                           <FormControl>
                             <SelectTrigger>
@@ -468,11 +486,15 @@ export function EquipmentFormDialog({
                             )}
                           </SelectContent>
                         </Select>
-                        {!isAdmin && availableShips.length > 0 && (
+                        {isShipLocked ? (
+                          <FormDescription>
+                            Navio padrão da conta (Técnico/Supervisor).
+                          </FormDescription>
+                        ) : (!isAdmin && availableShips.length > 0) ? (
                           <FormDescription>
                             Apenas navios atribuídos ao seu perfil estão disponíveis
                           </FormDescription>
-                        )}
+                        ) : null}
                         <FormMessage />
                       </FormItem>
                     )}
