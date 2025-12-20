@@ -4,18 +4,13 @@ import {
   Plus, 
   Edit, 
   Trash2, 
-  Flame, 
-  Wind, 
-  Shield, 
-  Waves, 
-  Gauge, 
-  ArrowUp,
-  Package,
   Loader2,
-  HardHat,
-  LifeBuoy,
-  Anchor,
   Search,
+  Flame, Wind, Shield, Waves, Gauge, ArrowUp, Package, HardHat, LifeBuoy, Anchor,
+  FireExtinguisher, Siren, AlertTriangle, Zap, Droplets, Thermometer, Activity, Radio, Bell,
+  Construction, Wrench, Settings, Cog, Truck, Building, Factory, Warehouse, Cylinder, CircleDot,
+  ShieldCheck, ShieldAlert, Eye, Camera, Lock, Key, Plug, Power, BatteryCharging,
+  TriangleAlert, OctagonAlert, CircleAlert, Megaphone, Volume2, Flashlight, Lightbulb
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,16 +39,68 @@ import { useEquipment } from '@/hooks/useEquipment';
 import { CategoryFormDialog } from '@/components/categories/CategoryFormDialog';
 
 const iconMap: Record<string, React.ElementType> = {
-  flame: Flame,
-  wind: Wind,
-  shield: Shield,
-  waves: Waves,
-  gauge: Gauge,
-  'arrow-up': ArrowUp,
-  package: Package,
+  // Combate a incêndio
+  'fire-extinguisher': FireExtinguisher,
+  'flame': Flame,
+  'droplets': Droplets,
+  'waves': Waves,
+  'siren': Siren,
+  'megaphone': Megaphone,
+  
+  // Segurança e alertas
+  'shield': Shield,
+  'shield-check': ShieldCheck,
+  'shield-alert': ShieldAlert,
+  'alert-triangle': AlertTriangle,
+  'triangle-alert': TriangleAlert,
+  'octagon-alert': OctagonAlert,
+  'circle-alert': CircleAlert,
+  
+  // Equipamentos industriais
+  'cylinder': Cylinder,
+  'gauge': Gauge,
+  'thermometer': Thermometer,
+  'activity': Activity,
+  
+  // EPIs e proteção
   'hard-hat': HardHat,
+  'eye': Eye,
   'life-buoy': LifeBuoy,
-  anchor: Anchor,
+  
+  // Elétrica e energia
+  'zap': Zap,
+  'plug': Plug,
+  'power': Power,
+  'battery-charging': BatteryCharging,
+  'lightbulb': Lightbulb,
+  'flashlight': Flashlight,
+  
+  // Ferramentas e manutenção
+  'wrench': Wrench,
+  'settings': Settings,
+  'cog': Cog,
+  'construction': Construction,
+  
+  // Comunicação e monitoramento
+  'radio': Radio,
+  'bell': Bell,
+  'volume-2': Volume2,
+  'camera': Camera,
+  
+  // Estruturas e locais
+  'building': Building,
+  'factory': Factory,
+  'warehouse': Warehouse,
+  'truck': Truck,
+  
+  // Outros
+  'wind': Wind,
+  'arrow-up': ArrowUp,
+  'package': Package,
+  'anchor': Anchor,
+  'lock': Lock,
+  'key': Key,
+  'circle-dot': CircleDot,
 };
 
 const frequencyLabels: Record<string, string> = {
