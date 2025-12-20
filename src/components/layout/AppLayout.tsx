@@ -8,6 +8,7 @@ import { OfflineIndicator } from './OfflineIndicator';
 import { PWAInstallPrompt } from './PWAInstallPrompt';
 import { Loader2, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import sbmLogoColor from '@/assets/sbm-logo.svg';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -49,12 +50,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           >
             <Menu className="h-5 w-5" />
           </Button>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-center">
-              <span className="text-primary font-bold text-xs">SBM</span>
-            </div>
-            <span className="font-semibold text-sm">SafeShip</span>
-          </div>
+          <img src={sbmLogoColor} alt="SBM Offshore" className="h-8" />
         </div>
 
         {/* Desktop Header */}
