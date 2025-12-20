@@ -83,6 +83,79 @@ export type Database = {
         }
         Relationships: []
       }
+      checklist_template_items: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          is_required: boolean | null
+          order_index: number
+          template_id: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          is_required?: boolean | null
+          order_index?: number
+          template_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          is_required?: boolean | null
+          order_index?: number
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_template_items_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "checklist_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checklist_templates: {
+        Row: {
+          category_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_default: boolean | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_default?: boolean | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_templates_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       equipment: {
         Row: {
           acquisition_date: string | null
@@ -217,6 +290,64 @@ export type Database = {
           },
         ]
       }
+      equipment_transfers: {
+        Row: {
+          created_at: string
+          equipment_id: string
+          from_ship_id: string | null
+          id: string
+          notes: string | null
+          reason: string | null
+          to_ship_id: string
+          transfer_date: string
+          transferred_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          equipment_id: string
+          from_ship_id?: string | null
+          id?: string
+          notes?: string | null
+          reason?: string | null
+          to_ship_id: string
+          transfer_date?: string
+          transferred_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          equipment_id?: string
+          from_ship_id?: string | null
+          id?: string
+          notes?: string | null
+          reason?: string | null
+          to_ship_id?: string
+          transfer_date?: string
+          transferred_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_transfers_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_transfers_from_ship_id_fkey"
+            columns: ["from_ship_id"]
+            isOneToOne: false
+            referencedRelation: "ships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_transfers_to_ship_id_fkey"
+            columns: ["to_ship_id"]
+            isOneToOne: false
+            referencedRelation: "ships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inspection_checklist_items: {
         Row: {
           created_at: string
@@ -343,6 +474,137 @@ export type Database = {
             columns: ["ship_id"]
             isOneToOne: false
             referencedRelation: "ships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      login_logs: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          user_agent: string | null
+          user_email: string | null
+          user_id: string
+          user_name: string | null
+        }
+        Insert: {
+          action?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_email?: string | null
+          user_id: string
+          user_name?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string
+          user_name?: string | null
+        }
+        Relationships: []
+      }
+      maintenance_logs: {
+        Row: {
+          completed_at: string
+          completed_by: string | null
+          created_at: string
+          equipment_id: string
+          id: string
+          maintenance_plan_id: string
+          notes: string | null
+          status: string
+        }
+        Insert: {
+          completed_at?: string
+          completed_by?: string | null
+          created_at?: string
+          equipment_id: string
+          id?: string
+          maintenance_plan_id: string
+          notes?: string | null
+          status?: string
+        }
+        Update: {
+          completed_at?: string
+          completed_by?: string | null
+          created_at?: string
+          equipment_id?: string
+          id?: string
+          maintenance_plan_id?: string
+          notes?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_logs_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_logs_maintenance_plan_id_fkey"
+            columns: ["maintenance_plan_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_plans: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          equipment_id: string
+          frequency: string
+          id: string
+          last_completed_date: string | null
+          next_due_date: string
+          priority: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          equipment_id: string
+          frequency?: string
+          id?: string
+          last_completed_date?: string | null
+          next_due_date: string
+          priority?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          equipment_id?: string
+          frequency?: string
+          id?: string
+          last_completed_date?: string | null
+          next_due_date?: string
+          priority?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_plans_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
             referencedColumns: ["id"]
           },
         ]
@@ -495,6 +757,30 @@ export type Database = {
           id?: string
           name?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      user_favorites: {
+        Row: {
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          user_id?: string
         }
         Relationships: []
       }
