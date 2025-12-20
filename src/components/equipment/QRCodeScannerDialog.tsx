@@ -34,23 +34,39 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
   const progressIntervalRef = useRef<number | null>(null);
 
   const cleanupScanner = useCallback(async () => {
-    if (isCleaningUpRef.current) return;
-    isCleaningUpRef.current = true;
-
+    // Clear progress interval first
     if (progressIntervalRef.current) {
       clearInterval(progressIntervalRef.current);
       progressIntervalRef.current = null;
     }
 
-    if (scannerRef.current) {
+    // Prevent multiple simultaneous cleanups
+    if (isCleaningUpRef.current) return;
+    isCleaningUpRef.current = true;
+
+    const scanner = scannerRef.current;
+    if (scanner) {
       try {
-        const state = scannerRef.current.getState();
-        if (state === 2) { // Html5QrcodeScannerState.SCANNING
-          await scannerRef.current.stop();
+        const state = scanner.getState();
+        console.log('[QR Scanner] Cleanup - current state:', state);
+        
+        // State 2 = SCANNING, State 1 = NOT_STARTED
+        if (state === 2) {
+          console.log('[QR Scanner] Stopping camera...');
+          await scanner.stop();
+          console.log('[QR Scanner] Camera stopped');
         }
-        scannerRef.current.clear();
+        
+        scanner.clear();
+        console.log('[QR Scanner] Scanner cleared');
       } catch (err) {
-        console.log('Scanner cleanup:', err);
+        console.log('[QR Scanner] Cleanup error (usually safe to ignore):', err);
+        // Force stop even if there's an error
+        try {
+          await scanner.stop();
+        } catch {
+          // Ignore secondary errors
+        }
       }
       scannerRef.current = null;
     }
@@ -218,8 +234,17 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       setIsSwitchingCamera(false);
       setContainerId(`qr-reader-${Date.now()}`);
     } else {
+      // Ensure cleanup happens when dialog closes
+      console.log('[QR Scanner] Dialog closing - triggering cleanup');
       cleanupScanner();
     }
+    
+    // Also cleanup when this effect re-runs with open=true (dialog reopened)
+    return () => {
+      if (!open) {
+        cleanupScanner();
+      }
+    };
   }, [open, cleanupScanner]);
 
   // Start scanning when the containerId is rendered
@@ -233,10 +258,28 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
     return () => window.clearTimeout(t);
   }, [open, containerId, startScanning, isSwitchingCamera]);
 
-  // Cleanup on unmount
+  // Cleanup on unmount and page visibility changes
   useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && scannerRef.current) {
+        console.log('[QR Scanner] Page hidden - stopping camera');
+        cleanupScanner();
+      }
+    };
+
+    const handleBeforeUnload = () => {
+      console.log('[QR Scanner] Page unloading - stopping camera');
+      cleanupScanner();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
     return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
       isMountedRef.current = false;
+      console.log('[QR Scanner] Component unmounting - final cleanup');
       cleanupScanner();
     };
   }, [cleanupScanner]);
