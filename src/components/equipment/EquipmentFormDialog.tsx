@@ -104,19 +104,29 @@ export function EquipmentFormDialog({
   const updateEquipment = useUpdateEquipment();
 
   // Technician/Supervisor: lock to default ship (first ship assigned to the user)
-  const isShipLocked = role === 'technician' || role === 'supervisor';
+  // Admin and Admin Master should NEVER have locked ships
+  const isShipLocked = !isAdmin && (role === 'technician' || role === 'supervisor');
   const defaultUserShip = userShips.find((us) => us.ship)?.ship ?? null;
 
   // Determine which ships to show based on user role
+  // Admins and admin_master see all ships
   const availableShips = isAdmin
     ? allShips
-    : isShipLocked && defaultUserShip
-      ? [defaultUserShip]
-      : (userShips
-          .map((us) => us.ship)
-          .filter(Boolean) as Array<{ id: string; name: string; code: string | null }>);
+    : (userShips
+        .map((us) => us.ship)
+        .filter(Boolean) as Array<{ id: string; name: string; code: string | null }>);
   
   const isLoadingShips = shipsLoading || userShipsLoading;
+
+  // Debug log
+  console.log('[EquipmentFormDialog] Debug:', {
+    role,
+    isAdmin,
+    isShipLocked,
+    defaultUserShip,
+    userShipsCount: userShips.length,
+    availableShipsCount: availableShips.length,
+  });
 
   const form = useForm<EquipmentFormData>({
     resolver: zodResolver(equipmentSchema),
@@ -463,15 +473,23 @@ export function EquipmentFormDialog({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Navio / FPSO *</FormLabel>
-                        {isShipLocked && defaultUserShip ? (
+                        {isShipLocked ? (
                           // Technician/Supervisor: show locked ship badge instead of dropdown
-                          <div className="flex items-center gap-2 p-3 rounded-md border border-border bg-muted/50">
-                            <Ship className="h-4 w-4 text-primary" />
-                            <span className="font-medium">{defaultUserShip.name}</span>
-                            {defaultUserShip.code && (
-                              <span className="text-muted-foreground text-sm">({defaultUserShip.code})</span>
-                            )}
-                          </div>
+                          isLoadingShips || !defaultUserShip ? (
+                            // Still loading user ships
+                            <div className="flex items-center gap-2 p-3 rounded-md border border-border bg-muted/50">
+                              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                              <span className="text-muted-foreground">Carregando navio...</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 p-3 rounded-md border border-border bg-muted/50">
+                              <Ship className="h-4 w-4 text-primary" />
+                              <span className="font-medium">{defaultUserShip.name}</span>
+                              {defaultUserShip.code && (
+                                <span className="text-muted-foreground text-sm">({defaultUserShip.code})</span>
+                              )}
+                            </div>
+                          )
                         ) : (
                           // Admin/Admin Master: show dropdown to select ship
                           <Select 
