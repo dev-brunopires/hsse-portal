@@ -66,8 +66,8 @@ const equipmentSchema = z.object({
   name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
   categoryId: z.string().min(1, 'Selecione uma categoria'),
   type: z.string().min(1, 'Tipo é obrigatório'),
-  manufacturer: z.string().min(1, 'Fabricante é obrigatório'),
-  model: z.string().min(1, 'Modelo é obrigatório'),
+  manufacturer: z.string().optional(),
+  model: z.string().optional(),
   serialNumber: z.string().min(1, 'Número de série é obrigatório'),
   capacity: z.string().optional(),
   // Localização
@@ -345,8 +345,8 @@ export function EquipmentFormDialog({
         name: data.name,
         category_id: data.categoryId,
         type: data.type,
-        manufacturer: data.manufacturer,
-        model: data.model,
+        manufacturer: data.manufacturer || null,
+        model: data.model || null,
         serial_number: data.serialNumber,
         capacity: data.capacity || null,
         ship_id: data.shipId,
@@ -570,7 +570,7 @@ export function EquipmentFormDialog({
                       name="manufacturer"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Fabricante *</FormLabel>
+                          <FormLabel>Fabricante</FormLabel>
                           <FormControl>
                             <Input placeholder="Ex: Kidde, MSA, Dräger" {...field} />
                           </FormControl>
@@ -584,7 +584,7 @@ export function EquipmentFormDialog({
                       name="model"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Modelo *</FormLabel>
+                          <FormLabel>Modelo</FormLabel>
                           <FormControl>
                             <Input placeholder="Ex: Pro 10 CO2" {...field} />
                           </FormControl>
