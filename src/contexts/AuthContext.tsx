@@ -200,7 +200,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const isAdmin = role === 'admin' || role === 'admin_master';
   const isTechnician = role === 'technician';
-  const canEdit = isAdmin || isTechnician;
+  const isSupervisor = role === 'supervisor';
+  const canEdit = isAdmin || isTechnician || isSupervisor;
 
   return (
     <AuthContext.Provider
