@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useForm, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -110,11 +110,15 @@ export function EquipmentFormDialog({
 
   // Determine which ships to show based on user role
   // Admins and admin_master see all ships
-  const availableShips = isAdmin
-    ? allShips
-    : (userShips
-        .map((us) => us.ship)
-        .filter(Boolean) as Array<{ id: string; name: string; code: string | null }>);
+  const availableShips = useMemo(
+    () =>
+      isAdmin
+        ? allShips
+        : (userShips
+            .map((us) => us.ship)
+            .filter(Boolean) as Array<{ id: string; name: string; code: string | null }>),
+    [isAdmin, allShips, userShips]
+  );
   
   const isLoadingShips = shipsLoading || userShipsLoading;
 
@@ -163,8 +167,21 @@ export function EquipmentFormDialog({
     }
   }, [open, isShipLocked, defaultUserShip?.id, form]);
 
+  const initRef = useRef<{ opened: boolean; key: string | null }>({ opened: false, key: null });
+
   useEffect(() => {
-    if (open && initialData) {
+    if (!open) {
+      initRef.current = { opened: false, key: null };
+      return;
+    }
+
+    // Only initialize/reset the form once per dialog open (or when switching item in edit)
+    const key = mode === 'edit' ? `edit:${initialData?.id ?? 'none'}` : 'create';
+    if (initRef.current.opened && initRef.current.key === key) return;
+
+    initRef.current = { opened: true, key };
+
+    if (mode === 'edit' && initialData) {
       form.reset({
         internalCode: initialData.internalCode || '',
         name: initialData.name || '',
@@ -182,36 +199,47 @@ export function EquipmentFormDialog({
         certificateExpiry: initialData.certificateExpiry || '',
         observations: initialData.observations || '',
       });
-    } else if (open && !initialData) {
-      // Default ship behavior:
-      // - Technician/Supervisor: lock to the account default ship
-      // - Others (non-admin): auto-select only if they have a single ship
-      let defaultShipId = '';
-      if (isShipLocked) {
-        defaultShipId = defaultUserShip?.id || '';
-      } else if (!isAdmin && availableShips.length === 1) {
-        defaultShipId = availableShips[0].id;
-      }
-
-      form.reset({
-        internalCode: '',
-        name: '',
-        categoryId: '',
-        type: '',
-        manufacturer: '',
-        model: '',
-        serialNumber: '',
-        capacity: '',
-        shipId: defaultShipId,
-        location: '',
-        manufacturingDate: '',
-        acquisitionDate: '',
-        expiryDate: '',
-        certificateExpiry: '',
-        observations: '',
-      });
+      return;
     }
-  }, [open, initialData, form, availableShips, isShipLocked, defaultUserShip?.id, isAdmin]);
+
+    // Create mode
+    // Default ship behavior:
+    // - Technician/Supervisor: lock to the account default ship
+    // - Others (non-admin): auto-select only if they have a single ship
+    let defaultShipId = '';
+    if (isShipLocked) {
+      defaultShipId = defaultUserShip?.id || '';
+    } else if (!isAdmin && availableShips.length === 1) {
+      defaultShipId = availableShips[0].id;
+    }
+
+    form.reset({
+      internalCode: '',
+      name: '',
+      categoryId: '',
+      type: '',
+      manufacturer: '',
+      model: '',
+      serialNumber: '',
+      capacity: '',
+      shipId: defaultShipId,
+      location: '',
+      manufacturingDate: '',
+      acquisitionDate: '',
+      expiryDate: '',
+      certificateExpiry: '',
+      observations: '',
+    });
+  }, [
+    open,
+    mode,
+    initialData?.id,
+    isShipLocked,
+    defaultUserShip?.id,
+    isAdmin,
+    availableShips.length,
+    form,
+  ]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
