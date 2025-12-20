@@ -71,6 +71,7 @@ const inspectionSchema = z.object({
   equipmentId: z.string().min(1, 'Selecione o equipamento'),
   inspectorId: z.string().min(1, 'Selecione o inspetor responsável'),
   inspectionDate: z.string().min(1, 'Data é obrigatória'),
+  actionsTaken: z.string().optional(),
   observations: z.string().optional(),
   recommendations: z.string().optional(),
   nextInspectionDate: z.string().optional(),
@@ -180,6 +181,7 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
       equipmentId: '',
       inspectorId: user?.id || '',
       inspectionDate: new Date().toISOString().split('T')[0],
+      actionsTaken: '',
       observations: '',
       recommendations: '',
       nextInspectionDate: '',
@@ -288,6 +290,7 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
           inspector_id: data.inspectorId,
           inspection_date: data.inspectionDate,
           status: calculateOverallStatus(),
+          actions_taken: data.actionsTaken || null,
           observations: data.observations || null,
           recommendations: data.recommendations || null,
           next_inspection_date: data.nextInspectionDate || null,
@@ -674,6 +677,30 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
                 <CollapsibleContent>
                   <Separator />
                   <div className="p-4 space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="actionsTaken"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="flex items-center gap-2 text-primary">
+                            <CheckCircle2 className="h-4 w-4" />
+                            Ações Tomadas
+                          </FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Descreva as ações realizadas em relação às pendências ou recomendações anteriores..."
+                              className="min-h-[80px] border-primary/30 focus:border-primary"
+                              {...field}
+                            />
+                          </FormControl>
+                          <p className="text-xs text-muted-foreground">
+                            Registre aqui o que foi feito para resolver pendências de inspeções anteriores
+                          </p>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
                     <FormField
                       control={form.control}
                       name="observations"
