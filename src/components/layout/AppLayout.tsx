@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppSidebar } from './AppSidebar';
+import { MobileSidebar } from './MobileSidebar';
 import { Header } from './Header';
 import { OfflineIndicator } from './OfflineIndicator';
 import { PWAInstallPrompt } from './PWAInstallPrompt';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Menu } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -11,6 +14,7 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   const { loading } = useAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   if (loading) {
     return (
@@ -25,10 +29,39 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
-      <AppSidebar />
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:block">
+        <AppSidebar />
+      </div>
+
+      {/* Mobile Sidebar */}
+      <MobileSidebar open={mobileMenuOpen} onOpenChange={setMobileMenuOpen} />
+
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-auto p-6">
+        {/* Mobile Header with hamburger */}
+        <div className="lg:hidden h-14 bg-card border-b border-border flex items-center px-4 gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setMobileMenuOpen(true)}
+            className="flex-shrink-0"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-center">
+              <span className="text-primary font-bold text-xs">SBM</span>
+            </div>
+            <span className="font-semibold text-sm">SafeShip</span>
+          </div>
+        </div>
+
+        {/* Desktop Header */}
+        <div className="hidden lg:block">
+          <Header />
+        </div>
+
+        <main className="flex-1 overflow-auto p-4 lg:p-6">
           {children}
         </main>
       </div>

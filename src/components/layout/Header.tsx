@@ -15,7 +15,8 @@ import {
   CheckCheck,
   AlertCircle,
   Clock,
-  Check
+  Check,
+  Menu
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -57,7 +58,12 @@ const roleLabels: Record<string, string> = {
   viewer: 'Visualizador',
 };
 
-export function Header() {
+interface HeaderProps {
+  onMenuClick?: () => void;
+  showMenuButton?: boolean;
+}
+
+export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
   const { user, profile, role, signOut } = useAuth();
   const { selectedShipId, setSelectedShipId, isFilterEnabled } = useShipFilter();
   const navigate = useNavigate();
@@ -216,23 +222,37 @@ export function Header() {
   };
 
   return (
-    <header className="h-16 bg-card border-b border-border flex items-center justify-between px-6">
-      {/* Search */}
-      <div className="flex-1 max-w-xl">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar equipamentos, códigos, localização..."
-            className="pl-10 bg-background border-border focus:border-primary"
-          />
+    <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 lg:px-6">
+      {/* Left side - Menu button for mobile + Search */}
+      <div className="flex items-center gap-3 flex-1">
+        {showMenuButton && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onMenuClick}
+            className="lg:hidden flex-shrink-0"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+        )}
+        
+        {/* Search - hidden on small mobile */}
+        <div className="hidden sm:block flex-1 max-w-xl">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar equipamentos, códigos..."
+              className="pl-10 bg-background border-border focus:border-primary"
+            />
+          </div>
         </div>
       </div>
 
       {/* Right Actions */}
-      <div className="flex items-center gap-4">
-        {/* Ship Indicator */}
+      <div className="flex items-center gap-2 lg:gap-4">
+        {/* Ship Indicator - hidden on mobile */}
         {userShips.length > 0 && (
-          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-lg border border-primary/20">
+          <div className="hidden xl:flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-lg border border-primary/20">
             <Ship className="h-4 w-4 text-primary" />
             <span className="text-sm font-medium text-primary">
               {userShips.length === 1 
@@ -247,9 +267,9 @@ export function Header() {
         {isFilterEnabled && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2">
+              <Button variant="outline" size="sm" className="gap-2 hidden md:flex">
                 <Ship className="h-4 w-4" />
-                <span className="text-sm max-w-[180px] truncate">{selectedShipName}</span>
+                <span className="text-sm max-w-[120px] lg:max-w-[180px] truncate">{selectedShipName}</span>
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -296,7 +316,7 @@ export function Header() {
               )}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-96 bg-popover border border-border shadow-lg z-50">
+          <DropdownMenuContent align="end" className="w-80 sm:w-96 bg-popover border border-border shadow-lg z-50">
             <DropdownMenuLabel className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span>Notificações</span>
@@ -318,12 +338,12 @@ export function Header() {
                   }}
                 >
                   <CheckCheck className="h-3 w-3" />
-                  Marcar todas
+                  <span className="hidden sm:inline">Marcar todas</span>
                 </Button>
               )}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <ScrollArea className="max-h-96">
+            <ScrollArea className="max-h-80 sm:max-h-96">
               {combinedNotifications.length === 0 ? (
                 <div className="p-6 text-center text-muted-foreground">
                   <Bell className="h-10 w-10 mx-auto mb-3 opacity-30" />
@@ -332,7 +352,7 @@ export function Header() {
                 </div>
               ) : (
                 <div className="p-2 space-y-2">
-                  {combinedNotifications.map((notification) => (
+                  {combinedNotifications.slice(0, 5).map((notification) => (
                     <div
                       key={notification.id}
                       className={`p-3 rounded-lg border transition-all ${getNotificationBg(notification.type, notification.isRead)}`}
@@ -354,47 +374,12 @@ export function Header() {
                           {getNotificationIcon(notification.type)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className={`font-medium text-sm ${notification.isRead ? 'text-muted-foreground' : ''}`}>
-                              {notification.title}
-                            </p>
-                            {notification.shipName && (
-                              <Badge variant="outline" className="text-xs py-0">
-                                <Ship className="h-2.5 w-2.5 mr-1" />
-                                {notification.shipName}
-                              </Badge>
-                            )}
-                          </div>
+                          <p className={`font-medium text-sm ${notification.isRead ? 'text-muted-foreground' : ''}`}>
+                            {notification.title}
+                          </p>
                           <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                             {notification.message}
                           </p>
-                          <div className="flex items-center justify-between mt-2">
-                            {notification.createdAt ? (
-                              <p className="text-xs text-muted-foreground/70">
-                                {format(new Date(notification.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                              </p>
-                            ) : (
-                              <span />
-                            )}
-                            {!notification.isRead && notification.canMarkRead && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 px-2 text-xs gap-1"
-                                onPointerDown={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  handleMarkAsRead(
-                                    notification.id,
-                                    notification.isSystem || false
-                                  );
-                                }}
-                              >
-                                <CheckCheck className="h-3 w-3" />
-                                Marcar como lida
-                              </Button>
-                            )}
-                          </div>
                         </div>
                         {!notification.isRead && (
                           <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0 mt-1.5" />
@@ -418,8 +403,8 @@ export function Header() {
         {/* User Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="gap-2">
-              <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+            <Button variant="ghost" className="gap-2 px-2 lg:px-3">
+              <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
                 {profile?.avatar_url ? (
                   <img 
                     src={profile.avatar_url} 
@@ -430,17 +415,25 @@ export function Header() {
                   <User className="h-4 w-4 text-primary-foreground" />
                 )}
               </div>
-              <div className="text-left hidden md:block">
-                <p className="text-sm font-medium">{profile?.full_name || user?.email}</p>
+              <div className="text-left hidden lg:block">
+                <p className="text-sm font-medium truncate max-w-[120px]">{profile?.full_name || user?.email}</p>
                 <p className="text-xs text-muted-foreground">
                   {role ? roleLabels[role] : 'Carregando...'}
                 </p>
               </div>
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              <ChevronDown className="h-4 w-4 text-muted-foreground hidden lg:block" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56 bg-popover border border-border shadow-lg z-50">
-            <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
+            <DropdownMenuLabel>
+              <div className="lg:hidden">
+                <p className="font-medium">{profile?.full_name || user?.email}</p>
+                <p className="text-xs text-muted-foreground font-normal">
+                  {role ? roleLabels[role] : 'Carregando...'}
+                </p>
+              </div>
+              <span className="hidden lg:block">Minha Conta</span>
+            </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => navigate('/profile')}>
               <UserCircle className="h-4 w-4" />
@@ -452,7 +445,7 @@ export function Header() {
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem 
-              className="gap-2 text-destructive cursor-pointer"
+              className="gap-2 cursor-pointer text-destructive focus:text-destructive" 
               onClick={handleSignOut}
             >
               <LogOut className="h-4 w-4" />

@@ -310,26 +310,30 @@ export function EquipmentTable({
         )}
 
         {/* Toolbar */}
-        <div className="p-4 border-b border-border space-y-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3 flex-1">
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por código, nome, série, capacidade..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
+        <div className="p-3 sm:p-4 border-b border-border space-y-3">
+          {/* Mobile: Stacked layout, Desktop: Row layout */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            {/* Search - Full width on mobile */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar equipamentos..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            
+            {/* Filters row */}
+            <div className="flex items-center gap-2">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-40">
+                <SelectTrigger className="w-full sm:w-36">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent className="bg-popover border border-border shadow-lg z-50">
-                  <SelectItem value="all">Todos Status</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
                   <SelectItem value="active">Ativo</SelectItem>
-                  <SelectItem value="maintenance">Em Manutenção</SelectItem>
+                  <SelectItem value="maintenance">Manutenção</SelectItem>
                   <SelectItem value="expired">Vencido</SelectItem>
                   <SelectItem value="rejected">Reprovado</SelectItem>
                   <SelectItem value="inactive">Inativo</SelectItem>
@@ -339,51 +343,55 @@ export function EquipmentTable({
                 variant={hasAdvancedFilters ? "default" : "outline"} 
                 size="icon"
                 onClick={() => setAdvancedFiltersOpen(true)}
+                className="flex-shrink-0"
               >
                 <Filter className="h-4 w-4" />
               </Button>
             </div>
-            <div className="flex items-center gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="gap-2">
-                    <Download className="h-4 w-4" />
-                    Exportar
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-popover border border-border shadow-lg">
-                  <DropdownMenuItem onClick={handleExportExcel} className="gap-2 cursor-pointer">
-                    <FileSpreadsheet className="h-4 w-4" />
-                    Exportar Excel
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleExportPDF} className="gap-2 cursor-pointer">
-                    <FileText className="h-4 w-4" />
-                    Exportar PDF
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <Button variant="outline" className="gap-2" onClick={() => setImportDialogOpen(true)}>
-                <Upload className="h-4 w-4" />
-                Importar
-              </Button>
-              <Button className="gap-2" onClick={openCreateForm}>
-                <Plus className="h-4 w-4" />
-                Novo Equipamento
-              </Button>
-            </div>
+          </div>
+
+          {/* Action buttons - Scrollable on mobile */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2 flex-shrink-0">
+                  <Download className="h-4 w-4" />
+                  <span className="hidden sm:inline">Exportar</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-popover border border-border shadow-lg">
+                <DropdownMenuItem onClick={handleExportExcel} className="gap-2 cursor-pointer">
+                  <FileSpreadsheet className="h-4 w-4" />
+                  Exportar Excel
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportPDF} className="gap-2 cursor-pointer">
+                  <FileText className="h-4 w-4" />
+                  Exportar PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button variant="outline" size="sm" className="gap-2 flex-shrink-0" onClick={() => setImportDialogOpen(true)}>
+              <Upload className="h-4 w-4" />
+              <span className="hidden sm:inline">Importar</span>
+            </Button>
+            <Button size="sm" className="gap-2 flex-shrink-0 ml-auto" onClick={openCreateForm}>
+              <Plus className="h-4 w-4" />
+              <span className="hidden xs:inline">Novo</span>
+              <span className="hidden sm:inline">Equipamento</span>
+            </Button>
           </div>
 
           {selectedRows.length > 0 && (
-            <div className="flex items-center gap-4 p-3 bg-primary/5 rounded-lg border border-primary/20">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 bg-primary/5 rounded-lg border border-primary/20">
               <span className="text-sm font-medium">
                 {selectedRows.length} item(s) selecionado(s)
               </span>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <Button variant="outline" size="sm" onClick={handleExportExcel}>
-                  Exportar Selecionados
+                  Exportar
                 </Button>
                 <Button variant="outline" size="sm" onClick={handleExportPDF}>
-                  Gerar Relatório PDF
+                  Relatório PDF
                 </Button>
                 <Button variant="destructive" size="sm">Excluir</Button>
               </div>
