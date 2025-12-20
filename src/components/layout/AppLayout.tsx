@@ -41,7 +41,7 @@ export function AppLayout({ children }: AppLayoutProps) {
 
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Mobile Header with hamburger */}
-        <div className="lg:hidden h-14 bg-card border-b border-border flex items-center px-4 gap-3">
+        <div className="lg:hidden h-14 bg-card border-b border-border flex items-center px-4">
           <Button
             variant="ghost"
             size="icon"
@@ -50,7 +50,6 @@ export function AppLayout({ children }: AppLayoutProps) {
           >
             <Menu className="h-5 w-5" />
           </Button>
-          <img src={sbmLogoColor} alt="SBM Offshore" className="h-8" />
         </div>
 
         {/* Desktop Header */}
