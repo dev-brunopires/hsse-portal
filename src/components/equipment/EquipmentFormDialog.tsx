@@ -102,6 +102,9 @@ export function EquipmentFormDialog({
   const createEquipment = useCreateEquipment();
   const updateEquipment = useUpdateEquipment();
 
+  // Debug logging
+  console.log('EquipmentFormDialog - role:', role, 'isAdmin:', isAdmin, 'allShips:', allShips.length, 'userShips:', userShips.length);
+
   // Determine which ships to show based on user role
   const availableShips = isAdmin 
     ? allShips 
