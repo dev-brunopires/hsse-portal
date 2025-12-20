@@ -118,15 +118,17 @@ export function EquipmentFormDialog({
   
   const isLoadingShips = shipsLoading || userShipsLoading;
 
-  // Debug log
-  console.log('[EquipmentFormDialog] Debug:', {
-    role,
-    isAdmin,
-    isShipLocked,
-    defaultUserShip,
-    userShipsCount: userShips.length,
-    availableShipsCount: availableShips.length,
-  });
+  // Debug log (dev only)
+  if (import.meta.env.DEV) {
+    console.log('[EquipmentFormDialog] Debug:', {
+      role,
+      isAdmin,
+      isShipLocked,
+      defaultUserShip,
+      userShipsCount: userShips.length,
+      availableShipsCount: availableShips.length,
+    });
+  }
 
   const form = useForm<EquipmentFormData>({
     resolver: zodResolver(equipmentSchema),
@@ -148,6 +150,18 @@ export function EquipmentFormDialog({
       observations: initialData?.observations || '',
     },
   });
+
+  // Ensure shipId is always set for locked-ship users (technician/supervisor)
+  useEffect(() => {
+    if (!open) return;
+
+    if (isShipLocked) {
+      const lockedShipId = defaultUserShip?.id;
+      if (lockedShipId && form.getValues('shipId') !== lockedShipId) {
+        form.setValue('shipId', lockedShipId, { shouldValidate: true });
+      }
+    }
+  }, [open, isShipLocked, defaultUserShip?.id, form]);
 
   useEffect(() => {
     if (open && initialData) {
@@ -215,7 +229,10 @@ export function EquipmentFormDialog({
     
     try {
       // Get the ship name from the selected ship
-      const selectedShip = availableShips.find(s => s.id === data.shipId);
+      const selectedShip =
+        availableShips.find((s) => s.id === data.shipId) ||
+        (defaultUserShip && defaultUserShip.id === data.shipId ? defaultUserShip : null);
+
       const unitName = selectedShip?.name || '';
 
       const equipmentData = {
@@ -475,11 +492,15 @@ export function EquipmentFormDialog({
                         <FormLabel>Navio / FPSO *</FormLabel>
                         {isShipLocked ? (
                           // Technician/Supervisor: show locked ship badge instead of dropdown
-                          isLoadingShips || !defaultUserShip ? (
-                            // Still loading user ships
+                          isLoadingShips ? (
                             <div className="flex items-center gap-2 p-3 rounded-md border border-border bg-muted/50">
                               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                               <span className="text-muted-foreground">Carregando navio...</span>
+                            </div>
+                          ) : !defaultUserShip ? (
+                            <div className="flex items-center gap-2 p-3 rounded-md border border-border bg-destructive/10">
+                              <Ship className="h-4 w-4 text-destructive" />
+                              <span className="text-destructive">Nenhum navio vinculado à sua conta</span>
                             </div>
                           ) : (
                             <div className="flex items-center gap-2 p-3 rounded-md border border-border bg-muted/50">
