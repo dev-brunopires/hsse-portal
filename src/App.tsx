@@ -128,7 +128,7 @@ function App() {
               <Route
                 path="/settings"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requiredRole="admin">
                     <AppLayout>
                       <Settings />
                     </AppLayout>
