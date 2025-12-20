@@ -16,9 +16,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Shield, User, Eye, Loader2 } from 'lucide-react';
-import { useUpdateUserRole, type AppRole } from '@/hooks/useUserRoles';
+import { Shield, User, Eye, Loader2, Crown, UserCheck } from 'lucide-react';
+import { useUpdateUserRole } from '@/hooks/useUserRoles';
 import type { ProfileWithRole } from '@/hooks/useProfiles';
+
+type AppRole = 'admin_master' | 'admin' | 'supervisor' | 'technician' | 'viewer';
 
 interface UserRoleDialogProps {
   open: boolean;
@@ -28,10 +30,22 @@ interface UserRoleDialogProps {
 
 const roleOptions: { value: AppRole; label: string; description: string; icon: React.ElementType }[] = [
   { 
+    value: 'admin_master', 
+    label: 'Admin Master', 
+    description: 'Acesso total e irrestrito ao sistema, pode fazer tudo',
+    icon: Crown 
+  },
+  { 
     value: 'admin', 
     label: 'Administrador', 
     description: 'Acesso total ao sistema, pode gerenciar usuários e configurações',
     icon: Shield 
+  },
+  { 
+    value: 'supervisor', 
+    label: 'Supervisor', 
+    description: 'Pode supervisionar inspeções e aprovar relatórios',
+    icon: UserCheck 
   },
   { 
     value: 'technician', 
@@ -53,7 +67,7 @@ export function UserRoleDialog({ open, onOpenChange, user }: UserRoleDialogProps
 
   useEffect(() => {
     if (user?.user_roles?.[0]?.role) {
-      setSelectedRole(user.user_roles[0].role);
+      setSelectedRole(user.user_roles[0].role as AppRole);
     } else {
       setSelectedRole('viewer');
     }
@@ -64,7 +78,7 @@ export function UserRoleDialog({ open, onOpenChange, user }: UserRoleDialogProps
     
     await updateRole.mutateAsync({
       userId: user.user_id,
-      newRole: selectedRole,
+      newRole: selectedRole as any,
     });
     
     onOpenChange(false);

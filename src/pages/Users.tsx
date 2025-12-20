@@ -7,7 +7,10 @@ import {
   Trash2, 
   Search,
   User,
-  Loader2
+  Loader2,
+  Crown,
+  UserCheck,
+  Plus,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,13 +37,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import { UserRoleDialog } from '@/components/users/UserRoleDialog';
 import { UserEditDialog } from '@/components/users/UserEditDialog';
 import { DeleteUserDialog } from '@/components/users/DeleteUserDialog';
+import { CreateUserDialog } from '@/components/users/CreateUserDialog';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-const roleConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline'; icon: React.ElementType }> = {
-  admin: { label: 'Administrador', variant: 'default', icon: Shield },
-  technician: { label: 'Técnico', variant: 'secondary', icon: User },
-  viewer: { label: 'Visualizador', variant: 'outline', icon: Eye },
+const roleConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive'; icon: React.ElementType; order: number }> = {
+  admin_master: { label: 'Admin Master', variant: 'destructive', icon: Crown, order: 0 },
+  admin: { label: 'Administrador', variant: 'default', icon: Shield, order: 1 },
+  supervisor: { label: 'Supervisor', variant: 'secondary', icon: UserCheck, order: 2 },
+  technician: { label: 'Técnico', variant: 'outline', icon: User, order: 3 },
+  viewer: { label: 'Visualizador', variant: 'outline', icon: Eye, order: 4 },
 };
 
 export default function Users() {
@@ -50,6 +56,7 @@ export default function Users() {
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<ProfileWithRole | null>(null);
 
   const filteredUsers = profiles?.filter(user => 
@@ -60,9 +67,11 @@ export default function Users() {
 
   const userCounts = {
     total: profiles?.length || 0,
-    admins: profiles?.filter(u => u.user_roles?.[0]?.role === 'admin').length || 0,
-    technicians: profiles?.filter(u => u.user_roles?.[0]?.role === 'technician').length || 0,
-    viewers: profiles?.filter(u => u.user_roles?.[0]?.role === 'viewer').length || 0,
+    adminMasters: profiles?.filter(u => (u.user_roles?.[0]?.role as string) === 'admin_master').length || 0,
+    admins: profiles?.filter(u => (u.user_roles?.[0]?.role as string) === 'admin').length || 0,
+    supervisors: profiles?.filter(u => (u.user_roles?.[0]?.role as string) === 'supervisor').length || 0,
+    technicians: profiles?.filter(u => (u.user_roles?.[0]?.role as string) === 'technician').length || 0,
+    viewers: profiles?.filter(u => (u.user_roles?.[0]?.role as string) === 'viewer').length || 0,
   };
 
   const handleRoleChange = (user: ProfileWithRole) => {
@@ -101,10 +110,14 @@ export default function Users() {
             Gerencie usuários e permissões de acesso ao sistema
           </p>
         </div>
+        <Button className="gap-2" onClick={() => setCreateDialogOpen(true)}>
+          <Plus className="h-4 w-4" />
+          Novo Usuário
+        </Button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -119,12 +132,34 @@ export default function Users() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Crown className="h-4 w-4" />
+              Admin Master
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold text-destructive">{userCounts.adminMasters}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
               <Shield className="h-4 w-4" />
-              Administradores
+              Admins
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-primary">{userCounts.admins}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <UserCheck className="h-4 w-4" />
+              Supervisores
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{userCounts.supervisors}</p>
           </CardContent>
         </Card>
         <Card>
@@ -135,7 +170,7 @@ export default function Users() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-secondary-foreground">{userCounts.technicians}</p>
+            <p className="text-2xl font-bold">{userCounts.technicians}</p>
           </CardContent>
         </Card>
         <Card>
@@ -282,6 +317,10 @@ export default function Users() {
         open={deleteDialogOpen} 
         onOpenChange={setDeleteDialogOpen} 
         user={selectedUser}
+      />
+      <CreateUserDialog 
+        open={createDialogOpen} 
+        onOpenChange={setCreateDialogOpen}
       />
     </div>
   );
