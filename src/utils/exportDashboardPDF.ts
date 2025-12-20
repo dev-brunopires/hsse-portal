@@ -20,8 +20,10 @@ const statusLabels: Record<string, string> = {
 };
 
 export function exportDashboardPDF(stats: DashboardStats, filters: ExportFilters) {
-  const doc = new jsPDF();
+  // Create PDF in landscape orientation
+  const doc = new jsPDF({ orientation: 'landscape' });
   const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
   
   // Colors
   const primaryColor: [number, number, number] = [30, 58, 138];
@@ -33,21 +35,17 @@ export function exportDashboardPDF(stats: DashboardStats, filters: ExportFilters
   
   // Header
   doc.setFillColor(...primaryColor);
-  doc.rect(0, 0, pageWidth, 45, 'F');
+  doc.rect(0, 0, pageWidth, 35, 'F');
   
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(24);
+  doc.setFontSize(22);
   doc.setFont('helvetica', 'bold');
-  doc.text('Relatório Gerencial', 14, 22);
+  doc.text('Relatório Gerencial - Dashboard de Equipamentos', 14, 18);
   
-  doc.setFontSize(12);
-  doc.setFont('helvetica', 'normal');
-  doc.text('Dashboard de Equipamentos', 14, 32);
-  
-  // Date and filters info
   doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
   const generatedDate = format(new Date(), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR });
-  doc.text(`Gerado em: ${generatedDate}`, pageWidth - 14, 22, { align: 'right' });
+  doc.text(`Gerado em: ${generatedDate}`, 14, 28);
   
   // Filters applied
   const filtersApplied: string[] = [];
@@ -62,25 +60,26 @@ export function exportDashboardPDF(stats: DashboardStats, filters: ExportFilters
   }
   
   if (filtersApplied.length > 0) {
-    doc.text(filtersApplied.join(' | '), pageWidth - 14, 32, { align: 'right' });
+    doc.text(`Filtros: ${filtersApplied.join(' | ')}`, pageWidth - 14, 28, { align: 'right' });
   }
   
-  yPos = 55;
+  yPos = 45;
   
-  // KPI Section
+  // KPI Section Title
   doc.setTextColor(30, 41, 59);
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
   doc.text('Indicadores Principais', 14, yPos);
-  yPos += 10;
+  yPos += 8;
   
-  // KPI Cards
-  const kpiWidth = (pageWidth - 42) / 4;
+  // KPI Cards - Using more horizontal space in landscape
+  const kpiWidth = (pageWidth - 70) / 5;
   const kpis = [
     { label: 'Total Equipamentos', value: stats.totalEquipment.toString(), color: primaryColor },
     { label: 'Ativos', value: stats.activeEquipment.toString(), color: successColor },
     { label: 'Vencidos/Reprovados', value: stats.expiredEquipment.toString(), color: dangerColor },
     { label: 'Inspeções Pendentes', value: stats.pendingInspections.toString(), color: warningColor },
+    { label: 'Taxa Conformidade', value: `${stats.complianceRate}%`, color: primaryColor },
   ];
   
   kpis.forEach((kpi, index) => {
@@ -88,65 +87,35 @@ export function exportDashboardPDF(stats: DashboardStats, filters: ExportFilters
     
     // Card background
     doc.setFillColor(248, 250, 252);
-    doc.roundedRect(xPos, yPos, kpiWidth, 28, 3, 3, 'F');
+    doc.roundedRect(xPos, yPos, kpiWidth, 25, 3, 3, 'F');
     
     // Accent bar
     doc.setFillColor(...kpi.color);
-    doc.rect(xPos, yPos, 3, 28, 'F');
+    doc.rect(xPos, yPos, 3, 25, 'F');
     
     // Value
-    doc.setFontSize(18);
+    doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...kpi.color);
-    doc.text(kpi.value, xPos + 8, yPos + 14);
+    doc.text(kpi.value, xPos + 8, yPos + 12);
     
     // Label
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(100, 116, 139);
-    doc.text(kpi.label, xPos + 8, yPos + 22);
+    doc.text(kpi.label, xPos + 8, yPos + 20);
   });
-  
-  yPos += 40;
-  
-  // Compliance Rate
-  doc.setFillColor(...primaryColor);
-  doc.roundedRect(14, yPos, pageWidth - 28, 25, 3, 3, 'F');
-  
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(12);
-  doc.setFont('helvetica', 'normal');
-  doc.text('Taxa de Conformidade Geral', 20, yPos + 10);
-  
-  doc.setFontSize(20);
-  doc.setFont('helvetica', 'bold');
-  doc.text(`${stats.complianceRate}%`, 20, yPos + 20);
-  
-  // Progress bar
-  const progressWidth = 80;
-  const progressHeight = 6;
-  const progressX = pageWidth - 28 - progressWidth;
-  const progressY = yPos + 12;
-  
-  doc.setFillColor(255, 255, 255);
-  doc.setGState(new (doc as any).GState({ opacity: 0.3 }));
-  doc.roundedRect(progressX, progressY, progressWidth, progressHeight, 2, 2, 'F');
-  
-  doc.setGState(new (doc as any).GState({ opacity: 1 }));
-  doc.setFillColor(255, 255, 255);
-  doc.roundedRect(progressX, progressY, progressWidth * (stats.complianceRate / 100), progressHeight, 2, 2, 'F');
-  
-  doc.setFontSize(10);
-  doc.text('Meta: 95%', progressX + progressWidth + 5, progressY + 5);
   
   yPos += 35;
   
-  // Status Table
+  // Two columns layout for tables
+  const colWidth = (pageWidth - 42) / 2;
+  
+  // Left column: Status Table
   doc.setTextColor(30, 41, 59);
-  doc.setFontSize(14);
+  doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
   doc.text('Distribuição por Status', 14, yPos);
-  yPos += 5;
   
   const statusData = stats.byStatus
     .filter(s => s.count > 0)
@@ -157,83 +126,85 @@ export function exportDashboardPDF(stats: DashboardStats, filters: ExportFilters
     ]);
   
   autoTable(doc, {
-    startY: yPos,
-    head: [['Status', 'Quantidade', 'Percentual']],
+    startY: yPos + 4,
+    head: [['Status', 'Qtd', '%']],
     body: statusData,
     theme: 'striped',
-    headStyles: { fillColor: primaryColor, fontSize: 10 },
-    styles: { fontSize: 9, cellPadding: 4 },
+    headStyles: { fillColor: primaryColor, fontSize: 9, cellPadding: 3 },
+    styles: { fontSize: 9, cellPadding: 3 },
     columnStyles: {
-      0: { cellWidth: 60 },
-      1: { cellWidth: 40, halign: 'center' },
-      2: { cellWidth: 40, halign: 'center' },
+      0: { cellWidth: 50 },
+      1: { cellWidth: 25, halign: 'center' },
+      2: { cellWidth: 25, halign: 'center' },
     },
-    margin: { left: 14, right: 14 },
+    margin: { left: 14, right: pageWidth - 14 - colWidth },
+    tableWidth: colWidth,
   });
   
-  yPos = (doc as any).lastAutoTable.finalY + 15;
+  // Right column: Category Table
+  doc.setTextColor(30, 41, 59);
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Conformidade por Categoria', 14 + colWidth + 14, yPos);
   
-  // Category Table
   if (stats.byCategory.length > 0) {
-    doc.setTextColor(30, 41, 59);
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Conformidade por Categoria', 14, yPos);
-    yPos += 5;
-    
     const categoryData = stats.byCategory.map(c => [
-      c.category,
+      c.category.length > 20 ? c.category.substring(0, 18) + '...' : c.category,
       c.count.toString(),
       c.compliant.toString(),
       c.nonCompliant.toString(),
-      `${c.count > 0 ? ((c.compliant / c.count) * 100).toFixed(1) : 0}%`
+      `${c.count > 0 ? ((c.compliant / c.count) * 100).toFixed(0) : 0}%`
     ]);
     
     autoTable(doc, {
-      startY: yPos,
-      head: [['Categoria', 'Total', 'Conforme', 'Não Conforme', '% Conform.']],
+      startY: yPos + 4,
+      head: [['Categoria', 'Total', 'OK', 'NC', '%']],
       body: categoryData,
       theme: 'striped',
-      headStyles: { fillColor: primaryColor, fontSize: 10 },
-      styles: { fontSize: 9, cellPadding: 4 },
+      headStyles: { fillColor: primaryColor, fontSize: 9, cellPadding: 3 },
+      styles: { fontSize: 9, cellPadding: 3 },
       columnStyles: {
-        0: { cellWidth: 50 },
-        1: { cellWidth: 25, halign: 'center' },
-        2: { cellWidth: 30, halign: 'center' },
-        3: { cellWidth: 35, halign: 'center' },
-        4: { cellWidth: 30, halign: 'center' },
+        0: { cellWidth: 55 },
+        1: { cellWidth: 20, halign: 'center' },
+        2: { cellWidth: 20, halign: 'center' },
+        3: { cellWidth: 20, halign: 'center' },
+        4: { cellWidth: 20, halign: 'center' },
       },
-      margin: { left: 14, right: 14 },
+      margin: { left: 14 + colWidth + 14, right: 14 },
+      tableWidth: colWidth,
     });
-    
-    yPos = (doc as any).lastAutoTable.finalY + 15;
   }
   
-  // Alerts Section (if space allows)
-  if (yPos < 220 && stats.recentAlerts.length > 0) {
+  // Get the Y position after both tables
+  const statusTableEndY = (doc as any).lastAutoTable?.finalY || yPos + 50;
+  yPos = statusTableEndY + 15;
+  
+  // Alerts Section - Full width
+  if (stats.recentAlerts.length > 0 && yPos < pageHeight - 50) {
     doc.setTextColor(30, 41, 59);
-    doc.setFontSize(14);
+    doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     doc.text('Alertas Prioritários', 14, yPos);
-    yPos += 5;
     
-    const alertData = stats.recentAlerts.slice(0, 5).map(a => [
+    const alertData = stats.recentAlerts.slice(0, 8).map(a => [
       a.message,
-      a.equipmentName,
+      a.equipmentName.length > 35 ? a.equipmentName.substring(0, 33) + '...' : a.equipmentName,
+      a.date,
       a.severity === 'high' ? 'Alta' : a.severity === 'medium' ? 'Média' : 'Baixa'
     ]);
     
     autoTable(doc, {
-      startY: yPos,
-      head: [['Alerta', 'Equipamento', 'Prioridade']],
+      startY: yPos + 4,
+      head: [['Alerta', 'Equipamento', 'Data', 'Prioridade']],
       body: alertData,
       theme: 'striped',
-      headStyles: { fillColor: dangerColor, fontSize: 10 },
-      styles: { fontSize: 9, cellPadding: 4 },
+      headStyles: { fillColor: dangerColor, fontSize: 9, cellPadding: 3 },
+      styles: { fontSize: 9, cellPadding: 3 },
       columnStyles: {
-        0: { cellWidth: 60 },
-        1: { cellWidth: 70 },
+        0: { cellWidth: 80 },
+        1: { cellWidth: 100 },
         2: { cellWidth: 30, halign: 'center' },
+        3: { cellWidth: 30, halign: 'center' },
       },
       margin: { left: 14, right: 14 },
     });
@@ -248,7 +219,7 @@ export function exportDashboardPDF(stats: DashboardStats, filters: ExportFilters
     doc.text(
       `SafeShip - Sistema de Gestão de Equipamentos | Página ${i} de ${pageCount}`,
       pageWidth / 2,
-      doc.internal.pageSize.getHeight() - 10,
+      pageHeight - 8,
       { align: 'center' }
     );
   }

@@ -45,11 +45,11 @@ export function useTechniciansAndAdmins() {
   return useQuery({
     queryKey: ['profiles', 'technicians-admins'],
     queryFn: async () => {
-      // First get user_ids that are technicians or admins
+      // First get user_ids that are technicians, admins, admin_master, or supervisors
       const { data: roleData, error: roleError } = await supabase
         .from('user_roles')
         .select('user_id, role')
-        .in('role', ['admin', 'technician']);
+        .in('role', ['admin', 'admin_master', 'technician', 'supervisor']);
       
       if (roleError) throw roleError;
       
