@@ -49,22 +49,33 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
       components={{
         IconLeft: ({ ..._props }) => <ChevronLeft className="h-4 w-4" />,
         IconRight: ({ ..._props }) => <ChevronRight className="h-4 w-4" />,
-        Dropdown: ({ value, onChange, children, ...dropdownProps }) => {
+        Dropdown: ({ value, onChange, children, name }) => {
           const options = React.Children.toArray(children) as React.ReactElement<React.HTMLProps<HTMLOptionElement>>[];
           const selected = options.find((child) => child.props.value === value);
+          const isMonth = name === "months";
           
           return (
             <div className="relative inline-flex items-center">
-              <span className="text-sm font-medium px-2 py-1 rounded-md bg-muted hover:bg-accent transition-colors cursor-pointer">
-                {selected?.props?.children}
-              </span>
+              <div className="flex items-center gap-1 text-sm font-medium px-2 py-1.5 rounded-md bg-muted hover:bg-accent transition-colors cursor-pointer border border-border">
+                <span className="capitalize">
+                  {isMonth 
+                    ? String(selected?.props?.children).charAt(0).toUpperCase() + String(selected?.props?.children).slice(1)
+                    : selected?.props?.children
+                  }
+                </span>
+                <ChevronRight className="h-3 w-3 rotate-90 opacity-50" />
+              </div>
               <select
                 value={value}
                 onChange={onChange}
-                className="absolute inset-0 w-full opacity-0 cursor-pointer"
-                {...dropdownProps}
+                name={name}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               >
-                {children}
+                {options.map((option, i) => (
+                  <option key={i} value={option.props.value}>
+                    {option.props.children}
+                  </option>
+                ))}
               </select>
             </div>
           );
