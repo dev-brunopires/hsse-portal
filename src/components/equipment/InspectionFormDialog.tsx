@@ -49,6 +49,7 @@ import {
   Info,
   PenTool,
   WifiOff,
+  Zap,
 } from 'lucide-react';
 import { SignaturePad } from '@/components/inspections/SignaturePad';
 import { Equipment } from '@/types/equipment';
@@ -288,6 +289,84 @@ export function InspectionFormDialog({
         description: 'Deseja salvar localmente para sincronizar depois?',
         variant: 'destructive',
       });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Quick inspection - mark all as OK and submit as compliant
+  const handleQuickInspection = async () => {
+    if (!equipment) return;
+
+    const formData = form.getValues();
+    if (!formData.inspectorId) {
+      toast({
+        title: "Inspetor Necessário",
+        description: "Selecione o inspetor responsável antes de continuar.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Mark all checklist items as OK
+      const quickChecklist = checklist.map(item => ({
+        description: item.description,
+        status: 'ok' as const,
+        notes: '',
+      }));
+
+      if (!isOnline) {
+        addPendingInspection({
+          equipment_id: equipment.id,
+          equipment_name: equipment.name,
+          equipment_code: equipment.internalCode,
+          status: 'compliant',
+          observations: 'Inspeção rápida - Todos os itens conformes',
+          recommendations: null,
+          checklist_items: quickChecklist,
+          signature_data: signatureData,
+          inspector_id: formData.inspectorId,
+          ship_id: null,
+        });
+
+        toast({
+          title: 'Inspeção Salva Offline',
+          description: 'Será sincronizada automaticamente quando a conexão for restaurada.',
+        });
+      } else {
+        await createInspection.mutateAsync({
+          inspection: {
+            equipment_id: equipment.id,
+            inspector_id: formData.inspectorId,
+            inspection_date: formData.inspectionDate || new Date().toISOString().split('T')[0],
+            status: 'compliant',
+            observations: 'Inspeção rápida - Todos os itens conformes',
+            recommendations: null,
+            next_inspection_date: formData.nextInspectionDate || null,
+            signature_data: signatureData,
+            signed_at: signatureData ? new Date().toISOString() : null,
+          },
+          checklistItems: quickChecklist,
+          photos: [],
+        });
+
+        toast({
+          title: "Inspeção Registrada",
+          description: `${equipment.internalCode} marcado como conforme.`,
+        });
+      }
+
+      onOpenChange(false);
+      form.reset();
+      setChecklist([]);
+      setUploadedPhotos([]);
+      setSignatureData(null);
+      onSuccess?.();
+    } catch (error) {
+      console.error('Error creating quick inspection:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -718,24 +797,38 @@ export function InspectionFormDialog({
             </Tabs>
 
             {/* Footer */}
-            <div className="flex items-center justify-between pt-4 mt-4 border-t border-border flex-shrink-0">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 mt-4 border-t border-border flex-shrink-0">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar
               </Button>
               
-              <Button type="submit" disabled={isSubmitting} className="gap-2">
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Registrando...
-                  </>
-                ) : (
-                  <>
-                    <ClipboardCheck className="h-4 w-4" />
-                    Finalizar Inspeção
-                  </>
-                )}
-              </Button>
+              <div className="flex items-center gap-2">
+                {/* Quick Inspection Button */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isSubmitting}
+                  onClick={handleQuickInspection}
+                  className="gap-2 bg-status-success/10 border-status-success/30 text-status-success hover:bg-status-success/20 hover:text-status-success"
+                >
+                  <Zap className="h-4 w-4" />
+                  <span className="hidden sm:inline">Lançar como</span> Conforme
+                </Button>
+
+                <Button type="submit" disabled={isSubmitting} className="gap-2">
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Registrando...
+                    </>
+                  ) : (
+                    <>
+                      <ClipboardCheck className="h-4 w-4" />
+                      Finalizar Inspeção
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </form>
         </Form>
