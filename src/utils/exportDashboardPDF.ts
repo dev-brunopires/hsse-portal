@@ -66,44 +66,79 @@ export async function exportDashboardPDF(stats: DashboardStats, filters: ExportF
   yPos = addSectionHeader(doc, yPos, 'INDICADORES PRINCIPAIS', SBM_BLUE, pageWidth - 28);
   yPos += 4;
   
-  // KPI Cards
-  const kpiWidth = (pageWidth - 98) / 6;
+  // KPI Cards - 2 rows
+  const kpiWidth = (pageWidth - 70) / 5;
   const kpis = [
     { label: 'Total Equipamentos', value: stats.totalEquipment.toString(), color: SBM_BLUE },
     { label: 'Ativos', value: stats.activeEquipment.toString(), color: SUCCESS_GREEN },
     { label: 'Cert. Vencidos', value: stats.expiredCertificates.toString(), color: DANGER_RED },
     { label: 'Status Vencido', value: stats.expiredEquipment.toString(), color: DANGER_RED },
     { label: 'Insp. Pendentes', value: stats.pendingInspections.toString(), color: WARNING_YELLOW },
+  ];
+  
+  const kpisRow2 = [
     { label: 'Conformidade', value: `${stats.complianceRate}%`, color: SBM_BLUE },
+    { label: 'Manut. Pendentes', value: stats.pendingMaintenance.toString(), color: WARNING_YELLOW },
+    { label: 'Manut. Atrasadas', value: stats.overdueMaintenance.toString(), color: DANGER_RED },
+    { label: 'Manut. em Exec.', value: stats.inProgressMaintenance.toString(), color: SBM_BLUE },
   ];
   
   kpis.forEach((kpi, index) => {
-    const xPos = 14 + (kpiWidth + 5) * index;
+    const xPos = 14 + (kpiWidth + 4) * index;
     
     // Card background
     doc.setFillColor(255, 255, 255);
     doc.setDrawColor(229, 231, 235);
-    doc.roundedRect(xPos, yPos, kpiWidth, 28, 3, 3, 'FD');
+    doc.roundedRect(xPos, yPos, kpiWidth, 26, 3, 3, 'FD');
     
     // Colored accent bar on left
     doc.setFillColor(...kpi.color);
-    doc.roundedRect(xPos, yPos, 4, 28, 2, 0, 'F');
-    doc.rect(xPos + 2, yPos, 2, 28, 'F');
+    doc.roundedRect(xPos, yPos, 4, 26, 2, 0, 'F');
+    doc.rect(xPos + 2, yPos, 2, 26, 'F');
     
     // Value
-    doc.setFontSize(18);
+    doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...kpi.color);
-    doc.text(kpi.value, xPos + 10, yPos + 14);
+    doc.text(kpi.value, xPos + 10, yPos + 12);
     
     // Label
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...MEDIUM_GRAY);
-    doc.text(kpi.label, xPos + 10, yPos + 22);
+    doc.text(kpi.label, xPos + 10, yPos + 20);
   });
   
-  yPos += 38;
+  yPos += 30;
+  
+  // Row 2 of KPIs
+  kpisRow2.forEach((kpi, index) => {
+    const xPos = 14 + (kpiWidth + 4) * index;
+    
+    // Card background
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(229, 231, 235);
+    doc.roundedRect(xPos, yPos, kpiWidth, 26, 3, 3, 'FD');
+    
+    // Colored accent bar on left
+    doc.setFillColor(...kpi.color);
+    doc.roundedRect(xPos, yPos, 4, 26, 2, 0, 'F');
+    doc.rect(xPos + 2, yPos, 2, 26, 'F');
+    
+    // Value
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...kpi.color);
+    doc.text(kpi.value, xPos + 10, yPos + 12);
+    
+    // Label
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...MEDIUM_GRAY);
+    doc.text(kpi.label, xPos + 10, yPos + 20);
+  });
+  
+  yPos += 34;
   
   // Two columns layout for tables
   const colWidth = (pageWidth - 42) / 2;
