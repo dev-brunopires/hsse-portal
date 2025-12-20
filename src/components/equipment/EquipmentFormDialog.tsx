@@ -350,8 +350,8 @@ export function EquipmentFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col bg-card border border-border">
-        <DialogHeader className="pb-4 border-b border-border">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col bg-card border border-border" hideCloseButton>
+        <DialogHeader className="pb-4 border-b border-border pr-0">
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Package className="h-5 w-5 text-primary" />
             {mode === 'create' ? 'Novo Equipamento' : 'Editar Equipamento'}
@@ -397,10 +397,10 @@ export function EquipmentFormDialog({
                 </TabsTrigger>
               </TabsList>
 
-              <div className="flex-1 overflow-y-auto pr-2">
+              <div className="flex-1 overflow-y-auto px-1">
                 {/* General Tab */}
                 <TabsContent value="general" className="space-y-4 mt-0">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                     <FormField
                       control={form.control}
                       name="internalCode"
@@ -458,7 +458,7 @@ export function EquipmentFormDialog({
                     )}
                   />
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                     <FormField
                       control={form.control}
                       name="type"
@@ -488,7 +488,7 @@ export function EquipmentFormDialog({
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                     <FormField
                       control={form.control}
                       name="manufacturer"
@@ -637,7 +637,7 @@ export function EquipmentFormDialog({
 
                 {/* Dates Tab */}
                 <TabsContent value="dates" className="space-y-4 mt-0">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                     <FormField
                       control={form.control}
                       name="manufacturingDate"
@@ -679,7 +679,7 @@ export function EquipmentFormDialog({
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                     <FormField
                       control={form.control}
                       name="expiryDate"
