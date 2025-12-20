@@ -474,13 +474,16 @@ export function EquipmentTable({
                     Val. Cert. {getSortIcon('certificate_expiry')}
                   </div>
                 </TableHead>
+                <TableHead className="font-semibold hidden lg:table-cell">
+                  Cadastrado por
+                </TableHead>
                 <TableHead className="w-12"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredAndSortedEquipment.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                     Nenhum equipamento encontrado
                   </TableCell>
                 </TableRow>
@@ -529,6 +532,9 @@ export function EquipmentTable({
                     </TableCell>
                     <TableCell className="text-sm">
                       {formatDate(item.certificate_expiry)}
+                    </TableCell>
+                    <TableCell className="text-sm hidden lg:table-cell">
+                      {(item as any).created_by_profile?.full_name || '—'}
                     </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
