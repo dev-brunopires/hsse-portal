@@ -39,6 +39,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { SignaturePad } from '@/components/inspections/SignaturePad';
+import { AvatarCropDialog } from '@/components/profile/AvatarCropDialog';
 
 const profileSchema = z.object({
   full_name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
@@ -77,6 +78,8 @@ export default function Profile() {
   const [notificationApp, setNotificationApp] = useState(true);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [cropDialogOpen, setCropDialogOpen] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -140,9 +143,29 @@ export default function Profile() {
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setAvatarFile(file);
-      setAvatarPreview(URL.createObjectURL(file));
+      // Open crop dialog with the selected image
+      const imageUrl = URL.createObjectURL(file);
+      setImageToCrop(imageUrl);
+      setCropDialogOpen(true);
     }
+  };
+
+  const handleCropComplete = (croppedBlob: Blob) => {
+    // Convert blob to file
+    const croppedFile = new File([croppedBlob], 'avatar.jpg', { type: 'image/jpeg' });
+    setAvatarFile(croppedFile);
+    setAvatarPreview(URL.createObjectURL(croppedBlob));
+    
+    // Clean up the original image URL
+    if (imageToCrop) {
+      URL.revokeObjectURL(imageToCrop);
+      setImageToCrop(null);
+    }
+    
+    toast({
+      title: 'Foto recortada',
+      description: 'Clique em "Salvar Alterações" para confirmar.',
+    });
   };
 
   const onSubmit = async (data: ProfileFormData) => {
@@ -661,6 +684,22 @@ export default function Profile() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Avatar Crop Dialog */}
+      {imageToCrop && (
+        <AvatarCropDialog
+          open={cropDialogOpen}
+          onOpenChange={(open) => {
+            setCropDialogOpen(open);
+            if (!open && imageToCrop) {
+              URL.revokeObjectURL(imageToCrop);
+              setImageToCrop(null);
+            }
+          }}
+          imageSrc={imageToCrop}
+          onCropComplete={handleCropComplete}
+        />
+      )}
     </div>
   );
 }
