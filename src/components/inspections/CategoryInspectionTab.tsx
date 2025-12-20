@@ -646,9 +646,30 @@ export function CategoryInspectionTab() {
                       </TableCell>
                       <TableCell>{result.equipment.type}</TableCell>
                       <TableCell>
-                        <Badge variant="default" className="gap-1">
-                          <Check className="h-3 w-3" />
-                          Conforme
+                        <Badge 
+                          variant="default" 
+                          className={`gap-1 ${
+                            result.status === 'compliant' ? 'bg-green-500 hover:bg-green-600' :
+                            result.status === 'attention' ? 'bg-yellow-500 hover:bg-yellow-600 text-black' :
+                            'bg-red-500 hover:bg-red-600'
+                          }`}
+                        >
+                          {result.status === 'compliant' ? (
+                            <>
+                              <Check className="h-3 w-3" />
+                              Conforme
+                            </>
+                          ) : result.status === 'attention' ? (
+                            <>
+                              <AlertTriangle className="h-3 w-3" />
+                              Atenção
+                            </>
+                          ) : (
+                            <>
+                              <AlertTriangle className="h-3 w-3" />
+                              Não Conforme
+                            </>
+                          )}
                         </Badge>
                       </TableCell>
                     </TableRow>
