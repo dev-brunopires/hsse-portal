@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
+import sbmLogoWhite from '@/assets/sbm-logo-white.png';
 
 interface MobileNavItemProps {
   to: string;
@@ -74,17 +75,7 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
       >
         <SheetHeader className="h-16 flex flex-row items-center justify-between border-b border-sidebar-border px-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-sidebar-foreground/10 border border-sidebar-border rounded-lg flex items-center justify-center">
-              <span className="text-sidebar-foreground font-bold text-xs">SBM</span>
-            </div>
-            <div className="flex flex-col">
-              <SheetTitle className="text-sm font-bold text-sidebar-foreground tracking-tight">
-                SBM Offshore
-              </SheetTitle>
-              <span className="text-[10px] text-sidebar-foreground/60 uppercase tracking-wider">
-                Safety Equipment
-              </span>
-            </div>
+            <img src={sbmLogoWhite} alt="SBM Offshore" className="h-10" />
           </div>
         </SheetHeader>
 
