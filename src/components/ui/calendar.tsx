@@ -11,16 +11,21 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
-      className={cn("p-3", className)}
+      className={cn("p-3 pointer-events-auto", className)}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
-        caption: "flex justify-center pt-1 relative items-center",
-        caption_label: "text-sm font-medium",
+        caption: "flex justify-center pt-1 relative items-center gap-1",
+        caption_label: "text-sm font-medium hidden",
+        caption_dropdowns: "flex items-center gap-1",
+        dropdown_month: "relative",
+        dropdown_year: "relative",
+        dropdown: "absolute inset-0 w-full opacity-0 cursor-pointer z-10",
+        vhidden: "sr-only",
         nav: "space-x-1 flex items-center",
         nav_button: cn(
           buttonVariants({ variant: "outline" }),
-          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
+          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 border-border",
         ),
         nav_button_previous: "absolute left-1",
         nav_button_next: "absolute right-1",
@@ -44,6 +49,26 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
       components={{
         IconLeft: ({ ..._props }) => <ChevronLeft className="h-4 w-4" />,
         IconRight: ({ ..._props }) => <ChevronRight className="h-4 w-4" />,
+        Dropdown: ({ value, onChange, children, ...dropdownProps }) => {
+          const options = React.Children.toArray(children) as React.ReactElement<React.HTMLProps<HTMLOptionElement>>[];
+          const selected = options.find((child) => child.props.value === value);
+          
+          return (
+            <div className="relative inline-flex items-center">
+              <span className="text-sm font-medium px-2 py-1 rounded-md bg-muted hover:bg-accent transition-colors cursor-pointer">
+                {selected?.props?.children}
+              </span>
+              <select
+                value={value}
+                onChange={onChange}
+                className="absolute inset-0 w-full opacity-0 cursor-pointer"
+                {...dropdownProps}
+              >
+                {children}
+              </select>
+            </div>
+          );
+        },
       }}
       {...props}
     />
