@@ -111,11 +111,12 @@ export function AppSidebar() {
         <NavItem to="/inspections" icon={<ClipboardCheck size={20} />} label="Inspeções" collapsed={collapsed} />
         <NavItem to="/reports" icon={<FileText size={20} />} label="Relatórios" collapsed={collapsed} />
         <NavItem to="/alerts" icon={<Bell size={20} />} label="Alertas" collapsed={collapsed} />
+        <NavItem to="/categories" icon={<FolderOpen size={20} />} label="Categorias" collapsed={collapsed} />
 
         {!collapsed && (
           <div className="pt-4">
             <p className="px-3 pb-2 text-xs font-medium uppercase tracking-wider text-sidebar-foreground/50">
-              Categorias
+              Tipos de Equipamento
             </p>
           </div>
         )}
@@ -131,7 +132,6 @@ export function AppSidebar() {
       {/* Bottom Section */}
       <div className="border-t border-sidebar-border p-3 space-y-1">
         <NavItem to="/profile" icon={<User size={20} />} label="Meu Perfil" collapsed={collapsed} />
-        <NavItem to="/categories" icon={<FolderOpen size={20} />} label="Categorias" collapsed={collapsed} />
         <NavItem to="/users" icon={<Users size={20} />} label="Usuários" collapsed={collapsed} />
         <NavItem to="/settings" icon={<Settings size={20} />} label="Configurações" collapsed={collapsed} />
       </div>
