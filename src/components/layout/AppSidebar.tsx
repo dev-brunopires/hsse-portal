@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
-import sbmLogoWhite from '@/assets/sbm-logo-white.svg';
+import sbmLogoWhite from '@/assets/sbm-logo-white.png';
 
 interface NavItemProps {
   to: string;
