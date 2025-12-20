@@ -315,12 +315,7 @@ export function InspectionFormDialog({
                               <SelectContent className="bg-popover border border-border shadow-lg z-50">
                                 {inspectors.map((inspector) => (
                                   <SelectItem key={inspector.user_id} value={inspector.user_id}>
-                                    <div className="flex flex-col">
-                                      <span className="font-medium">{inspector.full_name}</span>
-                                      <span className="text-xs text-muted-foreground">
-                                        {inspector.email}
-                                      </span>
-                                    </div>
+                                    {inspector.full_name}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
