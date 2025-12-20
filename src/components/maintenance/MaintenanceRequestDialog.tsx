@@ -123,8 +123,8 @@ export function MaintenanceRequestDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col bg-card">
+        <DialogHeader className="shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Wrench className="h-5 w-5 text-primary" />
             Nova Solicitação de Manutenção
@@ -134,9 +134,9 @@ export function MaintenanceRequestDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 pr-4">
+        <ScrollArea className="flex-1 -mx-6 px-6 min-h-0">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pb-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 pb-4 pr-2">
               {/* Type and Priority */}
               <div className="grid grid-cols-2 gap-4">
                 <FormField
@@ -147,7 +147,7 @@ export function MaintenanceRequestDialog({
                       <FormLabel>Tipo de Manutenção *</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="border-border">
                             <SelectValue />
                           </SelectTrigger>
                         </FormControl>
@@ -169,7 +169,7 @@ export function MaintenanceRequestDialog({
                       <FormLabel>Prioridade *</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="border-border">
                             <SelectValue />
                           </SelectTrigger>
                         </FormControl>
@@ -196,7 +196,7 @@ export function MaintenanceRequestDialog({
                     <FormLabel>Equipamento *</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value} disabled={equipmentLoading}>
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="border-border">
                           <SelectValue placeholder={equipmentLoading ? 'Carregando...' : 'Selecione o equipamento'} />
                         </SelectTrigger>
                       </FormControl>
@@ -241,7 +241,7 @@ export function MaintenanceRequestDialog({
                   <FormItem>
                     <FormLabel>Título *</FormLabel>
                     <FormControl>
-                      <Input placeholder="Breve descrição do problema ou serviço" {...field} />
+                      <Input className="border-border" placeholder="Breve descrição do problema ou serviço" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -258,7 +258,7 @@ export function MaintenanceRequestDialog({
                     <FormControl>
                       <Textarea 
                         placeholder="Descreva o problema ou serviço necessário em detalhes..."
-                        className="min-h-[100px]"
+                        className="min-h-[80px] border-border resize-none"
                         {...field} 
                       />
                     </FormControl>
@@ -277,7 +277,7 @@ export function MaintenanceRequestDialog({
                     <FormControl>
                       <Textarea 
                         placeholder="Se já identificou a causa do problema, descreva aqui..."
-                        className="min-h-[80px]"
+                        className="min-h-[60px] border-border resize-none"
                         {...field} 
                       />
                     </FormControl>
