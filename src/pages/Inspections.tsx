@@ -23,6 +23,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -407,19 +408,21 @@ export default function Inspections() {
             </Select>
 
             <div className="flex gap-2">
-              <Input
-                type="date"
-                placeholder="De"
+              <DatePicker
                 value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="w-full lg:w-[140px]"
+                onChange={setDateFrom}
+                placeholder="De"
+                className="w-full lg:w-[160px]"
+                fromYear={new Date().getFullYear() - 10}
+                toYear={new Date().getFullYear() + 1}
               />
-              <Input
-                type="date"
-                placeholder="Até"
+              <DatePicker
                 value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="w-full lg:w-[140px]"
+                onChange={setDateTo}
+                placeholder="Até"
+                className="w-full lg:w-[160px]"
+                fromYear={new Date().getFullYear() - 10}
+                toYear={new Date().getFullYear() + 1}
               />
             </div>
 
