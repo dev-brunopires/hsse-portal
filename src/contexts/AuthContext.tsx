@@ -198,7 +198,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const isAdmin = role === 'admin';
+  const isAdmin = role === 'admin' || role === 'admin_master';
   const isTechnician = role === 'technician';
   const canEdit = isAdmin || isTechnician;
 
