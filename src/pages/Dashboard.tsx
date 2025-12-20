@@ -16,6 +16,8 @@ import { ModernAlertsList } from '@/components/dashboard/ModernAlertsList';
 import { ModernStatusChart } from '@/components/dashboard/ModernStatusChart';
 import { ModernCategoryChart } from '@/components/dashboard/ModernCategoryChart';
 import { ComplianceGauge } from '@/components/dashboard/ComplianceGauge';
+import { InspectionTrendChart } from '@/components/dashboard/InspectionTrendChart';
+import { UpcomingInspectionsCard } from '@/components/dashboard/UpcomingInspectionsCard';
 import { DashboardFilters, type DashboardFiltersState } from '@/components/dashboard/DashboardFilters';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useShips } from '@/hooks/useShips';
@@ -210,16 +212,24 @@ export default function Dashboard() {
       {/* Compliance Rate Card */}
       <ComplianceGauge value={stats.complianceRate} target={95} />
 
-      {/* Charts and Alerts */}
+      {/* Charts Row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2">
           <ModernCategoryChart data={stats.byCategory} />
-          <ModernStatusChart data={stats.byStatus} totalEquipment={stats.totalEquipment} />
         </div>
-        <div className="lg:row-span-1">
-          <ModernAlertsList alerts={stats.recentAlerts} />
-        </div>
+        <ModernStatusChart data={stats.byStatus} totalEquipment={stats.totalEquipment} />
       </div>
+
+      {/* Charts Row 2 */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <InspectionTrendChart />
+        </div>
+        <UpcomingInspectionsCard />
+      </div>
+
+      {/* Alerts */}
+      <ModernAlertsList alerts={stats.recentAlerts} />
     </div>
   );
 }
