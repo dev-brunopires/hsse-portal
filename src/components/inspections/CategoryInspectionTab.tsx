@@ -81,7 +81,7 @@ export function CategoryInspectionTab() {
   const { data: categories = [], isLoading: categoriesLoading } = useCategories();
   const { data: equipment = [], isLoading: equipmentLoading } = useEquipment();
   const { data: allShips = [] } = useShips();
-  const { data: userSignatureSettings } = useUserSignature();
+  const { data: userSignatureSettings, isLoading: signatureLoading } = useUserSignature();
   const { data: userShips = [] } = useUserShips(user?.id);
   const createInspection = useCreateInspection();
   
@@ -157,11 +157,24 @@ export function CategoryInspectionTab() {
       return;
     }
 
-    // Check if user has auto-sign enabled
-    if (userSignatureSettings?.auto_sign_inspections && userSignatureSettings?.default_signature) {
+    // Wait for signature settings to load
+    if (signatureLoading) {
+      toast({
+        title: 'Carregando configurações...',
+        description: 'Aguarde enquanto carregamos suas configurações de assinatura.',
+      });
+      return;
+    }
+
+    console.log('Signature settings:', userSignatureSettings);
+
+    // Check if user has auto-sign enabled AND has a signature saved
+    if (userSignatureSettings?.auto_sign_inspections === true && userSignatureSettings?.default_signature) {
+      console.log('Using auto-signature');
       setSignatureData(userSignatureSettings.default_signature);
       handleSubmitInspections(userSignatureSettings.default_signature);
     } else {
+      console.log('Showing signature dialog');
       setShowSignatureDialog(true);
     }
   };
