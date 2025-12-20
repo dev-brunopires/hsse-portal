@@ -137,7 +137,7 @@ export function EditInspectionDialog({
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-hidden flex flex-col">
             <ScrollArea className="flex-1 pr-4">
               <div className="space-y-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <FormField
                     control={form.control}
                     name="status"
@@ -182,27 +182,27 @@ export function EditInspectionDialog({
                       </FormItem>
                     )}
                   />
-                </div>
 
-                <FormField
-                  control={form.control}
-                  name="next_inspection_date"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Próxima Inspeção</FormLabel>
-                      <FormControl>
-                        <DatePickerField
-                          value={field.value}
-                          onChange={field.onChange}
-                          placeholder="Selecione a data"
-                          fromYear={new Date().getFullYear()}
-                          toYear={new Date().getFullYear() + 5}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="next_inspection_date"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Próxima</FormLabel>
+                        <FormControl>
+                          <DatePickerField
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="Selecione"
+                            fromYear={new Date().getFullYear()}
+                            toYear={new Date().getFullYear() + 5}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 <FormField
                   control={form.control}
