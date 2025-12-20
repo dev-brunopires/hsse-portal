@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
-import sbmLogo from '@/assets/sbm-logo.svg';
+import sbmLogoWhite from '@/assets/sbm-logo-white.svg';
 
 interface NavItemProps {
   to: string;
@@ -82,7 +82,7 @@ export function AppSidebar() {
             <span className="text-sidebar-foreground font-bold text-sm">SBM</span>
           </div>
         ) : (
-          <img src={sbmLogo} alt="SBM Offshore" className="h-8" />
+          <img src={sbmLogoWhite} alt="SBM Offshore" className="h-8" />
         )}
       </div>
 
