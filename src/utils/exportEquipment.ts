@@ -4,6 +4,16 @@ import autoTable from 'jspdf-autotable';
 import type { EquipmentWithCategory } from '@/hooks/useEquipment';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import {
+  SBM_BLUE,
+  DARK_GRAY,
+  LIGHT_GRAY,
+  MEDIUM_GRAY,
+  addPDFHeader,
+  addPDFFooter,
+  addSectionHeader,
+  preloadLogo,
+} from './pdfStyles';
 
 const statusLabels: Record<string, string> = {
   active: 'Ativo',
@@ -52,15 +62,21 @@ export function exportToExcel(equipment: EquipmentWithCategory[], filename = 'eq
   XLSX.writeFile(wb, `${filename}_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
 }
 
-export function exportToPDF(equipment: EquipmentWithCategory[], filename = 'equipamentos') {
+export async function exportToPDF(equipment: EquipmentWithCategory[], filename = 'equipamentos') {
+  // Preload logo
+  await preloadLogo();
+  
   const doc = new jsPDF('landscape');
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const generatedDate = format(new Date(), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR });
   
-  doc.setFontSize(18);
-  doc.text('Relatório de Equipamentos', 14, 22);
-  
-  doc.setFontSize(10);
-  doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, 14, 30);
-  doc.text(`Total de equipamentos: ${equipment.length}`, 14, 36);
+  // Add standardized header with logo
+  let yPos = await addPDFHeader(
+    doc,
+    'RELATÓRIO DE EQUIPAMENTOS',
+    `Gerado em: ${generatedDate}`,
+    [`Total: ${equipment.length} equipamentos`]
+  );
 
   const tableData = equipment.map(item => [
     item.internal_code,
@@ -75,7 +91,7 @@ export function exportToPDF(equipment: EquipmentWithCategory[], filename = 'equi
   ]);
 
   autoTable(doc, {
-    startY: 42,
+    startY: yPos,
     head: [[
       'Código',
       'Nome',
@@ -89,9 +105,16 @@ export function exportToPDF(equipment: EquipmentWithCategory[], filename = 'equi
     ]],
     body: tableData,
     styles: { fontSize: 8 },
-    headStyles: { fillColor: [30, 41, 59] },
+    headStyles: { fillColor: SBM_BLUE },
     alternateRowStyles: { fillColor: [248, 250, 252] },
   });
+
+  // Add standardized footer
+  addPDFFooter(
+    doc,
+    'SBM Offshore - Sistema de Gestão de Equipamentos de Segurança',
+    `Relatório de Equipamentos - ${format(new Date(), 'dd/MM/yyyy HH:mm')}`
+  );
 
   doc.save(`${filename}_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
 }
