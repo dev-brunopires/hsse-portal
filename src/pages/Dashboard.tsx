@@ -20,9 +20,14 @@ import { InspectionTrendChart } from '@/components/dashboard/InspectionTrendChar
 import { UpcomingInspectionsCard } from '@/components/dashboard/UpcomingInspectionsCard';
 import { ExpiringCertificatesCard } from '@/components/dashboard/ExpiringCertificatesCard';
 import { DashboardFilters, type DashboardFiltersState } from '@/components/dashboard/DashboardFilters';
+import { UpcomingMaintenanceCard } from '@/components/maintenance/UpcomingMaintenanceCard';
+import { InspectorPerformanceCard } from '@/components/dashboard/InspectorPerformanceCard';
+import { InspectionHeatmapCard } from '@/components/dashboard/InspectionHeatmapCard';
+import { CriticalEquipmentCard } from '@/components/dashboard/CriticalEquipmentCard';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useShips } from '@/hooks/useShips';
 import { useCategories } from '@/hooks/useCategories';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { CardSkeleton, ChartSkeleton, ListSkeleton } from '@/components/ui/table-skeleton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,6 +40,9 @@ export default function Dashboard() {
   const { data: stats, isLoading, error, refetch, isFetching } = useDashboardStats();
   const { data: ships = [] } = useShips();
   const { data: categories = [] } = useCategories();
+  
+  // Enable keyboard shortcuts
+  useKeyboardShortcuts();
   
   const [filters, setFilters] = useState<DashboardFiltersState>({
     shipId: 'all',
@@ -233,6 +241,16 @@ export default function Dashboard() {
 
       {/* Expiring Certificates */}
       <ExpiringCertificatesCard />
+
+      {/* New Row: Maintenance, Performance, Heatmap */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <UpcomingMaintenanceCard />
+        <InspectorPerformanceCard />
+        <InspectionHeatmapCard />
+      </div>
+
+      {/* Critical Equipment */}
+      <CriticalEquipmentCard />
 
       {/* Alerts */}
       <ModernAlertsList alerts={stats.recentAlerts} />
