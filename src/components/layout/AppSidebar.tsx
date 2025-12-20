@@ -121,9 +121,11 @@ export function AppSidebar() {
         
         <NavItem to="/profile" icon={<User size={20} />} label="Meu Perfil" collapsed={collapsed} />
         {isAdmin && (
-          <NavItem to="/users" icon={<Users size={20} />} label="Usuários" collapsed={collapsed} />
+          <>
+            <NavItem to="/users" icon={<Users size={20} />} label="Usuários" collapsed={collapsed} />
+            <NavItem to="/settings" icon={<Settings size={20} />} label="Configurações" collapsed={collapsed} />
+          </>
         )}
-        <NavItem to="/settings" icon={<Settings size={20} />} label="Configurações" collapsed={collapsed} />
       </div>
 
       {/* Collapse Button */}

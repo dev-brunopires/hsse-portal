@@ -107,9 +107,11 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
           
           <MobileNavItem to="/profile" icon={<User size={20} />} label="Meu Perfil" onClick={handleNavClick} />
           {isAdmin && (
-            <MobileNavItem to="/users" icon={<Users size={20} />} label="Usuários" onClick={handleNavClick} />
+            <>
+              <MobileNavItem to="/users" icon={<Users size={20} />} label="Usuários" onClick={handleNavClick} />
+              <MobileNavItem to="/settings" icon={<Settings size={20} />} label="Configurações" onClick={handleNavClick} />
+            </>
           )}
-          <MobileNavItem to="/settings" icon={<Settings size={20} />} label="Configurações" onClick={handleNavClick} />
         </div>
       </SheetContent>
     </Sheet>
