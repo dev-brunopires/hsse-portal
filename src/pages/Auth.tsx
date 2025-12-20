@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Shield, Mail, Lock, User, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Shield, Mail, Lock, User, Loader2, Eye, EyeOff, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -14,6 +14,13 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import loginBg from '@/assets/login-bg.jpg';
 
@@ -27,6 +34,9 @@ const signupSchema = z.object({
   email: z.string().email('Email inválido').min(1, 'Email é obrigatório'),
   password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
   confirmPassword: z.string().min(6, 'Confirme sua senha'),
+  role: z.enum(['viewer', 'technician', 'supervisor', 'admin'], {
+    required_error: 'Selecione um perfil de acesso',
+  }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'As senhas não coincidem',
   path: ['confirmPassword'],
@@ -34,6 +44,13 @@ const signupSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 type SignupFormData = z.infer<typeof signupSchema>;
+
+const roleOptions = [
+  { value: 'viewer', label: 'Visualizador', description: 'Apenas visualização' },
+  { value: 'technician', label: 'Técnico', description: 'Pode realizar inspeções' },
+  { value: 'supervisor', label: 'Supervisor', description: 'Supervisiona equipes' },
+  { value: 'admin', label: 'Administrador', description: 'Acesso completo' },
+];
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
@@ -63,6 +80,7 @@ export default function Auth() {
       email: '',
       password: '',
       confirmPassword: '',
+      role: undefined,
     },
   });
 
@@ -78,7 +96,7 @@ export default function Auth() {
 
   const handleSignup = async (data: SignupFormData) => {
     setIsLoading(true);
-    const { error } = await signUp(data.email, data.password, data.fullName);
+    const { error } = await signUp(data.email, data.password, data.fullName, data.role);
     setIsLoading(false);
     
     if (!error) {
@@ -310,6 +328,35 @@ export default function Auth() {
                           />
                         </div>
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={signupForm.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Perfil de Acesso</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="pl-10">
+                            <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <SelectValue placeholder="Selecione seu perfil" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {roleOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              <div className="flex flex-col">
+                                <span>{option.label}</span>
+                                <span className="text-xs text-muted-foreground">{option.description}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
