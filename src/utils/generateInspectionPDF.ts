@@ -125,10 +125,11 @@ export async function generateInspectionPDF(data: InspectionPDFData) {
   doc.setFillColor(...SBM_BLUE);
   doc.rect(0, 0, pageWidth, 32, 'F');
   
-  // Add logo image or fallback to text
+  // Add logo image or fallback to text - maintain aspect ratio (original is ~200x50)
   if (logoBase64) {
     try {
-      doc.addImage(logoBase64, 'PNG', margin, 8, 40, 16);
+      // Logo with correct aspect ratio (4:1) - width:height
+      doc.addImage(logoBase64, 'PNG', margin, 6, 32, 20);
     } catch {
       // Fallback to text
       doc.setTextColor(255, 255, 255);
@@ -252,13 +253,13 @@ export async function generateInspectionPDF(data: InspectionPDFData) {
       ],
       [
         { content: 'Fabricante:', styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
-        data.equipment.manufacturer,
+        data.equipment.manufacturer || '-',
         { content: 'Modelo:', styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
-        data.equipment.model
+        data.equipment.model || '-'
       ],
       [
         { content: 'Nº Série:', styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
-        data.equipment.serial_number,
+        { content: data.equipment.serial_number, styles: { fontStyle: 'bold', textColor: DARK_GRAY } },
         { content: 'Capacidade:', styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
         data.equipment.capacity || '-'
       ],
@@ -268,6 +269,18 @@ export async function generateInspectionPDF(data: InspectionPDFData) {
         { content: 'Unidade:', styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
         data.equipment.unit
       ],
+      [
+        { content: 'Data Fabricação:', styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
+        formatDate(data.equipment.manufacturing_date),
+        { content: 'Data Aquisição:', styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
+        formatDate(data.equipment.acquisition_date)
+      ],
+      [
+        { content: 'Data Validade:', styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
+        formatDate(data.equipment.expiry_date),
+        { content: 'Status Equipamento:', styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
+        { content: statusLabels[data.equipment.status || ''] || data.equipment.status || '-', styles: { fontStyle: 'bold' } }
+      ],
     ],
     theme: 'plain',
     styles: { 
@@ -276,10 +289,10 @@ export async function generateInspectionPDF(data: InspectionPDFData) {
       textColor: DARK_GRAY
     },
     columnStyles: { 
-      0: { cellWidth: 28 },
-      1: { cellWidth: 62 },
-      2: { cellWidth: 28 },
-      3: { cellWidth: 62 },
+      0: { cellWidth: 32 },
+      1: { cellWidth: 58 },
+      2: { cellWidth: 32 },
+      3: { cellWidth: 58 },
     },
     margin: { left: margin },
   });
