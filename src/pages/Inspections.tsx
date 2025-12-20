@@ -15,6 +15,8 @@ import {
   FileText,
   User,
   X,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,12 +44,17 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { useInspections, type InspectionWithDetails } from '@/hooks/useInspections';
 import { useProfiles } from '@/hooks/useProfiles';
 import { format, isAfter, isBefore, addDays, startOfMonth, endOfMonth, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { InspectionDetailDialog } from '@/components/inspections/InspectionDetailDialog';
-import { NewInspectionDialog } from '@/components/inspections/NewInspectionDialog';
+import { InspectionForm } from '@/components/inspections/InspectionForm';
 import { exportInspectionsToExcel, exportInspectionsToPDF } from '@/utils/exportInspections';
 
 const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: typeof CheckCircle }> = {
@@ -67,7 +74,7 @@ export default function Inspections() {
   const [dateTo, setDateTo] = useState<string>('');
   const [selectedInspection, setSelectedInspection] = useState<InspectionWithDetails | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
-  const [newInspectionDialogOpen, setNewInspectionDialogOpen] = useState(false);
+  const [showNewInspectionForm, setShowNewInspectionForm] = useState(false);
 
   // Get unique inspectors from inspections
   const inspectors = useMemo(() => {
@@ -181,12 +188,31 @@ export default function Inspections() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button className="gap-2" onClick={() => setNewInspectionDialogOpen(true)}>
-            <Plus className="h-4 w-4" />
-            Nova Inspeção
+          <Button className="gap-2" onClick={() => setShowNewInspectionForm(!showNewInspectionForm)}>
+            {showNewInspectionForm ? (
+              <>
+                <ChevronUp className="h-4 w-4" />
+                Ocultar Formulário
+              </>
+            ) : (
+              <>
+                <Plus className="h-4 w-4" />
+                Nova Inspeção
+              </>
+            )}
           </Button>
         </div>
       </div>
+
+      {/* New Inspection Form */}
+      <Collapsible open={showNewInspectionForm} onOpenChange={setShowNewInspectionForm}>
+        <CollapsibleContent>
+          <InspectionForm 
+            onSuccess={() => setShowNewInspectionForm(false)}
+            onCancel={() => setShowNewInspectionForm(false)}
+          />
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -469,11 +495,6 @@ export default function Inspections() {
         inspection={selectedInspection}
       />
 
-      {/* New Inspection Dialog */}
-      <NewInspectionDialog
-        open={newInspectionDialogOpen}
-        onOpenChange={setNewInspectionDialogOpen}
-      />
     </div>
   );
 }
