@@ -18,6 +18,7 @@ import { ModernCategoryChart } from '@/components/dashboard/ModernCategoryChart'
 import { ComplianceGauge } from '@/components/dashboard/ComplianceGauge';
 import { InspectionTrendChart } from '@/components/dashboard/InspectionTrendChart';
 import { UpcomingInspectionsCard } from '@/components/dashboard/UpcomingInspectionsCard';
+import { ExpiringCertificatesCard } from '@/components/dashboard/ExpiringCertificatesCard';
 import { DashboardFilters, type DashboardFiltersState } from '@/components/dashboard/DashboardFilters';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useShips } from '@/hooks/useShips';
@@ -229,6 +230,9 @@ export default function Dashboard() {
         </div>
         <UpcomingInspectionsCard />
       </div>
+
+      {/* Expiring Certificates */}
+      <ExpiringCertificatesCard />
 
       {/* Alerts */}
       <ModernAlertsList alerts={stats.recentAlerts} />

@@ -12,6 +12,7 @@ export type EquipmentUpdate = TablesUpdate<'equipment'>;
 export interface EquipmentWithCategory extends Equipment {
   categories?: { name: string; icon: string } | null;
   ships?: { id: string; name: string; code: string | null } | null;
+  created_by_profile?: { full_name: string } | null;
 }
 
 const OFFLINE_EQUIPMENT_KEY = 'safeship_offline_equipment';
@@ -52,7 +53,7 @@ export function useEquipment() {
   const query = useQuery({
     queryKey: ['equipment', selectedShipId],
     queryFn: async () => {
-      let query = supabase
+      let queryBuilder = supabase
         .from('equipment')
         .select(`
           *,
@@ -63,10 +64,10 @@ export function useEquipment() {
       
       // Apply ship filter for admin/admin_master when a specific ship is selected
       if (isFilterEnabled && selectedShipId) {
-        query = query.eq('ship_id', selectedShipId);
+        queryBuilder = queryBuilder.eq('ship_id', selectedShipId);
       }
       
-      const { data, error } = await query;
+      const { data: equipmentData, error } = await queryBuilder;
       
       if (error) {
         // If offline, return cached data
@@ -81,7 +82,31 @@ export function useEquipment() {
         throw error;
       }
       
-      return data as EquipmentWithCategory[];
+      // Fetch creator profiles separately
+      const creatorIds = [...new Set(equipmentData?.map(e => e.created_by).filter(Boolean) || [])];
+      let profilesMap: Record<string, string> = {};
+      
+      if (creatorIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, full_name')
+          .in('user_id', creatorIds);
+        
+        if (profiles) {
+          profilesMap = profiles.reduce((acc, p) => {
+            acc[p.user_id] = p.full_name;
+            return acc;
+          }, {} as Record<string, string>);
+        }
+      }
+      
+      // Merge profile data with equipment
+      const enrichedData = equipmentData?.map(e => ({
+        ...e,
+        created_by_profile: e.created_by ? { full_name: profilesMap[e.created_by] || null } : null,
+      })) || [];
+      
+      return enrichedData as EquipmentWithCategory[];
     },
     // Provide placeholder data when offline
     placeholderData: () => {
