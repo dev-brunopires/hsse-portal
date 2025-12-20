@@ -1,11 +1,12 @@
 import { useMemo } from 'react';
 import { Calendar, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useInspections } from '@/hooks/useInspections';
-import { format, addDays, isAfter, isBefore, parseISO, differenceInDays } from 'date-fns';
+import { format, addDays, isAfter, isBefore, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { parseLocalDate } from '@/utils/dateFormat';
 
 export function UpcomingInspectionsCard() {
   const { data: inspections = [], isLoading } = useInspections();
@@ -17,13 +18,17 @@ export function UpcomingInspectionsCard() {
     return inspections
       .filter(insp => {
         if (!insp.next_inspection_date) return false;
-        const nextDate = parseISO(insp.next_inspection_date);
+        const nextDate = parseLocalDate(insp.next_inspection_date);
+        if (!nextDate) return false;
         return isAfter(nextDate, now) && isBefore(nextDate, thirtyDaysFromNow);
       })
-      .map(insp => ({
-        ...insp,
-        daysUntil: differenceInDays(parseISO(insp.next_inspection_date!), now),
-      }))
+      .map(insp => {
+        const nextDate = parseLocalDate(insp.next_inspection_date!)!;
+        return {
+          ...insp,
+          daysUntil: differenceInDays(nextDate, now),
+        };
+      })
       .sort((a, b) => a.daysUntil - b.daysUntil)
       .slice(0, 5);
   }, [inspections]);
@@ -35,13 +40,15 @@ export function UpcomingInspectionsCard() {
     
     const thisWeek = inspections.filter(insp => {
       if (!insp.next_inspection_date) return false;
-      const nextDate = parseISO(insp.next_inspection_date);
+      const nextDate = parseLocalDate(insp.next_inspection_date);
+      if (!nextDate) return false;
       return isAfter(nextDate, now) && isBefore(nextDate, weekFromNow);
     }).length;
 
     const thisMonth = inspections.filter(insp => {
       if (!insp.next_inspection_date) return false;
-      const nextDate = parseISO(insp.next_inspection_date);
+      const nextDate = parseLocalDate(insp.next_inspection_date);
+      if (!nextDate) return false;
       return isAfter(nextDate, now) && isBefore(nextDate, monthFromNow);
     }).length;
 
@@ -134,10 +141,10 @@ export function UpcomingInspectionsCard() {
                 </div>
                 <div className="text-right">
                   <p className="text-xs font-medium text-foreground">
-                    {format(parseISO(insp.next_inspection_date!), 'dd/MM', { locale: ptBR })}
+                    {format(parseLocalDate(insp.next_inspection_date!)!, 'dd/MM', { locale: ptBR })}
                   </p>
                   <p className="text-xs text-muted-foreground capitalize">
-                    {format(parseISO(insp.next_inspection_date!), 'EEE', { locale: ptBR })}
+                    {format(parseLocalDate(insp.next_inspection_date!)!, 'EEE', { locale: ptBR })}
                   </p>
                 </div>
               </div>
