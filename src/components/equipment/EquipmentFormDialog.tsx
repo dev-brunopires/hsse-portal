@@ -50,6 +50,7 @@ import { cn } from '@/lib/utils';
 import { uploadEquipmentDocument } from '@/hooks/useStorage';
 import { useShips } from '@/hooks/useShips';
 import { useUserShips } from '@/hooks/useUserShips';
+import { DatePickerField } from '@/components/ui/date-picker';
 
 const equipmentSchema = z.object({
   // Dados Gerais
@@ -641,10 +642,16 @@ export function EquipmentFormDialog({
                       control={form.control}
                       name="manufacturingDate"
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className="flex flex-col">
                           <FormLabel>Data de Fabricação *</FormLabel>
                           <FormControl>
-                            <Input type="date" {...field} />
+                            <DatePickerField
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder="Selecione a data"
+                              fromYear={1950}
+                              toYear={new Date().getFullYear()}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -655,10 +662,16 @@ export function EquipmentFormDialog({
                       control={form.control}
                       name="acquisitionDate"
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className="flex flex-col">
                           <FormLabel>Data de Aquisição *</FormLabel>
                           <FormControl>
-                            <Input type="date" {...field} />
+                            <DatePickerField
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder="Selecione a data"
+                              fromYear={1990}
+                              toYear={new Date().getFullYear() + 1}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -671,10 +684,16 @@ export function EquipmentFormDialog({
                       control={form.control}
                       name="expiryDate"
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className="flex flex-col">
                           <FormLabel>Data de Validade</FormLabel>
                           <FormControl>
-                            <Input type="date" {...field} />
+                            <DatePickerField
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder="Selecione a data"
+                              fromYear={new Date().getFullYear()}
+                              toYear={new Date().getFullYear() + 30}
+                            />
                           </FormControl>
                           <FormDescription>
                             Validade do equipamento (se aplicável)
@@ -688,10 +707,16 @@ export function EquipmentFormDialog({
                       control={form.control}
                       name="certificateExpiry"
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className="flex flex-col">
                           <FormLabel>Validade do Certificado</FormLabel>
                           <FormControl>
-                            <Input type="date" {...field} />
+                            <DatePickerField
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder="Selecione a data"
+                              fromYear={new Date().getFullYear()}
+                              toYear={new Date().getFullYear() + 30}
+                            />
                           </FormControl>
                           <FormDescription>
                             Data de vencimento da certificação

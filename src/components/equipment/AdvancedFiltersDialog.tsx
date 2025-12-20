@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -151,17 +152,19 @@ export function AdvancedFiltersDialog({
           <div className="space-y-2">
             <Label>Data de Aquisição</Label>
             <div className="grid grid-cols-2 gap-2">
-              <Input
-                type="date"
+              <DatePicker
                 value={localFilters.acquisitionDateFrom}
-                onChange={(e) => setLocalFilters(f => ({ ...f, acquisitionDateFrom: e.target.value }))}
+                onChange={(v) => setLocalFilters(f => ({ ...f, acquisitionDateFrom: v }))}
                 placeholder="De"
+                fromYear={1990}
+                toYear={new Date().getFullYear() + 1}
               />
-              <Input
-                type="date"
+              <DatePicker
                 value={localFilters.acquisitionDateTo}
-                onChange={(e) => setLocalFilters(f => ({ ...f, acquisitionDateTo: e.target.value }))}
+                onChange={(v) => setLocalFilters(f => ({ ...f, acquisitionDateTo: v }))}
                 placeholder="Até"
+                fromYear={1990}
+                toYear={new Date().getFullYear() + 1}
               />
             </div>
           </div>
@@ -169,17 +172,19 @@ export function AdvancedFiltersDialog({
           <div className="space-y-2">
             <Label>Validade do Equipamento</Label>
             <div className="grid grid-cols-2 gap-2">
-              <Input
-                type="date"
+              <DatePicker
                 value={localFilters.expiryDateFrom}
-                onChange={(e) => setLocalFilters(f => ({ ...f, expiryDateFrom: e.target.value }))}
+                onChange={(v) => setLocalFilters(f => ({ ...f, expiryDateFrom: v }))}
                 placeholder="De"
+                fromYear={new Date().getFullYear() - 5}
+                toYear={new Date().getFullYear() + 30}
               />
-              <Input
-                type="date"
+              <DatePicker
                 value={localFilters.expiryDateTo}
-                onChange={(e) => setLocalFilters(f => ({ ...f, expiryDateTo: e.target.value }))}
+                onChange={(v) => setLocalFilters(f => ({ ...f, expiryDateTo: v }))}
                 placeholder="Até"
+                fromYear={new Date().getFullYear() - 5}
+                toYear={new Date().getFullYear() + 30}
               />
             </div>
           </div>
@@ -187,17 +192,19 @@ export function AdvancedFiltersDialog({
           <div className="space-y-2">
             <Label>Validade do Certificado</Label>
             <div className="grid grid-cols-2 gap-2">
-              <Input
-                type="date"
+              <DatePicker
                 value={localFilters.certificateExpiryFrom}
-                onChange={(e) => setLocalFilters(f => ({ ...f, certificateExpiryFrom: e.target.value }))}
+                onChange={(v) => setLocalFilters(f => ({ ...f, certificateExpiryFrom: v }))}
                 placeholder="De"
+                fromYear={new Date().getFullYear() - 5}
+                toYear={new Date().getFullYear() + 30}
               />
-              <Input
-                type="date"
+              <DatePicker
                 value={localFilters.certificateExpiryTo}
-                onChange={(e) => setLocalFilters(f => ({ ...f, certificateExpiryTo: e.target.value }))}
+                onChange={(v) => setLocalFilters(f => ({ ...f, certificateExpiryTo: v }))}
                 placeholder="Até"
+                fromYear={new Date().getFullYear() - 5}
+                toYear={new Date().getFullYear() + 30}
               />
             </div>
           </div>

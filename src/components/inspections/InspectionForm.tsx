@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { DatePickerField } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -470,13 +471,19 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
                 control={form.control}
                 name="inspectionDate"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="flex flex-col">
                     <FormLabel className="flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
                       Data *
                     </FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} />
+                      <DatePickerField
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Selecione a data"
+                        fromYear={new Date().getFullYear() - 5}
+                        toYear={new Date().getFullYear() + 1}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -741,13 +748,19 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
                       control={form.control}
                       name="nextInspectionDate"
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className="flex flex-col">
                           <FormLabel className="flex items-center gap-2">
                             <Calendar className="h-4 w-4" />
                             Próxima Inspeção
                           </FormLabel>
                           <FormControl>
-                            <Input type="date" {...field} />
+                            <DatePickerField
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder="Selecione a data"
+                              fromYear={new Date().getFullYear()}
+                              toYear={new Date().getFullYear() + 10}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
