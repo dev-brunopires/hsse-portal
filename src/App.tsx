@@ -8,6 +8,7 @@ import { ShipFilterProvider } from "@/contexts/ShipFilterContext";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AppLayout } from "./components/layout/AppLayout";
+import { OnboardingProvider } from "./components/onboarding/OnboardingProvider";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import EquipmentList from "./pages/EquipmentList";
@@ -41,6 +42,7 @@ function App() {
           <BrowserRouter>
             <AuthProvider>
               <ShipFilterProvider>
+                <OnboardingProvider />
             <Routes>
               {/* Public Route */}
               <Route path="/auth" element={<Auth />} />
