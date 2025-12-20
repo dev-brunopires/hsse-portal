@@ -41,16 +41,24 @@ import {
   CheckCircle2,
   Loader2,
   Ship,
+  Download,
+  Eye,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { useCategories } from '@/hooks/useCategories';
 import { useCreateEquipment, useUpdateEquipment } from '@/hooks/useEquipment';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { uploadEquipmentDocument } from '@/hooks/useStorage';
+import { uploadEquipmentDocument, getSignedUrl } from '@/hooks/useStorage';
 import { useShips } from '@/hooks/useShips';
 import { useUserShips } from '@/hooks/useUserShips';
 import { DatePickerField } from '@/components/ui/date-picker';
+import { useEquipmentDocuments, useDeleteDocument, type EquipmentDocument } from '@/hooks/useEquipmentDocuments';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { supabase } from '@/integrations/supabase/client';
 
 const equipmentSchema = z.object({
   // Dados Gerais
@@ -95,8 +103,16 @@ export function EquipmentFormDialog({
   const [activeTab, setActiveTab] = useState('general');
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showRecommendations, setShowRecommendations] = useState(true);
+  const [deletingDocId, setDeletingDocId] = useState<string | null>(null);
   const { toast } = useToast();
   const { user, role, isAdmin } = useAuth();
+  
+  // Fetch existing documents for edit mode
+  const { data: existingDocuments = [], isLoading: documentsLoading } = useEquipmentDocuments(
+    mode === 'edit' ? initialData?.id : undefined
+  );
+  const deleteDocument = useDeleteDocument();
   
   const { data: categories = [], isLoading: categoriesLoading } = useCategories();
   const { data: allShips = [], isLoading: shipsLoading } = useShips();
@@ -253,6 +269,66 @@ export function EquipmentFormDialog({
     setUploadedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
+  const handleViewExistingDoc = async (doc: EquipmentDocument) => {
+    try {
+      const { data } = await supabase.storage
+        .from('equipment-documents')
+        .createSignedUrl(doc.file_path, 3600);
+      
+      if (data?.signedUrl) {
+        window.open(data.signedUrl, '_blank');
+      }
+    } catch (error) {
+      toast({
+        title: 'Erro ao abrir documento',
+        description: 'Não foi possível abrir o documento.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDownloadExistingDoc = async (doc: EquipmentDocument) => {
+    try {
+      const { data } = await supabase.storage
+        .from('equipment-documents')
+        .createSignedUrl(doc.file_path, 3600);
+      
+      if (data?.signedUrl) {
+        const response = await fetch(data.signedUrl);
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = doc.file_name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+      toast({
+        title: 'Erro ao baixar documento',
+        description: 'Não foi possível baixar o documento.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteExistingDoc = async (doc: EquipmentDocument) => {
+    if (!initialData?.id) return;
+    
+    setDeletingDocId(doc.id);
+    try {
+      await deleteDocument.mutateAsync({
+        id: doc.id,
+        filePath: doc.file_path,
+        equipmentId: initialData.id,
+      });
+    } finally {
+      setDeletingDocId(null);
+    }
+  };
+
   const onSubmit = async (data: EquipmentFormData) => {
     setIsSubmitting(true);
     
@@ -389,9 +465,9 @@ export function EquipmentFormDialog({
                 <TabsTrigger value="documents" className="gap-2 relative">
                   <FileText className="h-4 w-4" />
                   <span className="hidden sm:inline">Documentos</span>
-                  {uploadedFiles.length > 0 && (
+                  {(uploadedFiles.length > 0 || existingDocuments.length > 0) && (
                     <span className="absolute -top-1 -right-1 h-4 w-4 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center">
-                      {uploadedFiles.length}
+                      {uploadedFiles.length + existingDocuments.length}
                     </span>
                   )}
                 </TabsTrigger>
@@ -739,7 +815,37 @@ export function EquipmentFormDialog({
 
                 {/* Documents Tab */}
                 <TabsContent value="documents" className="space-y-4 mt-0">
-                  <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors">
+                  {/* Collapsible Recommendations - at the top */}
+                  <Collapsible open={showRecommendations} onOpenChange={setShowRecommendations}>
+                    <CollapsibleTrigger asChild>
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        className="w-full justify-between p-3 bg-primary/5 rounded-lg border border-primary/20 hover:bg-primary/10"
+                      >
+                        <span className="font-medium text-sm text-primary">Documentos Recomendados</span>
+                        {showRecommendations ? (
+                          <ChevronUp className="h-4 w-4 text-primary" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4 text-primary" />
+                        )}
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pt-2">
+                      <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 border-t-0 rounded-t-none -mt-2">
+                        <ul className="text-sm text-muted-foreground space-y-1">
+                          <li>• Certificado de conformidade do fabricante</li>
+                          <li>• Nota fiscal de aquisição</li>
+                          <li>• Laudo de inspeção inicial</li>
+                          <li>• Manual do equipamento</li>
+                          <li>• Fotos do equipamento instalado</li>
+                        </ul>
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+
+                  {/* Upload area */}
+                  <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
                     <input
                       type="file"
                       multiple
@@ -749,41 +855,120 @@ export function EquipmentFormDialog({
                       id="file-upload"
                     />
                     <label htmlFor="file-upload" className="cursor-pointer">
-                      <Upload className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                      <p className="font-medium text-foreground">
+                      <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                      <p className="font-medium text-foreground text-sm">
                         Arraste arquivos ou clique para fazer upload
                       </p>
-                      <p className="text-sm text-muted-foreground mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         PDF, imagens ou documentos (máx. 10MB cada)
                       </p>
                     </label>
                   </div>
 
+                  {/* Existing documents (edit mode) */}
+                  {mode === 'edit' && existingDocuments.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-sm flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        Documentos Salvos ({existingDocuments.length})
+                      </h4>
+                      <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                        {existingDocuments.map((doc) => (
+                          <div 
+                            key={doc.id}
+                            className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg border border-border"
+                          >
+                            {doc.file_type.startsWith('image/') ? (
+                              <ImageIcon className="h-5 w-5 text-primary flex-shrink-0" />
+                            ) : (
+                              <File className="h-5 w-5 text-primary flex-shrink-0" />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm truncate">{doc.file_name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {doc.file_size ? `${(doc.file_size / 1024).toFixed(1)} KB` : 'Tamanho desconhecido'}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => handleViewExistingDoc(doc)}
+                                title="Visualizar"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => handleDownloadExistingDoc(doc)}
+                                title="Baixar"
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive hover:text-destructive"
+                                onClick={() => handleDeleteExistingDoc(doc)}
+                                disabled={deletingDocId === doc.id}
+                                title="Excluir"
+                              >
+                                {deletingDocId === doc.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Loading state for documents */}
+                  {mode === 'edit' && documentsLoading && (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      <span className="ml-2 text-sm text-muted-foreground">Carregando documentos...</span>
+                    </div>
+                  )}
+
+                  {/* New files to upload */}
                   {uploadedFiles.length > 0 && (
                     <div className="space-y-2">
-                      <h4 className="font-medium text-sm">Arquivos Anexados</h4>
-                      <div className="space-y-2">
+                      <h4 className="font-medium text-sm flex items-center gap-2">
+                        <Upload className="h-4 w-4" />
+                        Novos Arquivos ({uploadedFiles.length})
+                      </h4>
+                      <div className="space-y-2 max-h-[150px] overflow-y-auto">
                         {uploadedFiles.map((file, index) => (
                           <div 
                             key={index}
-                            className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg border border-border"
+                            className="flex items-center gap-3 p-3 bg-primary/5 rounded-lg border border-primary/20"
                           >
                             {file.type.startsWith('image/') ? (
-                              <ImageIcon className="h-5 w-5 text-primary" />
+                              <ImageIcon className="h-5 w-5 text-primary flex-shrink-0" />
                             ) : (
-                              <File className="h-5 w-5 text-primary" />
+                              <File className="h-5 w-5 text-primary flex-shrink-0" />
                             )}
                             <div className="flex-1 min-w-0">
                               <p className="font-medium text-sm truncate">{file.name}</p>
                               <p className="text-xs text-muted-foreground">
-                                {(file.size / 1024).toFixed(1)} KB
+                                {(file.size / 1024).toFixed(1)} KB - <span className="text-primary">Novo</span>
                               </p>
                             </div>
                             <Button
                               type="button"
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8"
+                              className="h-8 w-8 flex-shrink-0"
                               onClick={() => removeFile(index)}
                             >
                               <X className="h-4 w-4" />
@@ -793,17 +978,6 @@ export function EquipmentFormDialog({
                       </div>
                     </div>
                   )}
-
-                  <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
-                    <h4 className="font-medium text-sm mb-2 text-primary">Documentos Recomendados</h4>
-                    <ul className="text-sm text-muted-foreground space-y-1">
-                      <li>• Certificado de conformidade do fabricante</li>
-                      <li>• Nota fiscal de aquisição</li>
-                      <li>• Laudo de inspeção inicial</li>
-                      <li>• Manual do equipamento</li>
-                      <li>• Fotos do equipamento instalado</li>
-                    </ul>
-                  </div>
                 </TabsContent>
               </div>
             </Tabs>
