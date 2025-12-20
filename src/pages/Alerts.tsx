@@ -164,8 +164,8 @@ function StatCard({
                   </p>
                 )}
               </div>
-              <div className={cn('p-3 rounded-xl', bgColor.replace('bg-', 'bg-').replace('/100', '/10'))}>
-                <Icon className={cn('h-6 w-6', color)} />
+              <div className={cn('p-3 rounded-xl', bgColor)}>
+                <Icon className="h-6 w-6 text-white" />
               </div>
             </div>
           </div>
