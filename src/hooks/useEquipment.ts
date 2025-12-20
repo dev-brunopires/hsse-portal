@@ -9,6 +9,7 @@ export type EquipmentUpdate = TablesUpdate<'equipment'>;
 
 export interface EquipmentWithCategory extends Equipment {
   categories?: { name: string; icon: string } | null;
+  ships?: { id: string; name: string; code: string | null } | null;
 }
 
 export function useEquipment() {
@@ -19,7 +20,8 @@ export function useEquipment() {
         .from('equipment')
         .select(`
           *,
-          categories (name, icon)
+          categories (name, icon),
+          ships (id, name, code)
         `)
         .order('created_at', { ascending: false });
       
@@ -38,7 +40,8 @@ export function useEquipmentById(id: string | undefined) {
         .from('equipment')
         .select(`
           *,
-          categories (name, icon)
+          categories (name, icon),
+          ships (id, name, code)
         `)
         .eq('id', id)
         .maybeSingle();

@@ -594,7 +594,7 @@ export function EquipmentTable({
           model: selectedEquipment.model,
           serialNumber: selectedEquipment.serial_number,
           capacity: selectedEquipment.capacity || '',
-          unit: selectedEquipment.unit,
+          shipId: selectedEquipment.ship_id || '',
           location: selectedEquipment.location,
           manufacturingDate: selectedEquipment.manufacturing_date,
           acquisitionDate: selectedEquipment.acquisition_date,

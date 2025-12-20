@@ -47,7 +47,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { uploadEquipmentDocument } from '@/hooks/useStorage';
-import { useUnits } from '@/hooks/useUnits';
+import { useShips } from '@/hooks/useShips';
+import { useUserShips } from '@/hooks/useUserShips';
 
 const equipmentSchema = z.object({
   // Dados Gerais
@@ -60,7 +61,7 @@ const equipmentSchema = z.object({
   serialNumber: z.string().min(1, 'Número de série é obrigatório'),
   capacity: z.string().optional(),
   // Localização
-  unit: z.string().min(1, 'Unidade é obrigatória'),
+  shipId: z.string().min(1, 'Selecione um navio'),
   location: z.string().min(1, 'Localização é obrigatória'),
   // Datas
   manufacturingDate: z.string().min(1, 'Data de fabricação é obrigatória'),
@@ -77,7 +78,7 @@ interface EquipmentFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   mode: 'create' | 'edit';
-  initialData?: Partial<EquipmentFormData> & { id?: string; capacity?: string };
+  initialData?: Partial<EquipmentFormData> & { id?: string; capacity?: string; shipId?: string };
   onSuccess?: () => void;
 }
 
@@ -93,12 +94,20 @@ export function EquipmentFormDialog({
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, role, isAdmin } = useAuth();
   
   const { data: categories = [], isLoading: categoriesLoading } = useCategories();
-  const { data: units = [], isLoading: unitsLoading } = useUnits();
+  const { data: allShips = [], isLoading: shipsLoading } = useShips();
+  const { data: userShips = [], isLoading: userShipsLoading } = useUserShips(user?.id);
   const createEquipment = useCreateEquipment();
   const updateEquipment = useUpdateEquipment();
+
+  // Determine which ships to show based on user role
+  const availableShips = isAdmin 
+    ? allShips 
+    : userShips.map(us => us.ship).filter(Boolean) as Array<{ id: string; name: string; code: string | null }>;
+  
+  const isLoadingShips = shipsLoading || userShipsLoading;
 
   const form = useForm<EquipmentFormData>({
     resolver: zodResolver(equipmentSchema),
@@ -111,7 +120,7 @@ export function EquipmentFormDialog({
       model: initialData?.model || '',
       serialNumber: initialData?.serialNumber || '',
       capacity: initialData?.capacity || '',
-      unit: initialData?.unit || '',
+      shipId: initialData?.shipId || '',
       location: initialData?.location || '',
       manufacturingDate: initialData?.manufacturingDate || '',
       acquisitionDate: initialData?.acquisitionDate || '',
@@ -132,7 +141,7 @@ export function EquipmentFormDialog({
         model: initialData.model || '',
         serialNumber: initialData.serialNumber || '',
         capacity: initialData.capacity || '',
-        unit: initialData.unit || '',
+        shipId: initialData.shipId || '',
         location: initialData.location || '',
         manufacturingDate: initialData.manufacturingDate || '',
         acquisitionDate: initialData.acquisitionDate || '',
@@ -141,9 +150,27 @@ export function EquipmentFormDialog({
         observations: initialData.observations || '',
       });
     } else if (open && !initialData) {
-      form.reset();
+      // Auto-select ship if user has only one ship assigned
+      const defaultShipId = availableShips.length === 1 ? availableShips[0].id : '';
+      form.reset({
+        internalCode: '',
+        name: '',
+        categoryId: '',
+        type: '',
+        manufacturer: '',
+        model: '',
+        serialNumber: '',
+        capacity: '',
+        shipId: defaultShipId,
+        location: '',
+        manufacturingDate: '',
+        acquisitionDate: '',
+        expiryDate: '',
+        certificateExpiry: '',
+        observations: '',
+      });
     }
-  }, [open, initialData, form]);
+  }, [open, initialData, form, availableShips]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -160,6 +187,10 @@ export function EquipmentFormDialog({
     setIsSubmitting(true);
     
     try {
+      // Get the ship name from the selected ship
+      const selectedShip = availableShips.find(s => s.id === data.shipId);
+      const unitName = selectedShip?.name || '';
+
       const equipmentData = {
         internal_code: data.internalCode,
         name: data.name,
@@ -169,7 +200,8 @@ export function EquipmentFormDialog({
         model: data.model,
         serial_number: data.serialNumber,
         capacity: data.capacity || null,
-        unit: data.unit,
+        ship_id: data.shipId,
+        unit: unitName, // Keep unit for backwards compatibility
         location: data.location,
         manufacturing_date: data.manufacturingDate,
         acquisition_date: data.acquisitionDate,
@@ -211,7 +243,7 @@ export function EquipmentFormDialog({
 
   const tabProgress = {
     general: form.watch('name') && form.watch('categoryId') && form.watch('internalCode'),
-    location: form.watch('unit') && form.watch('location'),
+    location: form.watch('shipId') && form.watch('location'),
     dates: form.watch('manufacturingDate') && form.watch('acquisitionDate'),
     documents: true,
   };
@@ -405,30 +437,39 @@ export function EquipmentFormDialog({
                 <TabsContent value="location" className="space-y-4 mt-0">
                   <FormField
                     control={form.control}
-                    name="unit"
+                    name="shipId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Unidade / FPSO *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value} disabled={unitsLoading}>
+                        <FormLabel>Navio / FPSO *</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          value={field.value} 
+                          disabled={isLoadingShips || availableShips.length === 0}
+                        >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder={unitsLoading ? 'Carregando...' : 'Selecione a unidade'} />
+                              <SelectValue placeholder={isLoadingShips ? 'Carregando...' : 'Selecione o navio'} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent className="bg-popover border border-border shadow-lg z-50">
-                            {units.length === 0 ? (
-                              <SelectItem value="__no_units__" disabled>
-                                Nenhuma unidade cadastrada
+                            {availableShips.length === 0 ? (
+                              <SelectItem value="__no_ships__" disabled>
+                                {isAdmin ? 'Nenhum navio cadastrado' : 'Você não tem navios atribuídos'}
                               </SelectItem>
                             ) : (
-                              units.map((unit) => (
-                                <SelectItem key={unit} value={unit}>
-                                  {unit}
+                              availableShips.map((ship) => (
+                                <SelectItem key={ship.id} value={ship.id}>
+                                  {ship.name} {ship.code ? `(${ship.code})` : ''}
                                 </SelectItem>
                               ))
                             )}
                           </SelectContent>
                         </Select>
+                        {!isAdmin && availableShips.length > 0 && (
+                          <FormDescription>
+                            Apenas navios atribuídos ao seu perfil estão disponíveis
+                          </FormDescription>
+                        )}
                         <FormMessage />
                       </FormItem>
                     )}
