@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -23,10 +23,13 @@ import {
   Calendar,
   ArrowRight,
   Filter,
+  AlertTriangle,
 } from 'lucide-react';
 import { useEquipment, type EquipmentWithCategory } from '@/hooks/useEquipment';
 import { useCategories } from '@/hooks/useCategories';
+import { useLastInspection } from '@/hooks/useInspections';
 import { InspectionFormDialog } from '@/components/equipment/InspectionFormDialog';
+import { PreInspectionWarningDialog } from './PreInspectionWarningDialog';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Equipment } from '@/types/equipment';
@@ -54,9 +57,14 @@ export function NewInspectionDialog({ open, onOpenChange }: NewInspectionDialogP
   const { data: equipmentList = [], isLoading } = useEquipment();
   const { data: categories = [] } = useCategories();
   const [selectedEquipment, setSelectedEquipment] = useState<EquipmentWithCategory | null>(null);
+  const [pendingEquipment, setPendingEquipment] = useState<EquipmentWithCategory | null>(null);
   const [inspectionDialogOpen, setInspectionDialogOpen] = useState(false);
+  const [warningDialogOpen, setWarningDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+
+  // Fetch last inspection for pending equipment to check for warnings
+  const { data: lastInspection } = useLastInspection(pendingEquipment?.id);
 
   const filteredEquipment = useMemo(() => {
     return equipmentList.filter(eq => {
@@ -71,9 +79,54 @@ export function NewInspectionDialog({ open, onOpenChange }: NewInspectionDialogP
     });
   }, [equipmentList, searchTerm, categoryFilter]);
 
+  // Check if equipment has any warnings
+  const checkEquipmentWarnings = (equipment: EquipmentWithCategory): boolean => {
+    const today = new Date().toISOString().split('T')[0];
+    const isCertificateExpired = equipment.certificate_expiry && equipment.certificate_expiry < today;
+    const isInspectionOverdue = equipment.next_inspection && equipment.next_inspection < today;
+    const isEquipmentExpired = equipment.expiry_date && equipment.expiry_date < today;
+    const isStatusCritical = equipment.status === 'expired' || equipment.status === 'rejected';
+    
+    return !!(isCertificateExpired || isInspectionOverdue || isEquipmentExpired || isStatusCritical);
+  };
+
+  // Effect to check if we need to show warning when last inspection data is loaded
+  useEffect(() => {
+    if (pendingEquipment && lastInspection !== undefined) {
+      const hasEquipmentWarnings = checkEquipmentWarnings(pendingEquipment);
+      const hasRecommendations = lastInspection?.recommendations && lastInspection.recommendations.trim().length > 0;
+      const lastInspectionHadIssues = lastInspection?.status === 'attention' || lastInspection?.status === 'non-compliant';
+      
+      if (hasEquipmentWarnings || hasRecommendations || lastInspectionHadIssues) {
+        setWarningDialogOpen(true);
+      } else {
+        // No warnings, proceed directly to inspection form
+        setSelectedEquipment(pendingEquipment);
+        setInspectionDialogOpen(true);
+        setPendingEquipment(null);
+      }
+    }
+  }, [pendingEquipment, lastInspection]);
+
   const handleSelectEquipment = (equipment: EquipmentWithCategory) => {
-    setSelectedEquipment(equipment);
-    setInspectionDialogOpen(true);
+    // Set pending equipment to trigger last inspection fetch
+    setPendingEquipment(equipment);
+  };
+
+  const handleWarningProceed = () => {
+    if (pendingEquipment) {
+      setSelectedEquipment(pendingEquipment);
+      setWarningDialogOpen(false);
+      setInspectionDialogOpen(true);
+      setPendingEquipment(null);
+    }
+  };
+
+  const handleWarningClose = (isOpen: boolean) => {
+    setWarningDialogOpen(isOpen);
+    if (!isOpen) {
+      setPendingEquipment(null);
+    }
   };
 
   const handleInspectionSuccess = () => {
@@ -164,55 +217,71 @@ export function NewInspectionDialog({ open, onOpenChange }: NewInspectionDialogP
                     {searchTerm || categoryFilter !== 'all' ? 'Nenhum equipamento encontrado.' : 'Nenhum equipamento cadastrado.'}
                   </div>
                 ) : (
-                  filteredEquipment.map((equipment) => (
-                    <div
-                      key={equipment.id}
-                      className="p-4 rounded-lg border border-border bg-card hover:bg-accent/50 transition-colors cursor-pointer group"
-                      onClick={() => handleSelectEquipment(equipment)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3 flex-1">
-                          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                            <Package className="h-5 w-5 text-primary" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium truncate">{equipment.name}</span>
-                              <Badge variant="outline" className="font-mono text-xs">
-                                {equipment.internal_code}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                              <span className="flex items-center gap-1">
-                                <MapPin className="h-3 w-3" />
-                                {equipment.location}
-                              </span>
-                              {equipment.categories?.name && (
-                                <span className="text-xs px-2 py-0.5 bg-muted rounded">
-                                  {equipment.categories.name}
-                                </span>
+                  filteredEquipment.map((equipment) => {
+                    const hasWarnings = checkEquipmentWarnings(equipment);
+                    return (
+                      <div
+                        key={equipment.id}
+                        className={`p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer group ${
+                          hasWarnings ? 'border-warning/50 bg-warning/5' : 'border-border'
+                        }`}
+                        onClick={() => handleSelectEquipment(equipment)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3 flex-1">
+                            <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                              hasWarnings ? 'bg-warning/10' : 'bg-primary/10'
+                            }`}>
+                              {hasWarnings ? (
+                                <AlertTriangle className="h-5 w-5 text-warning" />
+                              ) : (
+                                <Package className="h-5 w-5 text-primary" />
                               )}
-                              {equipment.last_inspection && (
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium truncate">{equipment.name}</span>
+                                <Badge variant="outline" className="font-mono text-xs">
+                                  {equipment.internal_code}
+                                </Badge>
+                                {hasWarnings && (
+                                  <Badge variant="outline" className="text-xs border-warning text-warning bg-warning/10">
+                                    Atenção
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
                                 <span className="flex items-center gap-1">
-                                  <Calendar className="h-3 w-3" />
-                                  Última: {format(new Date(equipment.last_inspection), 'dd/MM/yy', { locale: ptBR })}
+                                  <MapPin className="h-3 w-3" />
+                                  {equipment.location}
                                 </span>
-                              )}
+                                {equipment.categories?.name && (
+                                  <span className="text-xs px-2 py-0.5 bg-muted rounded">
+                                    {equipment.categories.name}
+                                  </span>
+                                )}
+                                {equipment.last_inspection && (
+                                  <span className="flex items-center gap-1">
+                                    <Calendar className="h-3 w-3" />
+                                    Última: {format(new Date(equipment.last_inspection), 'dd/MM/yy', { locale: ptBR })}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Badge 
-                            variant="outline" 
-                            className={statusColors[equipment.status] || statusColors.active}
-                          >
-                            {statusLabels[equipment.status] || equipment.status}
-                          </Badge>
-                          <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                          <div className="flex items-center gap-3">
+                            <Badge 
+                              variant="outline" 
+                              className={statusColors[equipment.status] || statusColors.active}
+                            >
+                              {statusLabels[equipment.status] || equipment.status}
+                            </Badge>
+                            <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </ScrollArea>
@@ -224,6 +293,18 @@ export function NewInspectionDialog({ open, onOpenChange }: NewInspectionDialogP
         </DialogContent>
       </Dialog>
 
+      {/* Warning Dialog */}
+      {pendingEquipment && (
+        <PreInspectionWarningDialog
+          open={warningDialogOpen}
+          onOpenChange={handleWarningClose}
+          equipment={pendingEquipment}
+          lastInspection={lastInspection || null}
+          onProceed={handleWarningProceed}
+        />
+      )}
+
+      {/* Inspection Form Dialog */}
       {selectedEquipment && (
         <InspectionFormDialog
           open={inspectionDialogOpen}

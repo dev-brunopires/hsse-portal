@@ -206,11 +206,23 @@ export function InspectionDetailDialog({
               )}
             </div>
 
-            {/* Observations & Recommendations */}
-            {(inspection.observations || inspection.recommendations) && (
+            {/* Actions Taken, Observations & Recommendations */}
+            {(inspection.actions_taken || inspection.observations || inspection.recommendations) && (
               <>
                 <Separator />
                 <div className="space-y-4">
+                  {inspection.actions_taken && (
+                    <div className="space-y-2">
+                      <h3 className="font-semibold flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-status-success" />
+                        Ações Tomadas
+                      </h3>
+                      <div className="pl-6 p-3 rounded-md bg-status-success/5 border border-status-success/20">
+                        <p className="text-sm whitespace-pre-wrap">{inspection.actions_taken}</p>
+                      </div>
+                    </div>
+                  )}
+
                   {inspection.observations && (
                     <div className="space-y-2">
                       <h3 className="font-semibold flex items-center gap-2">
@@ -224,10 +236,12 @@ export function InspectionDetailDialog({
                   {inspection.recommendations && (
                     <div className="space-y-2">
                       <h3 className="font-semibold flex items-center gap-2">
-                        <AlertTriangle className="h-4 w-4 text-primary" />
+                        <AlertTriangle className="h-4 w-4 text-warning" />
                         Recomendações
                       </h3>
-                      <p className="pl-6 text-muted-foreground">{inspection.recommendations}</p>
+                      <div className="pl-6 p-3 rounded-md bg-warning/5 border border-warning/20">
+                        <p className="text-sm whitespace-pre-wrap">{inspection.recommendations}</p>
+                      </div>
                     </div>
                   )}
                 </div>
