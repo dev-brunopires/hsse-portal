@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { 
   Bell, 
   Search, 
@@ -60,6 +60,15 @@ export function Header() {
   const unreadNotifications = useUnreadNotifications();
   const markAsRead = useMarkNotificationAsRead();
   const markAllAsRead = useMarkAllNotificationsAsRead();
+  
+  // State to force re-render when system notifications are dismissed
+  const [dismissedSystemNotifications, setDismissedSystemNotifications] = useState<Set<string>>(() => {
+    const dismissed = new Set<string>();
+    if (localStorage.getItem('ship-filter-reminder-dismissed')) {
+      dismissed.add('system-ship-filter');
+    }
+    return dismissed;
+  });
 
   // Check if user is admin (including admin_master which might come from database)
   const isAdmin = role === 'admin' || (role as string) === 'admin_master';
@@ -92,21 +101,18 @@ export function Header() {
     });
 
     // Add system reminder for filtering ships (only if not admin and has multiple ships)
-    if (!isAdmin && userShips.length > 1) {
-      const reminderDismissed = localStorage.getItem('ship-filter-reminder-dismissed');
-      if (!reminderDismissed) {
-        notifs.unshift({
-          id: 'system-ship-filter',
-          type: 'reminder',
-          title: 'Filtrar por Navio',
-          message: `Você tem acesso a ${userShips.length} navios. Lembre-se de filtrar os dados por navio no Dashboard.`,
-          isRead: false,
-          isSystem: true,
-        });
-      }
+    if (!isAdmin && userShips.length > 1 && !dismissedSystemNotifications.has('system-ship-filter')) {
+      notifs.unshift({
+        id: 'system-ship-filter',
+        type: 'reminder',
+        title: 'Filtrar por Navio',
+        message: `Você tem acesso a ${userShips.length} navios. Lembre-se de filtrar os dados por navio no Dashboard.`,
+        isRead: false,
+        isSystem: true,
+      });
     }
 
-    // Add alert for high priority items
+    // Add alert for high priority items (this one can't be dismissed)
     const highPriorityCount = stats?.recentAlerts?.filter(a => a.severity === 'high').length || 0;
     if (highPriorityCount > 0) {
       notifs.unshift({
@@ -120,26 +126,28 @@ export function Header() {
     }
 
     return notifs;
-  }, [allNotifications, userShips, stats, isAdmin]);
+  }, [allNotifications, userShips, stats, isAdmin, dismissedSystemNotifications]);
 
   const unreadCount = combinedNotifications.filter(n => !n.isRead).length;
 
-  const handleMarkAsRead = (notificationId: string, isSystem: boolean) => {
+  const handleMarkAsRead = useCallback((notificationId: string, isSystem: boolean) => {
     if (isSystem) {
       if (notificationId === 'system-ship-filter') {
         localStorage.setItem('ship-filter-reminder-dismissed', 'true');
+        setDismissedSystemNotifications(prev => new Set([...prev, 'system-ship-filter']));
       }
       return;
     }
     markAsRead.mutate(notificationId);
-  };
+  }, [markAsRead]);
 
-  const handleMarkAllAsRead = () => {
+  const handleMarkAllAsRead = useCallback(() => {
     // Dismiss system notifications
     localStorage.setItem('ship-filter-reminder-dismissed', 'true');
+    setDismissedSystemNotifications(prev => new Set([...prev, 'system-ship-filter']));
     // Mark database notifications as read
     markAllAsRead.mutate();
-  };
+  }, [markAllAsRead]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -248,7 +256,11 @@ export function Header() {
                   variant="ghost"
                   size="sm"
                   className="h-auto py-1 px-2 text-xs gap-1"
-                  onClick={handleMarkAllAsRead}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleMarkAllAsRead();
+                  }}
                 >
                   <CheckCheck className="h-3 w-3" />
                   Marcar todas
@@ -268,8 +280,7 @@ export function Header() {
                   {combinedNotifications.map((notification) => (
                     <div 
                       key={notification.id}
-                      className={`p-3 rounded-lg border cursor-pointer transition-all hover:opacity-80 ${getNotificationBg(notification.type, notification.isRead)}`}
-                      onClick={() => handleMarkAsRead(notification.id, notification.isSystem || false)}
+                      className={`p-3 rounded-lg border transition-all ${getNotificationBg(notification.type, notification.isRead)}`}
                     >
                       <div className="flex items-start gap-3">
                         <div className="mt-0.5">
@@ -290,11 +301,30 @@ export function Header() {
                           <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                             {notification.message}
                           </p>
-                          {notification.createdAt && (
-                            <p className="text-xs text-muted-foreground/70 mt-1.5">
-                              {format(new Date(notification.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                            </p>
-                          )}
+                          <div className="flex items-center justify-between mt-2">
+                            {notification.createdAt ? (
+                              <p className="text-xs text-muted-foreground/70">
+                                {format(new Date(notification.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                              </p>
+                            ) : (
+                              <span />
+                            )}
+                            {!notification.isRead && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-2 text-xs gap-1"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleMarkAsRead(notification.id, notification.isSystem || false);
+                                }}
+                              >
+                                <CheckCheck className="h-3 w-3" />
+                                Marcar como lida
+                              </Button>
+                            )}
+                          </div>
                         </div>
                         {!notification.isRead && (
                           <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0 mt-1.5" />
