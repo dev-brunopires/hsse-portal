@@ -309,7 +309,8 @@ export function Header() {
                             ) : (
                               <span />
                             )}
-                            {!notification.isRead && (
+                            {!notification.isRead &&
+                              (!notification.isSystem || notification.id === 'system-ship-filter') && (
                               <Button
                                 variant="ghost"
                                 size="sm"

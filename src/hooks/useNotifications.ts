@@ -86,15 +86,44 @@ export function useMarkNotificationAsRead() {
 
       const { error } = await supabase
         .from('notification_reads')
-        .insert({
-          notification_id: notificationId,
-          user_id: user.id,
-        });
+        .upsert(
+          {
+            notification_id: notificationId,
+            user_id: user.id,
+          },
+          {
+            onConflict: 'notification_id,user_id',
+            ignoreDuplicates: true,
+          }
+        );
 
-      // Ignore unique constraint error (already read)
-      if (error && !error.message.includes('duplicate')) throw error;
+      if (error) throw error;
     },
-    onSuccess: () => {
+    onMutate: async (notificationId) => {
+      const uid = user?.id;
+      if (!uid) return;
+
+      await queryClient.cancelQueries({ queryKey: ['notifications', uid] });
+
+      const previous = queryClient.getQueryData<Notification[]>([
+        'notifications',
+        uid,
+      ]);
+
+      queryClient.setQueryData<Notification[]>(['notifications', uid], (old) =>
+        (old ?? []).map((n) =>
+          n.id === notificationId ? { ...n, is_read: true } : n
+        )
+      );
+
+      return { previous, uid };
+    },
+    onError: (_err, _notificationId, ctx) => {
+      if (ctx?.previous && ctx?.uid) {
+        queryClient.setQueryData(['notifications', ctx.uid], ctx.previous);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
   });
@@ -109,22 +138,48 @@ export function useMarkAllNotificationsAsRead() {
     mutationFn: async () => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      const unreadNotifications = notifications.filter(n => !n.is_read);
-      
+      const unreadNotifications = notifications.filter((n) => !n.is_read);
+
       if (unreadNotifications.length === 0) return;
 
       const { error } = await supabase
         .from('notification_reads')
-        .insert(
-          unreadNotifications.map(n => ({
+        .upsert(
+          unreadNotifications.map((n) => ({
             notification_id: n.id,
             user_id: user.id,
-          }))
+          })),
+          {
+            onConflict: 'notification_id,user_id',
+            ignoreDuplicates: true,
+          }
         );
 
-      if (error && !error.message.includes('duplicate')) throw error;
+      if (error) throw error;
     },
-    onSuccess: () => {
+    onMutate: async () => {
+      const uid = user?.id;
+      if (!uid) return;
+
+      await queryClient.cancelQueries({ queryKey: ['notifications', uid] });
+
+      const previous = queryClient.getQueryData<Notification[]>([
+        'notifications',
+        uid,
+      ]);
+
+      queryClient.setQueryData<Notification[]>(['notifications', uid], (old) =>
+        (old ?? []).map((n) => ({ ...n, is_read: true }))
+      );
+
+      return { previous, uid };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous && ctx?.uid) {
+        queryClient.setQueryData(['notifications', ctx.uid], ctx.previous);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
   });
