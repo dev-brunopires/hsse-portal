@@ -663,8 +663,8 @@ export function InspectionFormDialog({
 
               {/* Tab: Observações */}
               <TabsContent value="observations" className="flex-1 overflow-hidden mt-4">
-                <ScrollArea className="h-full pr-4">
-                  <div className="space-y-6 pb-4">
+                <ScrollArea className="h-full px-1">
+                  <div className="space-y-6 pb-4 pr-3">
                     <FormField
                       control={form.control}
                       name="observations"
