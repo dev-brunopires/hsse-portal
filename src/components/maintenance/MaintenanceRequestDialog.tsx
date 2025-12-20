@@ -122,22 +122,19 @@ export function MaintenanceRequestDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl p-0 h-[85vh] max-h-[85vh] overflow-hidden overflow-y-hidden bg-card">
-        <div className="flex h-full flex-col">
-          <DialogHeader className="shrink-0 px-6 pt-6 pb-4 border-b border-border">
-            <DialogTitle className="flex items-center gap-2">
-              <Wrench className="h-5 w-5 text-primary" />
-              Nova Solicitação de Manutenção
-            </DialogTitle>
-            <DialogDescription>
-              Preencha os dados para registrar uma solicitação de manutenção
-            </DialogDescription>
-          </DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto bg-card">
+        <DialogHeader className="pb-2">
+          <DialogTitle className="flex items-center gap-2">
+            <Wrench className="h-5 w-5 text-primary" />
+            Nova Solicitação de Manutenção
+          </DialogTitle>
+          <DialogDescription>
+            Preencha os dados para registrar uma solicitação de manutenção
+          </DialogDescription>
+        </DialogHeader>
 
-          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y">
-            <div className="px-6 py-4">
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 pb-4 pr-2">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 pb-4">
               {/* Type and Priority */}
               <div className="grid grid-cols-2 gap-4">
                 <FormField
@@ -334,12 +331,9 @@ export function MaintenanceRequestDialog({
                   Criar Solicitação
                 </Button>
               </div>
-            </form>
-          </Form>
-        </div>
-      </div>
-    </div>
-  </DialogContent>
-</Dialog>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
 }
