@@ -336,8 +336,11 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
               (scannerState === 'initializing') && "border-muted bg-muted"
             )}
           >
-            {/* Camera feed container */}
-            <div id={containerId} className="absolute inset-0" />
+            {/* Camera feed container - hide library's built-in qrbox */}
+            <div 
+              id={containerId} 
+              className="absolute inset-0 [&_#qr-shaded-region]:hidden [&>div>div]:border-none"
+            />
 
             {/* Camera switch button - only show when scanning */}
             {scannerState === 'scanning' && !isSwitchingCamera && (
