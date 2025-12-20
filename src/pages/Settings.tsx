@@ -1,12 +1,20 @@
-import { Bell, Shield, Database, Mail, Plug } from 'lucide-react';
+import { Bell, Shield, Database, Mail, Plug, Rocket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { NotificationSettingsCard } from '@/components/dashboard/NotificationSettingsCard';
-
+import { IFSIntegrationCard } from '@/components/settings/IFSIntegrationCard';
+import { useOnboarding } from '@/hooks/useOnboarding';
 export default function Settings() {
+  const { resetTour, startTour } = useOnboarding();
+
+  const handleRestartTour = () => {
+    resetTour();
+    setTimeout(() => startTour(), 300);
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
@@ -137,8 +145,23 @@ export default function Settings() {
                 </div>
                 <Switch />
               </div>
-              <Button variant="outline" className="w-full mt-4">
-                Configurar Integrações
+            </CardContent>
+          </Card>
+
+          <IFSIntegrationCard />
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Rocket className="h-5 w-5 text-primary" />
+                Tour do Sistema
+              </CardTitle>
+              <CardDescription>Reinicie o tour de introdução ao sistema</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={handleRestartTour} variant="outline" className="w-full">
+                <Rocket className="h-4 w-4 mr-2" />
+                Reiniciar Tour de Onboarding
               </Button>
             </CardContent>
           </Card>

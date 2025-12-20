@@ -70,6 +70,7 @@ export function AppSidebar() {
 
   return (
     <aside
+      data-tour="sidebar"
       className={cn(
         'h-screen bg-sidebar flex flex-col border-r border-sidebar-border transition-all duration-300',
         collapsed ? 'w-16' : 'w-64'
@@ -90,12 +91,22 @@ export function AppSidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-        <NavItem to="/" icon={<LayoutDashboard size={20} />} label="Dashboard" collapsed={collapsed} />
-        <NavItem to="/equipment" icon={<Package size={20} />} label="Equipamentos" collapsed={collapsed} />
-        <NavItem to="/inspections" icon={<ClipboardCheck size={20} />} label="Inspeções" collapsed={collapsed} />
+        <div data-tour="dashboard">
+          <NavItem to="/" icon={<LayoutDashboard size={20} />} label="Dashboard" collapsed={collapsed} />
+        </div>
+        <div data-tour="equipment">
+          <NavItem to="/equipment" icon={<Package size={20} />} label="Equipamentos" collapsed={collapsed} />
+        </div>
+        <div data-tour="inspections">
+          <NavItem to="/inspections" icon={<ClipboardCheck size={20} />} label="Inspeções" collapsed={collapsed} />
+        </div>
         <NavItem to="/pending" icon={<AlertCircle size={20} />} label="Pendências" collapsed={collapsed} />
-        <NavItem to="/reports" icon={<FileText size={20} />} label="Relatórios" collapsed={collapsed} />
-        <NavItem to="/alerts" icon={<Bell size={20} />} label="Alertas" collapsed={collapsed} />
+        <div data-tour="reports">
+          <NavItem to="/reports" icon={<FileText size={20} />} label="Relatórios" collapsed={collapsed} />
+        </div>
+        <div data-tour="alerts">
+          <NavItem to="/alerts" icon={<Bell size={20} />} label="Alertas" collapsed={collapsed} />
+        </div>
         <NavItem to="/categories" icon={<FolderOpen size={20} />} label="Categorias" collapsed={collapsed} />
       </nav>
 
@@ -120,7 +131,9 @@ export function AppSidebar() {
           )}
         </button>
         
-        <NavItem to="/profile" icon={<User size={20} />} label="Meu Perfil" collapsed={collapsed} />
+        <div data-tour="profile">
+          <NavItem to="/profile" icon={<User size={20} />} label="Meu Perfil" collapsed={collapsed} />
+        </div>
         {isAdmin && (
           <>
             <NavItem to="/users" icon={<Users size={20} />} label="Usuários" collapsed={collapsed} />
