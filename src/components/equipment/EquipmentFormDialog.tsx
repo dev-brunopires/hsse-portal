@@ -57,6 +57,7 @@ const equipmentSchema = z.object({
   manufacturer: z.string().min(1, 'Fabricante é obrigatório'),
   model: z.string().min(1, 'Modelo é obrigatório'),
   serialNumber: z.string().min(1, 'Número de série é obrigatório'),
+  capacity: z.string().optional(),
   // Localização
   unit: z.string().min(1, 'Unidade é obrigatória'),
   location: z.string().min(1, 'Localização é obrigatória'),
@@ -75,7 +76,7 @@ interface EquipmentFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   mode: 'create' | 'edit';
-  initialData?: Partial<EquipmentFormData> & { id?: string };
+  initialData?: Partial<EquipmentFormData> & { id?: string; capacity?: string };
   onSuccess?: () => void;
 }
 
@@ -116,6 +117,7 @@ export function EquipmentFormDialog({
       manufacturer: initialData?.manufacturer || '',
       model: initialData?.model || '',
       serialNumber: initialData?.serialNumber || '',
+      capacity: initialData?.capacity || '',
       unit: initialData?.unit || '',
       location: initialData?.location || '',
       manufacturingDate: initialData?.manufacturingDate || '',
@@ -136,6 +138,7 @@ export function EquipmentFormDialog({
         manufacturer: initialData.manufacturer || '',
         model: initialData.model || '',
         serialNumber: initialData.serialNumber || '',
+        capacity: initialData.capacity || '',
         unit: initialData.unit || '',
         location: initialData.location || '',
         manufacturingDate: initialData.manufacturingDate || '',
@@ -172,6 +175,7 @@ export function EquipmentFormDialog({
         manufacturer: data.manufacturer,
         model: data.model,
         serial_number: data.serialNumber,
+        capacity: data.capacity || null,
         unit: data.unit,
         location: data.location,
         manufacturing_date: data.manufacturingDate,
@@ -359,7 +363,7 @@ export function EquipmentFormDialog({
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <FormField
                       control={form.control}
                       name="manufacturer"
@@ -382,6 +386,20 @@ export function EquipmentFormDialog({
                           <FormLabel>Modelo *</FormLabel>
                           <FormControl>
                             <Input placeholder="Ex: Pro 10 CO2" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="capacity"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Capacidade</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Ex: 6kg, 10L, 45min" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

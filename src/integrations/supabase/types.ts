@@ -47,6 +47,7 @@ export type Database = {
       equipment: {
         Row: {
           acquisition_date: string
+          capacity: string | null
           category_id: string
           certificate_expiry: string | null
           created_at: string
@@ -70,6 +71,7 @@ export type Database = {
         }
         Insert: {
           acquisition_date: string
+          capacity?: string | null
           category_id: string
           certificate_expiry?: string | null
           created_at?: string
@@ -93,6 +95,7 @@ export type Database = {
         }
         Update: {
           acquisition_date?: string
+          capacity?: string | null
           category_id?: string
           certificate_expiry?: string | null
           created_at?: string
