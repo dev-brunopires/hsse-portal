@@ -68,15 +68,9 @@ export default function Auth() {
         
         {/* Overlay Content */}
         <div className="relative z-10 flex flex-col justify-between p-8 lg:p-12 text-white">
-          <div className="flex items-center gap-3">
-            <img src={sbmLogo} alt="SBM Offshore" className="h-10" />
-          </div>
+          <div />
           
-          <div className="max-w-md">
-            <p className="text-white/80 text-lg">
-              Controle completo de inspeções, certificações e manutenção preventiva para garantir a segurança operacional.
-            </p>
-          </div>
+          <div className="max-w-md" />
           
           <p className="text-white/60 text-sm">
             © {new Date().getFullYear()} SBM Offshore. Todos os direitos reservados.
@@ -94,6 +88,7 @@ export default function Auth() {
 
           {/* Form Header */}
           <div className="mb-8">
+            <img src={sbmLogo} alt="SBM Offshore" className="h-10 mb-4 hidden lg:block" />
             <p className="text-sm font-medium text-primary mb-1">
               Sistema de Gestão de Equipamentos
             </p>
