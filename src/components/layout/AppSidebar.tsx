@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
+import sbmLogo from '@/assets/sbm-logo.svg';
 
 interface NavItemProps {
   to: string;
@@ -72,25 +73,16 @@ export function AppSidebar() {
         collapsed ? 'w-16' : 'w-64'
       )}
     >
-      {/* Logo */}
       <div className={cn(
         'h-16 flex items-center border-b border-sidebar-border px-4',
         collapsed && 'justify-center px-2'
       )}>
         {collapsed ? (
-          <div className="w-9 h-9 bg-sidebar-foreground/10 border border-sidebar-border rounded-lg flex items-center justify-center">
+          <div className="w-9 h-9 flex items-center justify-center">
             <span className="text-sidebar-foreground font-bold text-sm">SBM</span>
           </div>
         ) : (
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-sidebar-foreground/10 border border-sidebar-border rounded-lg flex items-center justify-center">
-              <span className="text-sidebar-foreground font-bold text-xs">SBM</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-bold text-sidebar-foreground tracking-tight">SBM Offshore</span>
-              <span className="text-[10px] text-sidebar-foreground/60 uppercase tracking-wider">Safety Equipment</span>
-            </div>
-          </div>
+          <img src={sbmLogo} alt="SBM Offshore" className="h-8" />
         )}
       </div>
 
