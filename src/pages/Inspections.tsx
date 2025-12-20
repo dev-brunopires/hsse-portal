@@ -1,5 +1,21 @@
-import { useState } from 'react';
-import { ClipboardCheck, Calendar, Plus, Search, Eye, AlertTriangle, CheckCircle, XCircle, Clock, Filter } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { 
+  ClipboardCheck, 
+  Calendar, 
+  Plus, 
+  Search, 
+  Eye, 
+  AlertTriangle, 
+  CheckCircle, 
+  XCircle, 
+  Clock, 
+  Filter,
+  Download,
+  FileSpreadsheet,
+  FileText,
+  User,
+  X,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -19,10 +35,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useInspections, type InspectionWithDetails } from '@/hooks/useInspections';
-import { format, isAfter, isBefore, addDays, startOfMonth, endOfMonth } from 'date-fns';
+import { useProfiles } from '@/hooks/useProfiles';
+import { format, isAfter, isBefore, addDays, startOfMonth, endOfMonth, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { InspectionDetailDialog } from '@/components/inspections/InspectionDetailDialog';
+import { exportInspectionsToExcel, exportInspectionsToPDF } from '@/utils/exportInspections';
 
 const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: typeof CheckCircle }> = {
   approved: { label: 'Aprovado', variant: 'default', icon: CheckCircle },
@@ -33,8 +58,28 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'second
 
 export default function Inspections() {
   const { data: inspections = [], isLoading } = useInspections();
+  const { data: profiles = [] } = useProfiles();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [inspectorFilter, setInspectorFilter] = useState<string>('all');
+  const [dateFrom, setDateFrom] = useState<string>('');
+  const [dateTo, setDateTo] = useState<string>('');
+  const [selectedInspection, setSelectedInspection] = useState<InspectionWithDetails | null>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+
+  // Get unique inspectors from inspections
+  const inspectors = useMemo(() => {
+    const uniqueInspectors = new Map<string, { id: string; name: string }>();
+    inspections.forEach(i => {
+      if (i.profiles && i.inspector_id) {
+        uniqueInspectors.set(i.inspector_id, { 
+          id: i.inspector_id, 
+          name: i.profiles.full_name 
+        });
+      }
+    });
+    return Array.from(uniqueInspectors.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [inspections]);
 
   // Calculate statistics
   const now = new Date();
@@ -49,21 +94,38 @@ export default function Inspections() {
   const nonConformant = inspections.filter(i => i.status === 'rejected' || i.status === 'conditional').length;
 
   // Filter inspections
-  const filteredInspections = inspections.filter(inspection => {
-    const matchesSearch = 
-      inspection.equipment?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inspection.equipment?.internal_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inspection.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || inspection.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
+  const filteredInspections = useMemo(() => {
+    return inspections.filter(inspection => {
+      const matchesSearch = 
+        inspection.equipment?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        inspection.equipment?.internal_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        inspection.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStatus = statusFilter === 'all' || inspection.status === statusFilter;
+      const matchesInspector = inspectorFilter === 'all' || inspection.inspector_id === inspectorFilter;
+      
+      const inspectionDate = parseISO(inspection.inspection_date);
+      const matchesDateFrom = !dateFrom || isAfter(inspectionDate, parseISO(dateFrom)) || inspection.inspection_date === dateFrom;
+      const matchesDateTo = !dateTo || isBefore(inspectionDate, parseISO(dateTo)) || inspection.inspection_date === dateTo;
+      
+      return matchesSearch && matchesStatus && matchesInspector && matchesDateFrom && matchesDateTo;
+    });
+  }, [inspections, searchTerm, statusFilter, inspectorFilter, dateFrom, dateTo]);
 
   // Get upcoming inspections (next 30 days based on next_inspection_date)
   const upcomingInspections = inspections
     .filter(i => i.next_inspection_date && isAfter(new Date(i.next_inspection_date), now) && isBefore(new Date(i.next_inspection_date), addDays(now, 30)))
     .sort((a, b) => new Date(a.next_inspection_date!).getTime() - new Date(b.next_inspection_date!).getTime());
+
+  const hasActiveFilters = statusFilter !== 'all' || inspectorFilter !== 'all' || dateFrom || dateTo;
+
+  const clearFilters = () => {
+    setStatusFilter('all');
+    setInspectorFilter('all');
+    setDateFrom('');
+    setDateTo('');
+    setSearchTerm('');
+  };
 
   const getStatusBadge = (status: string) => {
     const config = statusConfig[status] || statusConfig.pending;
@@ -76,6 +138,19 @@ export default function Inspections() {
     );
   };
 
+  const openDetailDialog = (inspection: InspectionWithDetails) => {
+    setSelectedInspection(inspection);
+    setDetailDialogOpen(true);
+  };
+
+  const handleExportExcel = () => {
+    exportInspectionsToExcel(filteredInspections);
+  };
+
+  const handleExportPDF = () => {
+    exportInspectionsToPDF(filteredInspections);
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
@@ -85,14 +160,51 @@ export default function Inspections() {
             Gerenciamento de inspeções e checklists
           </p>
         </div>
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" />
-          Nova Inspeção
-        </Button>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Download className="h-4 w-4" />
+                Exportar
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-popover border border-border shadow-lg">
+              <DropdownMenuItem onClick={handleExportExcel} className="gap-2 cursor-pointer">
+                <FileSpreadsheet className="h-4 w-4" />
+                Exportar Excel
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExportPDF} className="gap-2 cursor-pointer">
+                <FileText className="h-4 w-4" />
+                Exportar PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button className="gap-2">
+            <Plus className="h-4 w-4" />
+            Nova Inspeção
+          </Button>
+        </div>
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <ClipboardCheck className="h-5 w-5 text-primary" />
+              Total
+            </CardTitle>
+            <CardDescription>Todas as inspeções</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="h-9 w-16" />
+            ) : (
+              <p className="text-3xl font-bold">{inspections.length}</p>
+            )}
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
@@ -113,7 +225,7 @@ export default function Inspections() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
-              <ClipboardCheck className="h-5 w-5 text-status-success" />
+              <CheckCircle className="h-5 w-5 text-status-success" />
               Realizadas (Mês)
             </CardTitle>
             <CardDescription>Inspeções concluídas</CardDescription>
@@ -152,7 +264,7 @@ export default function Inspections() {
           <CardDescription>Todas as inspeções realizadas no sistema</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col lg:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -162,20 +274,65 @@ export default function Inspections() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
+            
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Filtrar status" />
+              <SelectTrigger className="w-full lg:w-[160px]">
+                <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos os status</SelectItem>
+                <SelectItem value="all">Todos Status</SelectItem>
                 <SelectItem value="approved">Aprovado</SelectItem>
                 <SelectItem value="pending">Pendente</SelectItem>
                 <SelectItem value="rejected">Reprovado</SelectItem>
                 <SelectItem value="conditional">Condicional</SelectItem>
               </SelectContent>
             </Select>
+
+            <Select value={inspectorFilter} onValueChange={setInspectorFilter}>
+              <SelectTrigger className="w-full lg:w-[200px]">
+                <User className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Inspetor" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos Inspetores</SelectItem>
+                {inspectors.map(inspector => (
+                  <SelectItem key={inspector.id} value={inspector.id}>
+                    {inspector.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <div className="flex gap-2">
+              <Input
+                type="date"
+                placeholder="De"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="w-full lg:w-[140px]"
+              />
+              <Input
+                type="date"
+                placeholder="Até"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="w-full lg:w-[140px]"
+              />
+            </div>
+
+            {hasActiveFilters && (
+              <Button variant="ghost" size="icon" onClick={clearFilters}>
+                <X className="h-4 w-4" />
+              </Button>
+            )}
           </div>
+
+          {hasActiveFilters && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Filter className="h-4 w-4" />
+              Mostrando {filteredInspections.length} de {inspections.length} inspeções
+            </div>
+          )}
 
           {/* Inspections Table */}
           <div className="rounded-md border">
@@ -207,18 +364,22 @@ export default function Inspections() {
                 ) : filteredInspections.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                      {searchTerm || statusFilter !== 'all' 
+                      {searchTerm || hasActiveFilters
                         ? 'Nenhuma inspeção encontrada com os filtros aplicados.' 
                         : 'Nenhuma inspeção registrada ainda.'}
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredInspections.map((inspection) => (
-                    <TableRow key={inspection.id}>
+                    <TableRow 
+                      key={inspection.id}
+                      className="cursor-pointer hover:bg-muted/50"
+                      onDoubleClick={() => openDetailDialog(inspection)}
+                    >
                       <TableCell className="font-medium">
                         {inspection.equipment?.name || 'Equipamento não encontrado'}
                       </TableCell>
-                      <TableCell className="text-muted-foreground">
+                      <TableCell className="text-muted-foreground font-mono">
                         {inspection.equipment?.internal_code || '-'}
                       </TableCell>
                       <TableCell>
@@ -236,7 +397,11 @@ export default function Inspections() {
                           : '-'}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => openDetailDialog(inspection)}
+                        >
                           <Eye className="h-4 w-4" />
                         </Button>
                       </TableCell>
@@ -245,6 +410,10 @@ export default function Inspections() {
                 )}
               </TableBody>
             </Table>
+          </div>
+
+          <div className="text-sm text-muted-foreground">
+            Total: {filteredInspections.length} inspeções
           </div>
         </CardContent>
       </Card>
@@ -264,7 +433,8 @@ export default function Inspections() {
               {upcomingInspections.slice(0, 5).map((inspection) => (
                 <div 
                   key={inspection.id} 
-                  className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                  className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+                  onClick={() => openDetailDialog(inspection)}
                 >
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -289,6 +459,13 @@ export default function Inspections() {
           </CardContent>
         </Card>
       )}
+
+      {/* Detail Dialog */}
+      <InspectionDetailDialog
+        open={detailDialogOpen}
+        onOpenChange={setDetailDialogOpen}
+        inspection={selectedInspection}
+      />
     </div>
   );
 }
