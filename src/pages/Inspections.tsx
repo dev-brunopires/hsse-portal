@@ -62,6 +62,10 @@ import { exportInspectionsToExcel, exportInspectionsToPDF } from '@/utils/export
 import { useToast } from '@/hooks/use-toast';
 
 const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: typeof CheckCircle }> = {
+  compliant: { label: 'Conforme', variant: 'default', icon: CheckCircle },
+  attention: { label: 'Atenção', variant: 'outline', icon: AlertTriangle },
+  'non-compliant': { label: 'Não Conforme', variant: 'destructive', icon: XCircle },
+  // Legacy values for backwards compatibility
   approved: { label: 'Aprovado', variant: 'default', icon: CheckCircle },
   pending: { label: 'Pendente', variant: 'secondary', icon: Clock },
   rejected: { label: 'Reprovado', variant: 'destructive', icon: XCircle },
@@ -131,12 +135,12 @@ export default function Inspections() {
   const monthStart = startOfMonth(now);
   const monthEnd = endOfMonth(now);
   
-  const pendingInspections = inspections.filter(i => i.status === 'pending').length;
+  const pendingInspections = inspections.filter(i => i.status === 'attention').length;
   const completedThisMonth = inspections.filter(i => {
     const date = new Date(i.inspection_date);
-    return isAfter(date, monthStart) && isBefore(date, monthEnd) && i.status !== 'pending';
+    return isAfter(date, monthStart) && isBefore(date, monthEnd) && i.status === 'compliant';
   }).length;
-  const nonConformant = inspections.filter(i => i.status === 'rejected' || i.status === 'conditional').length;
+  const nonConformant = inspections.filter(i => i.status === 'non-compliant' || i.status === 'attention').length;
 
   // Filter inspections
   const filteredInspections = useMemo(() => {
@@ -362,12 +366,11 @@ export default function Inspections() {
               <SelectTrigger className="w-full lg:w-[160px]">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-popover border border-border shadow-lg z-50">
                 <SelectItem value="all">Todos Status</SelectItem>
-                <SelectItem value="approved">Aprovado</SelectItem>
-                <SelectItem value="pending">Pendente</SelectItem>
-                <SelectItem value="rejected">Reprovado</SelectItem>
-                <SelectItem value="conditional">Condicional</SelectItem>
+                <SelectItem value="compliant">Conforme</SelectItem>
+                <SelectItem value="attention">Atenção</SelectItem>
+                <SelectItem value="non-compliant">Não Conforme</SelectItem>
               </SelectContent>
             </Select>
 
