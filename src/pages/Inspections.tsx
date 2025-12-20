@@ -19,6 +19,7 @@ import {
   QrCode,
   CalendarDays,
   List,
+  GitCommitHorizontal,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -56,6 +57,7 @@ import { InspectionDetailDialog } from '@/components/inspections/InspectionDetai
 import { NewInspectionDialog } from '@/components/inspections/NewInspectionDialog';
 import { QRCodeScannerDialog } from '@/components/equipment/QRCodeScannerDialog';
 import { InspectionCalendar } from '@/components/inspections/InspectionCalendar';
+import { InspectionTimeline } from '@/components/inspections/InspectionTimeline';
 import { exportInspectionsToExcel, exportInspectionsToPDF } from '@/utils/exportInspections';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -89,7 +91,7 @@ export default function Inspections() {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [showNewInspectionForm, setShowNewInspectionForm] = useState(false);
   const [showQRScanner, setShowQRScanner] = useState(false);
-  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'calendar' | 'timeline'>('list');
 
   // Auto-open form when scanning QR code
   useEffect(() => {
@@ -349,11 +351,15 @@ export default function Inspections() {
       </div>
 
       {/* View Mode Tabs */}
-      <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'list' | 'calendar')}>
+      <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'list' | 'calendar' | 'timeline')}>
         <TabsList>
           <TabsTrigger value="list" className="gap-2">
             <List className="h-4 w-4" />
             Lista
+          </TabsTrigger>
+          <TabsTrigger value="timeline" className="gap-2">
+            <GitCommitHorizontal className="h-4 w-4" />
+            Timeline
           </TabsTrigger>
           <TabsTrigger value="calendar" className="gap-2">
             <CalendarDays className="h-4 w-4" />
@@ -522,6 +528,23 @@ export default function Inspections() {
             Total: {filteredInspections.length} inspeções
           </div>
         </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Timeline View */}
+        <TabsContent value="timeline" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Timeline de Inspeções</CardTitle>
+              <CardDescription>Histórico visual das inspeções realizadas</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <InspectionTimeline 
+                inspections={filteredInspections}
+                onViewDetails={openDetailDialog}
+                maxItems={10}
+              />
+            </CardContent>
           </Card>
         </TabsContent>
 
