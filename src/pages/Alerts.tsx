@@ -2,6 +2,9 @@ import { Bell, AlertTriangle, Clock, XCircle, CheckCircle, Loader2 } from 'lucid
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { useMarkAllNotificationsAsRead } from '@/hooks/useNotifications';
+import { useToast } from '@/hooks/use-toast';
+import { markSystemNotificationRead } from '@/utils/systemNotificationsRead';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Alert } from '@/types/equipment';
@@ -14,12 +17,29 @@ const alertTypeConfig = {
 };
 
 export default function Alerts() {
+  const { toast } = useToast();
+  const markAllNotificationsAsRead = useMarkAllNotificationsAsRead();
   const { data: stats, isLoading, error } = useDashboardStats();
 
   const alerts = stats?.recentAlerts || [];
   const highCount = alerts.filter(a => a.severity === 'high').length;
   const mediumCount = alerts.filter(a => a.severity === 'medium').length;
   const lowCount = alerts.filter(a => a.severity === 'low').length;
+
+  const handleMarkAllAsRead = () => {
+    // Marks the bell/system notifications as read too
+    markSystemNotificationRead('system-ship-filter', '1');
+    if (highCount > 0) {
+      markSystemNotificationRead('system-high-priority', String(highCount));
+    }
+
+    markAllNotificationsAsRead.mutate();
+
+    toast({
+      title: 'Marcado como lido',
+      description: 'As notificações foram marcadas como lidas.',
+    });
+  };
 
   if (isLoading) {
     return (
@@ -76,7 +96,7 @@ export default function Alerts() {
             Notificações e itens que requerem atenção
           </p>
         </div>
-        <Button variant="outline" className="gap-2">
+        <Button variant="outline" className="gap-2" onClick={handleMarkAllAsRead}>
           <CheckCircle className="h-4 w-4" />
           Marcar todos como lidos
         </Button>
@@ -134,7 +154,7 @@ export default function Alerts() {
               {alerts.map((alert) => {
                 const config = alertTypeConfig[alert.type];
                 const Icon = config.icon;
-                
+
                 return (
                   <div
                     key={alert.id}

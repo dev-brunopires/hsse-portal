@@ -41,6 +41,11 @@ import {
 } from '@/hooks/useNotifications';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import {
+  markSystemNotificationRead,
+  readSystemNotificationsRead,
+  type SystemNotificationId,
+} from '@/utils/systemNotificationsRead';
 
 const roleLabels: Record<string, string> = {
   admin: 'Administrador',
@@ -60,18 +65,24 @@ export function Header() {
   const unreadNotifications = useUnreadNotifications();
   const markAsRead = useMarkNotificationAsRead();
   const markAllAsRead = useMarkAllNotificationsAsRead();
-  
-  // State to force re-render when system notifications are dismissed
-  const [dismissedSystemNotifications, setDismissedSystemNotifications] = useState<Set<string>>(() => {
-    const dismissed = new Set<string>();
-    if (localStorage.getItem('ship-filter-reminder-dismissed')) {
-      dismissed.add('system-ship-filter');
-    }
-    return dismissed;
-  });
+
+  const [systemRead, setSystemRead] = useState<Record<string, string>>(() =>
+    readSystemNotificationsRead()
+  );
+
+  const markSystemRead = useCallback(
+    (id: SystemNotificationId, version: string = '1') => {
+      const next = markSystemNotificationRead(id, version);
+      setSystemRead(next);
+    },
+    []
+  );
 
   // Check if user is admin (including admin_master which might come from database)
   const isAdmin = role === 'admin' || (role as string) === 'admin_master';
+
+  const highPriorityCount =
+    stats?.recentAlerts?.filter((a) => a.severity === 'high').length || 0;
 
   // Combine system notifications with database notifications
   const combinedNotifications = useMemo(() => {
@@ -84,10 +95,11 @@ export function Header() {
       createdAt?: string;
       isRead: boolean;
       isSystem?: boolean;
+      canMarkRead?: boolean;
     }> = [];
-    
+
     // Add database notifications
-    allNotifications.forEach(n => {
+    allNotifications.forEach((n) => {
       notifs.push({
         id: n.id,
         type: n.type as any,
@@ -97,11 +109,13 @@ export function Header() {
         createdAt: n.created_at,
         isRead: n.is_read || false,
         isSystem: false,
+        canMarkRead: true,
       });
     });
 
     // Add system reminder for filtering ships (only if not admin and has multiple ships)
-    if (!isAdmin && userShips.length > 1 && !dismissedSystemNotifications.has('system-ship-filter')) {
+    const shipFilterRead = systemRead['system-ship-filter'] === '1';
+    if (!isAdmin && userShips.length > 1 && !shipFilterRead) {
       notifs.unshift({
         id: 'system-ship-filter',
         type: 'reminder',
@@ -109,52 +123,54 @@ export function Header() {
         message: `Você tem acesso a ${userShips.length} navios. Lembre-se de filtrar os dados por navio no Dashboard.`,
         isRead: false,
         isSystem: true,
+        canMarkRead: true,
       });
     }
 
-    // Add alert for high priority items (this one can't be dismissed)
-    const highPriorityCount = stats?.recentAlerts?.filter(a => a.severity === 'high').length || 0;
+    // Add alert for high priority items (mark as read stores current count, and reappears if count changes)
     if (highPriorityCount > 0) {
+      const version = String(highPriorityCount);
+      const isRead = systemRead['system-high-priority'] === version;
+
       notifs.unshift({
         id: 'system-high-priority',
         type: 'alert',
         title: 'Alertas Críticos',
         message: `${highPriorityCount} alerta(s) de alta prioridade requerem atenção.`,
-        isRead: false,
+        isRead,
         isSystem: true,
+        canMarkRead: true,
       });
     }
 
     return notifs;
-  }, [allNotifications, userShips, stats, isAdmin, dismissedSystemNotifications]);
+  }, [allNotifications, userShips, highPriorityCount, isAdmin, systemRead]);
 
-  const unreadCount = combinedNotifications.filter(n => !n.isRead).length;
+  const unreadCount = combinedNotifications.filter((n) => !n.isRead).length;
 
   const handleMarkAsRead = useCallback(
     (notificationId: string, isSystem: boolean) => {
       if (isSystem) {
         if (notificationId === 'system-ship-filter') {
-          localStorage.setItem('ship-filter-reminder-dismissed', 'true');
-          setDismissedSystemNotifications(
-            (prev) => new Set([...prev, 'system-ship-filter'])
-          );
+          markSystemRead('system-ship-filter', '1');
+        }
+        if (notificationId === 'system-high-priority') {
+          markSystemRead('system-high-priority', String(highPriorityCount));
         }
         return;
       }
       markAsRead.mutate(notificationId);
     },
-    [markAsRead]
+    [markAsRead, markSystemRead, highPriorityCount]
   );
 
   const handleMarkAllAsRead = useCallback(() => {
-    // Dismiss system notifications
-    localStorage.setItem('ship-filter-reminder-dismissed', 'true');
-    setDismissedSystemNotifications(
-      (prev) => new Set([...prev, 'system-ship-filter'])
-    );
-    // Mark database notifications as read
+    markSystemRead('system-ship-filter', '1');
+    if (highPriorityCount > 0) {
+      markSystemRead('system-high-priority', String(highPriorityCount));
+    }
     markAllAsRead.mutate();
-  }, [markAllAsRead]);
+  }, [markAllAsRead, markSystemRead, highPriorityCount]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -285,9 +301,21 @@ export function Header() {
               ) : (
                 <div className="p-2 space-y-2">
                   {combinedNotifications.map((notification) => (
-                    <div 
+                    <div
                       key={notification.id}
                       className={`p-3 rounded-lg border transition-all ${getNotificationBg(notification.type, notification.isRead)}`}
+                      onPointerDown={(e) => {
+                        if (!notification.isRead && notification.canMarkRead) {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleMarkAsRead(
+                            notification.id,
+                            notification.isSystem || false
+                          );
+                        }
+                      }}
+                      role={!notification.isRead && notification.canMarkRead ? 'button' : undefined}
+                      tabIndex={!notification.isRead && notification.canMarkRead ? 0 : undefined}
                     >
                       <div className="flex items-start gap-3">
                         <div className="mt-0.5">
@@ -316,8 +344,7 @@ export function Header() {
                             ) : (
                               <span />
                             )}
-                            {!notification.isRead &&
-                              (!notification.isSystem || notification.id === 'system-ship-filter') && (
+                            {!notification.isRead && notification.canMarkRead && (
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -325,7 +352,10 @@ export function Header() {
                                 onPointerDown={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  handleMarkAsRead(notification.id, notification.isSystem || false);
+                                  handleMarkAsRead(
+                                    notification.id,
+                                    notification.isSystem || false
+                                  );
                                 }}
                               >
                                 <CheckCheck className="h-3 w-3" />
