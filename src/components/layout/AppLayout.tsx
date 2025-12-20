@@ -2,6 +2,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AppSidebar } from './AppSidebar';
 import { Header } from './Header';
 import { OfflineIndicator } from './OfflineIndicator';
+import { PWAInstallPrompt } from './PWAInstallPrompt';
 import { Loader2 } from 'lucide-react';
 
 interface AppLayoutProps {
@@ -32,6 +33,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         </main>
       </div>
       <OfflineIndicator />
+      <PWAInstallPrompt />
     </div>
   );
 }
