@@ -68,6 +68,10 @@ export default {
           danger: "hsl(var(--status-danger))",
           "danger-foreground": "hsl(var(--status-danger-foreground))",
         },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+        },
         chart: {
           "1": "hsl(var(--chart-1))",
           "2": "hsl(var(--chart-2))",

@@ -42,6 +42,10 @@
     --status-danger: 0 72% 51%;
     --status-danger-foreground: 0 0% 100%;
 
+    /* Warning semantic token */
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 10%;
+
     --border: 214 20% 88%;
     --input: 214 20% 88%;
     --ring: 215 70% 22%;
@@ -97,6 +101,10 @@
     --status-warning-foreground: 0 0% 10%;
     --status-danger: 0 72% 55%;
     --status-danger-foreground: 0 0% 100%;
+
+    /* Warning semantic token */
+    --warning: 38 92% 55%;
+    --warning-foreground: 0 0% 10%;
 
     --border: 215 20% 22%;
     --input: 215 20% 22%;
