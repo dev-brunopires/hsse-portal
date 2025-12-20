@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
+import { useShipFilter } from '@/contexts/ShipFilterContext';
 
 export type Inspection = Tables<'inspections'>;
 export type InspectionInsert = TablesInsert<'inspections'>;
@@ -16,13 +17,22 @@ export interface InspectionWithDetails extends Inspection {
 }
 
 export function useInspections() {
+  const { selectedShipId, isFilterEnabled } = useShipFilter();
+  
   return useQuery({
-    queryKey: ['inspections'],
+    queryKey: ['inspections', selectedShipId],
     queryFn: async () => {
-      const { data: inspections, error } = await supabase
+      let query = supabase
         .from('inspections')
         .select('*')
         .order('inspection_date', { ascending: false });
+      
+      // Apply ship filter for admin/admin_master when a specific ship is selected
+      if (isFilterEnabled && selectedShipId) {
+        query = query.eq('ship_id', selectedShipId);
+      }
+      
+      const { data: inspections, error } = await query;
       
       if (error) throw error;
       

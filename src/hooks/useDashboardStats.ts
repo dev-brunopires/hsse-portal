@@ -3,16 +3,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { addDays, isAfter, isBefore, startOfMonth, endOfMonth } from 'date-fns';
 import type { DashboardStats, Alert, CategoryStats, StatusStats, EquipmentStatus } from '@/types/equipment';
 import { getEffectiveEquipmentStatus } from '@/utils/equipmentStatus';
+import { useShipFilter } from '@/contexts/ShipFilterContext';
 
 export function useDashboardStats() {
+  const { selectedShipId, isFilterEnabled } = useShipFilter();
+  
   return useQuery({
-    queryKey: ['dashboard-stats'],
+    queryKey: ['dashboard-stats', selectedShipId],
     queryFn: async (): Promise<DashboardStats> => {
       const today = new Date();
       const thirtyDaysFromNow = addDays(today, 30);
 
       // Fetch all equipment with categories
-      const { data: equipment, error: equipmentError } = await supabase
+      let equipmentQuery = supabase
         .from('equipment')
         .select(`
           id,
@@ -23,17 +26,31 @@ export function useDashboardStats() {
           certificate_expiry,
           expiry_date,
           next_inspection,
+          ship_id,
           categories (name)
         `);
+      
+      // Apply ship filter for admin/admin_master when a specific ship is selected
+      if (isFilterEnabled && selectedShipId) {
+        equipmentQuery = equipmentQuery.eq('ship_id', selectedShipId);
+      }
+
+      const { data: equipment, error: equipmentError } = await equipmentQuery;
 
       if (equipmentError) throw equipmentError;
 
-      // Fetch pending inspections (next 30 days)
-      const { data: pendingInspectionsData, error: inspectionsError } = await supabase
+      // Fetch pending inspections (next 30 days) with ship filter
+      let pendingQuery = supabase
         .from('equipment')
-        .select('id')
+        .select('id, ship_id')
         .not('next_inspection', 'is', null)
         .lte('next_inspection', thirtyDaysFromNow.toISOString().split('T')[0]);
+      
+      if (isFilterEnabled && selectedShipId) {
+        pendingQuery = pendingQuery.eq('ship_id', selectedShipId);
+      }
+
+      const { data: pendingInspectionsData, error: inspectionsError } = await pendingQuery;
 
       if (inspectionsError) throw inspectionsError;
 
