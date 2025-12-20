@@ -51,6 +51,7 @@ import { format, isAfter, isBefore, addDays, startOfMonth, endOfMonth, parseISO 
 import { ptBR } from 'date-fns/locale';
 import { InspectionDetailDialog } from '@/components/inspections/InspectionDetailDialog';
 import { NewInspectionDialog } from '@/components/inspections/NewInspectionDialog';
+import { QRCodeScannerDialog } from '@/components/equipment/QRCodeScannerDialog';
 import { exportInspectionsToExcel, exportInspectionsToPDF } from '@/utils/exportInspections';
 import { useToast } from '@/hooks/use-toast';
 
@@ -82,6 +83,7 @@ export default function Inspections() {
   const [selectedInspection, setSelectedInspection] = useState<InspectionWithDetails | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [showNewInspectionForm, setShowNewInspectionForm] = useState(false);
+  const [showQRScanner, setShowQRScanner] = useState(false);
 
   // Auto-open form when scanning QR code
   useEffect(() => {
@@ -221,12 +223,26 @@ export default function Inspections() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          <Button variant="outline" className="gap-2" onClick={() => setShowQRScanner(true)}>
+            <QrCode className="h-4 w-4" />
+            Ler QR Code
+          </Button>
           <Button className="gap-2" onClick={() => setShowNewInspectionForm(true)}>
             <Plus className="h-4 w-4" />
             Nova Inspeção
           </Button>
         </div>
       </div>
+
+      {/* QR Code Scanner Dialog */}
+      <QRCodeScannerDialog
+        open={showQRScanner}
+        onOpenChange={setShowQRScanner}
+        onScan={(equipmentId) => {
+          setSearchParams({ scan: equipmentId });
+          setShowQRScanner(false);
+        }}
+      />
 
       {/* QR Code Scan Indicator */}
       {scanEquipmentId && scannedEquipment && (
