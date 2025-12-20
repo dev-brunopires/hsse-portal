@@ -11,7 +11,10 @@ import {
   AlertTriangle,
   Info,
   X,
-  Filter
+  Filter,
+  CheckCheck,
+  AlertCircle,
+  Clock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +33,14 @@ import { useNavigate } from 'react-router-dom';
 import { useUnits } from '@/hooks/useUnits';
 import { useUserShips } from '@/hooks/useUserShips';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { 
+  useNotifications, 
+  useUnreadNotifications, 
+  useMarkNotificationAsRead,
+  useMarkAllNotificationsAsRead 
+} from '@/hooks/useNotifications';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const roleLabels: Record<string, string> = {
   admin: 'Administrador',
@@ -39,111 +50,127 @@ const roleLabels: Record<string, string> = {
   viewer: 'Visualizador',
 };
 
-interface Notification {
-  id: string;
-  type: 'info' | 'warning' | 'reminder';
-  title: string;
-  message: string;
-  action?: {
-    label: string;
-    onClick: () => void;
-  };
-  dismissible?: boolean;
-}
-
 export function Header() {
   const { user, profile, role, signOut } = useAuth();
   const navigate = useNavigate();
   const { data: units = [] } = useUnits();
   const { data: userShips = [] } = useUserShips(user?.id);
   const { data: stats } = useDashboardStats();
-  
-  const [dismissedNotifications, setDismissedNotifications] = useState<string[]>(() => {
-    const stored = localStorage.getItem('dismissed-notifications');
-    return stored ? JSON.parse(stored) : [];
-  });
+  const { data: allNotifications = [] } = useNotifications();
+  const unreadNotifications = useUnreadNotifications();
+  const markAsRead = useMarkNotificationAsRead();
+  const markAllAsRead = useMarkAllNotificationsAsRead();
 
-  const dismissNotification = (id: string) => {
-    const updated = [...dismissedNotifications, id];
-    setDismissedNotifications(updated);
-    localStorage.setItem('dismissed-notifications', JSON.stringify(updated));
-  };
+  // Check if user is admin (including admin_master which might come from database)
+  const isAdmin = role === 'admin' || (role as string) === 'admin_master';
 
-  // Generate notifications
-  const notifications = useMemo(() => {
-    const notifs: Notification[] = [];
+  // Combine system notifications with database notifications
+  const combinedNotifications = useMemo(() => {
+    const notifs: Array<{
+      id: string;
+      type: 'info' | 'warning' | 'alert' | 'reminder';
+      title: string;
+      message: string;
+      shipName?: string;
+      createdAt?: string;
+      isRead: boolean;
+      isSystem?: boolean;
+    }> = [];
     
-    // Reminder to filter ships if user has multiple ships assigned
-    if (userShips.length > 1) {
+    // Add database notifications
+    allNotifications.forEach(n => {
       notifs.push({
-        id: 'filter-ships-reminder',
-        type: 'reminder',
-        title: 'Filtrar por Navio',
-        message: `Você tem acesso a ${userShips.length} navios. Lembre-se de filtrar os dados por navio para visualizar informações específicas.`,
-        action: {
-          label: 'Ir para Dashboard',
-          onClick: () => navigate('/'),
-        },
-        dismissible: true,
+        id: n.id,
+        type: n.type as any,
+        title: n.title,
+        message: n.message,
+        shipName: n.ship?.name,
+        createdAt: n.created_at,
+        isRead: n.is_read || false,
+        isSystem: false,
       });
-    }
+    });
 
-    // Reminder for users with ships but none selected
-    if (userShips.length === 1 && userShips[0]?.ship) {
-      notifs.push({
-        id: 'single-ship-info',
-        type: 'info',
-        title: `Navio: ${userShips[0].ship.name}`,
-        message: 'Você está visualizando dados deste navio.',
-        dismissible: true,
-      });
-    }
-
-    // Alert for pending items
-    if (stats?.recentAlerts && stats.recentAlerts.length > 0) {
-      const highPriorityCount = stats.recentAlerts.filter(a => a.severity === 'high').length;
-      if (highPriorityCount > 0) {
-        notifs.push({
-          id: 'high-priority-alerts',
-          type: 'warning',
-          title: 'Alertas Críticos',
-          message: `Você tem ${highPriorityCount} alerta(s) de alta prioridade que requerem atenção imediata.`,
-          action: {
-            label: 'Ver Alertas',
-            onClick: () => navigate('/alerts'),
-          },
+    // Add system reminder for filtering ships (only if not admin and has multiple ships)
+    if (!isAdmin && userShips.length > 1) {
+      const reminderDismissed = localStorage.getItem('ship-filter-reminder-dismissed');
+      if (!reminderDismissed) {
+        notifs.unshift({
+          id: 'system-ship-filter',
+          type: 'reminder',
+          title: 'Filtrar por Navio',
+          message: `Você tem acesso a ${userShips.length} navios. Lembre-se de filtrar os dados por navio no Dashboard.`,
+          isRead: false,
+          isSystem: true,
         });
       }
     }
 
-    // Filter out dismissed notifications
-    return notifs.filter(n => !dismissedNotifications.includes(n.id) || !n.dismissible);
-  }, [userShips, stats, dismissedNotifications, navigate]);
+    // Add alert for high priority items
+    const highPriorityCount = stats?.recentAlerts?.filter(a => a.severity === 'high').length || 0;
+    if (highPriorityCount > 0) {
+      notifs.unshift({
+        id: 'system-high-priority',
+        type: 'alert',
+        title: 'Alertas Críticos',
+        message: `${highPriorityCount} alerta(s) de alta prioridade requerem atenção.`,
+        isRead: false,
+        isSystem: true,
+      });
+    }
+
+    return notifs;
+  }, [allNotifications, userShips, stats, isAdmin]);
+
+  const unreadCount = combinedNotifications.filter(n => !n.isRead).length;
+
+  const handleMarkAsRead = (notificationId: string, isSystem: boolean) => {
+    if (isSystem) {
+      if (notificationId === 'system-ship-filter') {
+        localStorage.setItem('ship-filter-reminder-dismissed', 'true');
+      }
+      return;
+    }
+    markAsRead.mutate(notificationId);
+  };
+
+  const handleMarkAllAsRead = () => {
+    // Dismiss system notifications
+    localStorage.setItem('ship-filter-reminder-dismissed', 'true');
+    // Mark database notifications as read
+    markAllAsRead.mutate();
+  };
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/auth');
   };
 
-  const getNotificationIcon = (type: Notification['type']) => {
+  const getNotificationIcon = (type: string) => {
     switch (type) {
+      case 'alert':
+        return <AlertCircle className="h-4 w-4 text-red-500" />;
       case 'warning':
         return <AlertTriangle className="h-4 w-4 text-status-warning" />;
       case 'reminder':
-        return <Filter className="h-4 w-4 text-primary" />;
+        return <Clock className="h-4 w-4 text-primary" />;
       default:
-        return <Info className="h-4 w-4 text-muted-foreground" />;
+        return <Info className="h-4 w-4 text-blue-500" />;
     }
   };
 
-  const getNotificationBg = (type: Notification['type']) => {
+  const getNotificationBg = (type: string, isRead: boolean) => {
+    if (isRead) return 'bg-muted/30 border-muted opacity-60';
+    
     switch (type) {
+      case 'alert':
+        return 'bg-red-500/10 border-red-500/30';
       case 'warning':
         return 'bg-status-warning/10 border-status-warning/30';
       case 'reminder':
         return 'bg-primary/10 border-primary/30';
       default:
-        return 'bg-muted/50 border-muted';
+        return 'bg-blue-500/10 border-blue-500/30';
     }
   };
 
@@ -199,82 +226,92 @@ export function Header() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="h-5 w-5" />
-              {notifications.length > 0 && (
+              {unreadCount > 0 && (
                 <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-status-danger text-status-danger-foreground text-xs">
-                  {notifications.length}
+                  {unreadCount > 9 ? '9+' : unreadCount}
                 </Badge>
               )}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80 bg-popover border border-border shadow-lg z-50">
+          <DropdownMenuContent align="end" className="w-96 bg-popover border border-border shadow-lg z-50">
             <DropdownMenuLabel className="flex items-center justify-between">
-              <span>Notificações</span>
-              {notifications.length > 0 && (
-                <Badge variant="secondary" className="text-xs">
-                  {notifications.length}
-                </Badge>
+              <div className="flex items-center gap-2">
+                <span>Notificações</span>
+                {unreadCount > 0 && (
+                  <Badge variant="secondary" className="text-xs">
+                    {unreadCount} não lidas
+                  </Badge>
+                )}
+              </div>
+              {unreadCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto py-1 px-2 text-xs gap-1"
+                  onClick={handleMarkAllAsRead}
+                >
+                  <CheckCheck className="h-3 w-3" />
+                  Marcar todas
+                </Button>
               )}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <ScrollArea className="max-h-80">
-              {notifications.length === 0 ? (
-                <div className="p-4 text-center text-muted-foreground">
-                  <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">Nenhuma notificação</p>
+            <ScrollArea className="max-h-96">
+              {combinedNotifications.length === 0 ? (
+                <div className="p-6 text-center text-muted-foreground">
+                  <Bell className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm font-medium">Nenhuma notificação</p>
+                  <p className="text-xs mt-1">Você está em dia!</p>
                 </div>
               ) : (
                 <div className="p-2 space-y-2">
-                  {notifications.map((notification) => (
+                  {combinedNotifications.map((notification) => (
                     <div 
                       key={notification.id}
-                      className={`p-3 rounded-lg border ${getNotificationBg(notification.type)} relative`}
+                      className={`p-3 rounded-lg border cursor-pointer transition-all hover:opacity-80 ${getNotificationBg(notification.type, notification.isRead)}`}
+                      onClick={() => handleMarkAsRead(notification.id, notification.isSystem || false)}
                     >
-                      {notification.dismissible && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            dismissNotification(notification.id);
-                          }}
-                          className="absolute top-2 right-2 p-1 hover:bg-background/50 rounded"
-                        >
-                          <X className="h-3 w-3 text-muted-foreground" />
-                        </button>
-                      )}
-                      <div className="flex items-start gap-2 pr-6">
-                        {getNotificationIcon(notification.type)}
+                      <div className="flex items-start gap-3">
+                        <div className="mt-0.5">
+                          {getNotificationIcon(notification.type)}
+                        </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm">{notification.title}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
+                          <div className="flex items-center gap-2">
+                            <p className={`font-medium text-sm ${notification.isRead ? 'text-muted-foreground' : ''}`}>
+                              {notification.title}
+                            </p>
+                            {notification.shipName && (
+                              <Badge variant="outline" className="text-xs py-0">
+                                <Ship className="h-2.5 w-2.5 mr-1" />
+                                {notification.shipName}
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                             {notification.message}
                           </p>
-                          {notification.action && (
-                            <Button
-                              variant="link"
-                              size="sm"
-                              className="h-auto p-0 mt-2 text-xs"
-                              onClick={notification.action.onClick}
-                            >
-                              {notification.action.label} →
-                            </Button>
+                          {notification.createdAt && (
+                            <p className="text-xs text-muted-foreground/70 mt-1.5">
+                              {format(new Date(notification.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                            </p>
                           )}
                         </div>
+                        {!notification.isRead && (
+                          <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0 mt-1.5" />
+                        )}
                       </div>
                     </div>
                   ))}
                 </div>
               )}
             </ScrollArea>
-            {notifications.length > 0 && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  className="justify-center text-primary cursor-pointer"
-                  onClick={() => navigate('/alerts')}
-                >
-                  Ver todos os alertas
-                </DropdownMenuItem>
-              </>
-            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem 
+              className="justify-center text-primary cursor-pointer"
+              onClick={() => navigate('/alerts')}
+            >
+              Ver todos os alertas
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
