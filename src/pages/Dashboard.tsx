@@ -27,7 +27,7 @@ import { CriticalEquipmentCard } from '@/components/dashboard/CriticalEquipmentC
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useShips } from '@/hooks/useShips';
 import { useCategories } from '@/hooks/useCategories';
-import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+
 import { CardSkeleton, ChartSkeleton, ListSkeleton } from '@/components/ui/table-skeleton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -41,8 +41,6 @@ export default function Dashboard() {
   const { data: ships = [] } = useShips();
   const { data: categories = [] } = useCategories();
   
-  // Enable keyboard shortcuts
-  useKeyboardShortcuts();
   
   const [filters, setFilters] = useState<DashboardFiltersState>({
     shipId: 'all',

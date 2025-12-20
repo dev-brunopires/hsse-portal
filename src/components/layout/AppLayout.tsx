@@ -6,9 +6,9 @@ import { MobileBottomNav } from './MobileBottomNav';
 import { Header } from './Header';
 import { OfflineIndicator } from './OfflineIndicator';
 import { PWAInstallPrompt } from './PWAInstallPrompt';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { Loader2, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import sbmLogoColor from '@/assets/sbm-logo.svg';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -17,6 +17,9 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const { loading } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  // Enable global keyboard shortcuts
+  useKeyboardShortcuts();
 
   if (loading) {
     return (

@@ -76,9 +76,9 @@ export async function addPDFHeader(
   const logoBase64 = await loadLogoBase64();
   
   if (logoBase64) {
-    // Add the actual logo image
+    // Add the actual logo image with correct aspect ratio (not stretched)
     try {
-      doc.addImage(logoBase64, 'PNG', 14, 8, 40, 16);
+      doc.addImage(logoBase64, 'PNG', 14, 6, 32, 20);
     } catch (error) {
       console.error('Error adding logo to PDF:', error);
       // Fallback to text
@@ -145,7 +145,7 @@ export function addPDFHeaderSync(
   // Use cached logo if available
   if (logoBase64Cache) {
     try {
-      doc.addImage(logoBase64Cache, 'PNG', 14, 8, 40, 16);
+      doc.addImage(logoBase64Cache, 'PNG', 14, 6, 32, 20);
     } catch (error) {
       addTextLogo(doc);
     }

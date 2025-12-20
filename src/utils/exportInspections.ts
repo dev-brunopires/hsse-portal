@@ -152,12 +152,23 @@ export async function exportSingleInspectionPDF(
   doc.text(`Email: ${inspection.profiles?.email || '—'}`, 100, yPos);
   yPos += 10;
   
-  // Equipment info section
+  // Equipment info section - expanded with more details
   yPos = addSectionHeader(doc, yPos, 'EQUIPAMENTO', SBM_BLUE);
   yPos += 4;
   
+  doc.setFontSize(10);
+  doc.setTextColor(...DARK_GRAY);
   doc.text(`Nome: ${inspection.equipment?.name || '—'}`, 14, yPos);
   doc.text(`Código: ${inspection.equipment?.internal_code || '—'}`, 100, yPos);
+  yPos += 6;
+  doc.text(`Nº Série: ${inspection.equipment?.serial_number || '—'}`, 14, yPos);
+  doc.text(`Tipo: ${inspection.equipment?.type || '—'}`, 100, yPos);
+  yPos += 6;
+  doc.text(`Fabricante: ${inspection.equipment?.manufacturer || '—'}`, 14, yPos);
+  doc.text(`Modelo: ${inspection.equipment?.model || '—'}`, 100, yPos);
+  yPos += 6;
+  doc.text(`Localização: ${inspection.equipment?.location || '—'}`, 14, yPos);
+  doc.text(`Capacidade: ${inspection.equipment?.capacity || '—'}`, 100, yPos);
   yPos += 10;
   
   // Checklist section
@@ -204,6 +215,61 @@ export async function exportSingleInspectionPDF(
     const lines = doc.splitTextToSize(inspection.recommendations, 180);
     doc.text(lines, 14, yPos);
     yPos += lines.length * 5 + 6;
+  }
+  
+  // Signature section
+  const pageHeight = doc.internal.pageSize.getHeight();
+  if (yPos > pageHeight - 60) {
+    doc.addPage();
+    yPos = 20;
+  }
+  
+  yPos = addSectionHeader(doc, yPos, 'ASSINATURA', SBM_BLUE);
+  yPos += 4;
+  
+  const sigBoxWidth = 80;
+  const sigBoxHeight = 30;
+  
+  doc.setDrawColor(...MEDIUM_GRAY);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(14, yPos, sigBoxWidth, sigBoxHeight, 2, 2, 'FD');
+  
+  if (inspection.signature_data) {
+    try {
+      doc.addImage(inspection.signature_data, 'PNG', 18, yPos + 2, 72, 26);
+    } catch (e) {
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'italic');
+      doc.setTextColor(...MEDIUM_GRAY);
+      doc.text('Assinatura digital registrada', 24, yPos + 16);
+    }
+  } else {
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(...MEDIUM_GRAY);
+    doc.text('Aguardando assinatura', 28, yPos + 16);
+  }
+  
+  // Signature line
+  doc.setDrawColor(...DARK_GRAY);
+  doc.line(14, yPos + sigBoxHeight + 2, 14 + sigBoxWidth, yPos + sigBoxHeight + 2);
+  
+  // Inspector info beside signature
+  const detailsX = 14 + sigBoxWidth + 10;
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...DARK_GRAY);
+  doc.text(inspection.profiles?.full_name || '—', detailsX, yPos + 10);
+  
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...MEDIUM_GRAY);
+  if (inspection.profiles?.position) {
+    doc.text(inspection.profiles.position, detailsX, yPos + 16);
+  }
+  if (inspection.signed_at) {
+    doc.setTextColor(...SBM_BLUE);
+    doc.text(`Assinado em: ${format(new Date(inspection.signed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, detailsX, yPos + 22);
   }
 
   // Add standardized footer
