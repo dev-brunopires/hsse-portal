@@ -293,6 +293,7 @@ export default function Inspections() {
           setShowNewInspectionForm(open);
           if (!open) handleFormCancel();
         }}
+        preSelectedEquipmentId={scanEquipmentId}
       />
 
       {/* Statistics Cards */}
