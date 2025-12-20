@@ -19,38 +19,55 @@ const statusLabels: Record<string, string> = {
   inactive: 'Inativo',
 };
 
+// SBM Brand Colors
+const SBM_ORANGE: [number, number, number] = [243, 111, 39]; // #F36F27
+const SBM_BLUE: [number, number, number] = [22, 85, 154]; // #16559A
+const DARK_GRAY: [number, number, number] = [51, 51, 51];
+const LIGHT_GRAY: [number, number, number] = [245, 247, 250];
+const MEDIUM_GRAY: [number, number, number] = [156, 163, 175];
+const SUCCESS_GREEN: [number, number, number] = [16, 185, 129];
+const WARNING_YELLOW: [number, number, number] = [245, 158, 11];
+const DANGER_RED: [number, number, number] = [239, 68, 68];
+
 export function exportDashboardPDF(stats: DashboardStats, filters: ExportFilters) {
-  // Create PDF in landscape orientation
   const doc = new jsPDF({ orientation: 'landscape' });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   
-  // Colors
-  const primaryColor: [number, number, number] = [30, 58, 138];
-  const successColor: [number, number, number] = [34, 197, 94];
-  const warningColor: [number, number, number] = [245, 158, 11];
-  const dangerColor: [number, number, number] = [239, 68, 68];
+  let yPos = 0;
   
-  let yPos = 20;
+  // === HEADER WITH SBM BRANDING ===
+  // Orange accent bar at top
+  doc.setFillColor(...SBM_ORANGE);
+  doc.rect(0, 0, pageWidth, 4, 'F');
   
-  // Header
-  doc.setFillColor(...primaryColor);
-  doc.rect(0, 0, pageWidth, 35, 'F');
+  // Blue header section
+  doc.setFillColor(...SBM_BLUE);
+  doc.rect(0, 4, pageWidth, 28, 'F');
   
+  // Company name
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(22);
   doc.setFont('helvetica', 'bold');
-  doc.text('Relatório Gerencial - Dashboard de Equipamentos', 14, 18);
+  doc.text('SBM', 14, 18);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.text('OFFSHORE', 14, 25);
   
-  doc.setFontSize(10);
+  // Report title
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.text('RELATÓRIO GERENCIAL DE EQUIPAMENTOS', pageWidth / 2, 18, { align: 'center' });
+  
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   const generatedDate = format(new Date(), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR });
-  doc.text(`Gerado em: ${generatedDate}`, 14, 28);
+  doc.text(`Gerado em: ${generatedDate}`, pageWidth / 2, 26, { align: 'center' });
   
   // Filters applied
   const filtersApplied: string[] = [];
   if (filters.shipName && filters.shipName !== 'all') {
-    filtersApplied.push(`Navio: ${filters.shipName}`);
+    filtersApplied.push(`Unidade: ${filters.shipName}`);
   }
   if (filters.categoryName && filters.categoryName !== 'all') {
     filtersApplied.push(`Categoria: ${filters.categoryName}`);
@@ -60,63 +77,76 @@ export function exportDashboardPDF(stats: DashboardStats, filters: ExportFilters
   }
   
   if (filtersApplied.length > 0) {
-    doc.text(`Filtros: ${filtersApplied.join(' | ')}`, pageWidth - 14, 28, { align: 'right' });
+    doc.text(filtersApplied.join(' | '), pageWidth - 14, 18, { align: 'right' });
   }
   
-  yPos = 45;
+  yPos = 42;
   
-  // KPI Section Title
-  doc.setTextColor(30, 41, 59);
-  doc.setFontSize(14);
+  // === KPI SECTION ===
+  doc.setFillColor(...SBM_ORANGE);
+  doc.rect(14, yPos, 4, 8, 'F');
+  doc.setFillColor(...LIGHT_GRAY);
+  doc.rect(18, yPos, pageWidth - 32, 8, 'F');
+  
+  doc.setTextColor(...DARK_GRAY);
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  doc.text('Indicadores Principais', 14, yPos);
-  yPos += 8;
+  doc.text('INDICADORES PRINCIPAIS', 24, yPos + 5.5);
   
-  // KPI Cards - Using more horizontal space in landscape
-  const kpiWidth = (pageWidth - 84) / 6;
+  yPos += 14;
+  
+  // KPI Cards
+  const kpiWidth = (pageWidth - 98) / 6;
   const kpis = [
-    { label: 'Total Equipamentos', value: stats.totalEquipment.toString(), color: primaryColor },
-    { label: 'Ativos', value: stats.activeEquipment.toString(), color: successColor },
-    { label: 'Cert. Vencidos', value: stats.expiredCertificates.toString(), color: dangerColor },
-    { label: 'Status Vencido', value: stats.expiredEquipment.toString(), color: dangerColor },
-    { label: 'Insp. Pendentes', value: stats.pendingInspections.toString(), color: warningColor },
-    { label: 'Conformidade', value: `${stats.complianceRate}%`, color: primaryColor },
+    { label: 'Total Equipamentos', value: stats.totalEquipment.toString(), color: SBM_BLUE },
+    { label: 'Ativos', value: stats.activeEquipment.toString(), color: SUCCESS_GREEN },
+    { label: 'Cert. Vencidos', value: stats.expiredCertificates.toString(), color: DANGER_RED },
+    { label: 'Status Vencido', value: stats.expiredEquipment.toString(), color: DANGER_RED },
+    { label: 'Insp. Pendentes', value: stats.pendingInspections.toString(), color: WARNING_YELLOW },
+    { label: 'Conformidade', value: `${stats.complianceRate}%`, color: SBM_BLUE },
   ];
   
   kpis.forEach((kpi, index) => {
     const xPos = 14 + (kpiWidth + 5) * index;
     
     // Card background
-    doc.setFillColor(248, 250, 252);
-    doc.roundedRect(xPos, yPos, kpiWidth, 25, 3, 3, 'F');
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(229, 231, 235);
+    doc.roundedRect(xPos, yPos, kpiWidth, 28, 3, 3, 'FD');
     
-    // Accent bar
+    // Colored accent bar on left
     doc.setFillColor(...kpi.color);
-    doc.rect(xPos, yPos, 3, 25, 'F');
+    doc.roundedRect(xPos, yPos, 4, 28, 2, 0, 'F');
+    doc.rect(xPos + 2, yPos, 2, 28, 'F');
     
     // Value
-    doc.setFontSize(16);
+    doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...kpi.color);
-    doc.text(kpi.value, xPos + 8, yPos + 12);
+    doc.text(kpi.value, xPos + 10, yPos + 14);
     
     // Label
-    doc.setFontSize(8);
+    doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(100, 116, 139);
-    doc.text(kpi.label, xPos + 8, yPos + 20);
+    doc.setTextColor(...MEDIUM_GRAY);
+    doc.text(kpi.label, xPos + 10, yPos + 22);
   });
   
-  yPos += 35;
+  yPos += 38;
   
   // Two columns layout for tables
   const colWidth = (pageWidth - 42) / 2;
   
   // Left column: Status Table
-  doc.setTextColor(30, 41, 59);
-  doc.setFontSize(12);
+  doc.setFillColor(...SBM_BLUE);
+  doc.rect(14, yPos, 4, 8, 'F');
+  doc.setFillColor(...LIGHT_GRAY);
+  doc.rect(18, yPos, colWidth - 4, 8, 'F');
+  
+  doc.setTextColor(...DARK_GRAY);
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.text('Distribuição por Status', 14, yPos);
+  doc.text('DISTRIBUIÇÃO POR STATUS', 24, yPos + 5.5);
   
   const statusData = stats.byStatus
     .filter(s => s.count > 0)
@@ -127,26 +157,37 @@ export function exportDashboardPDF(stats: DashboardStats, filters: ExportFilters
     ]);
   
   autoTable(doc, {
-    startY: yPos + 4,
-    head: [['Status', 'Qtd', '%']],
+    startY: yPos + 10,
+    head: [['Status', 'Quantidade', 'Percentual']],
     body: statusData,
     theme: 'striped',
-    headStyles: { fillColor: primaryColor, fontSize: 9, cellPadding: 3 },
+    headStyles: { 
+      fillColor: SBM_BLUE, 
+      fontSize: 9, 
+      cellPadding: 3,
+      textColor: [255, 255, 255]
+    },
     styles: { fontSize: 9, cellPadding: 3 },
     columnStyles: {
-      0: { cellWidth: 50 },
-      1: { cellWidth: 25, halign: 'center' },
-      2: { cellWidth: 25, halign: 'center' },
+      0: { cellWidth: 55 },
+      1: { cellWidth: 30, halign: 'center' },
+      2: { cellWidth: 30, halign: 'center' },
     },
+    alternateRowStyles: { fillColor: [250, 251, 252] },
     margin: { left: 14, right: pageWidth - 14 - colWidth },
     tableWidth: colWidth,
   });
   
   // Right column: Category Table
-  doc.setTextColor(30, 41, 59);
-  doc.setFontSize(12);
+  doc.setFillColor(...SBM_ORANGE);
+  doc.rect(14 + colWidth + 14, yPos, 4, 8, 'F');
+  doc.setFillColor(...LIGHT_GRAY);
+  doc.rect(14 + colWidth + 18, yPos, colWidth - 4, 8, 'F');
+  
+  doc.setTextColor(...DARK_GRAY);
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.text('Conformidade por Categoria', 14 + colWidth + 14, yPos);
+  doc.text('CONFORMIDADE POR CATEGORIA', 14 + colWidth + 24, yPos + 5.5);
   
   if (stats.byCategory.length > 0) {
     const categoryData = stats.byCategory.map(c => [
@@ -158,19 +199,25 @@ export function exportDashboardPDF(stats: DashboardStats, filters: ExportFilters
     ]);
     
     autoTable(doc, {
-      startY: yPos + 4,
-      head: [['Categoria', 'Total', 'OK', 'NC', '%']],
+      startY: yPos + 10,
+      head: [['Categoria', 'Total', 'Conforme', 'N/C', 'Taxa']],
       body: categoryData,
       theme: 'striped',
-      headStyles: { fillColor: primaryColor, fontSize: 9, cellPadding: 3 },
+      headStyles: { 
+        fillColor: SBM_ORANGE, 
+        fontSize: 9, 
+        cellPadding: 3,
+        textColor: [255, 255, 255]
+      },
       styles: { fontSize: 9, cellPadding: 3 },
       columnStyles: {
-        0: { cellWidth: 55 },
+        0: { cellWidth: 50 },
         1: { cellWidth: 20, halign: 'center' },
-        2: { cellWidth: 20, halign: 'center' },
+        2: { cellWidth: 25, halign: 'center' },
         3: { cellWidth: 20, halign: 'center' },
         4: { cellWidth: 20, halign: 'center' },
       },
+      alternateRowStyles: { fillColor: [250, 251, 252] },
       margin: { left: 14 + colWidth + 14, right: 14 },
       tableWidth: colWidth,
     });
@@ -178,54 +225,78 @@ export function exportDashboardPDF(stats: DashboardStats, filters: ExportFilters
   
   // Get the Y position after both tables
   const statusTableEndY = (doc as any).lastAutoTable?.finalY || yPos + 50;
-  yPos = statusTableEndY + 15;
+  yPos = statusTableEndY + 12;
   
   // Alerts Section - Full width
   if (stats.recentAlerts.length > 0 && yPos < pageHeight - 50) {
-    doc.setTextColor(30, 41, 59);
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Alertas Prioritários', 14, yPos);
+    doc.setFillColor(...DANGER_RED);
+    doc.rect(14, yPos, 4, 8, 'F');
+    doc.setFillColor(...LIGHT_GRAY);
+    doc.rect(18, yPos, pageWidth - 32, 8, 'F');
     
-    const alertData = stats.recentAlerts.slice(0, 8).map(a => [
-      a.message,
-      a.equipmentName.length > 35 ? a.equipmentName.substring(0, 33) + '...' : a.equipmentName,
-      a.date,
-      a.severity === 'high' ? 'Alta' : a.severity === 'medium' ? 'Média' : 'Baixa'
-    ]);
+    doc.setTextColor(...DARK_GRAY);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('ALERTAS PRIORITÁRIOS', 24, yPos + 5.5);
+    
+    const alertData = stats.recentAlerts.slice(0, 8).map(a => {
+      const severityLabel = a.severity === 'high' ? 'Alta' : a.severity === 'medium' ? 'Média' : 'Baixa';
+      const severityColor: [number, number, number] = a.severity === 'high' 
+        ? DANGER_RED 
+        : a.severity === 'medium' 
+          ? WARNING_YELLOW 
+          : MEDIUM_GRAY;
+      
+      return [
+        a.message,
+        a.equipmentName.length > 40 ? a.equipmentName.substring(0, 38) + '...' : a.equipmentName,
+        a.date,
+        { content: severityLabel, styles: { textColor: severityColor, fontStyle: 'bold' as const } }
+      ];
+    });
     
     autoTable(doc, {
-      startY: yPos + 4,
-      head: [['Alerta', 'Equipamento', 'Data', 'Prioridade']],
+      startY: yPos + 10,
+      head: [['Descrição do Alerta', 'Equipamento', 'Data', 'Prioridade']],
       body: alertData,
       theme: 'striped',
-      headStyles: { fillColor: dangerColor, fontSize: 9, cellPadding: 3 },
+      headStyles: { 
+        fillColor: DANGER_RED, 
+        fontSize: 9, 
+        cellPadding: 3,
+        textColor: [255, 255, 255]
+      },
       styles: { fontSize: 9, cellPadding: 3 },
       columnStyles: {
-        0: { cellWidth: 80 },
+        0: { cellWidth: 90 },
         1: { cellWidth: 100 },
         2: { cellWidth: 30, halign: 'center' },
         3: { cellWidth: 30, halign: 'center' },
       },
+      alternateRowStyles: { fillColor: [250, 251, 252] },
       margin: { left: 14, right: 14 },
     });
   }
   
-  // Footer
+  // === FOOTER ===
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
-    doc.setFontSize(8);
-    doc.setTextColor(148, 163, 184);
-    doc.text(
-      `SafeShip - Sistema de Gestão de Equipamentos | Página ${i} de ${pageCount}`,
-      pageWidth / 2,
-      pageHeight - 8,
-      { align: 'center' }
-    );
+    
+    // Footer orange accent
+    doc.setFillColor(...SBM_ORANGE);
+    doc.rect(0, pageHeight - 10, pageWidth, 2, 'F');
+    
+    // Footer text
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...MEDIUM_GRAY);
+    doc.text('SBM Offshore - Sistema de Gestão de Equipamentos de Segurança', 14, pageHeight - 4);
+    doc.text(`Relatório Gerencial - ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, pageWidth / 2, pageHeight - 4, { align: 'center' });
+    doc.text(`Página ${i} de ${pageCount}`, pageWidth - 14, pageHeight - 4, { align: 'right' });
   }
   
   // Save
-  const fileName = `dashboard-gerencial-${format(new Date(), 'yyyy-MM-dd-HHmm')}.pdf`;
+  const fileName = `SBM_Relatorio_Gerencial_${format(new Date(), 'yyyy-MM-dd-HHmm')}.pdf`;
   doc.save(fileName);
 }
