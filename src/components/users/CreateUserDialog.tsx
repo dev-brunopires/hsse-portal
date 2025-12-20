@@ -31,6 +31,7 @@ import { Shield, User, Eye, Loader2, Crown, UserCheck, UserPlus } from 'lucide-r
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { useUnits } from '@/hooks/useUnits';
 
 interface CreateUserDialogProps {
   open: boolean;
@@ -84,6 +85,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { data: units = [] } = useUnits();
 
   const form = useForm<CreateUserFormData>({
     resolver: zodResolver(createUserSchema),
@@ -144,6 +146,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
       }
 
       queryClient.invalidateQueries({ queryKey: ['profiles'] });
+      queryClient.invalidateQueries({ queryKey: ['units'] });
       
       toast({
         title: 'Usuário Criado',
@@ -229,9 +232,26 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Unidade</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Unidade/Departamento" {...field} />
-                  </FormControl>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione uma unidade" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent className="bg-popover border border-border shadow-lg z-50">
+                      {units.length === 0 ? (
+                        <SelectItem value="_empty" disabled>
+                          Nenhuma unidade cadastrada
+                        </SelectItem>
+                      ) : (
+                        units.map((unit) => (
+                          <SelectItem key={unit} value={unit}>
+                            {unit}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
