@@ -32,6 +32,7 @@ import {
   XCircle,
   Image,
   File,
+  ExternalLink,
 } from 'lucide-react';
 import { Equipment } from '@/types/equipment';
 import { StatusBadge } from './StatusBadge';
@@ -108,6 +109,24 @@ export function EquipmentDetailDialog({
     } finally {
       setUploadingFile(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleView = async (filePath: string, fileType: string) => {
+    try {
+      const { data } = await supabase.storage
+        .from('equipment-documents')
+        .createSignedUrl(filePath, 300);
+      
+      if (data?.signedUrl) {
+        window.open(data.signedUrl, '_blank');
+      }
+    } catch (error) {
+      toast({
+        title: 'Erro ao visualizar',
+        description: 'Não foi possível abrir o documento.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -532,6 +551,15 @@ export function EquipmentDetailDialog({
                           </p>
                         </div>
                         <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="gap-2"
+                            onClick={() => handleView(doc.file_path, doc.file_type)}
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                            Ver
+                          </Button>
                           <Button 
                             variant="outline" 
                             size="sm" 

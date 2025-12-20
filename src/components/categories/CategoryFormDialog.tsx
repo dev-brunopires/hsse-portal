@@ -28,14 +28,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { 
-  Loader2, FolderOpen, Flame, Wind, Shield, Waves, Gauge, ArrowUp, Package, HardHat, LifeBuoy, Anchor,
-  FireExtinguisher, Siren, AlertTriangle, Zap, Droplets, Thermometer, Activity, Radio, Bell,
-  Construction, Wrench, Settings, Cog, Truck, Building, Factory, Warehouse, Cylinder, CircleDot,
-  ShieldCheck, ShieldAlert, Eye, Camera, Lock, Key, Plug, Power, BatteryCharging,
-  TriangleAlert, OctagonAlert, CircleAlert, Megaphone, Volume2, Flashlight, Lightbulb
-} from 'lucide-react';
+import { Loader2, FolderOpen } from 'lucide-react';
 import { useCreateCategory, useUpdateCategory, type Category } from '@/hooks/useCategories';
+import { categoryIconOptions, getCategoryIcon } from '@/utils/categoryIcons';
 
 const categorySchema = z.object({
   name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
@@ -52,71 +47,6 @@ interface CategoryFormDialogProps {
   mode: 'create' | 'edit';
   category?: Category | null;
 }
-
-const iconOptions = [
-  // Combate a incêndio
-  { value: 'fire-extinguisher', label: 'Extintor', icon: FireExtinguisher },
-  { value: 'flame', label: 'Fogo', icon: Flame },
-  { value: 'droplets', label: 'Mangueira/Água', icon: Droplets },
-  { value: 'waves', label: 'Hidrante', icon: Waves },
-  { value: 'siren', label: 'Alarme', icon: Siren },
-  { value: 'megaphone', label: 'Sirene', icon: Megaphone },
-  
-  // Segurança e alertas
-  { value: 'shield', label: 'Escudo', icon: Shield },
-  { value: 'shield-check', label: 'Proteção', icon: ShieldCheck },
-  { value: 'shield-alert', label: 'Alerta Segurança', icon: ShieldAlert },
-  { value: 'alert-triangle', label: 'Atenção', icon: AlertTriangle },
-  { value: 'triangle-alert', label: 'Perigo', icon: TriangleAlert },
-  { value: 'octagon-alert', label: 'Parada', icon: OctagonAlert },
-  { value: 'circle-alert', label: 'Aviso', icon: CircleAlert },
-  
-  // Equipamentos industriais
-  { value: 'cylinder', label: 'Cilindro', icon: Cylinder },
-  { value: 'gauge', label: 'Manômetro', icon: Gauge },
-  { value: 'thermometer', label: 'Termômetro', icon: Thermometer },
-  { value: 'activity', label: 'Monitor', icon: Activity },
-  
-  // EPIs e proteção
-  { value: 'hard-hat', label: 'Capacete', icon: HardHat },
-  { value: 'eye', label: 'Óculos/Visão', icon: Eye },
-  { value: 'life-buoy', label: 'Boia', icon: LifeBuoy },
-  
-  // Elétrica e energia
-  { value: 'zap', label: 'Elétrico', icon: Zap },
-  { value: 'plug', label: 'Tomada', icon: Plug },
-  { value: 'power', label: 'Energia', icon: Power },
-  { value: 'battery-charging', label: 'Bateria', icon: BatteryCharging },
-  { value: 'lightbulb', label: 'Iluminação', icon: Lightbulb },
-  { value: 'flashlight', label: 'Lanterna', icon: Flashlight },
-  
-  // Ferramentas e manutenção
-  { value: 'wrench', label: 'Ferramenta', icon: Wrench },
-  { value: 'settings', label: 'Configuração', icon: Settings },
-  { value: 'cog', label: 'Engrenagem', icon: Cog },
-  { value: 'construction', label: 'Construção', icon: Construction },
-  
-  // Comunicação e monitoramento
-  { value: 'radio', label: 'Rádio', icon: Radio },
-  { value: 'bell', label: 'Notificação', icon: Bell },
-  { value: 'volume-2', label: 'Som', icon: Volume2 },
-  { value: 'camera', label: 'Câmera', icon: Camera },
-  
-  // Estruturas e locais
-  { value: 'building', label: 'Prédio', icon: Building },
-  { value: 'factory', label: 'Fábrica', icon: Factory },
-  { value: 'warehouse', label: 'Armazém', icon: Warehouse },
-  { value: 'truck', label: 'Veículo', icon: Truck },
-  
-  // Outros
-  { value: 'wind', label: 'Ventilação', icon: Wind },
-  { value: 'arrow-up', label: 'Altura', icon: ArrowUp },
-  { value: 'package', label: 'Pacote', icon: Package },
-  { value: 'anchor', label: 'Âncora', icon: Anchor },
-  { value: 'lock', label: 'Cadeado', icon: Lock },
-  { value: 'key', label: 'Chave', icon: Key },
-  { value: 'circle-dot', label: 'Ponto', icon: CircleDot },
-];
 
 const frequencyOptions = [
   { value: 'monthly', label: 'Mensal' },
@@ -179,7 +109,7 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
   };
 
   const isSubmitting = createCategory.isPending || updateCategory.isPending;
-  const selectedIcon = iconOptions.find(i => i.value === form.watch('icon'));
+  const selectedIcon = categoryIconOptions.find(i => i.value === form.watch('icon'));
   const IconComponent = selectedIcon?.icon || FolderOpen;
 
   return (
@@ -244,13 +174,13 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
                           <SelectValue>
                             <div className="flex items-center gap-2">
                               <IconComponent className="h-4 w-4" />
-                              <span>{selectedIcon?.label}</span>
+                              <span>{selectedIcon?.label || 'Selecione'}</span>
                             </div>
                           </SelectValue>
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
-                        {iconOptions.map((option) => (
+                      <SelectContent className="max-h-[300px]">
+                        {categoryIconOptions.map((option) => (
                           <SelectItem key={option.value} value={option.value}>
                             <div className="flex items-center gap-2">
                               <option.icon className="h-4 w-4" />

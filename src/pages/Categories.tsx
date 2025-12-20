@@ -6,11 +6,6 @@ import {
   Trash2, 
   Loader2,
   Search,
-  Flame, Wind, Shield, Waves, Gauge, ArrowUp, Package, HardHat, LifeBuoy, Anchor,
-  FireExtinguisher, Siren, AlertTriangle, Zap, Droplets, Thermometer, Activity, Radio, Bell,
-  Construction, Wrench, Settings, Cog, Truck, Building, Factory, Warehouse, Cylinder, CircleDot,
-  ShieldCheck, ShieldAlert, Eye, Camera, Lock, Key, Plug, Power, BatteryCharging,
-  TriangleAlert, OctagonAlert, CircleAlert, Megaphone, Volume2, Flashlight, Lightbulb
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,71 +32,7 @@ import {
 import { useCategories, useDeleteCategory, type Category } from '@/hooks/useCategories';
 import { useEquipment } from '@/hooks/useEquipment';
 import { CategoryFormDialog } from '@/components/categories/CategoryFormDialog';
-
-const iconMap: Record<string, React.ElementType> = {
-  // Combate a incêndio
-  'fire-extinguisher': FireExtinguisher,
-  'flame': Flame,
-  'droplets': Droplets,
-  'waves': Waves,
-  'siren': Siren,
-  'megaphone': Megaphone,
-  
-  // Segurança e alertas
-  'shield': Shield,
-  'shield-check': ShieldCheck,
-  'shield-alert': ShieldAlert,
-  'alert-triangle': AlertTriangle,
-  'triangle-alert': TriangleAlert,
-  'octagon-alert': OctagonAlert,
-  'circle-alert': CircleAlert,
-  
-  // Equipamentos industriais
-  'cylinder': Cylinder,
-  'gauge': Gauge,
-  'thermometer': Thermometer,
-  'activity': Activity,
-  
-  // EPIs e proteção
-  'hard-hat': HardHat,
-  'eye': Eye,
-  'life-buoy': LifeBuoy,
-  
-  // Elétrica e energia
-  'zap': Zap,
-  'plug': Plug,
-  'power': Power,
-  'battery-charging': BatteryCharging,
-  'lightbulb': Lightbulb,
-  'flashlight': Flashlight,
-  
-  // Ferramentas e manutenção
-  'wrench': Wrench,
-  'settings': Settings,
-  'cog': Cog,
-  'construction': Construction,
-  
-  // Comunicação e monitoramento
-  'radio': Radio,
-  'bell': Bell,
-  'volume-2': Volume2,
-  'camera': Camera,
-  
-  // Estruturas e locais
-  'building': Building,
-  'factory': Factory,
-  'warehouse': Warehouse,
-  'truck': Truck,
-  
-  // Outros
-  'wind': Wind,
-  'arrow-up': ArrowUp,
-  'package': Package,
-  'anchor': Anchor,
-  'lock': Lock,
-  'key': Key,
-  'circle-dot': CircleDot,
-};
+import { getCategoryIcon } from '@/utils/categoryIcons';
 
 const frequencyLabels: Record<string, string> = {
   monthly: 'Mensal',
@@ -120,8 +51,8 @@ const frequencyColors: Record<string, string> = {
 };
 
 export default function Categories() {
-  const { data: categories = [], isLoading } = useCategories();
-  const { data: equipment = [] } = useEquipment();
+  const { data: categories, isLoading } = useCategories();
+  const { data: equipment } = useEquipment();
   const deleteCategory = useDeleteCategory();
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -129,206 +60,180 @@ export default function Categories() {
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
 
-  const filteredCategories = categories.filter(cat =>
+  const filteredCategories = categories?.filter(cat =>
     cat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cat.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ) || [];
 
-  const openCreateForm = () => {
+  const getEquipmentCount = (categoryId: string) => {
+    return equipment?.filter(e => e.category_id === categoryId).length || 0;
+  };
+
+  const handleCreate = () => {
     setFormMode('create');
     setSelectedCategory(null);
     setFormOpen(true);
   };
 
-  const openEditForm = (category: Category) => {
+  const handleEdit = (category: Category) => {
     setFormMode('edit');
     setSelectedCategory(category);
     setFormOpen(true);
   };
 
-  const openDeleteDialog = (category: Category) => {
-    setSelectedCategory(category);
+  const handleDeleteClick = (category: Category) => {
+    setCategoryToDelete(category);
     setDeleteDialogOpen(true);
   };
 
-  const handleDelete = async () => {
-    if (selectedCategory) {
-      await deleteCategory.mutateAsync(selectedCategory.id);
+  const handleDeleteConfirm = async () => {
+    if (categoryToDelete) {
+      await deleteCategory.mutateAsync(categoryToDelete.id);
       setDeleteDialogOpen(false);
-      setSelectedCategory(null);
+      setCategoryToDelete(null);
     }
-  };
-
-  const getEquipmentCount = (categoryId: string) => {
-    return equipment.filter(e => e.category_id === categoryId).length;
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <FolderOpen className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle>Categorias de Equipamentos</CardTitle>
+                <CardDescription>Carregando...</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Categorias</h1>
-          <p className="text-muted-foreground">
-            Gerenciamento de tipos de equipamentos e regras de inspeção
-          </p>
-        </div>
-        <Button className="gap-2" onClick={openCreateForm}>
-          <Plus className="h-4 w-4" />
-          Nova Categoria
-        </Button>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total de Categorias</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{categories.length}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Inspeção Mensal</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-blue-600">
-              {categories.filter(c => c.inspection_frequency === 'monthly').length}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Inspeção Trimestral</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-green-600">
-              {categories.filter(c => c.inspection_frequency === 'quarterly').length}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Equipamentos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-primary">{equipment.length}</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Categories Table */}
+    <div className="space-y-6">
       <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <CardTitle>Lista de Categorias</CardTitle>
-              <CardDescription>Todas as categorias de equipamentos cadastradas</CardDescription>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <FolderOpen className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle>Categorias de Equipamentos</CardTitle>
+                <CardDescription>
+                  Gerencie as categorias e suas frequências de inspeção
+                </CardDescription>
+              </div>
             </div>
-            <div className="relative w-full sm:w-64">
+            <Button onClick={handleCreate} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Nova Categoria
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {/* Search */}
+          <div className="mb-6">
+            <div className="relative max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar categorias..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
+                className="pl-10"
               />
             </div>
           </div>
-        </CardHeader>
-        <CardContent>
+
+          {/* Table */}
           {filteredCategories.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <FolderOpen className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">
+            <div className="text-center py-12">
+              <FolderOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-lg font-medium text-muted-foreground">
                 {searchTerm ? 'Nenhuma categoria encontrada' : 'Nenhuma categoria cadastrada'}
-              </h3>
-              {!searchTerm && (
-                <>
-                  <p className="text-muted-foreground mb-4">Crie sua primeira categoria de equipamentos</p>
-                  <Button onClick={openCreateForm} className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    Criar Categoria
-                  </Button>
-                </>
-              )}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {searchTerm ? 'Tente uma busca diferente' : 'Clique em "Nova Categoria" para começar'}
+              </p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-12"></TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead>Frequência</TableHead>
-                  <TableHead className="text-center">Equipamentos</TableHead>
-                  <TableHead className="w-24 text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredCategories.map((category) => {
-                  const IconComponent = iconMap[category.icon || 'package'] || FolderOpen;
-                  const equipmentCount = getEquipmentCount(category.id);
-                  
-                  return (
-                    <TableRow key={category.id} className="group">
-                      <TableCell>
-                        <div className="p-2 bg-primary/10 rounded-lg w-fit">
-                          <IconComponent className="h-5 w-5 text-primary" />
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="font-medium">{category.name}</span>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground max-w-xs truncate">
-                        {category.description || '—'}
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant="outline" 
-                          className={frequencyColors[category.inspection_frequency] || ''}
-                        >
-                          {frequencyLabels[category.inspection_frequency] || category.inspection_frequency}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <span className="font-medium">{equipmentCount}</span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8"
-                            onClick={() => openEditForm(category)}
+            <div className="rounded-lg border border-border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="w-12"></TableHead>
+                    <TableHead>Nome</TableHead>
+                    <TableHead className="hidden md:table-cell">Descrição</TableHead>
+                    <TableHead>Frequência</TableHead>
+                    <TableHead className="text-center">Equipamentos</TableHead>
+                    <TableHead className="w-24">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredCategories.map((category) => {
+                    const IconComponent = getCategoryIcon(category.icon);
+                    const equipmentCount = getEquipmentCount(category.id);
+                    
+                    return (
+                      <TableRow key={category.id} className="group">
+                        <TableCell>
+                          <div className="p-2 bg-primary/10 rounded-lg w-fit">
+                            <IconComponent className="h-4 w-4 text-primary" />
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-medium">{category.name}</TableCell>
+                        <TableCell className="hidden md:table-cell text-muted-foreground max-w-xs truncate">
+                          {category.description || '—'}
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant="outline" 
+                            className={frequencyColors[category.inspection_frequency] || ''}
                           >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 text-destructive hover:text-destructive"
-                            onClick={() => openDeleteDialog(category)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                            {frequencyLabels[category.inspection_frequency] || category.inspection_frequency}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant="secondary">{equipmentCount}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleEdit(category)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => handleDeleteClick(category)}
+                              disabled={equipmentCount > 0}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -341,26 +246,21 @@ export default function Categories() {
         category={selectedCategory}
       />
 
-      {/* Delete Confirmation */}
+      {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir Categoria</AlertDialogTitle>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir a categoria <strong>{selectedCategory?.name}</strong>?
-              {getEquipmentCount(selectedCategory?.id || '') > 0 && (
-                <span className="block mt-2 text-destructive">
-                  Atenção: Esta categoria possui {getEquipmentCount(selectedCategory?.id || '')} equipamento(s) vinculado(s). A exclusão pode falhar.
-                </span>
-              )}
+              Tem certeza que deseja excluir a categoria "{categoryToDelete?.name}"? 
+              Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDelete}
+              onClick={handleDeleteConfirm}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              disabled={deleteCategory.isPending}
             >
               {deleteCategory.isPending ? (
                 <>
