@@ -273,6 +273,7 @@ export const mockDashboardStats: DashboardStats = {
   totalEquipment: 8,
   activeEquipment: 5,
   expiredEquipment: 1,
+  expiredCertificates: 1,
   pendingInspections: 3,
   complianceRate: 87.5,
   byCategory: [

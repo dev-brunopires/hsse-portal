@@ -36,15 +36,30 @@ export function useDashboardStats() {
 
       if (inspectionsError) throw inspectionsError;
 
+      const todayStr = today.toISOString().split('T')[0];
+      
       const totalEquipment = equipment?.length || 0;
       const activeEquipment = equipment?.filter(e => e.status === 'active').length || 0;
       const expiredEquipment = equipment?.filter(e => e.status === 'expired' || e.status === 'rejected').length || 0;
+      
+      // Count equipment with expired certificates (regardless of status)
+      const expiredCertificates = equipment?.filter(e => {
+        if (!e.certificate_expiry) return false;
+        return e.certificate_expiry < todayStr;
+      }).length || 0;
+      
       const pendingInspections = pendingInspectionsData?.length || 0;
 
-      // Calculate compliance rate
-      const compliantEquipment = equipment?.filter(e => 
-        e.status === 'active' || e.status === 'maintenance'
-      ).length || 0;
+      // Calculate compliance rate - consider certificate expiry too
+      const nonCompliantEquipment = equipment?.filter(e => {
+        // Status-based non-compliance
+        if (e.status === 'expired' || e.status === 'rejected' || e.status === 'inactive') return true;
+        // Certificate expired
+        if (e.certificate_expiry && e.certificate_expiry < todayStr) return true;
+        return false;
+      }).length || 0;
+      
+      const compliantEquipment = totalEquipment - nonCompliantEquipment;
       const complianceRate = totalEquipment > 0 
         ? Number(((compliantEquipment / totalEquipment) * 100).toFixed(1))
         : 0;
@@ -157,6 +172,7 @@ export function useDashboardStats() {
         totalEquipment,
         activeEquipment,
         expiredEquipment,
+        expiredCertificates,
         pendingInspections,
         complianceRate,
         byCategory,
