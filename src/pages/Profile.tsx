@@ -17,6 +17,10 @@ import {
   CheckCircle2,
   Settings,
   Key,
+  Palette,
+  Sun,
+  Moon,
+  Monitor,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +30,8 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useTheme } from '@/hooks/useTheme';
 import {
   Form,
   FormControl,
@@ -69,6 +75,7 @@ interface ProfileData {
 export default function Profile() {
   const { user, refreshProfile } = useAuth();
   const { toast } = useToast();
+  const { theme, setTheme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
@@ -276,7 +283,7 @@ export default function Profile() {
       </div>
 
       <Tabs defaultValue="personal" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="personal" className="flex items-center gap-2">
             <User className="h-4 w-4" />
             <span className="hidden sm:inline">Pessoal</span>
@@ -284,6 +291,10 @@ export default function Profile() {
           <TabsTrigger value="signature" className="flex items-center gap-2">
             <PenTool className="h-4 w-4" />
             <span className="hidden sm:inline">Assinatura</span>
+          </TabsTrigger>
+          <TabsTrigger value="appearance" className="flex items-center gap-2">
+            <Palette className="h-4 w-4" />
+            <span className="hidden sm:inline">Aparência</span>
           </TabsTrigger>
           <TabsTrigger value="notifications" className="flex items-center gap-2">
             <Bell className="h-4 w-4" />
@@ -539,6 +550,80 @@ export default function Profile() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        {/* Tab: Aparência */}
+        <TabsContent value="appearance">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Palette className="h-5 w-5 text-primary" />
+                Aparência
+              </CardTitle>
+              <CardDescription>
+                Personalize a aparência do sistema
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <Label className="text-base font-medium">Tema do Sistema</Label>
+                <p className="text-sm text-muted-foreground">
+                  Escolha o tema visual que melhor se adapta às suas preferências
+                </p>
+                <RadioGroup
+                  value={theme}
+                  onValueChange={(value: 'light' | 'dark' | 'system') => setTheme(value)}
+                  className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2"
+                >
+                  <div>
+                    <RadioGroupItem
+                      value="light"
+                      id="theme-light"
+                      className="peer sr-only"
+                    />
+                    <Label
+                      htmlFor="theme-light"
+                      className="flex flex-col items-center justify-between rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                    >
+                      <Sun className="h-8 w-8 mb-3 text-yellow-500" />
+                      <span className="font-medium">Claro</span>
+                      <span className="text-xs text-muted-foreground mt-1">Tema claro padrão</span>
+                    </Label>
+                  </div>
+                  <div>
+                    <RadioGroupItem
+                      value="dark"
+                      id="theme-dark"
+                      className="peer sr-only"
+                    />
+                    <Label
+                      htmlFor="theme-dark"
+                      className="flex flex-col items-center justify-between rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                    >
+                      <Moon className="h-8 w-8 mb-3 text-blue-500" />
+                      <span className="font-medium">Escuro</span>
+                      <span className="text-xs text-muted-foreground mt-1">Tema escuro</span>
+                    </Label>
+                  </div>
+                  <div>
+                    <RadioGroupItem
+                      value="system"
+                      id="theme-system"
+                      className="peer sr-only"
+                    />
+                    <Label
+                      htmlFor="theme-system"
+                      className="flex flex-col items-center justify-between rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                    >
+                      <Monitor className="h-8 w-8 mb-3 text-muted-foreground" />
+                      <span className="font-medium">Sistema</span>
+                      <span className="text-xs text-muted-foreground mt-1">Seguir preferência do dispositivo</span>
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Tab: Notificações */}
