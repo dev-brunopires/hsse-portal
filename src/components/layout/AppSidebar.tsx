@@ -11,7 +11,6 @@ import {
   FolderOpen,
   ChevronLeft,
   ChevronRight,
-  Shield,
   User,
   AlertCircle,
   Moon,
@@ -37,13 +36,16 @@ const NavItem = ({ to, icon, label, collapsed }: NavItemProps) => {
     <NavLink to={to}>
       <div
         className={cn(
-          'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200',
+          'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group',
           'hover:bg-sidebar-accent text-sidebar-foreground',
-          isActive && 'bg-sidebar-accent text-sidebar-primary font-medium',
+          isActive && 'bg-sidebar-primary/20 text-sidebar-primary font-medium border-l-2 border-sidebar-primary',
           collapsed && 'justify-center px-2'
         )}
       >
-        <span className={cn('flex-shrink-0', isActive && 'text-sidebar-primary')}>
+        <span className={cn(
+          'flex-shrink-0 transition-transform duration-200 group-hover:scale-110', 
+          isActive && 'text-sidebar-primary'
+        )}>
           {icon}
         </span>
         {!collapsed && (
@@ -76,17 +78,17 @@ export function AppSidebar() {
         collapsed && 'justify-center px-2'
       )}>
         {collapsed ? (
-          <div className="w-8 h-8 bg-sidebar-primary rounded-lg flex items-center justify-center">
-            <Shield className="w-5 h-5 text-sidebar-primary-foreground" />
+          <div className="w-9 h-9 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center shadow-lg shadow-primary/20">
+            <span className="text-primary-foreground font-bold text-sm">SBM</span>
           </div>
         ) : (
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-sidebar-primary rounded-lg flex items-center justify-center">
-              <Shield className="w-5 h-5 text-sidebar-primary-foreground" />
+            <div className="w-9 h-9 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center shadow-lg shadow-primary/20">
+              <span className="text-primary-foreground font-bold text-xs">SBM</span>
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-semibold text-sidebar-foreground">SBM Offshore</span>
-              <span className="text-xs text-sidebar-foreground/60">Safety Equipment</span>
+              <span className="text-sm font-bold text-sidebar-foreground tracking-tight">SBM Offshore</span>
+              <span className="text-[10px] text-sidebar-foreground/60 uppercase tracking-wider">Safety Equipment</span>
             </div>
           </div>
         )}
