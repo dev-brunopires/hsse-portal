@@ -339,8 +339,8 @@ export default function Reports() {
       count: filteredInspections.length,
       onPDF: handleInspectionReportPDF,
       onExcel: handleInspectionReportExcel,
-      color: 'text-blue-500',
-      bgColor: 'bg-blue-500/10',
+      iconColor: 'text-white',
+      bgColor: 'bg-blue-600',
     },
     {
       id: 'category',
@@ -350,8 +350,8 @@ export default function Reports() {
       count: categories.filter(c => filteredEquipment.some(e => e.category_id === c.id)).length,
       onPDF: handleCategoryReportPDF,
       onExcel: handleCategoryReportExcel,
-      color: 'text-purple-500',
-      bgColor: 'bg-purple-500/10',
+      iconColor: 'text-white',
+      bgColor: 'bg-purple-600',
     },
     {
       id: 'expiry',
@@ -361,8 +361,8 @@ export default function Reports() {
       count: expiringEquipment.length,
       onPDF: handleExpiryReportPDF,
       onExcel: handleExpiryReportExcel,
-      color: 'text-red-500',
-      bgColor: 'bg-red-500/10',
+      iconColor: 'text-white',
+      bgColor: 'bg-red-600',
     },
     {
       id: 'non-conformities',
@@ -372,8 +372,8 @@ export default function Reports() {
       count: nonConformities.length,
       onPDF: handleNonConformitiesReportPDF,
       onExcel: handleNonConformitiesReportExcel,
-      color: 'text-orange-500',
-      bgColor: 'bg-orange-500/10',
+      iconColor: 'text-white',
+      bgColor: 'bg-orange-500',
     },
   ];
 
@@ -472,10 +472,10 @@ export default function Reports() {
           {reportTypes.map((report) => (
             <Card key={report.id} className="hover:border-primary/50 transition-colors">
               <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg ${report.bgColor}`}>
-                      <report.icon className={`h-5 w-5 ${report.color}`} />
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2.5 rounded-lg ${report.bgColor}`}>
+                        <report.icon className={`h-5 w-5 ${report.iconColor}`} />
                     </div>
                     <div>
                       <CardTitle className="text-base">{report.title}</CardTitle>
