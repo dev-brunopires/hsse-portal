@@ -247,6 +247,7 @@ export type Database = {
       }
       inspections: {
         Row: {
+          actions_taken: string | null
           created_at: string
           equipment_id: string
           id: string
@@ -261,6 +262,7 @@ export type Database = {
           status: string
         }
         Insert: {
+          actions_taken?: string | null
           created_at?: string
           equipment_id: string
           id?: string
@@ -275,6 +277,7 @@ export type Database = {
           status: string
         }
         Update: {
+          actions_taken?: string | null
           created_at?: string
           equipment_id?: string
           id?: string

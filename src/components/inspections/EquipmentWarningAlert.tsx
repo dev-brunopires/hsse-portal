@@ -1,5 +1,5 @@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, Info, Calendar, MessageSquare, Clock } from 'lucide-react';
+import { AlertTriangle, Info, Calendar, MessageSquare, Clock, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Inspection } from '@/hooks/useInspections';
@@ -28,6 +28,7 @@ export function EquipmentWarningAlert({ equipment, lastInspection }: EquipmentWa
   // Check if there are recommendations from last inspection
   const hasRecommendations = lastInspection?.recommendations && lastInspection.recommendations.trim().length > 0;
   const hasObservations = lastInspection?.observations && lastInspection.observations.trim().length > 0;
+  const hasActionsTaken = lastInspection?.actions_taken && lastInspection.actions_taken.trim().length > 0;
   
   // Check if last inspection had issues
   const lastInspectionHadIssues = lastInspection?.status === 'attention' || lastInspection?.status === 'non-compliant';
@@ -148,6 +149,15 @@ export function EquipmentWarningAlert({ equipment, lastInspection }: EquipmentWa
             <div className="mt-2 p-3 bg-background/80 rounded-md border border-border/50">
               <p className="text-sm whitespace-pre-wrap">{lastInspection?.recommendations}</p>
             </div>
+            {hasActionsTaken && (
+              <div className="mt-3 p-3 bg-status-success/10 rounded-md border border-status-success/30">
+                <div className="flex items-center gap-2 text-status-success font-medium text-sm mb-1">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Ações Tomadas na Última Inspeção:
+                </div>
+                <p className="text-sm whitespace-pre-wrap">{lastInspection?.actions_taken}</p>
+              </div>
+            )}
             {lastInspection?.inspection_date && (
               <p className="text-xs text-muted-foreground mt-2">
                 Registrado em {format(new Date(lastInspection.inspection_date + 'T00:00:00'), "dd/MM/yyyy", { locale: ptBR })}
