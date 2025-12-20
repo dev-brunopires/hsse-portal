@@ -4,7 +4,7 @@ import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: 'admin' | 'technician' | 'viewer';
+  requiredRole?: 'admin' | 'technician' | 'viewer' | 'supervisor';
 }
 
 export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
@@ -28,10 +28,23 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
   }
 
   // Check role if required
-  if (requiredRole) {
-    const roleHierarchy = { admin: 3, technician: 2, viewer: 1 };
-    const userLevel = roleHierarchy[role || 'viewer'];
-    const requiredLevel = roleHierarchy[requiredRole];
+  if (requiredRole === 'admin') {
+    // Only admin and admin_master can access admin-required routes
+    const isAdminUser = role === 'admin' || role === 'admin_master';
+    if (!isAdminUser) {
+      return <Navigate to="/" replace />;
+    }
+  } else if (requiredRole) {
+    // For other role requirements, use hierarchy
+    const roleHierarchy: Record<string, number> = {
+      admin_master: 5,
+      admin: 4,
+      supervisor: 3,
+      technician: 2,
+      viewer: 1,
+    };
+    const userLevel = roleHierarchy[role || 'viewer'] ?? 1;
+    const requiredLevel = roleHierarchy[requiredRole] ?? 1;
 
     if (userLevel < requiredLevel) {
       return <Navigate to="/" replace />;
