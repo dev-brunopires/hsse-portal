@@ -47,6 +47,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { uploadEquipmentDocument } from '@/hooks/useStorage';
+import { useUnits } from '@/hooks/useUnits';
 
 const equipmentSchema = z.object({
   // Dados Gerais
@@ -80,15 +81,6 @@ interface EquipmentFormDialogProps {
   onSuccess?: () => void;
 }
 
-const units = [
-  'FPSO Cidade de Paraty',
-  'FPSO Cidade de Maricá',
-  'FPSO Almirante Barroso',
-  'FPSO Sepetiba',
-  'FPSO Cidade de Ilhabela',
-  'Escritório Rio de Janeiro',
-  'Base Macaé',
-];
 
 export function EquipmentFormDialog({ 
   open, 
@@ -104,6 +96,7 @@ export function EquipmentFormDialog({
   const { user } = useAuth();
   
   const { data: categories = [], isLoading: categoriesLoading } = useCategories();
+  const { data: units = [], isLoading: unitsLoading } = useUnits();
   const createEquipment = useCreateEquipment();
   const updateEquipment = useUpdateEquipment();
 
@@ -416,18 +409,24 @@ export function EquipmentFormDialog({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Unidade / FPSO *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value} disabled={unitsLoading}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Selecione a unidade" />
+                              <SelectValue placeholder={unitsLoading ? 'Carregando...' : 'Selecione a unidade'} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent className="bg-popover border border-border shadow-lg z-50">
-                            {units.map((unit) => (
-                              <SelectItem key={unit} value={unit}>
-                                {unit}
-                              </SelectItem>
-                            ))}
+                            {units.length === 0 ? (
+                              <div className="p-2 text-sm text-muted-foreground text-center">
+                                Nenhuma unidade cadastrada
+                              </div>
+                            ) : (
+                              units.map((unit) => (
+                                <SelectItem key={unit} value={unit}>
+                                  {unit}
+                                </SelectItem>
+                              ))
+                            )}
                           </SelectContent>
                         </Select>
                         <FormMessage />
