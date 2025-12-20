@@ -189,7 +189,7 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
   return (
     <>
       <Dialog open={open && !inspectionDialogOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col bg-card border border-border">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto bg-card border border-border">
           <DialogHeader className="pb-4 border-b border-border">
             <DialogTitle className="flex items-center gap-2 text-xl">
               <ClipboardCheck className="h-5 w-5 text-primary" />
