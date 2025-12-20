@@ -22,7 +22,7 @@ interface AuthContextType {
   role: AppRole | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, fullName: string, role?: AppRole) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   isAdmin: boolean;
@@ -139,11 +139,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signUp = async (email: string, password: string, fullName: string, role?: AppRole) => {
+  const signUp = async (email: string, password: string, fullName: string) => {
     try {
       const redirectUrl = `${window.location.origin}/`;
       
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -166,18 +166,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           variant: 'destructive',
         });
         return { error };
-      }
-
-      // Update the user role if a role was selected (different from default 'viewer')
-      if (data.user && role && role !== 'viewer') {
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .update({ role })
-          .eq('user_id', data.user.id);
-        
-        if (roleError) {
-          console.error('Error updating user role:', roleError);
-        }
       }
 
       toast({
