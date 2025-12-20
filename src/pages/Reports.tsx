@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { FileText, Download, Calendar, Filter, AlertTriangle, Ship, Loader2, BarChart3 } from 'lucide-react';
+import { FileText, Download, Calendar, Filter, AlertTriangle, Ship, Loader2, BarChart3, Wrench } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -11,6 +11,7 @@ import { useEquipment } from '@/hooks/useEquipment';
 import { useInspections } from '@/hooks/useInspections';
 import { useCategories } from '@/hooks/useCategories';
 import { useShips } from '@/hooks/useShips';
+import { useMaintenanceRequests } from '@/hooks/useMaintenanceRequests';
 import { exportToExcel, exportToPDF } from '@/utils/exportEquipment';
 import { exportInspectionsToExcel, exportInspectionsToPDF } from '@/utils/exportInspections';
 import { toast } from 'sonner';
@@ -28,11 +29,32 @@ const statusLabels: Record<string, string> = {
   inactive: 'Inativo',
 };
 
+const maintenanceStatusLabels: Record<string, string> = {
+  pending: 'Pendente',
+  approved: 'Aprovada',
+  in_progress: 'Em Execução',
+  completed: 'Concluída',
+  rejected: 'Rejeitada',
+};
+
+const maintenancePriorityLabels: Record<string, string> = {
+  low: 'Baixa',
+  medium: 'Média',
+  high: 'Alta',
+  critical: 'Crítica',
+};
+
+const maintenanceTypeLabels: Record<string, string> = {
+  corrective: 'Corretiva',
+  preventive: 'Preventiva',
+};
+
 export default function Reports() {
   const { data: equipment = [], isLoading: equipmentLoading } = useEquipment();
   const { data: inspections = [], isLoading: inspectionsLoading } = useInspections();
   const { data: categories = [] } = useCategories();
   const { data: ships = [] } = useShips();
+  const { data: maintenanceRequests = [], isLoading: maintenanceLoading } = useMaintenanceRequests();
 
   // Filters
   const [shipFilter, setShipFilter] = useState<string>('all');
@@ -40,7 +62,7 @@ export default function Reports() {
   const [startDateStr, setStartDateStr] = useState<string>('');
   const [endDateStr, setEndDateStr] = useState<string>('');
 
-  const isLoading = equipmentLoading || inspectionsLoading;
+  const isLoading = equipmentLoading || inspectionsLoading || maintenanceLoading;
 
   // Filtered data based on global filters
   const filteredEquipment = useMemo(() => {
@@ -64,7 +86,19 @@ export default function Reports() {
       return true;
     });
   }, [inspections, equipment, shipFilter, categoryFilter, startDateStr, endDateStr]);
-  
+
+  // Filter maintenance requests
+  const filteredMaintenance = useMemo(() => {
+    const startDate = startDateStr ? new Date(startDateStr) : undefined;
+    const endDate = endDateStr ? new Date(endDateStr) : undefined;
+    
+    return maintenanceRequests.filter(item => {
+      if (shipFilter !== 'all' && item.ship_id !== shipFilter) return false;
+      if (startDate && isBefore(new Date(item.created_at), startOfDay(startDate))) return false;
+      if (endDate && isAfter(new Date(item.created_at), startOfDay(addDays(endDate, 1)))) return false;
+      return true;
+    });
+  }, [maintenanceRequests, shipFilter, startDateStr, endDateStr]);
 
   // Report 1: Inspection Report
   const handleInspectionReportPDF = () => {
@@ -321,6 +355,78 @@ export default function Reports() {
     toast.success('Relatório de não conformidades exportado em Excel');
   };
 
+  // Report 5: Maintenance Report
+  const handleMaintenanceReportPDF = () => {
+    if (filteredMaintenance.length === 0) {
+      toast.error('Nenhuma manutenção encontrada para exportar');
+      return;
+    }
+
+    const doc = new jsPDF('landscape');
+    doc.setFontSize(18);
+    doc.text('Relatório de Manutenções', 14, 22);
+    doc.setFontSize(10);
+    doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, 14, 30);
+    doc.text(`Total de manutenções: ${filteredMaintenance.length}`, 14, 36);
+
+    // Stats
+    const pending = filteredMaintenance.filter(m => m.status === 'pending').length;
+    const inProgress = filteredMaintenance.filter(m => m.status === 'in_progress').length;
+    const completed = filteredMaintenance.filter(m => m.status === 'completed').length;
+    doc.text(`Pendentes: ${pending} | Em Execução: ${inProgress} | Concluídas: ${completed}`, 14, 42);
+
+    const tableData = filteredMaintenance.map(item => [
+      format(new Date(item.created_at), 'dd/MM/yyyy', { locale: ptBR }),
+      item.title?.substring(0, 30) + (item.title?.length > 30 ? '...' : '') || '—',
+      item.equipment?.name || '—',
+      maintenanceTypeLabels[item.type] || item.type,
+      maintenancePriorityLabels[item.priority] || item.priority,
+      maintenanceStatusLabels[item.status] || item.status,
+      item.due_date ? format(new Date(item.due_date), 'dd/MM/yyyy', { locale: ptBR }) : '—',
+      item.completed_at ? format(new Date(item.completed_at), 'dd/MM/yyyy', { locale: ptBR }) : '—',
+    ]);
+
+    autoTable(doc, {
+      startY: 48,
+      head: [['Data Abertura', 'Título', 'Equipamento', 'Tipo', 'Prioridade', 'Status', 'Prazo', 'Conclusão']],
+      body: tableData,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [59, 130, 246] },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+    });
+
+    doc.save(`relatorio_manutencoes_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+    toast.success('Relatório de manutenções exportado em PDF');
+  };
+
+  const handleMaintenanceReportExcel = () => {
+    if (filteredMaintenance.length === 0) {
+      toast.error('Nenhuma manutenção encontrada para exportar');
+      return;
+    }
+
+    const data = filteredMaintenance.map(item => ({
+      'Data Abertura': format(new Date(item.created_at), 'dd/MM/yyyy', { locale: ptBR }),
+      'Título': item.title || '—',
+      'Equipamento': item.equipment?.name || '—',
+      'Código': item.equipment?.internal_code || '—',
+      'Tipo': maintenanceTypeLabels[item.type] || item.type,
+      'Prioridade': maintenancePriorityLabels[item.priority] || item.priority,
+      'Status': maintenanceStatusLabels[item.status] || item.status,
+      'Prazo': item.due_date ? format(new Date(item.due_date), 'dd/MM/yyyy', { locale: ptBR }) : '—',
+      'Conclusão': item.completed_at ? format(new Date(item.completed_at), 'dd/MM/yyyy', { locale: ptBR }) : '—',
+      'Descrição': item.description || '—',
+      'Trabalho Realizado': item.work_performed || '—',
+      'Solicitante': item.requester?.full_name || '—',
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Manutenções');
+    XLSX.writeFile(wb, `relatorio_manutencoes_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+    toast.success('Relatório de manutenções exportado em Excel');
+  };
+
   const clearFilters = () => {
     setShipFilter('all');
     setCategoryFilter('all');
@@ -341,6 +447,17 @@ export default function Reports() {
       onExcel: handleInspectionReportExcel,
       iconColor: 'text-white',
       bgColor: 'bg-blue-600',
+    },
+    {
+      id: 'maintenance',
+      title: 'Relatório de Manutenções',
+      description: 'Histórico e status de solicitações de manutenção',
+      icon: Wrench,
+      count: filteredMaintenance.length,
+      onPDF: handleMaintenanceReportPDF,
+      onExcel: handleMaintenanceReportExcel,
+      iconColor: 'text-white',
+      bgColor: 'bg-teal-600',
     },
     {
       id: 'category',

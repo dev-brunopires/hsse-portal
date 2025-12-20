@@ -24,6 +24,7 @@ import { DashboardFilters, type DashboardFiltersState } from '@/components/dashb
 import { UpcomingMaintenanceCard } from '@/components/maintenance/UpcomingMaintenanceCard';
 import { InspectorPerformanceCard } from '@/components/dashboard/InspectorPerformanceCard';
 import { InspectionHeatmapCard } from '@/components/dashboard/InspectionHeatmapCard';
+import { MaintenanceTrendChart } from '@/components/dashboard/MaintenanceTrendChart';
 import { CriticalEquipmentCard } from '@/components/dashboard/CriticalEquipmentCard';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useShips } from '@/hooks/useShips';
@@ -248,9 +249,14 @@ export default function Dashboard() {
       {/* Expiring Certificates */}
       <ExpiringCertificatesCard />
 
-      {/* New Row: Maintenance, Performance, Heatmap */}
+      {/* Maintenance Trend Chart */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <MaintenanceTrendChart />
         <UpcomingMaintenanceCard />
+      </div>
+
+      {/* Performance Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <InspectorPerformanceCard />
         <InspectionHeatmapCard />
       </div>
