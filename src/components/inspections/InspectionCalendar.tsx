@@ -74,11 +74,12 @@ export function InspectionCalendar({ inspections, onInspectionClick }: Inspectio
 
   const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
-  // Group inspections by date
+  // Group inspections by date - using parseLocalDate to avoid timezone issues
   const inspectionsByDate = useMemo(() => {
     const grouped = new Map<string, InspectionWithDetails[]>();
     
     inspections.forEach(inspection => {
+      // The inspection_date is already in 'YYYY-MM-DD' format from the database
       const dateKey = inspection.inspection_date;
       if (!grouped.has(dateKey)) {
         grouped.set(dateKey, []);
@@ -107,7 +108,11 @@ export function InspectionCalendar({ inspections, onInspectionClick }: Inspectio
   }, [inspections]);
 
   const getInspectionsForDay = (date: Date): InspectionWithDetails[] => {
-    const dateKey = format(date, 'yyyy-MM-dd');
+    // Format the local date to YYYY-MM-DD without timezone conversion
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateKey = `${year}-${month}-${day}`;
     return inspectionsByDate.get(dateKey) || [];
   };
 

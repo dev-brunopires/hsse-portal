@@ -66,8 +66,7 @@ import { QRCodeDialog } from './QRCodeDialog';
 import { AdvancedFiltersDialog, type AdvancedFilters } from './AdvancedFiltersDialog';
 import { exportToExcel, exportToPDF } from '@/utils/exportEquipment';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { formatDate } from '@/utils/dateFormat';
 
 interface EquipmentTableProps {
   equipment: EquipmentWithCategory[];
@@ -287,10 +286,6 @@ export function EquipmentTable({
     exportToPDF(dataToExport);
   };
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return '—';
-    return format(new Date(dateString), 'dd/MM/yyyy', { locale: ptBR });
-  };
 
   return (
     <>

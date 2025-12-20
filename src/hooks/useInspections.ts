@@ -252,3 +252,132 @@ export function useCreateInspection() {
     },
   });
 }
+
+interface UpdateInspectionData {
+  id: string;
+  inspection: Partial<InspectionInsert>;
+}
+
+export function useUpdateInspection() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, inspection }: UpdateInspectionData) => {
+      const { data, error } = await supabase
+        .from('inspections')
+        .update(inspection)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // If status changed, update equipment status
+      if (inspection.status) {
+        const equipmentStatus = mapInspectionToEquipmentStatus(inspection.status);
+        
+        await supabase
+          .from('equipment')
+          .update({
+            status: equipmentStatus,
+            ...(inspection.inspection_date && { last_inspection: inspection.inspection_date }),
+            ...(inspection.next_inspection_date !== undefined && { next_inspection: inspection.next_inspection_date }),
+          })
+          .eq('id', data.equipment_id);
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inspections'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment'] });
+      toast({
+        title: 'Inspeção Atualizada',
+        description: 'A inspeção foi atualizada com sucesso.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Erro ao Atualizar Inspeção',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+}
+
+export function useDeleteInspection() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      // First get the inspection to know the equipment_id
+      const { data: inspection, error: fetchError } = await supabase
+        .from('inspections')
+        .select('equipment_id')
+        .eq('id', id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Delete the inspection (cascade will delete checklist items and photos)
+      const { error } = await supabase
+        .from('inspections')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Find the latest remaining inspection for this equipment to update its status
+      const { data: latestInspection } = await supabase
+        .from('inspections')
+        .select('*')
+        .eq('equipment_id', inspection.equipment_id)
+        .order('inspection_date', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      // Update equipment based on latest inspection or reset if none
+      if (latestInspection) {
+        const equipmentStatus = mapInspectionToEquipmentStatus(latestInspection.status);
+        await supabase
+          .from('equipment')
+          .update({
+            last_inspection: latestInspection.inspection_date,
+            next_inspection: latestInspection.next_inspection_date,
+            status: equipmentStatus,
+          })
+          .eq('id', inspection.equipment_id);
+      } else {
+        // No more inspections, reset equipment status
+        await supabase
+          .from('equipment')
+          .update({
+            last_inspection: null,
+            next_inspection: null,
+            status: 'active',
+          })
+          .eq('id', inspection.equipment_id);
+      }
+
+      return id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inspections'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment'] });
+      toast({
+        title: 'Inspeção Excluída',
+        description: 'A inspeção foi excluída com sucesso.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Erro ao Excluir Inspeção',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+}

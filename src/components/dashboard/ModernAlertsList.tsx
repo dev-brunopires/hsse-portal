@@ -4,8 +4,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Link } from 'react-router-dom';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { formatDateShort } from '@/utils/dateFormat';
 
 interface ModernAlertsListProps {
   alerts: Alert[];
@@ -45,14 +44,6 @@ const severityBorder = {
 };
 
 export function ModernAlertsList({ alerts }: ModernAlertsListProps) {
-  const formatAlertDate = (dateStr: string) => {
-    try {
-      const date = new Date(dateStr);
-      return format(date, "dd 'de' MMM", { locale: ptBR });
-    } catch {
-      return dateStr;
-    }
-  };
 
   return (
     <div className="bg-card rounded-2xl border shadow-sm overflow-hidden h-full flex flex-col">
@@ -105,7 +96,7 @@ export function ModernAlertsList({ alerts }: ModernAlertsListProps) {
                         {config.label}
                       </span>
                       <span className="text-xs text-muted-foreground">
-                        {formatAlertDate(alert.date)}
+                        {formatDateShort(alert.date)}
                       </span>
                     </div>
                     <p className="font-medium text-sm text-foreground truncate">

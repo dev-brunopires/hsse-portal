@@ -49,8 +49,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useInspections, type InspectionWithDetails } from '@/hooks/useInspections';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useEquipmentById } from '@/hooks/useEquipment';
-import { format, isAfter, isBefore, addDays, startOfMonth, endOfMonth, parseISO } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { isAfter, isBefore, addDays, startOfMonth, endOfMonth, parseISO } from 'date-fns';
+import { formatDate, formatWeekday } from '@/utils/dateFormat';
 import { InspectionDetailDialog } from '@/components/inspections/InspectionDetailDialog';
 import { NewInspectionDialog } from '@/components/inspections/NewInspectionDialog';
 import { QRCodeScannerDialog } from '@/components/equipment/QRCodeScannerDialog';
@@ -486,7 +486,7 @@ export default function Inspections() {
                         {inspection.equipment?.internal_code || '-'}
                       </TableCell>
                       <TableCell>
-                        {format(new Date(inspection.inspection_date), 'dd/MM/yyyy', { locale: ptBR })}
+                        {formatDate(inspection.inspection_date)}
                       </TableCell>
                       <TableCell>
                         {inspection.profiles?.full_name || 'Inspetor não encontrado'}
@@ -496,7 +496,7 @@ export default function Inspections() {
                       </TableCell>
                       <TableCell>
                         {inspection.next_inspection_date 
-                          ? format(new Date(inspection.next_inspection_date), 'dd/MM/yyyy', { locale: ptBR })
+                          ? formatDate(inspection.next_inspection_date)
                           : '-'}
                       </TableCell>
                       <TableCell className="text-right">
@@ -563,10 +563,10 @@ export default function Inspections() {
                   </div>
                   <div className="text-right">
                     <p className="font-medium">
-                      {format(new Date(inspection.next_inspection_date!), 'dd/MM/yyyy', { locale: ptBR })}
+                      {formatDate(inspection.next_inspection_date!)}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {format(new Date(inspection.next_inspection_date!), 'EEEE', { locale: ptBR })}
+                      {formatWeekday(inspection.next_inspection_date!)}
                     </p>
                   </div>
                 </div>
