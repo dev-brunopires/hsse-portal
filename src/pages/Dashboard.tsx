@@ -1,13 +1,73 @@
-import { Package, AlertTriangle, ClipboardCheck, TrendingUp, Calendar, Shield, Loader2 } from 'lucide-react';
-import { KPICard } from '@/components/dashboard/KPICard';
-import { AlertsList } from '@/components/dashboard/AlertsList';
-import { StatusChart } from '@/components/dashboard/StatusChart';
-import { CategoryChart } from '@/components/dashboard/CategoryChart';
+import { useState, useMemo } from 'react';
+import { 
+  Package, 
+  AlertTriangle, 
+  ClipboardCheck, 
+  Shield, 
+  Calendar, 
+  Download,
+  RefreshCw,
+  LayoutDashboard
+} from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { ModernKPICard } from '@/components/dashboard/ModernKPICard';
+import { ModernAlertsList } from '@/components/dashboard/ModernAlertsList';
+import { ModernStatusChart } from '@/components/dashboard/ModernStatusChart';
+import { ModernCategoryChart } from '@/components/dashboard/ModernCategoryChart';
+import { ComplianceGauge } from '@/components/dashboard/ComplianceGauge';
+import { DashboardFilters, type DashboardFiltersState } from '@/components/dashboard/DashboardFilters';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { useShips } from '@/hooks/useShips';
+import { useCategories } from '@/hooks/useCategories';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { exportDashboardPDF } from '@/utils/exportDashboardPDF';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 export default function Dashboard() {
-  const { data: stats, isLoading, error } = useDashboardStats();
+  const queryClient = useQueryClient();
+  const { data: stats, isLoading, error, refetch, isFetching } = useDashboardStats();
+  const { data: ships = [] } = useShips();
+  const { data: categories = [] } = useCategories();
+  
+  const [filters, setFilters] = useState<DashboardFiltersState>({
+    shipId: 'all',
+    categoryId: 'all',
+    startDate: undefined,
+    endDate: undefined,
+  });
+
+  // Get filter names for export
+  const selectedShipName = useMemo(() => {
+    if (filters.shipId === 'all') return undefined;
+    return ships.find(s => s.id === filters.shipId)?.name;
+  }, [filters.shipId, ships]);
+
+  const selectedCategoryName = useMemo(() => {
+    if (filters.categoryId === 'all') return undefined;
+    return categories.find(c => c.id === filters.categoryId)?.name;
+  }, [filters.categoryId, categories]);
+
+  const handleExportPDF = () => {
+    if (!stats) return;
+    
+    exportDashboardPDF(stats, {
+      shipName: selectedShipName,
+      categoryName: selectedCategoryName,
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+    });
+    
+    toast.success('Relatório exportado com sucesso!');
+  };
+
+  const handleRefresh = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+    toast.success('Dados atualizados!');
+  };
 
   if (isLoading) {
     return (
@@ -20,16 +80,16 @@ export default function Dashboard() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-32 rounded-xl" />
+            <Skeleton key={i} className="h-32 rounded-2xl" />
           ))}
         </div>
-        <Skeleton className="h-32 rounded-xl" />
+        <Skeleton className="h-36 rounded-2xl" />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            <Skeleton className="h-64 rounded-xl" />
-            <Skeleton className="h-64 rounded-xl" />
+            <Skeleton className="h-80 rounded-2xl" />
+            <Skeleton className="h-80 rounded-2xl" />
           </div>
-          <Skeleton className="h-96 rounded-xl" />
+          <Skeleton className="h-[600px] rounded-2xl" />
         </div>
       </div>
     );
@@ -37,8 +97,14 @@ export default function Dashboard() {
 
   if (error || !stats) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <div className="p-4 bg-red-500/10 rounded-full">
+          <AlertTriangle className="h-8 w-8 text-red-500" />
+        </div>
         <p className="text-muted-foreground">Erro ao carregar estatísticas</p>
+        <Button variant="outline" onClick={() => refetch()}>
+          Tentar novamente
+        </Button>
       </div>
     );
   }
@@ -46,47 +112,76 @@ export default function Dashboard() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">Visão geral do sistema de gestão de equipamentos</p>
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div className="flex items-start gap-4">
+          <div className="p-3 bg-primary/10 rounded-2xl hidden sm:block">
+            <LayoutDashboard className="h-8 w-8 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Dashboard</h1>
+            <p className="text-muted-foreground mt-1">Visão geral do sistema de gestão de equipamentos</p>
+            <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+              <Calendar className="h-4 w-4" />
+              <span>Atualizado em {format(new Date(), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}</span>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Calendar className="h-4 w-4" />
-          <span>Atualizado em {new Date().toLocaleDateString('pt-BR', { 
-            day: '2-digit', 
-            month: 'long', 
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-          })}</span>
+        
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isFetching}
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Atualizar</span>
+          </Button>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={handleExportPDF}
+            className="gap-2"
+          >
+            <Download className="h-4 w-4" />
+            <span className="hidden sm:inline">Exportar PDF</span>
+          </Button>
         </div>
       </div>
 
+      {/* Filters */}
+      <DashboardFilters
+        filters={filters}
+        onFiltersChange={setFilters}
+        ships={ships}
+        categories={categories.map(c => ({ id: c.id, name: c.name }))}
+      />
+
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <ModernKPICard
           title="Total de Equipamentos"
           value={stats.totalEquipment}
           subtitle="Cadastrados no sistema"
           icon={Package}
-          variant="default"
+          variant="info"
         />
-        <KPICard
+        <ModernKPICard
           title="Equipamentos Ativos"
           value={stats.activeEquipment}
           subtitle={stats.totalEquipment > 0 ? `${((stats.activeEquipment / stats.totalEquipment) * 100).toFixed(0)}% do total` : '0% do total'}
           icon={Shield}
           variant="success"
         />
-        <KPICard
+        <ModernKPICard
           title="Vencidos / Reprovados"
           value={stats.expiredEquipment}
           subtitle="Requerem ação imediata"
           icon={AlertTriangle}
           variant="danger"
         />
-        <KPICard
+        <ModernKPICard
           title="Inspeções Pendentes"
           value={stats.pendingInspections}
           subtitle="Próximos 30 dias"
@@ -96,37 +191,16 @@ export default function Dashboard() {
       </div>
 
       {/* Compliance Rate Card */}
-      <div className="bg-gradient-to-r from-primary to-accent rounded-xl p-6 text-primary-foreground">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium opacity-90">Taxa de Conformidade Geral</p>
-            <p className="text-4xl font-bold mt-1">{stats.complianceRate}%</p>
-            <p className="text-sm opacity-75 mt-2">
-              <TrendingUp className="inline h-4 w-4 mr-1" />
-              Equipamentos em conformidade
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-sm opacity-75">Meta Mensal</p>
-            <p className="text-2xl font-semibold">95%</p>
-            <div className="mt-2 w-32 h-2 bg-primary-foreground/30 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-primary-foreground rounded-full transition-all duration-500"
-                style={{ width: `${Math.min((stats.complianceRate / 95) * 100, 100)}%` }}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+      <ComplianceGauge value={stats.complianceRate} target={95} />
 
       {/* Charts and Alerts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <CategoryChart data={stats.byCategory} />
-          <StatusChart data={stats.byStatus} />
+          <ModernCategoryChart data={stats.byCategory} />
+          <ModernStatusChart data={stats.byStatus} totalEquipment={stats.totalEquipment} />
         </div>
-        <div>
-          <AlertsList alerts={stats.recentAlerts} />
+        <div className="lg:row-span-1">
+          <ModernAlertsList alerts={stats.recentAlerts} />
         </div>
       </div>
     </div>
