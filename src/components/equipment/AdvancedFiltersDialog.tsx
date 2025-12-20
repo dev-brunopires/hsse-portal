@@ -96,14 +96,14 @@ export function AdvancedFiltersDialog({
             <div className="space-y-2">
               <Label>Fabricante</Label>
               <Select 
-                value={localFilters.manufacturer} 
-                onValueChange={(v) => setLocalFilters(f => ({ ...f, manufacturer: v }))}
+                value={localFilters.manufacturer || "all"} 
+                onValueChange={(v) => setLocalFilters(f => ({ ...f, manufacturer: v === "all" ? "" : v }))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
                   {manufacturers.map(m => (
                     <SelectItem key={m} value={m}>{m}</SelectItem>
                   ))}
@@ -114,14 +114,14 @@ export function AdvancedFiltersDialog({
             <div className="space-y-2">
               <Label>Categoria</Label>
               <Select 
-                value={localFilters.category} 
-                onValueChange={(v) => setLocalFilters(f => ({ ...f, category: v }))}
+                value={localFilters.category || "all"} 
+                onValueChange={(v) => setLocalFilters(f => ({ ...f, category: v === "all" ? "" : v }))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Todas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas</SelectItem>
+                  <SelectItem value="all">Todas</SelectItem>
                   {categories?.map(c => (
                     <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                   ))}
@@ -133,15 +133,15 @@ export function AdvancedFiltersDialog({
           <div className="space-y-2">
             <Label>Unidade</Label>
             <Select 
-              value={localFilters.unit} 
-              onValueChange={(v) => setLocalFilters(f => ({ ...f, unit: v }))}
+              value={localFilters.unit || "all"} 
+              onValueChange={(v) => setLocalFilters(f => ({ ...f, unit: v === "all" ? "" : v }))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Todas" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas</SelectItem>
-                {units.map(u => (
+                <SelectItem value="all">Todas</SelectItem>
+                {units.filter(u => u).map(u => (
                   <SelectItem key={u} value={u}>{u}</SelectItem>
                 ))}
               </SelectContent>
