@@ -256,6 +256,8 @@ export type Database = {
           observations: string | null
           recommendations: string | null
           ship_id: string | null
+          signature_data: string | null
+          signed_at: string | null
           status: string
         }
         Insert: {
@@ -268,6 +270,8 @@ export type Database = {
           observations?: string | null
           recommendations?: string | null
           ship_id?: string | null
+          signature_data?: string | null
+          signed_at?: string | null
           status: string
         }
         Update: {
@@ -280,6 +284,8 @@ export type Database = {
           observations?: string | null
           recommendations?: string | null
           ship_id?: string | null
+          signature_data?: string | null
+          signed_at?: string | null
           status?: string
         }
         Relationships: [

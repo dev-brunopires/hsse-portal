@@ -46,7 +46,9 @@ import {
   FileText,
   ImageIcon,
   Info,
+  PenTool,
 } from 'lucide-react';
+import { SignaturePad } from '@/components/inspections/SignaturePad';
 import { Equipment } from '@/types/equipment';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -122,6 +124,7 @@ export function InspectionFormDialog({
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
   const [uploadedPhotos, setUploadedPhotos] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [signatureData, setSignatureData] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
   
@@ -212,6 +215,8 @@ export function InspectionFormDialog({
           observations: data.observations || null,
           recommendations: data.recommendations || null,
           next_inspection_date: data.nextInspectionDate || null,
+          signature_data: signatureData,
+          signed_at: signatureData ? new Date().toISOString() : null,
         },
         checklistItems: checklist.map(item => ({
           description: item.description,
@@ -225,6 +230,7 @@ export function InspectionFormDialog({
       form.reset();
       setChecklist([]);
       setUploadedPhotos([]);
+      setSignatureData(null);
       onSuccess?.();
     } catch (error) {
       console.error('Error creating inspection:', error);
@@ -263,7 +269,7 @@ export function InspectionFormDialog({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-hidden flex flex-col">
             <Tabs defaultValue="info" className="flex-1 flex flex-col overflow-hidden">
-              <TabsList className="grid w-full grid-cols-4 flex-shrink-0">
+              <TabsList className="grid w-full grid-cols-5 flex-shrink-0">
                 <TabsTrigger value="info" className="flex items-center gap-2">
                   <Info className="h-4 w-4" />
                   <span className="hidden sm:inline">Dados</span>
@@ -279,7 +285,7 @@ export function InspectionFormDialog({
                 </TabsTrigger>
                 <TabsTrigger value="observations" className="flex items-center gap-2">
                   <FileText className="h-4 w-4" />
-                  <span className="hidden sm:inline">Observações</span>
+                  <span className="hidden sm:inline">Obs.</span>
                 </TabsTrigger>
                 <TabsTrigger value="photos" className="flex items-center gap-2">
                   <ImageIcon className="h-4 w-4" />
@@ -288,6 +294,13 @@ export function InspectionFormDialog({
                     <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
                       {uploadedPhotos.length}
                     </Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="signature" className="flex items-center gap-2">
+                  <PenTool className="h-4 w-4" />
+                  <span className="hidden sm:inline">Assinar</span>
+                  {signatureData && (
+                    <CheckCircle2 className="h-4 w-4 text-status-success" />
                   )}
                 </TabsTrigger>
               </TabsList>
@@ -589,6 +602,42 @@ export function InspectionFormDialog({
                       <div className="text-center py-8 text-muted-foreground">
                         <ImageIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
                         <p className="text-sm">Nenhuma foto adicionada</p>
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+
+              {/* Tab: Assinatura */}
+              <TabsContent value="signature" className="flex-1 overflow-hidden mt-4">
+                <ScrollArea className="h-full pr-4">
+                  <div className="space-y-4 pb-4">
+                    <div className="text-center mb-4">
+                      <p className="text-sm text-muted-foreground">
+                        Assine abaixo para confirmar a inspeção realizada
+                      </p>
+                    </div>
+                    
+                    <SignaturePad
+                      onSave={(data) => {
+                        setSignatureData(data);
+                        toast({
+                          title: "Assinatura Capturada",
+                          description: "Sua assinatura foi registrada com sucesso.",
+                        });
+                      }}
+                      initialSignature={signatureData || undefined}
+                    />
+                    
+                    {signatureData && (
+                      <div className="mt-4 p-4 rounded-lg border border-status-success bg-status-success/10">
+                        <div className="flex items-center gap-2 text-status-success">
+                          <CheckCircle2 className="h-5 w-5" />
+                          <span className="font-medium">Assinatura confirmada</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          A assinatura será anexada ao relatório da inspeção
+                        </p>
                       </div>
                     )}
                   </div>
