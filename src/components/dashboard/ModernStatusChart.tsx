@@ -62,17 +62,17 @@ export function ModernStatusChart({ data, totalEquipment }: ModernStatusChartPro
       </div>
       
       <div className="p-5">
-        <div className="flex flex-col sm:flex-row items-center gap-6">
+        <div className="flex items-center gap-6">
           {/* Chart */}
-          <div className="relative h-36 w-36 shrink-0">
+          <div className="relative h-32 w-32 shrink-0">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={chartData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={40}
-                  outerRadius={60}
+                  innerRadius={35}
+                  outerRadius={55}
                   paddingAngle={3}
                   dataKey="value"
                   strokeWidth={0}
@@ -87,26 +87,26 @@ export function ModernStatusChart({ data, totalEquipment }: ModernStatusChartPro
             
             {/* Center text */}
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-xl font-bold text-foreground">{totalEquipment}</span>
-              <span className="text-xs text-muted-foreground">Total</span>
+              <span className="text-lg font-bold text-foreground">{totalEquipment}</span>
+              <span className="text-[10px] text-muted-foreground">Total</span>
             </div>
           </div>
           
           {/* Legend */}
-          <div className="flex-1 w-full space-y-1.5">
+          <div className="flex-1 space-y-1">
             {chartData.map((item) => (
               <div 
                 key={item.status}
-                className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-muted/50 transition-colors"
               >
                 <div className="flex items-center gap-2">
                   <div 
-                    className="w-2.5 h-2.5 rounded-full"
+                    className="w-2.5 h-2.5 rounded-full shrink-0"
                     style={{ backgroundColor: item.color }}
                   />
-                  <span className="text-sm font-medium text-foreground">{item.name}</span>
+                  <span className="text-sm font-medium text-foreground truncate">{item.name}</span>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 shrink-0">
                   <span className="text-sm font-semibold text-foreground">{item.value}</span>
                   <span className="text-xs text-muted-foreground w-12 text-right">
                     {item.percentage}%
