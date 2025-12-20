@@ -8,7 +8,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Camera, CameraOff, Loader2, QrCode, CheckCircle2, AlertCircle, Scan } from 'lucide-react';
+import { Camera, CameraOff, Loader2, QrCode, CheckCircle2, AlertCircle, Scan, SwitchCamera } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
 interface QRCodeScannerDialogProps {
@@ -24,6 +25,8 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [containerId, setContainerId] = useState(() => `qr-reader-${Date.now()}`);
   const [scanProgress, setScanProgress] = useState(0);
+  const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
+  const [isSwitchingCamera, setIsSwitchingCamera] = useState(false);
 
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const isMountedRef = useRef(true);
@@ -103,7 +106,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
     }, 600);
   }, [cleanupScanner, onScan, onOpenChange]);
 
-  const attemptStartScanning = useCallback(async (attempt: number) => {
+  const attemptStartScanning = useCallback(async (attempt: number, cameraFacingMode: 'environment' | 'user') => {
     if (!isMountedRef.current || isCleaningUpRef.current) return;
 
     const containerElement = document.getElementById(containerId);
@@ -111,7 +114,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
     if (!containerElement) {
       if (attempt < 12) {
         window.setTimeout(() => {
-          attemptStartScanning(attempt + 1);
+          attemptStartScanning(attempt + 1, cameraFacingMode);
         }, 150);
         return;
       }
@@ -119,12 +122,15 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       if (isMountedRef.current) {
         setScannerState('error');
         setErrorMessage('Não foi possível inicializar o leitor de QR code. Feche e abra novamente para tentar.');
+        setIsSwitchingCamera(false);
       }
       return;
     }
 
     setErrorMessage(null);
-    setScannerState('initializing');
+    if (!isSwitchingCamera) {
+      setScannerState('initializing');
+    }
 
     try {
       await cleanupScanner();
@@ -134,7 +140,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       scannerRef.current = new Html5Qrcode(containerId);
 
       await scannerRef.current.start(
-        { facingMode: 'environment' },
+        { facingMode: cameraFacingMode },
         {
           fps: 10,
           qrbox: { width: 220, height: 220 },
@@ -150,6 +156,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       if (isMountedRef.current) {
         setScannerState('scanning');
         setScanProgress(0);
+        setIsSwitchingCamera(false);
         
         // Animate scanning progress for visual feedback
         progressIntervalRef.current = window.setInterval(() => {
@@ -163,6 +170,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       console.error('Error starting scanner:', err);
 
       if (isMountedRef.current) {
+        setIsSwitchingCamera(false);
         const errStr = String(err);
         if (errStr.includes('Permission') || errStr.includes('NotAllowedError')) {
           setScannerState('permission-denied');
@@ -176,11 +184,28 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
         }
       }
     }
-  }, [cleanupScanner, containerId, handleScanSuccess]);
+  }, [cleanupScanner, containerId, handleScanSuccess, isSwitchingCamera]);
 
-  const startScanning = useCallback(async () => {
-    await attemptStartScanning(0);
-  }, [attemptStartScanning]);
+  const startScanning = useCallback(async (cameraFacingMode?: 'environment' | 'user') => {
+    await attemptStartScanning(0, cameraFacingMode || facingMode);
+  }, [attemptStartScanning, facingMode]);
+
+  const handleSwitchCamera = useCallback(async () => {
+    if (isSwitchingCamera || scannerState !== 'scanning') return;
+    
+    setIsSwitchingCamera(true);
+    const newFacingMode = facingMode === 'environment' ? 'user' : 'environment';
+    setFacingMode(newFacingMode);
+    
+    // Cleanup current scanner and restart with new camera
+    await cleanupScanner();
+    setContainerId(`qr-reader-${Date.now()}`);
+    
+    // Small delay to ensure DOM is ready
+    setTimeout(() => {
+      startScanning(newFacingMode);
+    }, 100);
+  }, [facingMode, isSwitchingCamera, scannerState, cleanupScanner, startScanning]);
 
   // Handle dialog open/close
   useEffect(() => {
@@ -189,6 +214,8 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       setErrorMessage(null);
       setScannerState('initializing');
       setScanProgress(0);
+      setFacingMode('environment');
+      setIsSwitchingCamera(false);
       setContainerId(`qr-reader-${Date.now()}`);
     } else {
       cleanupScanner();
@@ -197,14 +224,14 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
 
   // Start scanning when the containerId is rendered
   useEffect(() => {
-    if (!open) return;
+    if (!open || isSwitchingCamera) return;
 
     const t = window.setTimeout(() => {
       if (isMountedRef.current) startScanning();
     }, 50);
 
     return () => window.clearTimeout(t);
-  }, [open, containerId, startScanning]);
+  }, [open, containerId, startScanning, isSwitchingCamera]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -234,11 +261,13 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       case 'scanning':
         return {
           icon: Scan,
-          title: 'Escaneando...',
-          subtitle: 'Posicione o QR code dentro da área de leitura',
+          title: isSwitchingCamera ? 'Alternando câmera...' : 'Escaneando...',
+          subtitle: isSwitchingCamera 
+            ? 'Aguarde a troca de câmera' 
+            : 'Posicione o QR code dentro da área de leitura',
           color: 'text-primary',
           bgColor: 'bg-primary/5',
-          showLoader: false,
+          showLoader: isSwitchingCamera,
         };
       case 'success':
         return {
@@ -310,8 +339,39 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
             {/* Camera feed container */}
             <div id={containerId} className="absolute inset-0" />
 
-            {/* Scanning frame overlay - only show when scanning */}
+            {/* Camera switch button - only show when scanning */}
+            {scannerState === 'scanning' && !isSwitchingCamera && (
+              <div className="absolute top-3 right-3 z-20">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="h-10 w-10 rounded-full bg-background/80 backdrop-blur-sm shadow-lg hover:bg-background/90 border border-border/50"
+                      onClick={handleSwitchCamera}
+                    >
+                      <SwitchCamera className="h-5 w-5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">
+                    <p>Alternar para câmera {facingMode === 'environment' ? 'frontal' : 'traseira'}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            )}
+
+            {/* Camera indicator badge */}
             {scannerState === 'scanning' && (
+              <div className="absolute top-3 left-3 z-20">
+                <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-background/80 backdrop-blur-sm text-xs font-medium border border-border/50">
+                  <Camera className="h-3 w-3" />
+                  {facingMode === 'environment' ? 'Traseira' : 'Frontal'}
+                </div>
+              </div>
+            )}
+
+            {/* Scanning frame overlay - only show when scanning */}
+            {scannerState === 'scanning' && !isSwitchingCamera && (
               <div className="absolute inset-0 pointer-events-none z-10">
                 {/* Corner brackets */}
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -342,6 +402,17 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 bg-transparent" 
                        style={{ boxShadow: '0 0 0 9999px rgba(0,0,0,0.4)' }} />
                 </div>
+              </div>
+            )}
+
+            {/* Switching camera overlay */}
+            {isSwitchingCamera && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center z-20 bg-background/80 backdrop-blur-sm">
+                <SwitchCamera className="h-12 w-12 text-primary animate-pulse" />
+                <p className="mt-3 text-sm font-medium text-muted-foreground">
+                  Alternando para câmera {facingMode === 'environment' ? 'traseira' : 'frontal'}...
+                </p>
+                <Loader2 className="h-5 w-5 animate-spin mt-2 text-primary" />
               </div>
             )}
 
@@ -433,7 +504,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                 {stateConfig.subtitle}
               </p>
             </div>
-            {scannerState === 'scanning' && (
+            {scannerState === 'scanning' && !isSwitchingCamera && (
               <div className="flex gap-1">
                 <span className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0ms' }} />
                 <span className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '150ms' }} />
