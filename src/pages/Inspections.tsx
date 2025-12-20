@@ -47,6 +47,7 @@ import { useProfiles } from '@/hooks/useProfiles';
 import { format, isAfter, isBefore, addDays, startOfMonth, endOfMonth, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { InspectionDetailDialog } from '@/components/inspections/InspectionDetailDialog';
+import { NewInspectionDialog } from '@/components/inspections/NewInspectionDialog';
 import { exportInspectionsToExcel, exportInspectionsToPDF } from '@/utils/exportInspections';
 
 const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: typeof CheckCircle }> = {
@@ -66,6 +67,7 @@ export default function Inspections() {
   const [dateTo, setDateTo] = useState<string>('');
   const [selectedInspection, setSelectedInspection] = useState<InspectionWithDetails | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [newInspectionDialogOpen, setNewInspectionDialogOpen] = useState(false);
 
   // Get unique inspectors from inspections
   const inspectors = useMemo(() => {
@@ -179,7 +181,7 @@ export default function Inspections() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={() => setNewInspectionDialogOpen(true)}>
             <Plus className="h-4 w-4" />
             Nova Inspeção
           </Button>
@@ -465,6 +467,12 @@ export default function Inspections() {
         open={detailDialogOpen}
         onOpenChange={setDetailDialogOpen}
         inspection={selectedInspection}
+      />
+
+      {/* New Inspection Dialog */}
+      <NewInspectionDialog
+        open={newInspectionDialogOpen}
+        onOpenChange={setNewInspectionDialogOpen}
       />
     </div>
   );
