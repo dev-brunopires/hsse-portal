@@ -231,7 +231,7 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
 
   return (
     <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 lg:px-6">
-      {/* Left side - Menu button for mobile + Search */}
+      {/* Left side - Menu button for mobile */}
       <div className="flex items-center gap-3 flex-1">
         {showMenuButton && (
           <Button
@@ -243,17 +243,6 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
             <Menu className="h-5 w-5" />
           </Button>
         )}
-        
-        {/* Search - hidden on small mobile */}
-        <div className="hidden sm:block flex-1 max-w-xl">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar equipamentos, códigos..."
-              className="pl-10 bg-background border-border focus:border-primary"
-            />
-          </div>
-        </div>
       </div>
 
       {/* Right Actions */}
