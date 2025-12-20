@@ -26,6 +26,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   isAdmin: boolean;
+  isAdminMaster: boolean;
   isTechnician: boolean;
   canEdit: boolean;
 }
@@ -198,6 +199,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const isAdminMaster = role === 'admin_master';
   const isAdmin = role === 'admin' || role === 'admin_master';
   const isTechnician = role === 'technician';
   const isSupervisor = role === 'supervisor';
@@ -216,6 +218,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signOut,
         refreshProfile,
         isAdmin,
+        isAdminMaster,
         isTechnician,
         canEdit,
       }}
