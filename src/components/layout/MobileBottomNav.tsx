@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, ClipboardList, Package, QrCode, Bell, MoreHorizontal } from 'lucide-react';
+import { User, ClipboardList, Package, QrCode, Bell } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { QRCodeScannerDialog } from '@/components/equipment/QRCodeScannerDialog';
 
@@ -11,7 +11,7 @@ interface NavItem {
 }
 
 const leftNavItems: NavItem[] = [
-  { icon: Home, label: 'Início', path: '/dashboard' },
+  { icon: User, label: 'Perfil', path: '/profile' },
   { icon: ClipboardList, label: 'Inspeções', path: '/inspections' },
 ];
 
