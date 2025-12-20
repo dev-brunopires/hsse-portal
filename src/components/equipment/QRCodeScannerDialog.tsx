@@ -158,8 +158,9 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       await scannerRef.current.start(
         { facingMode: cameraFacingMode },
         {
-          fps: 10,
-          qrbox: { width: 220, height: 220 },
+          fps: 20, // Higher FPS helps capture clear frames between moiré shifts
+          qrbox: { width: 200, height: 200 },
+          aspectRatio: 1.0,
         },
         (decodedText) => {
           handleScanSuccess(decodedText);
@@ -362,7 +363,10 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
             Escanear QR Code
           </DialogTitle>
           <DialogDescription>
-            Aponte a câmera para o QR code do equipamento
+            Aponte a câmera para o QR code do equipamento.
+            <span className="block text-xs mt-1 text-muted-foreground/80">
+              💡 Se estiver lendo de uma tela, aumente o brilho ao máximo e evite reflexos.
+            </span>
           </DialogDescription>
         </DialogHeader>
 
