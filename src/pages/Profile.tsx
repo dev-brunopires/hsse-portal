@@ -50,15 +50,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { SignaturePad } from '@/components/inspections/SignaturePad';
 import { AvatarCropDialog } from '@/components/profile/AvatarCropDialog';
 
-const profileSchema = z.object({
-  full_name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
-  email: z.string().email('Email inválido'),
+const createProfileSchema = (t: (key: string) => string) => z.object({
+  full_name: z.string().min(2, t('profilePage.validation.nameMin')),
+  email: z.string().email(t('profilePage.validation.emailInvalid')),
   phone: z.string().optional(),
   position: z.string().optional(),
   department: z.string().optional(),
 });
 
-type ProfileFormData = z.infer<typeof profileSchema>;
+type ProfileFormData = z.infer<ReturnType<typeof createProfileSchema>>;
 
 interface ProfileData {
   id: string;
@@ -92,6 +92,8 @@ export default function Profile() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [cropDialogOpen, setCropDialogOpen] = useState(false);
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
+
+  const profileSchema = createProfileSchema(t);
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
