@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { LucideIcon, TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -56,6 +57,7 @@ export function ModernKPICard({
   variant = 'default',
   size = 'md' 
 }: ModernKPICardProps) {
+  const { t } = useTranslation();
   const config = variantConfig[variant];
   
   return (
@@ -105,7 +107,7 @@ export function ModernKPICard({
               ) : (
                 <TrendingDown className="h-3 w-3" />
               )}
-              {Math.abs(trend.value)}% vs mês anterior
+              {Math.abs(trend.value)}% {t('dashboard.vsPreviousMonth')}
             </div>
           )}
         </div>

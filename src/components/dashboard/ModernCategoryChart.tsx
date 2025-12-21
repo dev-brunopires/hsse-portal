@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell } from 'recharts';
 import { CategoryStats } from '@/types/equipment';
 import { BarChart3 } from 'lucide-react';
@@ -12,6 +13,8 @@ const COLORS = {
 };
 
 export function ModernCategoryChart({ data }: ModernCategoryChartProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="bg-card rounded-2xl border shadow-sm overflow-hidden">
       <div className="p-5 border-b bg-gradient-to-r from-muted/50 to-transparent">
@@ -20,8 +23,8 @@ export function ModernCategoryChart({ data }: ModernCategoryChartProps) {
             <BarChart3 className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h3 className="font-semibold text-foreground">Conformidade por Categoria</h3>
-            <p className="text-sm text-muted-foreground">Distribuição de equipamentos conformes e não conformes</p>
+            <h3 className="font-semibold text-foreground">{t('dashboard.complianceByCategory')}</h3>
+            <p className="text-sm text-muted-foreground">{t('dashboard.complianceDistribution')}</p>
           </div>
         </div>
       </div>
@@ -78,14 +81,14 @@ export function ModernCategoryChart({ data }: ModernCategoryChartProps) {
               />
               <Bar 
                 dataKey="compliant" 
-                name="Conforme" 
+                name={t('dashboard.compliant')} 
                 fill={COLORS.compliant}
                 radius={[0, 6, 6, 0]} 
                 maxBarSize={24}
               />
               <Bar 
                 dataKey="nonCompliant" 
-                name="Não Conforme" 
+                name={t('dashboard.nonCompliant')} 
                 fill={COLORS.nonCompliant}
                 radius={[0, 6, 6, 0]} 
                 maxBarSize={24}

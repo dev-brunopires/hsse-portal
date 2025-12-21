@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS } from 'date-fns/locale';
 import { 
   Wrench, 
   Calendar, 
@@ -24,51 +25,54 @@ import { MaintenanceRequestDialog } from './MaintenanceRequestDialog';
 import { MaintenanceDetailDialog } from './MaintenanceDetailDialog';
 import { cn } from '@/lib/utils';
 
-const statusConfig = {
-  pending: { 
-    label: 'Pendente', 
-    icon: Clock, 
-    color: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
-    dotColor: 'bg-amber-500'
-  },
-  approved: { 
-    label: 'Aprovada', 
-    icon: CheckCircle2, 
-    color: 'bg-blue-500/15 text-blue-600 dark:text-blue-400',
-    dotColor: 'bg-blue-500'
-  },
-  in_progress: { 
-    label: 'Em Execução', 
-    icon: PlayCircle, 
-    color: 'bg-primary/15 text-primary',
-    dotColor: 'bg-primary'
-  },
-  completed: { 
-    label: 'Concluída', 
-    icon: CheckCircle2, 
-    color: 'bg-green-500/15 text-green-600 dark:text-green-400',
-    dotColor: 'bg-green-500'
-  },
-  rejected: { 
-    label: 'Rejeitada', 
-    icon: XCircle, 
-    color: 'bg-red-500/15 text-red-600 dark:text-red-400',
-    dotColor: 'bg-red-500'
-  },
-};
-
-const priorityConfig = {
-  low: { label: 'Baixa', color: 'text-slate-500' },
-  medium: { label: 'Média', color: 'text-blue-500' },
-  high: { label: 'Alta', color: 'text-amber-500' },
-  critical: { label: 'Crítica', color: 'text-red-500' },
-};
-
 export function UpcomingMaintenanceCard() {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { data: maintenanceRequests = [], isLoading } = useMaintenanceRequests();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
+
+  const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
+
+  const statusConfig = {
+    pending: { 
+      label: t('maintenance.statusPending'), 
+      icon: Clock, 
+      color: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
+      dotColor: 'bg-amber-500'
+    },
+    approved: { 
+      label: t('maintenance.statusApproved'), 
+      icon: CheckCircle2, 
+      color: 'bg-blue-500/15 text-blue-600 dark:text-blue-400',
+      dotColor: 'bg-blue-500'
+    },
+    in_progress: { 
+      label: t('maintenance.statusInProgress'), 
+      icon: PlayCircle, 
+      color: 'bg-primary/15 text-primary',
+      dotColor: 'bg-primary'
+    },
+    completed: { 
+      label: t('maintenance.statusCompleted'), 
+      icon: CheckCircle2, 
+      color: 'bg-green-500/15 text-green-600 dark:text-green-400',
+      dotColor: 'bg-green-500'
+    },
+    rejected: { 
+      label: t('maintenance.statusRejected'), 
+      icon: XCircle, 
+      color: 'bg-red-500/15 text-red-600 dark:text-red-400',
+      dotColor: 'bg-red-500'
+    },
+  };
+
+  const priorityConfig = {
+    low: { label: t('maintenance.priorityLow'), color: 'text-slate-500' },
+    medium: { label: t('maintenance.priorityMedium'), color: 'text-blue-500' },
+    high: { label: t('maintenance.priorityHigh'), color: 'text-amber-500' },
+    critical: { label: t('maintenance.priorityCritical'), color: 'text-red-500' },
+  };
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -109,13 +113,13 @@ export function UpcomingMaintenanceCard() {
                 <Wrench className="h-4 w-4 text-primary" />
               </div>
               <div>
-                <CardTitle className="text-base">Manutenções</CardTitle>
-                <CardDescription>Acompanhamento geral</CardDescription>
+                <CardTitle className="text-base">{t('navigation.maintenance')}</CardTitle>
+                <CardDescription>{t('maintenance.subtitle').split(' ').slice(0, 2).join(' ')}</CardDescription>
               </div>
             </div>
             <Button size="sm" variant="outline" onClick={() => setShowCreateDialog(true)}>
               <Plus className="h-4 w-4 mr-1" />
-              Nova
+              {t('common.add').split(' ')[0]}
             </Button>
           </div>
         </CardHeader>
@@ -124,19 +128,19 @@ export function UpcomingMaintenanceCard() {
           <div className="grid grid-cols-4 gap-2 mb-4">
             <div className="text-center p-2 rounded-lg bg-amber-500/10">
               <div className="text-lg font-bold text-amber-600 dark:text-amber-400">{stats.pending}</div>
-              <div className="text-[10px] text-muted-foreground">Pendentes</div>
+              <div className="text-[10px] text-muted-foreground">{t('maintenance.pending')}</div>
             </div>
             <div className="text-center p-2 rounded-lg bg-blue-500/10">
               <div className="text-lg font-bold text-blue-600 dark:text-blue-400">{stats.approved}</div>
-              <div className="text-[10px] text-muted-foreground">Aprovadas</div>
+              <div className="text-[10px] text-muted-foreground">{t('maintenance.statusApproved')}</div>
             </div>
             <div className="text-center p-2 rounded-lg bg-primary/10">
               <div className="text-lg font-bold text-primary">{stats.inProgress}</div>
-              <div className="text-[10px] text-muted-foreground">Em Exec.</div>
+              <div className="text-[10px] text-muted-foreground">{t('maintenance.inProgress').slice(0, 8)}</div>
             </div>
             <div className="text-center p-2 rounded-lg bg-green-500/10">
               <div className="text-lg font-bold text-green-600 dark:text-green-400">{stats.completed}</div>
-              <div className="text-[10px] text-muted-foreground">Concluídas</div>
+              <div className="text-[10px] text-muted-foreground">{t('maintenance.completed')}</div>
             </div>
           </div>
 
@@ -145,7 +149,7 @@ export function UpcomingMaintenanceCard() {
             <div className="flex items-center gap-2 p-2 mb-3 rounded-lg bg-red-500/10 border border-red-500/20">
               <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />
               <span className="text-xs text-red-600 dark:text-red-400 font-medium">
-                {stats.overdue} manutenção(ões) atrasada(s)
+                {stats.overdue} {t('dashboard.overdueCount')}
               </span>
             </div>
           )}
@@ -160,8 +164,8 @@ export function UpcomingMaintenanceCard() {
           ) : activeRequests.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center py-6 text-muted-foreground">
               <CheckCircle2 className="h-8 w-8 mb-2 text-green-500/50" />
-              <p className="text-sm font-medium">Nenhuma manutenção ativa</p>
-              <p className="text-xs">Todas as manutenções foram concluídas</p>
+              <p className="text-sm font-medium">{t('maintenance.noRequests')}</p>
+              <p className="text-xs">{t('maintenance.noRequestsFiltered')}</p>
             </div>
           ) : (
             <ScrollArea className="flex-1 -mx-2 px-2" style={{ maxHeight: '200px' }}>
@@ -202,7 +206,7 @@ export function UpcomingMaintenanceCard() {
                               <>
                                 <span>•</span>
                                 <span className={overdue ? 'text-red-500' : ''}>
-                                  {format(new Date(request.due_date), 'dd/MM', { locale: ptBR })}
+                                  {format(new Date(request.due_date), 'dd/MM', { locale: dateLocale })}
                                 </span>
                               </>
                             )}
@@ -227,7 +231,7 @@ export function UpcomingMaintenanceCard() {
               className="mt-3 w-full text-xs"
               onClick={() => navigate('/maintenance')}
             >
-              Ver todas as manutenções
+              {t('common.viewAll')}
               <ArrowRight className="h-3.5 w-3.5 ml-1" />
             </Button>
           )}
