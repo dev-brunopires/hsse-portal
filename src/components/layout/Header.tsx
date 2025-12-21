@@ -151,10 +151,11 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
       });
     }
 
-    // Add alert for high priority items (mark as read stores current count, and reappears if count changes)
+    // Add alert for high priority items (only reappears if count INCREASES from when it was marked read)
     if (highPriorityCount > 0) {
-      const version = String(highPriorityCount);
-      const isRead = systemRead['system-high-priority'] === version;
+      const savedCount = parseInt(systemRead['system-high-priority'] || '0', 10);
+      // Only show as unread if current count is greater than when it was last dismissed
+      const isRead = savedCount >= highPriorityCount;
 
       notifs.unshift({
         id: 'system-high-priority',
