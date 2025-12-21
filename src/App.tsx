@@ -122,7 +122,7 @@ function App() {
               <Route
                 path="/categories"
                 element={
-                  <ProtectedRoute requiredRole="admin">
+                  <ProtectedRoute requiredRole="technician">
                     <AppLayout>
                       <Categories />
                     </AppLayout>
