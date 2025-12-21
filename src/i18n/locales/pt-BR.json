@@ -1077,5 +1077,33 @@
     "statusCompliant": "Conforme",
     "statusAttention": "Atenção",
     "statusNonCompliant": "Não Conforme"
+  },
+  "inspectionCalendar": {
+    "today": "Hoje",
+    "inspectionsOnDay": "inspeção(ões) neste dia",
+    "scheduled": "Agendada",
+    "weekDays": ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"],
+    "statusCompliant": "Conforme",
+    "statusAttention": "Atenção",
+    "statusNonCompliant": "Não Conforme",
+    "statusPending": "Pendente"
+  },
+  "inspectionTimeline": {
+    "noInspections": "Nenhuma inspeção registrada",
+    "signed": "Assinado",
+    "inspector": "Inspetor",
+    "observations": "Observações",
+    "recommendations": "Recomendações",
+    "actionsTaken": "Ações Tomadas",
+    "nextInspection": "Próxima inspeção",
+    "viewDetails": "Ver Detalhes",
+    "edit": "Editar",
+    "delete": "Excluir",
+    "showLess": "Mostrar menos",
+    "viewAllInspections": "Ver todas as {{count}} inspeções",
+    "statusCompliant": "Conforme",
+    "statusAttention": "Atenção",
+    "statusNonCompliant": "Não Conforme",
+    "statusPending": "Pendente"
   }
 }
