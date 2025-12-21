@@ -17,7 +17,7 @@ import { ModernAlertsList } from '@/components/dashboard/ModernAlertsList';
 import { ModernStatusChart } from '@/components/dashboard/ModernStatusChart';
 import { ModernCategoryChart } from '@/components/dashboard/ModernCategoryChart';
 import { ComplianceGauge } from '@/components/dashboard/ComplianceGauge';
-import { InspectionTrendChart } from '@/components/dashboard/InspectionTrendChart';
+import { EquipmentStatusByCategoryChart } from '@/components/dashboard/EquipmentStatusByCategoryChart';
 import { EquipmentComplianceChart } from '@/components/dashboard/EquipmentComplianceChart';
 import { UpcomingInspectionsCard } from '@/components/dashboard/UpcomingInspectionsCard';
 import { ExpiringCertificatesCard } from '@/components/dashboard/ExpiringCertificatesCard';
@@ -242,7 +242,7 @@ export default function Dashboard() {
       {/* Charts Row 2 */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <InspectionTrendChart />
+          <EquipmentStatusByCategoryChart />
         </div>
         <UpcomingInspectionsCard />
       </div>
