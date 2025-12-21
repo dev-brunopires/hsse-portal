@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   LayoutDashboard,
   Package,
@@ -59,6 +60,7 @@ const NavItem = ({ to, icon, label, collapsed }: NavItemProps) => {
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const { isAdmin } = useAuth();
+  const { t } = useTranslation();
 
   return (
     <aside
@@ -84,37 +86,37 @@ export function AppSidebar() {
       {/* Navigation */}
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
         <div data-tour="dashboard">
-          <NavItem to="/" icon={<LayoutDashboard size={20} />} label="Dashboard" collapsed={collapsed} />
+          <NavItem to="/" icon={<LayoutDashboard size={20} />} label={t('navigation.dashboard')} collapsed={collapsed} />
         </div>
         <div data-tour="equipment">
-          <NavItem to="/equipment" icon={<Package size={20} />} label="Equipamentos" collapsed={collapsed} />
+          <NavItem to="/equipment" icon={<Package size={20} />} label={t('navigation.equipment')} collapsed={collapsed} />
         </div>
         <div data-tour="inspections">
-          <NavItem to="/inspections" icon={<ClipboardCheck size={20} />} label="Inspeções" collapsed={collapsed} />
+          <NavItem to="/inspections" icon={<ClipboardCheck size={20} />} label={t('navigation.inspections')} collapsed={collapsed} />
         </div>
         <div data-tour="maintenance">
-          <NavItem to="/maintenance" icon={<Wrench size={20} />} label="Manutenção" collapsed={collapsed} />
+          <NavItem to="/maintenance" icon={<Wrench size={20} />} label={t('navigation.maintenance')} collapsed={collapsed} />
         </div>
-        <NavItem to="/pending" icon={<AlertCircle size={20} />} label="Pendências" collapsed={collapsed} />
+        <NavItem to="/pending" icon={<AlertCircle size={20} />} label={t('navigation.pendingRecommendations')} collapsed={collapsed} />
         <div data-tour="reports">
-          <NavItem to="/reports" icon={<FileText size={20} />} label="Relatórios" collapsed={collapsed} />
+          <NavItem to="/reports" icon={<FileText size={20} />} label={t('navigation.reports')} collapsed={collapsed} />
         </div>
         <div data-tour="alerts">
-          <NavItem to="/alerts" icon={<Bell size={20} />} label="Alertas" collapsed={collapsed} />
+          <NavItem to="/alerts" icon={<Bell size={20} />} label={t('navigation.alerts')} collapsed={collapsed} />
         </div>
-        <NavItem to="/categories" icon={<FolderOpen size={20} />} label="Categorias" collapsed={collapsed} />
+        <NavItem to="/categories" icon={<FolderOpen size={20} />} label={t('navigation.categories')} collapsed={collapsed} />
       </nav>
 
       {/* Bottom Section */}
       <div className="border-t border-sidebar-border p-3 space-y-1">
         <div data-tour="profile">
-          <NavItem to="/profile" icon={<User size={20} />} label="Meu Perfil" collapsed={collapsed} />
+          <NavItem to="/profile" icon={<User size={20} />} label={t('navigation.profile')} collapsed={collapsed} />
         </div>
         {isAdmin && (
           <>
-            <NavItem to="/users" icon={<Users size={20} />} label="Usuários" collapsed={collapsed} />
-            <NavItem to="/audit-log" icon={<History size={20} />} label="Histórico" collapsed={collapsed} />
-            <NavItem to="/settings" icon={<Settings size={20} />} label="Configurações" collapsed={collapsed} />
+            <NavItem to="/users" icon={<Users size={20} />} label={t('navigation.users')} collapsed={collapsed} />
+            <NavItem to="/audit-log" icon={<History size={20} />} label={t('navigation.auditLog')} collapsed={collapsed} />
+            <NavItem to="/settings" icon={<Settings size={20} />} label={t('navigation.settings')} collapsed={collapsed} />
           </>
         )}
       </div>
