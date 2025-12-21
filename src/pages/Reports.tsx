@@ -507,6 +507,8 @@ export default function Reports() {
       equipment: typeof equipment[0];
       status: 'compliant' | 'attention' | 'non-compliant';
       inspectionDate: string;
+      lastInspectorName: string;
+      expiryStatus: 'ok' | 'expiry_expired' | 'certificate_expired' | 'both_expired';
     }>();
 
     const sortedInspections = [...filteredInspections].sort(
@@ -519,10 +521,27 @@ export default function Reports() {
         if (eq) {
           const status = insp.status === 'compliant' ? 'compliant' : 
                         insp.status === 'attention' ? 'attention' : 'non-compliant';
+          
+          // Check expiry dates
+          const today = new Date();
+          const expiryExpired = eq.expiry_date && new Date(eq.expiry_date) < today;
+          const certificateExpired = eq.certificate_expiry && new Date(eq.certificate_expiry) < today;
+          
+          let expiryStatus: 'ok' | 'expiry_expired' | 'certificate_expired' | 'both_expired' = 'ok';
+          if (expiryExpired && certificateExpired) {
+            expiryStatus = 'both_expired';
+          } else if (expiryExpired) {
+            expiryStatus = 'expiry_expired';
+          } else if (certificateExpired) {
+            expiryStatus = 'certificate_expired';
+          }
+          
           equipmentInspections.set(insp.equipment_id, {
             equipment: eq,
             status: status as 'compliant' | 'attention' | 'non-compliant',
             inspectionDate: insp.inspection_date,
+            lastInspectorName: insp.profiles?.full_name || '—',
+            expiryStatus,
           });
         }
       }
@@ -548,6 +567,9 @@ export default function Reports() {
     const results = categoryInspectionData.map(item => ({
       equipment: item.equipment,
       status: item.status,
+      lastInspectionDate: item.inspectionDate,
+      lastInspectorName: item.lastInspectorName,
+      expiryStatus: item.expiryStatus,
     }));
 
     await exportCategoryInspectionPDF({
@@ -572,6 +594,13 @@ export default function Reports() {
       return;
     }
 
+    const expiryStatusLabels: Record<string, string> = {
+      'ok': '—',
+      'expiry_expired': 'Validade vencida',
+      'certificate_expired': 'Certificado vencido',
+      'both_expired': 'Validade e Certificado vencidos',
+    };
+
     const data = categoryInspectionData.map((item, index) => ({
       '#': index + 1,
       'Código': item.equipment.internal_code,
@@ -579,8 +608,10 @@ export default function Reports() {
       'Tipo': item.equipment.type,
       'Categoria': item.equipment.categories?.name || '—',
       'Localização': item.equipment.location,
+      'Última Inspeção': format(new Date(item.inspectionDate), 'dd/MM/yyyy', { locale: ptBR }),
+      'Último Inspetor': item.lastInspectorName,
       'Status': inspectionStatusLabels[item.status] || item.status,
-      'Data Inspeção': format(new Date(item.inspectionDate), 'dd/MM/yyyy', { locale: ptBR }),
+      'Vencimento': expiryStatusLabels[item.expiryStatus],
     }));
 
     const ws = XLSX.utils.json_to_sheet(data);
@@ -735,21 +766,33 @@ export default function Reports() {
         return {
           title: 'Pré-visualização: Inspeção por Categoria',
           description: `${categoryInspectionData.length} equipamentos inspecionados`,
-          data: categoryInspectionData.map((item, index) => ({
-            num: index + 1,
-            code: item.equipment.internal_code,
-            name: item.equipment.name,
-            category: item.equipment.categories?.name || '—',
-            status: inspectionStatusLabels[item.status] || item.status,
-            date: format(new Date(item.inspectionDate), 'dd/MM/yyyy', { locale: ptBR }),
-          })),
+          data: categoryInspectionData.map((item, index) => {
+            const expiryStatusLabels: Record<string, string> = {
+              'ok': '—',
+              'expiry_expired': 'Val. vencida',
+              'certificate_expired': 'Cert. vencido',
+              'both_expired': 'Ambos vencidos',
+            };
+            return {
+              num: index + 1,
+              code: item.equipment.internal_code,
+              name: item.equipment.name,
+              category: item.equipment.categories?.name || '—',
+              lastInspection: format(new Date(item.inspectionDate), 'dd/MM/yyyy', { locale: ptBR }),
+              inspector: item.lastInspectorName,
+              status: inspectionStatusLabels[item.status] || item.status,
+              expiry: expiryStatusLabels[item.expiryStatus],
+            };
+          }),
           columns: [
             { key: 'num', label: '#' },
             { key: 'code', label: 'Código' },
             { key: 'name', label: 'Equipamento' },
             { key: 'category', label: 'Categoria' },
+            { key: 'lastInspection', label: 'Última Inspeção' },
+            { key: 'inspector', label: 'Inspetor' },
             { key: 'status', label: 'Status' },
-            { key: 'date', label: 'Data' },
+            { key: 'expiry', label: 'Vencimento' },
           ],
           onExportPDF: handleCategoryInspectionReportPDF,
           onExportExcel: handleCategoryInspectionReportExcel,
