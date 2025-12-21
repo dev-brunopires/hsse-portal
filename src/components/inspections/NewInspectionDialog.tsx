@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -31,7 +32,8 @@ import { useLastInspection } from '@/hooks/useInspections';
 import { InspectionFormDialog } from '@/components/equipment/InspectionFormDialog';
 import { PreInspectionWarningDialog } from './PreInspectionWarningDialog';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS } from 'date-fns/locale';
+import i18n from '@/i18n';
 import type { Equipment } from '@/types/equipment';
 
 interface NewInspectionDialogProps {
@@ -40,21 +42,24 @@ interface NewInspectionDialogProps {
   preSelectedEquipmentId?: string | null;
 }
 
-const statusLabels: Record<string, string> = {
-  active: 'Ativo',
-  inactive: 'Inativo',
-  maintenance: 'Manutenção',
-  rejected: 'Rejeitado',
-};
-
-const statusColors: Record<string, string> = {
-  active: 'bg-status-success/10 text-status-success border-status-success/30',
-  inactive: 'bg-muted text-muted-foreground border-muted',
-  maintenance: 'bg-status-warning/10 text-status-warning border-status-warning/30',
-  rejected: 'bg-status-danger/10 text-status-danger border-status-danger/30',
-};
-
 export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId }: NewInspectionDialogProps) {
+  const { t } = useTranslation();
+  const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
+  
+  const statusLabels: Record<string, string> = {
+    active: t('inspectionForm.statusLabels.active'),
+    inactive: t('inspectionForm.statusLabels.inactive'),
+    maintenance: t('inspectionForm.statusLabels.maintenance'),
+    rejected: t('inspectionForm.statusLabels.rejected'),
+  };
+
+  const statusColors: Record<string, string> = {
+    active: 'bg-status-success/10 text-status-success border-status-success/30',
+    inactive: 'bg-muted text-muted-foreground border-muted',
+    maintenance: 'bg-status-warning/10 text-status-warning border-status-warning/30',
+    rejected: 'bg-status-danger/10 text-status-danger border-status-danger/30',
+  };
+
   const { data: equipmentList = [], isLoading } = useEquipment();
   const { data: categories = [] } = useCategories();
   const [selectedEquipment, setSelectedEquipment] = useState<EquipmentWithCategory | null>(null);
@@ -208,10 +213,10 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
           <DialogHeader className="pb-4 border-b border-border">
             <DialogTitle className="flex items-center gap-2 text-xl">
               <ClipboardCheck className="h-5 w-5 text-primary" />
-              Nova Inspeção
+              {t('inspectionForm.newInspection')}
             </DialogTitle>
             <DialogDescription>
-              Selecione o equipamento que deseja inspecionar
+              {t('inspectionForm.selectEquipmentToInspect')}
             </DialogDescription>
           </DialogHeader>
 
@@ -220,7 +225,7 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
-                  placeholder="Buscar por nome, código ou localização..."
+                  placeholder={t('inspectionForm.searchByCodeNameLocation')}
                   className="w-full pl-10 pr-4 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -229,10 +234,10 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                 <SelectTrigger className="w-full sm:w-[180px]">
                   <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Categoria" />
+                  <SelectValue placeholder={t('common.category')} />
                 </SelectTrigger>
                 <SelectContent className="bg-popover border border-border shadow-lg z-50">
-                  <SelectItem value="all">Todas Categorias</SelectItem>
+                  <SelectItem value="all">{t('inspectionForm.allCategories')}</SelectItem>
                   {categories.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.name}
@@ -246,11 +251,11 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
               <div className="space-y-2 px-1">
                 {isLoading ? (
                   <div className="text-center py-8 text-muted-foreground">
-                    Carregando equipamentos...
+                    {t('inspectionForm.loadingEquipment')}
                   </div>
                 ) : filteredEquipment.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
-                    {searchTerm || categoryFilter !== 'all' ? 'Nenhum equipamento encontrado.' : 'Nenhum equipamento cadastrado.'}
+                    {searchTerm || categoryFilter !== 'all' ? t('inspectionForm.noEquipmentFound') : t('inspectionForm.noEquipmentRegistered')}
                   </div>
                 ) : (
                   filteredEquipment.map((equipment) => {
@@ -282,7 +287,7 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
                                 </Badge>
                                 {hasWarnings && (
                                   <Badge variant="outline" className="text-xs border-warning text-warning bg-warning/10">
-                                    Atenção
+                                    {t('inspectionForm.attention')}
                                   </Badge>
                                 )}
                               </div>
@@ -299,7 +304,7 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
                                 {equipment.last_inspection && (
                                   <span className="flex items-center gap-1">
                                     <Calendar className="h-3 w-3" />
-                                    Última: {format(new Date(equipment.last_inspection), 'dd/MM/yy', { locale: ptBR })}
+                                    {t('inspectionForm.last')}: {format(new Date(equipment.last_inspection), 'dd/MM/yy', { locale: dateLocale })}
                                   </span>
                                 )}
                               </div>
@@ -323,7 +328,7 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
             </ScrollArea>
 
             <div className="pt-4 border-t border-border text-sm text-muted-foreground px-1">
-              {filteredEquipment.length} equipamento(s) disponível(is)
+              {t('inspectionForm.equipmentAvailable', { count: filteredEquipment.length })}
             </div>
           </div>
         </DialogContent>
