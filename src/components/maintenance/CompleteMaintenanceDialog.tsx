@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -27,13 +28,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useCompleteMaintenance, type MaintenancePlan } from '@/hooks/useMaintenance';
 
-const formSchema = z.object({
-  status: z.enum(['completed', 'partial', 'skipped']),
-  notes: z.string().optional(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
 interface CompleteMaintenanceDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -41,7 +35,15 @@ interface CompleteMaintenanceDialogProps {
 }
 
 export function CompleteMaintenanceDialog({ open, onOpenChange, plan }: CompleteMaintenanceDialogProps) {
+  const { t } = useTranslation();
   const completeMaintenance = useCompleteMaintenance();
+
+  const formSchema = z.object({
+    status: z.enum(['completed', 'partial', 'skipped']),
+    notes: z.string().optional(),
+  });
+
+  type FormValues = z.infer<typeof formSchema>;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -67,9 +69,9 @@ export function CompleteMaintenanceDialog({ open, onOpenChange, plan }: Complete
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Registrar Execução</DialogTitle>
+          <DialogTitle>{t('maintenance.registerExecution')}</DialogTitle>
           <DialogDescription>
-            Registre a execução da manutenção: {plan.title}
+            {t('maintenance.registerExecutionDesc')}: {plan.title}
           </DialogDescription>
         </DialogHeader>
 
@@ -80,7 +82,7 @@ export function CompleteMaintenanceDialog({ open, onOpenChange, plan }: Complete
               name="status"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Status da Execução</FormLabel>
+                  <FormLabel>{t('maintenance.executionStatus')}</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
@@ -88,9 +90,9 @@ export function CompleteMaintenanceDialog({ open, onOpenChange, plan }: Complete
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="completed">Concluída</SelectItem>
-                      <SelectItem value="partial">Parcial</SelectItem>
-                      <SelectItem value="skipped">Não Realizada</SelectItem>
+                      <SelectItem value="completed">{t('maintenance.statusCompleted')}</SelectItem>
+                      <SelectItem value="partial">{t('maintenance.statusPartial')}</SelectItem>
+                      <SelectItem value="skipped">{t('maintenance.statusSkipped')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -103,10 +105,10 @@ export function CompleteMaintenanceDialog({ open, onOpenChange, plan }: Complete
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Observações</FormLabel>
+                  <FormLabel>{t('common.observations')}</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Detalhes sobre a execução..."
+                      placeholder={t('maintenance.executionDetails')}
                       className="resize-none"
                       rows={3}
                       {...field}
@@ -119,10 +121,10 @@ export function CompleteMaintenanceDialog({ open, onOpenChange, plan }: Complete
 
             <div className="flex justify-end gap-2 pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancelar
+                {t('common.cancel')}
               </Button>
               <Button type="submit" disabled={completeMaintenance.isPending}>
-                {completeMaintenance.isPending ? 'Salvando...' : 'Registrar'}
+                {completeMaintenance.isPending ? t('maintenance.saving') : t('maintenance.register')}
               </Button>
             </div>
           </form>
