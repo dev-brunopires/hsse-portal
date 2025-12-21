@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   Package, 
   AlertTriangle, 
@@ -11,7 +12,7 @@ import {
   Wrench
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS } from 'date-fns/locale';
 import { ModernKPICard } from '@/components/dashboard/ModernKPICard';
 import { ModernAlertsList } from '@/components/dashboard/ModernAlertsList';
 import { ModernStatusChart } from '@/components/dashboard/ModernStatusChart';
@@ -39,6 +40,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 export default function Dashboard() {
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.language === 'en' ? enUS : ptBR;
   const queryClient = useQueryClient();
   const { data: stats, isLoading, error, refetch, isFetching } = useDashboardStats();
   const { data: ships = [] } = useShips();
@@ -66,7 +69,7 @@ export default function Dashboard() {
   const handleExportPDF = async () => {
     if (!stats) return;
     
-    toast.info('Gerando relatório...');
+    toast.info(t('common.loading'));
     
     await exportDashboardPDF(stats, {
       shipName: selectedShipName,
@@ -75,12 +78,12 @@ export default function Dashboard() {
       endDate: filters.endDate,
     });
     
-    toast.success('Relatório exportado com sucesso!');
+    toast.success(t('common.success'));
   };
 
   const handleRefresh = async () => {
     await queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
-    toast.success('Dados atualizados!');
+    toast.success(t('common.refresh'));
   };
 
   if (isLoading) {
@@ -88,8 +91,8 @@ export default function Dashboard() {
       <div className="space-y-6 animate-fade-in">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-            <p className="text-muted-foreground">Visão geral do sistema de gestão de equipamentos</p>
+            <h1 className="text-2xl font-bold text-foreground">{t('dashboard.title')}</h1>
+            <p className="text-muted-foreground">{t('dashboard.subtitle')}</p>
           </div>
         </div>
         
@@ -125,9 +128,9 @@ export default function Dashboard() {
         <div className="p-4 bg-red-500/10 rounded-full">
           <AlertTriangle className="h-8 w-8 text-red-500" />
         </div>
-        <p className="text-muted-foreground">Erro ao carregar estatísticas</p>
+        <p className="text-muted-foreground">{t('errors.generic')}</p>
         <Button variant="outline" onClick={() => refetch()}>
-          Tentar novamente
+          {t('common.tryAgain')}
         </Button>
       </div>
     );
@@ -142,11 +145,11 @@ export default function Dashboard() {
             <LayoutDashboard className="h-8 w-8 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Dashboard</h1>
-            <p className="text-muted-foreground mt-1">Visão geral do sistema de gestão de equipamentos</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{t('dashboard.title')}</h1>
+            <p className="text-muted-foreground mt-1">{t('dashboard.subtitle')}</p>
             <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
               <Calendar className="h-4 w-4" />
-              <span>Atualizado em {format(new Date(), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}</span>
+              <span>{t('dashboard.updatedAt')} {format(new Date(), "dd/MM/yyyy HH:mm", { locale: dateLocale })}</span>
             </div>
           </div>
         </div>
@@ -160,7 +163,7 @@ export default function Dashboard() {
             className="gap-2"
           >
             <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Atualizar</span>
+            <span className="hidden sm:inline">{t('common.refresh')}</span>
           </Button>
           <Button
             variant="default"
@@ -169,7 +172,7 @@ export default function Dashboard() {
             className="gap-2"
           >
             <Download className="h-4 w-4" />
-            <span className="hidden sm:inline">Exportar PDF</span>
+            <span className="hidden sm:inline">{t('dashboard.exportPDF')}</span>
           </Button>
         </div>
       </div>
@@ -185,44 +188,44 @@ export default function Dashboard() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
         <ModernKPICard
-          title="Total de Equipamentos"
+          title={t('dashboard.totalEquipment')}
           value={stats.totalEquipment}
-          subtitle="Cadastrados no sistema"
+          subtitle={t('dashboard.registeredInSystem')}
           icon={Package}
           variant="info"
         />
         <ModernKPICard
-          title="Equipamentos Ativos"
+          title={t('dashboard.activeEquipment')}
           value={stats.activeEquipment}
-          subtitle={stats.totalEquipment > 0 ? `${((stats.activeEquipment / stats.totalEquipment) * 100).toFixed(0)}% do total` : '0% do total'}
+          subtitle={stats.totalEquipment > 0 ? `${((stats.activeEquipment / stats.totalEquipment) * 100).toFixed(0)}% ${t('dashboard.ofTotal')}` : `0% ${t('dashboard.ofTotal')}`}
           icon={Shield}
           variant="success"
         />
         <ModernKPICard
-          title="Certificados Vencidos"
+          title={t('dashboard.expiredCertificates')}
           value={stats.expiredCertificates}
-          subtitle="Certificados expirados"
+          subtitle={t('dashboard.expiredCerts')}
           icon={AlertTriangle}
           variant="danger"
         />
         <ModernKPICard
-          title="Status Vencido/Reprovado"
+          title={t('dashboard.expiredEquipment')}
           value={stats.expiredEquipment}
-          subtitle="Requerem ação imediata"
+          subtitle={t('dashboard.requireAction')}
           icon={AlertTriangle}
           variant="danger"
         />
         <ModernKPICard
-          title="Inspeções Pendentes"
+          title={t('dashboard.pendingInspections')}
           value={stats.pendingInspections}
-          subtitle="Próximos 30 dias"
+          subtitle={t('dashboard.next30Days')}
           icon={ClipboardCheck}
           variant="warning"
         />
         <ModernKPICard
-          title="Manutenções Pendentes"
+          title={t('dashboard.pendingMaintenance')}
           value={stats.pendingMaintenance + stats.overdueMaintenance}
-          subtitle={stats.overdueMaintenance > 0 ? `${stats.overdueMaintenance} atrasada(s)` : 'Em dia'}
+          subtitle={stats.overdueMaintenance > 0 ? `${stats.overdueMaintenance} ${t('dashboard.overdueCount')}` : t('dashboard.onSchedule')}
           icon={Wrench}
           variant={stats.overdueMaintenance > 0 ? 'danger' : 'warning'}
         />

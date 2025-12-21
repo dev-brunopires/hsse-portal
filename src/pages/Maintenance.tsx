@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -38,27 +39,32 @@ import { MaintenanceRequestDialog } from '@/components/maintenance/MaintenanceRe
 import { MaintenanceDetailDialog } from '@/components/maintenance/MaintenanceDetailDialog';
 import { useAuth } from '@/contexts/AuthContext';
 
-const statusConfig: Record<string, { label: string; icon: typeof Clock; color: string; bgColor: string }> = {
-  pending: { label: 'Pendente', icon: Clock, color: 'text-amber-600', bgColor: 'bg-amber-50 dark:bg-amber-950/30' },
-  approved: { label: 'Aprovada', icon: CheckCircle2, color: 'text-blue-600', bgColor: 'bg-blue-50 dark:bg-blue-950/30' },
-  in_progress: { label: 'Em Execução', icon: Play, color: 'text-primary', bgColor: 'bg-primary/10' },
-  completed: { label: 'Concluída', icon: CheckCircle2, color: 'text-green-600', bgColor: 'bg-green-50 dark:bg-green-950/30' },
-  rejected: { label: 'Rejeitada', icon: XCircle, color: 'text-destructive', bgColor: 'bg-destructive/10' },
-};
+const getStatusConfig = (t: (key: string) => string) => ({
+  pending: { label: t('maintenance.statusPending'), icon: Clock, color: 'text-amber-600', bgColor: 'bg-amber-50 dark:bg-amber-950/30' },
+  approved: { label: t('maintenance.statusApproved'), icon: CheckCircle2, color: 'text-blue-600', bgColor: 'bg-blue-50 dark:bg-blue-950/30' },
+  in_progress: { label: t('maintenance.statusInProgress'), icon: Play, color: 'text-primary', bgColor: 'bg-primary/10' },
+  completed: { label: t('maintenance.statusCompleted'), icon: CheckCircle2, color: 'text-green-600', bgColor: 'bg-green-50 dark:bg-green-950/30' },
+  rejected: { label: t('maintenance.statusRejected'), icon: XCircle, color: 'text-destructive', bgColor: 'bg-destructive/10' },
+});
 
-const priorityConfig: Record<string, { label: string; color: string }> = {
-  low: { label: 'Baixa', color: 'text-muted-foreground border-muted' },
-  medium: { label: 'Média', color: 'text-blue-600 border-blue-300' },
-  high: { label: 'Alta', color: 'text-orange-600 border-orange-300' },
-  critical: { label: 'Crítica', color: 'text-red-600 border-red-300' },
-};
+const getPriorityConfig = (t: (key: string) => string) => ({
+  low: { label: t('maintenance.priorityLow'), color: 'text-muted-foreground border-muted' },
+  medium: { label: t('maintenance.priorityMedium'), color: 'text-blue-600 border-blue-300' },
+  high: { label: t('maintenance.priorityHigh'), color: 'text-orange-600 border-orange-300' },
+  critical: { label: t('maintenance.priorityCritical'), color: 'text-red-600 border-red-300' },
+});
 
-const typeLabels: Record<string, string> = {
-  preventive: 'Preventiva',
-  corrective: 'Corretiva',
-};
+const getTypeLabels = (t: (key: string) => string) => ({
+  preventive: t('maintenance.typePreventive'),
+  corrective: t('maintenance.typeCorrective'),
+});
 
 export default function Maintenance() {
+  const { t } = useTranslation();
+  const statusConfig = getStatusConfig(t);
+  const priorityConfig = getPriorityConfig(t);
+  const typeLabels = getTypeLabels(t);
+  
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
@@ -137,16 +143,16 @@ export default function Maintenance() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
               <Wrench className="h-6 w-6 text-primary" />
-              Manutenção
+              {t('maintenance.title')}
             </h1>
             <p className="text-muted-foreground">
-              Gerencie solicitações de manutenção preventiva e corretiva
+              {t('maintenance.subtitle')}
             </p>
           </div>
           {canCreate && (
             <Button onClick={() => setCreateDialogOpen(true)} className="gap-2">
               <Plus className="h-4 w-4" />
-              Nova Solicitação
+              {t('maintenance.newRequest')}
             </Button>
           )}
         </div>
@@ -154,30 +160,30 @@ export default function Maintenance() {
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard 
-            title="Pendentes" 
+            title={t('maintenance.pending')} 
             value={stats?.pending || 0} 
             icon={Clock} 
             color="text-amber-600"
-            description="Aguardando aprovação"
+            description={t('maintenance.awaitingApproval')}
           />
           <StatCard 
-            title="Em Execução" 
+            title={t('maintenance.inProgress')} 
             value={stats?.inProgress || 0} 
             icon={Play} 
             color="text-primary"
           />
           <StatCard 
-            title="Concluídas" 
+            title={t('maintenance.completed')} 
             value={stats?.completed || 0} 
             icon={CheckCircle2} 
             color="text-green-600"
           />
           <StatCard 
-            title="Críticas" 
+            title={t('maintenance.critical')} 
             value={stats?.critical || 0} 
             icon={AlertTriangle} 
             color="text-red-600"
-            description="Alta prioridade"
+            description={t('maintenance.highPriority')}
           />
         </div>
 
@@ -186,7 +192,7 @@ export default function Maintenance() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar por título, equipamento..."
+              placeholder={t('maintenance.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -195,25 +201,25 @@ export default function Maintenance() {
           <div className="flex gap-2">
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Tipo" />
+                <SelectValue placeholder={t('common.type')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos os Tipos</SelectItem>
-                <SelectItem value="preventive">Preventiva</SelectItem>
-                <SelectItem value="corrective">Corretiva</SelectItem>
+                <SelectItem value="all">{t('maintenance.allTypes')}</SelectItem>
+                <SelectItem value="preventive">{t('maintenance.typePreventive')}</SelectItem>
+                <SelectItem value="corrective">{t('maintenance.typeCorrective')}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Status" />
+                <SelectValue placeholder={t('common.status')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos Status</SelectItem>
-                <SelectItem value="pending">Pendente</SelectItem>
-                <SelectItem value="approved">Aprovada</SelectItem>
-                <SelectItem value="in_progress">Em Execução</SelectItem>
-                <SelectItem value="completed">Concluída</SelectItem>
-                <SelectItem value="rejected">Rejeitada</SelectItem>
+                <SelectItem value="all">{t('maintenance.allStatus')}</SelectItem>
+                <SelectItem value="pending">{t('maintenance.statusPending')}</SelectItem>
+                <SelectItem value="approved">{t('maintenance.statusApproved')}</SelectItem>
+                <SelectItem value="in_progress">{t('maintenance.statusInProgress')}</SelectItem>
+                <SelectItem value="completed">{t('maintenance.statusCompleted')}</SelectItem>
+                <SelectItem value="rejected">{t('maintenance.statusRejected')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -223,19 +229,19 @@ export default function Maintenance() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="all" className="gap-2">
-              Todas
+              {t('maintenance.all')}
               <Badge variant="secondary" className="ml-1">{requests.length}</Badge>
             </TabsTrigger>
             <TabsTrigger value="pending" className="gap-2">
-              Pendentes
+              {t('maintenance.pending')}
               <Badge variant="secondary" className="ml-1">{(stats?.pending || 0) + (stats?.approved || 0)}</Badge>
             </TabsTrigger>
             <TabsTrigger value="in_progress" className="gap-2">
-              Em Execução
+              {t('maintenance.inProgress')}
               <Badge variant="secondary" className="ml-1">{stats?.inProgress || 0}</Badge>
             </TabsTrigger>
             <TabsTrigger value="completed" className="gap-2">
-              Concluídas
+              {t('maintenance.completed')}
               <Badge variant="secondary" className="ml-1">{stats?.completed || 0}</Badge>
             </TabsTrigger>
           </TabsList>
@@ -253,13 +259,13 @@ export default function Maintenance() {
                   <Wrench className="h-12 w-12 text-muted-foreground mb-4" />
                   <p className="text-muted-foreground text-center">
                     {searchTerm || statusFilter !== 'all' || typeFilter !== 'all'
-                      ? 'Nenhuma solicitação encontrada com os filtros aplicados.'
-                      : 'Nenhuma solicitação de manutenção registrada.'}
+                      ? t('maintenance.noRequestsFiltered')
+                      : t('maintenance.noRequests')}
                   </p>
                   {canCreate && !searchTerm && statusFilter === 'all' && typeFilter === 'all' && (
                     <Button onClick={() => setCreateDialogOpen(true)} className="mt-4 gap-2">
                       <Plus className="h-4 w-4" />
-                      Criar Solicitação
+                      {t('maintenance.createRequest')}
                     </Button>
                   )}
                 </CardContent>

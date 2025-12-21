@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EquipmentTable } from '@/components/equipment/EquipmentTable';
 import { useEquipment } from '@/hooks/useEquipment';
@@ -11,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { getCategoryIcon } from '@/utils/categoryIcons';
 
 export default function EquipmentList() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<string>('all');
   const { data: equipment = [], isLoading: equipmentLoading } = useEquipment();
   const { data: categories = [], isLoading: categoriesLoading } = useCategories();
@@ -44,9 +46,9 @@ export default function EquipmentList() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Equipamentos</h1>
+        <h1 className="text-2xl font-bold text-foreground">{t('equipment.title')}</h1>
         <p className="text-muted-foreground">
-          Gerencie todos os equipamentos de segurança
+          {t('equipment.subtitle')}
         </p>
       </div>
 
@@ -64,7 +66,7 @@ export default function EquipmentList() {
               )}
             >
               <Package className="h-4 w-4" />
-              <span>Todos</span>
+              <span>{t('common.all')}</span>
               <span className={cn(
                 "ml-1 px-1.5 py-0.5 text-xs rounded-full",
                 activeTab === 'all'

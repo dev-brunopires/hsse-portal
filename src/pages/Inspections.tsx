@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { 
+import { useTranslation } from 'react-i18next';
+import {
   ClipboardCheck, 
   Calendar, 
   Plus, 
@@ -68,18 +69,19 @@ import { exportInspectionsToExcel, exportInspectionsToPDF } from '@/utils/export
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: typeof CheckCircle }> = {
-  compliant: { label: 'Conforme', variant: 'default', icon: CheckCircle },
-  attention: { label: 'Atenção', variant: 'outline', icon: AlertTriangle },
-  'non-compliant': { label: 'Não Conforme', variant: 'destructive', icon: XCircle },
-  // Legacy values for backwards compatibility
-  approved: { label: 'Aprovado', variant: 'default', icon: CheckCircle },
-  pending: { label: 'Pendente', variant: 'secondary', icon: Clock },
-  rejected: { label: 'Reprovado', variant: 'destructive', icon: XCircle },
-  conditional: { label: 'Condicional', variant: 'outline', icon: AlertTriangle },
-};
+const getStatusConfig = (t: (key: string) => string) => ({
+  compliant: { label: t('inspections.statusCompliant'), variant: 'default' as const, icon: CheckCircle },
+  attention: { label: t('inspections.statusAttention'), variant: 'outline' as const, icon: AlertTriangle },
+  'non-compliant': { label: t('inspections.statusNonCompliant'), variant: 'destructive' as const, icon: XCircle },
+  approved: { label: t('inspections.statusApproved'), variant: 'default' as const, icon: CheckCircle },
+  pending: { label: t('inspections.statusPending'), variant: 'secondary' as const, icon: Clock },
+  rejected: { label: t('inspections.statusRejected'), variant: 'destructive' as const, icon: XCircle },
+  conditional: { label: t('inspections.statusConditional'), variant: 'outline' as const, icon: AlertTriangle },
+});
 
 export default function Inspections() {
+  const { t } = useTranslation();
+  const statusConfig = getStatusConfig(t);
   const [searchParams, setSearchParams] = useSearchParams();
   const scanEquipmentId = searchParams.get('scan');
   
@@ -108,15 +110,14 @@ export default function Inspections() {
       setPreselectedEquipmentId(scanEquipmentId);
       setShowNewInspectionForm(true);
       
-      // Show toast when equipment data is loaded
       if (scannedEquipment) {
         toast({
-          title: 'QR Code detectado',
-          description: `Iniciando inspeção para: ${scannedEquipment.internal_code} - ${scannedEquipment.name}`,
+          title: t('inspections.qrCodeDetected'),
+          description: `${t('inspections.startingInspection')}: ${scannedEquipment.internal_code} - ${scannedEquipment.name}`,
         });
       }
     }
-  }, [scanEquipmentId, scannedEquipment, toast]);
+  }, [scanEquipmentId, scannedEquipment, toast, t]);
 
   // Clear scan param after form closes
   const handleFormSuccess = () => {
@@ -196,7 +197,7 @@ export default function Inspections() {
   };
 
   const getStatusBadge = (status: string) => {
-    const config = statusConfig[status] || statusConfig.pending;
+    const config = statusConfig[status] || { label: t('common.pending'), variant: 'secondary' as const, icon: Clock };
     const Icon = config.icon;
     return (
       <Badge variant={config.variant} className="gap-1">
@@ -227,18 +228,18 @@ export default function Inspections() {
   };
 
   const handleExportPDF = async () => {
-    toast({ title: 'Gerando relatório...', description: 'Aguarde enquanto o PDF é preparado.' });
+    toast({ title: t('common.loading'), description: t('common.loading') });
     await exportInspectionsToPDF(filteredInspections);
-    toast({ title: 'Sucesso!', description: 'Relatório exportado com sucesso.' });
+    toast({ title: t('common.success'), description: t('common.success') });
   };
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Inspeções</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t('inspections.title')}</h1>
           <p className="text-muted-foreground">
-            Gerenciamento de inspeções e checklists
+            {t('inspections.subtitle')}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -246,27 +247,27 @@ export default function Inspections() {
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="gap-2">
                 <Download className="h-4 w-4" />
-                Exportar
+                {t('common.export')}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-popover border border-border shadow-lg">
               <DropdownMenuItem onClick={handleExportExcel} className="gap-2 cursor-pointer">
                 <FileSpreadsheet className="h-4 w-4" />
-                Exportar Excel
+                {t('inspections.exportExcel')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleExportPDF} className="gap-2 cursor-pointer">
                 <FileText className="h-4 w-4" />
-                Exportar PDF
+                {t('inspections.exportPDF')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <Button variant="outline" className="gap-2" onClick={() => setShowQRScanner(true)}>
             <QrCode className="h-4 w-4" />
-            Ler QR Code
+            {t('equipment.scanQRCode')}
           </Button>
           <Button className="gap-2" onClick={() => setShowNewInspectionForm(true)}>
             <Plus className="h-4 w-4" />
-            Nova Inspeção
+            {t('inspections.newInspection')}
           </Button>
         </div>
       </div>
