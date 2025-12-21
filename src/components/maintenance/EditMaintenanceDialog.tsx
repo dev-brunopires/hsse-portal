@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -34,19 +35,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { MaintenanceType, MaintenancePriority } from '@/hooks/useMaintenanceRequests';
 
-const formSchema = z.object({
-  type: z.enum(['preventive', 'corrective']),
-  priority: z.enum(['low', 'medium', 'high', 'critical']),
-  title: z.string().min(3, 'Título deve ter pelo menos 3 caracteres').max(200),
-  description: z.string().min(10, 'Descrição deve ter pelo menos 10 caracteres'),
-  problem_identified: z.string().optional(),
-  work_order: z.string().optional(),
-  scheduled_date: z.string().optional(),
-  due_date: z.string().optional(),
-});
-
-type FormData = z.infer<typeof formSchema>;
-
 interface EditMaintenanceDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -68,8 +56,22 @@ export function EditMaintenanceDialog({
   onOpenChange, 
   request 
 }: EditMaintenanceDialogProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  const formSchema = z.object({
+    type: z.enum(['preventive', 'corrective']),
+    priority: z.enum(['low', 'medium', 'high', 'critical']),
+    title: z.string().min(3, t('validation.minLength', { count: 3 })).max(200),
+    description: z.string().min(10, t('validation.minLength', { count: 10 })),
+    problem_identified: z.string().optional(),
+    work_order: z.string().optional(),
+    scheduled_date: z.string().optional(),
+    due_date: z.string().optional(),
+  });
+
+  type FormData = z.infer<typeof formSchema>;
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -125,14 +127,14 @@ export function EditMaintenanceDialog({
       queryClient.invalidateQueries({ queryKey: ['maintenance-requests'] });
       queryClient.invalidateQueries({ queryKey: ['maintenance-request', request?.id] });
       toast({
-        title: 'Manutenção Atualizada',
-        description: 'As alterações foram salvas com sucesso.',
+        title: t('maintenanceForm.maintenanceUpdated'),
+        description: t('maintenanceForm.changesSuccessfullySaved'),
       });
       onOpenChange(false);
     },
     onError: (error: Error) => {
       toast({
-        title: 'Erro ao Atualizar',
+        title: t('maintenanceForm.errorUpdating'),
         description: error.message,
         variant: 'destructive',
       });
@@ -146,10 +148,10 @@ export function EditMaintenanceDialog({
   };
 
   const priorityOptions = [
-    { value: 'low', label: 'Baixa', color: 'text-muted-foreground' },
-    { value: 'medium', label: 'Média', color: 'text-blue-600' },
-    { value: 'high', label: 'Alta', color: 'text-orange-600' },
-    { value: 'critical', label: 'Crítica', color: 'text-red-600' },
+    { value: 'low', label: t('maintenance.priorityLow'), color: 'text-muted-foreground' },
+    { value: 'medium', label: t('maintenance.priorityMedium'), color: 'text-blue-600' },
+    { value: 'high', label: t('maintenance.priorityHigh'), color: 'text-orange-600' },
+    { value: 'critical', label: t('maintenance.priorityCritical'), color: 'text-red-600' },
   ];
 
   if (!request) return null;
@@ -160,10 +162,10 @@ export function EditMaintenanceDialog({
         <DialogHeader className="pb-2">
           <DialogTitle className="flex items-center gap-2">
             <Wrench className="h-5 w-5 text-primary" />
-            Editar Manutenção
+            {t('maintenanceForm.editMaintenance')}
           </DialogTitle>
           <DialogDescription>
-            Altere os dados da solicitação de manutenção
+            {t('maintenanceForm.editMaintenanceDesc')}
           </DialogDescription>
         </DialogHeader>
 
@@ -176,7 +178,7 @@ export function EditMaintenanceDialog({
                 name="type"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tipo de Manutenção *</FormLabel>
+                    <FormLabel>{t('maintenanceForm.maintenanceType')} *</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger className="border-border focus-visible:ring-offset-0">
@@ -184,8 +186,8 @@ export function EditMaintenanceDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="corrective">Corretiva</SelectItem>
-                        <SelectItem value="preventive">Preventiva</SelectItem>
+                        <SelectItem value="corrective">{t('maintenanceForm.corrective')}</SelectItem>
+                        <SelectItem value="preventive">{t('maintenanceForm.preventive')}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -198,7 +200,7 @@ export function EditMaintenanceDialog({
                 name="priority"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Prioridade *</FormLabel>
+                    <FormLabel>{t('maintenance.priority')} *</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger className="border-border focus-visible:ring-offset-0">
@@ -226,7 +228,7 @@ export function EditMaintenanceDialog({
                 name="scheduled_date"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Data Programada</FormLabel>
+                    <FormLabel>{t('maintenanceForm.scheduledDate')}</FormLabel>
                     <FormControl>
                       <DatePickerField
                         value={field.value}
@@ -245,12 +247,12 @@ export function EditMaintenanceDialog({
               name="due_date"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Prazo de Conclusão</FormLabel>
+                  <FormLabel>{t('maintenanceForm.completionDeadline')}</FormLabel>
                   <FormControl>
                     <DatePickerField
                       value={field.value}
                       onChange={field.onChange}
-                      placeholder="Selecione o prazo limite"
+                      placeholder={t('maintenanceForm.selectDeadline')}
                     />
                   </FormControl>
                   <FormMessage />
@@ -264,11 +266,11 @@ export function EditMaintenanceDialog({
               name="work_order"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>WO (Work Order)</FormLabel>
+                  <FormLabel>{t('maintenanceForm.workOrderNumber')}</FormLabel>
                   <FormControl>
                     <Input 
                       className="border-border focus-visible:ring-offset-0" 
-                      placeholder="Número da Work Order relacionada" 
+                      placeholder={t('maintenanceForm.workOrderPlaceholder')} 
                       {...field} 
                     />
                   </FormControl>
@@ -283,11 +285,11 @@ export function EditMaintenanceDialog({
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Título *</FormLabel>
+                  <FormLabel>{t('maintenance.requestTitle')} *</FormLabel>
                   <FormControl>
                     <Input 
                       className="border-border focus-visible:ring-offset-0" 
-                      placeholder="Breve descrição do problema ou serviço" 
+                      placeholder={t('maintenanceForm.titlePlaceholder')} 
                       {...field} 
                     />
                   </FormControl>
@@ -302,10 +304,10 @@ export function EditMaintenanceDialog({
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Descrição Detalhada *</FormLabel>
+                  <FormLabel>{t('maintenanceForm.detailedDescription')} *</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="Descreva o problema ou serviço necessário em detalhes..."
+                      placeholder={t('maintenanceForm.detailedDescriptionPlaceholder')}
                       className="min-h-[80px] border-border resize-none focus-visible:ring-offset-0"
                       {...field} 
                     />
@@ -321,10 +323,10 @@ export function EditMaintenanceDialog({
               name="problem_identified"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Causa/Problema Identificado</FormLabel>
+                  <FormLabel>{t('maintenanceForm.problemCause')}</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="Se já identificou a causa do problema, descreva aqui..."
+                      placeholder={t('maintenanceForm.problemCausePlaceholder')}
                       className="min-h-[60px] border-border resize-none focus-visible:ring-offset-0"
                       {...field} 
                     />
@@ -337,11 +339,11 @@ export function EditMaintenanceDialog({
             {/* Submit */}
             <div className="flex justify-end gap-3 pt-4 border-t">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancelar
+                {t('common.cancel')}
               </Button>
               <Button type="submit" disabled={updateMutation.isPending}>
                 {updateMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Salvar Alterações
+                {t('dialogs.saveChanges')}
               </Button>
             </div>
           </form>
