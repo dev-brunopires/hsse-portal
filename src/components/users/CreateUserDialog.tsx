@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -38,58 +39,59 @@ interface CreateUserDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const createUserSchema = z.object({
-  email: z.string().email('E-mail inválido'),
-  password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
-  fullName: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
-  nationality: z.enum(['brazilian', 'foreigner']),
-  role: z.enum(['admin_master', 'admin', 'supervisor', 'technician', 'viewer']),
-});
-
-type CreateUserFormData = z.infer<typeof createUserSchema>;
-
-const roleOptions = [
-  { 
-    value: 'admin_master', 
-    label: 'Admin Master', 
-    description: 'Acesso total e irrestrito ao sistema',
-    icon: Crown,
-    hasAllShips: true,
-  },
-  { 
-    value: 'admin', 
-    label: 'Administrador', 
-    description: 'Acesso total ao sistema, pode gerenciar usuários e configurações',
-    icon: Shield,
-    hasAllShips: true,
-  },
-  { 
-    value: 'supervisor', 
-    label: 'Supervisor', 
-    description: 'Pode supervisionar inspeções e aprovar relatórios',
-    icon: UserCheck,
-    hasAllShips: false,
-  },
-  { 
-    value: 'technician', 
-    label: 'Técnico', 
-    description: 'Pode criar e editar equipamentos e inspeções',
-    icon: User,
-    hasAllShips: false,
-  },
-  { 
-    value: 'viewer', 
-    label: 'Visualizador', 
-    description: 'Apenas visualização de dados',
-    icon: Eye,
-    hasAllShips: false,
-  },
-] as const;
-
 export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) {
+  const { t } = useTranslation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const createUserSchema = z.object({
+    email: z.string().email(t('users.invalidEmail')),
+    password: z.string().min(6, t('users.passwordMinLength')),
+    fullName: z.string().min(2, t('users.nameMinLength')),
+    nationality: z.enum(['brazilian', 'foreigner']),
+    role: z.enum(['admin_master', 'admin', 'supervisor', 'technician', 'viewer']),
+  });
+
+  type CreateUserFormData = z.infer<typeof createUserSchema>;
+
+  const roleOptions = [
+    { 
+      value: 'admin_master', 
+      label: t('roles.admin_master'), 
+      description: t('roles.adminMasterDesc'),
+      icon: Crown,
+      hasAllShips: true,
+    },
+    { 
+      value: 'admin', 
+      label: t('roles.admin'), 
+      description: t('roles.adminDesc'),
+      icon: Shield,
+      hasAllShips: true,
+    },
+    { 
+      value: 'supervisor', 
+      label: t('roles.supervisor'), 
+      description: t('roles.supervisorDesc'),
+      icon: UserCheck,
+      hasAllShips: false,
+    },
+    { 
+      value: 'technician', 
+      label: t('roles.technician'), 
+      description: t('roles.technicianDesc'),
+      icon: User,
+      hasAllShips: false,
+    },
+    { 
+      value: 'viewer', 
+      label: t('roles.viewer'), 
+      description: t('roles.viewerDesc'),
+      icon: Eye,
+      hasAllShips: false,
+    },
+  ] as const;
 
   const form = useForm<CreateUserFormData>({
     resolver: zodResolver(createUserSchema),
@@ -130,14 +132,14 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
       }
 
       if (!result?.success) {
-        throw new Error(result?.error || 'Erro ao criar usuário');
+        throw new Error(result?.error || t('users.errorCreatingUserDesc'));
       }
 
       queryClient.invalidateQueries({ queryKey: ['profiles'] });
 
       toast({
-        title: 'Usuário Criado',
-        description: `${data.fullName} foi cadastrado com sucesso. Atribua os navios em "Gerenciar Navios".`,
+        title: t('users.userCreated'),
+        description: `${data.fullName} ${t('users.userCreatedDesc')}`,
       });
 
       form.reset();
@@ -145,8 +147,8 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
     } catch (error: any) {
       console.error('Error creating user:', error);
       toast({
-        title: 'Erro ao Criar Usuário',
-        description: error.message || 'Ocorreu um erro ao criar o usuário.',
+        title: t('users.errorCreatingUser'),
+        description: error.message || t('users.errorCreatingUserDesc'),
         variant: 'destructive',
       });
     } finally {
@@ -160,10 +162,10 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5 text-primary" />
-            Cadastrar Novo Usuário
+            {t('users.createUser')}
           </DialogTitle>
           <DialogDescription>
-            Preencha os dados para criar um novo usuário no sistema
+            {t('users.fillDataToCreate')}
           </DialogDescription>
         </DialogHeader>
 
@@ -174,9 +176,9 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
               name="fullName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome Completo *</FormLabel>
+                  <FormLabel>{t('users.fullNameRequired')} *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Nome do usuário" {...field} />
+                    <Input placeholder={t('users.userName')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -188,7 +190,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>E-mail *</FormLabel>
+                  <FormLabel>{t('users.emailRequired')} *</FormLabel>
                   <FormControl>
                     <Input type="email" placeholder="email@exemplo.com" {...field} />
                   </FormControl>
@@ -202,9 +204,9 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Senha *</FormLabel>
+                  <FormLabel>{t('users.passwordRequired')} *</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="Mínimo 6 caracteres" {...field} />
+                    <Input type="password" placeholder={t('users.minPasswordChars')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -218,23 +220,23 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                 <FormItem>
                   <FormLabel className="flex items-center gap-2">
                     <Globe className="h-4 w-4" />
-                    Nacionalidade *
+                    {t('users.nationality')} *
                   </FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione a nacionalidade" />
+                        <SelectValue placeholder={t('users.selectNationality')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent className="bg-popover border border-border shadow-lg z-50">
                       <SelectItem value="brazilian">
                         <div className="flex items-center gap-2">
-                          🇧🇷 Brasileiro
+                          🇧🇷 {t('users.brazilian')}
                         </div>
                       </SelectItem>
                       <SelectItem value="foreigner">
                         <div className="flex items-center gap-2">
-                          🌍 Estrangeiro (English)
+                          🌍 {t('users.foreigner')}
                         </div>
                       </SelectItem>
                     </SelectContent>
@@ -242,8 +244,8 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                   <FormMessage />
                   <p className="text-xs text-muted-foreground">
                     {field.value === 'brazilian' 
-                      ? 'Sistema será configurado em Português' 
-                      : 'System will be configured in English'}
+                      ? t('users.systemConfiguredPortuguese') 
+                      : t('users.systemConfiguredEnglish')}
                   </p>
                 </FormItem>
               )}
@@ -254,7 +256,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
               name="role"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Perfil de Acesso *</FormLabel>
+                  <FormLabel>{t('users.accessProfile')} *</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
@@ -288,7 +290,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
               <Alert>
                 <Info className="h-4 w-4" />
                 <AlertDescription>
-                  Após criar o usuário, atribua os navios através de "Gerenciar Navios" na lista de usuários.
+                  {t('users.assignShipsAfterCreate')}
                 </AlertDescription>
               </Alert>
             )}
@@ -296,23 +298,23 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
             {roleHasAllShips && (
               <div className="rounded-lg border border-border bg-muted/50 p-3">
                 <p className="text-sm text-muted-foreground">
-                  Este perfil tem acesso automático a todos os navios.
+                  {t('users.autoAccessAllShips')}
                 </p>
               </div>
             )}
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancelar
+                {t('common.cancel')}
               </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Criando...
+                    {t('users.creating')}
                   </>
                 ) : (
-                  'Criar Usuário'
+                  t('users.createUserBtn')
                 )}
               </Button>
             </DialogFooter>

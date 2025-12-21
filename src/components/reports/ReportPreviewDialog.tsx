@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -48,6 +49,7 @@ export function ReportPreviewDialog({
   isExporting = false,
   summary,
 }: ReportPreviewDialogProps) {
+  const { t } = useTranslation();
   const [exporting, setExporting] = useState<'pdf' | 'excel' | null>(null);
 
   const handleExportPDF = async () => {
@@ -151,7 +153,7 @@ export function ReportPreviewDialog({
           </div>
           {data.length > 50 && (
             <div className="text-center py-3 text-sm text-muted-foreground bg-muted/50 border-t">
-              Mostrando 50 de {data.length} registros. O arquivo exportado conterá todos os dados.
+              {t('reports.showing')} 50 {t('reports.of')} {data.length} {t('reports.records')}. {t('reports.exportedFileContainsAll')}
             </div>
           )}
         </ScrollArea>
@@ -159,7 +161,7 @@ export function ReportPreviewDialog({
         {data.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <FileText className="h-12 w-12 text-muted-foreground/50 mb-3" />
-            <p className="text-muted-foreground">Nenhum dado para exibir</p>
+            <p className="text-muted-foreground">{t('reports.noDataToShow')}</p>
           </div>
         )}
 
@@ -167,7 +169,7 @@ export function ReportPreviewDialog({
 
         <DialogFooter className="flex-row gap-2 sm:gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
+            {t('common.cancel')}
           </Button>
           <Button
             variant="outline"
@@ -180,7 +182,7 @@ export function ReportPreviewDialog({
             ) : (
               <FileSpreadsheet className="h-4 w-4" />
             )}
-            Exportar Excel
+            {t('reports.exportExcel')}
           </Button>
           <Button
             className="gap-2"
@@ -192,7 +194,7 @@ export function ReportPreviewDialog({
             ) : (
               <Download className="h-4 w-4" />
             )}
-            Exportar PDF
+            {t('reports.exportPDF')}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2 } from 'lucide-react';
+import { Loader2, UserPen } from 'lucide-react';
 import { useUpdateProfile } from '@/hooks/useUserRoles';
 import type { ProfileWithRole } from '@/hooks/useProfiles';
 
@@ -49,7 +49,10 @@ export function UserEditDialog({ open, onOpenChange, user }: UserEditDialogProps
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{t('dialogs.editUser')}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <UserPen className="h-5 w-5 text-primary" />
+            {t('dialogs.editUser')}
+          </DialogTitle>
           <DialogDescription>
             {t('dialogs.updateUserInfo')}
           </DialogDescription>

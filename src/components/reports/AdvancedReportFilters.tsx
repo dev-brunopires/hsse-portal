@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Filter, Calendar, Ship, FolderOpen, User, RotateCcw } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,7 +20,7 @@ export interface ReportFilters {
   groupBy: 'none' | 'ship' | 'category' | 'status' | 'month';
 }
 
-interface Ship {
+interface ShipType {
   id: string;
   name: string;
 }
@@ -37,7 +38,7 @@ interface Inspector {
 interface AdvancedReportFiltersProps {
   filters: ReportFilters;
   onFiltersChange: (filters: ReportFilters) => void;
-  ships: Ship[];
+  ships: ShipType[];
   categories: Category[];
   inspectors?: Inspector[];
 }
@@ -49,6 +50,7 @@ export function AdvancedReportFilters({
   categories,
   inspectors = [],
 }: AdvancedReportFiltersProps) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(true);
 
   const updateFilter = <K extends keyof ReportFilters>(key: K, value: ReportFilters[K]) => {
@@ -85,17 +87,17 @@ export function AdvancedReportFilters({
             <div className="flex items-center justify-between cursor-pointer">
               <div className="flex items-center gap-2">
                 <Filter className="h-4 w-4" />
-                <CardTitle className="text-base">Filtros Avançados</CardTitle>
+                <CardTitle className="text-base">{t('reports.advancedFilters')}</CardTitle>
                 {activeFiltersCount > 0 && (
                   <Badge variant="secondary" className="ml-2">
-                    {activeFiltersCount} ativo(s)
+                    {activeFiltersCount} {t('reports.activeFilters')}
                   </Badge>
                 )}
               </div>
               <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
             </div>
           </CollapsibleTrigger>
-          <CardDescription>Configure filtros para gerar relatórios personalizados</CardDescription>
+          <CardDescription>{t('reports.configureFilters')}</CardDescription>
         </CardHeader>
         <CollapsibleContent>
           <CardContent className="space-y-4">
@@ -104,14 +106,14 @@ export function AdvancedReportFilters({
               <div className="space-y-2">
                 <Label className="flex items-center gap-1.5">
                   <Ship className="h-3.5 w-3.5" />
-                  Embarcação
+                  {t('reports.ship')}
                 </Label>
                 <Select value={filters.shipId} onValueChange={(v) => updateFilter('shipId', v)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Todas" />
+                    <SelectValue placeholder={t('common.all')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Todas as embarcações</SelectItem>
+                    <SelectItem value="all">{t('reports.allShips')}</SelectItem>
                     {ships.map(ship => (
                       <SelectItem key={ship.id} value={ship.id}>{ship.name}</SelectItem>
                     ))}
@@ -123,14 +125,14 @@ export function AdvancedReportFilters({
               <div className="space-y-2">
                 <Label className="flex items-center gap-1.5">
                   <FolderOpen className="h-3.5 w-3.5" />
-                  Categoria
+                  {t('common.category')}
                 </Label>
                 <Select value={filters.categoryId} onValueChange={(v) => updateFilter('categoryId', v)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Todas" />
+                    <SelectValue placeholder={t('common.all')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Todas as categorias</SelectItem>
+                    <SelectItem value="all">{t('reports.allCategories')}</SelectItem>
                     {categories.map(cat => (
                       <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                     ))}
@@ -140,18 +142,18 @@ export function AdvancedReportFilters({
 
               {/* Status Filter */}
               <div className="space-y-2">
-                <Label>Status</Label>
+                <Label>{t('common.status')}</Label>
                 <Select value={filters.status} onValueChange={(v) => updateFilter('status', v)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Todos" />
+                    <SelectValue placeholder={t('common.all')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Todos os status</SelectItem>
-                    <SelectItem value="active">Ativo</SelectItem>
-                    <SelectItem value="maintenance">Em Manutenção</SelectItem>
-                    <SelectItem value="expired">Vencido</SelectItem>
-                    <SelectItem value="rejected">Reprovado</SelectItem>
-                    <SelectItem value="inactive">Inativo</SelectItem>
+                    <SelectItem value="all">{t('reports.allStatus')}</SelectItem>
+                    <SelectItem value="active">{t('reports.statusActive')}</SelectItem>
+                    <SelectItem value="maintenance">{t('reports.statusMaintenance')}</SelectItem>
+                    <SelectItem value="expired">{t('reports.statusExpired')}</SelectItem>
+                    <SelectItem value="rejected">{t('reports.statusRejected')}</SelectItem>
+                    <SelectItem value="inactive">{t('reports.statusInactive')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -161,14 +163,14 @@ export function AdvancedReportFilters({
                 <div className="space-y-2">
                   <Label className="flex items-center gap-1.5">
                     <User className="h-3.5 w-3.5" />
-                    Inspetor
+                    {t('reports.inspector')}
                   </Label>
                   <Select value={filters.inspectorId} onValueChange={(v) => updateFilter('inspectorId', v)}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Todos" />
+                      <SelectValue placeholder={t('common.all')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Todos os inspetores</SelectItem>
+                      <SelectItem value="all">{t('reports.allInspectors')}</SelectItem>
                       {inspectors.map(insp => (
                         <SelectItem key={insp.id} value={insp.id}>{insp.full_name}</SelectItem>
                       ))}
@@ -183,12 +185,12 @@ export function AdvancedReportFilters({
               <div className="space-y-2">
                 <Label className="flex items-center gap-1.5">
                   <Calendar className="h-3.5 w-3.5" />
-                  Data Início
+                  {t('reports.startDate')}
                 </Label>
                 <DatePicker
                   value={filters.startDate}
                   onChange={(v) => updateFilter('startDate', v)}
-                  placeholder="Selecione..."
+                  placeholder={t('common.selectOption')}
                 />
               </div>
 
@@ -196,35 +198,35 @@ export function AdvancedReportFilters({
               <div className="space-y-2">
                 <Label className="flex items-center gap-1.5">
                   <Calendar className="h-3.5 w-3.5" />
-                  Data Fim
+                  {t('reports.endDate')}
                 </Label>
                 <DatePicker
                   value={filters.endDate}
                   onChange={(v) => updateFilter('endDate', v)}
-                  placeholder="Selecione..."
+                  placeholder={t('common.selectOption')}
                 />
               </div>
 
               {/* Group By */}
               <div className="space-y-2">
-                <Label>Agrupar Por</Label>
+                <Label>{t('reports.groupBy')}</Label>
                 <Select value={filters.groupBy} onValueChange={(v) => updateFilter('groupBy', v as ReportFilters['groupBy'])}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Sem agrupamento" />
+                    <SelectValue placeholder={t('reports.noGrouping')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">Sem agrupamento</SelectItem>
-                    <SelectItem value="ship">Embarcação</SelectItem>
-                    <SelectItem value="category">Categoria</SelectItem>
-                    <SelectItem value="status">Status</SelectItem>
-                    <SelectItem value="month">Mês</SelectItem>
+                    <SelectItem value="none">{t('reports.noGrouping')}</SelectItem>
+                    <SelectItem value="ship">{t('reports.byShip')}</SelectItem>
+                    <SelectItem value="category">{t('reports.byCategory')}</SelectItem>
+                    <SelectItem value="status">{t('reports.byStatus')}</SelectItem>
+                    <SelectItem value="month">{t('reports.byMonth')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               {/* Clear Filters */}
               <div className="space-y-2">
-                <Label className="invisible">Ações</Label>
+                <Label className="invisible">{t('reports.actions')}</Label>
                 <Button 
                   variant="outline" 
                   className="w-full"
@@ -232,7 +234,7 @@ export function AdvancedReportFilters({
                   disabled={activeFiltersCount === 0}
                 >
                   <RotateCcw className="h-4 w-4 mr-2" />
-                  Limpar Filtros
+                  {t('reports.clearFilters')}
                 </Button>
               </div>
             </div>
