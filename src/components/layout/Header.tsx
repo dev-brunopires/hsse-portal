@@ -422,12 +422,12 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
             >
               {/* Avatar with status indicator */}
               <div className="relative">
-                <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center flex-shrink-0 shadow-sm ring-2 ring-background group-hover:ring-primary/20 transition-all duration-200">
+                <div className="h-9 w-9 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center flex-shrink-0 shadow-sm ring-2 ring-background group-hover:ring-primary/20 transition-all duration-200">
                   {profile?.avatar_url ? (
                     <img 
                       src={profile.avatar_url} 
                       alt={profile.full_name} 
-                      className="h-9 w-9 rounded-xl object-cover"
+                      className="h-9 w-9 rounded-full object-cover"
                     />
                   ) : (
                     <span className="text-sm font-semibold text-primary-foreground">
@@ -464,12 +464,12 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
             {/* User header in dropdown */}
             <div className="px-3 py-3 bg-muted/50 rounded-lg mx-1 mb-1">
               <div className="flex items-center gap-3">
-                <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-sm">
+                <div className="h-11 w-11 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-sm">
                   {profile?.avatar_url ? (
                     <img 
                       src={profile.avatar_url} 
                       alt={profile.full_name} 
-                      className="h-11 w-11 rounded-xl object-cover"
+                      className="h-11 w-11 rounded-full object-cover"
                     />
                   ) : (
                     <span className="text-base font-semibold text-primary-foreground">
