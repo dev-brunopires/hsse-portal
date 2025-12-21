@@ -835,6 +835,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          language: string
           notification_app: boolean | null
           notification_email: boolean | null
           onboarding_completed: boolean | null
@@ -853,6 +854,7 @@ export type Database = {
           email: string
           full_name: string
           id?: string
+          language?: string
           notification_app?: boolean | null
           notification_email?: boolean | null
           onboarding_completed?: boolean | null
@@ -871,6 +873,7 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          language?: string
           notification_app?: boolean | null
           notification_email?: boolean | null
           onboarding_completed?: boolean | null

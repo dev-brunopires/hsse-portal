@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useTranslation } from 'react-i18next';
 import { 
   User, 
   Mail, 
@@ -21,6 +22,7 @@ import {
   Sun,
   Moon,
   Monitor,
+  Globe,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,6 +33,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/hooks/useTheme';
 import {
   Form,
@@ -76,6 +79,8 @@ export default function Profile() {
   const { user, refreshProfile } = useAuth();
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
+  const { t } = useTranslation();
+  const { language, setLanguage } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
@@ -558,17 +563,67 @@ export default function Profile() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Palette className="h-5 w-5 text-primary" />
-                Aparência
+                {t('profile.appearance')}
               </CardTitle>
               <CardDescription>
-                Personalize a aparência do sistema
+                {t('profile.themeDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Language Selector */}
               <div className="space-y-4">
-                <Label className="text-base font-medium">Tema do Sistema</Label>
+                <Label className="text-base font-medium flex items-center gap-2">
+                  <Globe className="h-4 w-4" />
+                  {t('profile.language')}
+                </Label>
                 <p className="text-sm text-muted-foreground">
-                  Escolha o tema visual que melhor se adapta às suas preferências
+                  {t('profile.languageDescription')}
+                </p>
+                <RadioGroup
+                  value={language}
+                  onValueChange={(value: 'pt-BR' | 'en') => setLanguage(value)}
+                  className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2"
+                >
+                  <div>
+                    <RadioGroupItem
+                      value="pt-BR"
+                      id="lang-pt"
+                      className="peer sr-only"
+                    />
+                    <Label
+                      htmlFor="lang-pt"
+                      className="flex flex-col items-center justify-between rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                    >
+                      <span className="text-2xl mb-2">🇧🇷</span>
+                      <span className="font-medium">{t('common.portuguese')}</span>
+                      <span className="text-xs text-muted-foreground mt-1">Português (Brasil)</span>
+                    </Label>
+                  </div>
+                  <div>
+                    <RadioGroupItem
+                      value="en"
+                      id="lang-en"
+                      className="peer sr-only"
+                    />
+                    <Label
+                      htmlFor="lang-en"
+                      className="flex flex-col items-center justify-between rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                    >
+                      <span className="text-2xl mb-2">🇺🇸</span>
+                      <span className="font-medium">{t('common.english')}</span>
+                      <span className="text-xs text-muted-foreground mt-1">English</span>
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              <Separator />
+
+              {/* Theme Selector */}
+              <div className="space-y-4">
+                <Label className="text-base font-medium">{t('profile.theme')}</Label>
+                <p className="text-sm text-muted-foreground">
+                  {t('profile.themeDescription')}
                 </p>
                 <RadioGroup
                   value={theme}
@@ -586,8 +641,7 @@ export default function Profile() {
                       className="flex flex-col items-center justify-between rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
                     >
                       <Sun className="h-8 w-8 mb-3 text-yellow-500" />
-                      <span className="font-medium">Claro</span>
-                      <span className="text-xs text-muted-foreground mt-1">Tema claro padrão</span>
+                      <span className="font-medium">{t('profile.themeLight')}</span>
                     </Label>
                   </div>
                   <div>
@@ -601,8 +655,7 @@ export default function Profile() {
                       className="flex flex-col items-center justify-between rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
                     >
                       <Moon className="h-8 w-8 mb-3 text-blue-500" />
-                      <span className="font-medium">Escuro</span>
-                      <span className="text-xs text-muted-foreground mt-1">Tema escuro</span>
+                      <span className="font-medium">{t('profile.themeDark')}</span>
                     </Label>
                   </div>
                   <div>
@@ -616,8 +669,7 @@ export default function Profile() {
                       className="flex flex-col items-center justify-between rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
                     >
                       <Monitor className="h-8 w-8 mb-3 text-muted-foreground" />
-                      <span className="font-medium">Sistema</span>
-                      <span className="text-xs text-muted-foreground mt-1">Seguir preferência do dispositivo</span>
+                      <span className="font-medium">{t('profile.themeSystem')}</span>
                     </Label>
                   </div>
                 </RadioGroup>
