@@ -59,7 +59,17 @@
     "deleteError": "Error deleting",
     "language": "Language",
     "portuguese": "Portuguese",
-    "english": "English"
+    "english": "English",
+    "saving": "Saving...",
+    "transferring": "Transferring...",
+    "confirmTransfer": "Confirm Transfer",
+    "select": "Select",
+    "createCategory": "Create Category",
+    "saveChanges": "Save Changes",
+    "lightMode": "Light Mode",
+    "darkMode": "Dark Mode",
+    "equipment": "Equip.",
+    "profile": "Profile"
   },
   "auth": {
     "login": "Login",
@@ -361,7 +371,17 @@
     "qrCodeDetected": "QR Code detected",
     "startingInspection": "Starting inspection for",
     "exportExcel": "Export Excel",
-    "exportPDF": "Export PDF"
+    "exportPDF": "Export PDF",
+    "deleteInspection": "Delete Inspection",
+    "deleteConfirmation": "Are you sure you want to delete this inspection? This action cannot be undone.",
+    "inspectionTitle": "Inspection",
+    "notIdentified": "Not identified",
+    "notFound": "Not found",
+    "noChecklistItems": "No checklist items registered.",
+    "photos": "Photos",
+    "checklistOk": "OK",
+    "checklistFail": "Fail",
+    "checklistAttention": "Attention"
   },
   "maintenance": {
     "title": "Maintenance",
@@ -952,6 +972,24 @@
     "deleting": "Deleting...",
     "frequency": "Frequency",
     "equipmentCount": "Equipment"
+  },
+  "categoryForm": {
+    "newCategory": "New Category",
+    "editCategory": "Edit Category",
+    "createDescription": "Create a new equipment category",
+    "editDescription": "Update the category information",
+    "nameLabel": "Name *",
+    "namePlaceholder": "E.g.: Fire Extinguishers",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Describe the category...",
+    "iconLabel": "Icon *",
+    "frequencyLabel": "Inspection Frequency *",
+    "frequencyDescription": "Defines when inspections should be performed",
+    "monthly": "Monthly",
+    "quarterly": "Quarterly",
+    "semiannual": "Semi-annual",
+    "annual": "Annual",
+    "custom": "Custom"
   },
   "usersPage": {
     "title": "User Management",

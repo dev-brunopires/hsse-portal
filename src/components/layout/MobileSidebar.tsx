@@ -1,4 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   LayoutDashboard,
   Package,
@@ -56,6 +57,7 @@ interface MobileSidebarProps {
 }
 
 export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
+  const { t } = useTranslation();
   const { isAdmin } = useAuth();
   const { resolvedTheme, setTheme } = useTheme();
 
@@ -81,13 +83,13 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
 
         {/* Navigation */}
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          <MobileNavItem to="/" icon={<LayoutDashboard size={20} />} label="Dashboard" onClick={handleNavClick} />
-          <MobileNavItem to="/equipment" icon={<Package size={20} />} label="Equipamentos" onClick={handleNavClick} />
-          <MobileNavItem to="/inspections" icon={<ClipboardCheck size={20} />} label="Inspeções" onClick={handleNavClick} />
-          <MobileNavItem to="/pending" icon={<AlertCircle size={20} />} label="Pendências" onClick={handleNavClick} />
-          <MobileNavItem to="/reports" icon={<FileText size={20} />} label="Relatórios" onClick={handleNavClick} />
-          <MobileNavItem to="/alerts" icon={<Bell size={20} />} label="Alertas" onClick={handleNavClick} />
-          <MobileNavItem to="/categories" icon={<FolderOpen size={20} />} label="Categorias" onClick={handleNavClick} />
+          <MobileNavItem to="/" icon={<LayoutDashboard size={20} />} label={t('navigation.dashboard')} onClick={handleNavClick} />
+          <MobileNavItem to="/equipment" icon={<Package size={20} />} label={t('navigation.equipment')} onClick={handleNavClick} />
+          <MobileNavItem to="/inspections" icon={<ClipboardCheck size={20} />} label={t('navigation.inspections')} onClick={handleNavClick} />
+          <MobileNavItem to="/pending" icon={<AlertCircle size={20} />} label={t('navigation.pendingRecommendations')} onClick={handleNavClick} />
+          <MobileNavItem to="/reports" icon={<FileText size={20} />} label={t('navigation.reports')} onClick={handleNavClick} />
+          <MobileNavItem to="/alerts" icon={<Bell size={20} />} label={t('navigation.alerts')} onClick={handleNavClick} />
+          <MobileNavItem to="/categories" icon={<FolderOpen size={20} />} label={t('navigation.categories')} onClick={handleNavClick} />
         </nav>
 
         {/* Bottom Section */}
@@ -101,15 +103,15 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
               {resolvedTheme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
             </span>
             <span className="text-sm">
-              {resolvedTheme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
+              {resolvedTheme === 'dark' ? t('common.lightMode') : t('common.darkMode')}
             </span>
           </button>
           
-          <MobileNavItem to="/profile" icon={<User size={20} />} label="Meu Perfil" onClick={handleNavClick} />
+          <MobileNavItem to="/profile" icon={<User size={20} />} label={t('navigation.profile')} onClick={handleNavClick} />
           {isAdmin && (
             <>
-              <MobileNavItem to="/users" icon={<Users size={20} />} label="Usuários" onClick={handleNavClick} />
-              <MobileNavItem to="/settings" icon={<Settings size={20} />} label="Configurações" onClick={handleNavClick} />
+              <MobileNavItem to="/users" icon={<Users size={20} />} label={t('navigation.users')} onClick={handleNavClick} />
+              <MobileNavItem to="/settings" icon={<Settings size={20} />} label={t('navigation.settings')} onClick={handleNavClick} />
             </>
           )}
         </div>

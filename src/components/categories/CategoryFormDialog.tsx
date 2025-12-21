@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -48,17 +49,18 @@ interface CategoryFormDialogProps {
   category?: Category | null;
 }
 
-const frequencyOptions = [
-  { value: 'monthly', label: 'Mensal' },
-  { value: 'quarterly', label: 'Trimestral' },
-  { value: 'semiannual', label: 'Semestral' },
-  { value: 'annual', label: 'Anual' },
-  { value: 'custom', label: 'Personalizada' },
-];
-
 export function CategoryFormDialog({ open, onOpenChange, mode, category }: CategoryFormDialogProps) {
+  const { t } = useTranslation();
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
+
+  const frequencyOptions = [
+    { value: 'monthly', label: t('categoryForm.monthly') },
+    { value: 'quarterly', label: t('categoryForm.quarterly') },
+    { value: 'semiannual', label: t('categoryForm.semiannual') },
+    { value: 'annual', label: t('categoryForm.annual') },
+    { value: 'custom', label: t('categoryForm.custom') },
+  ];
 
   const form = useForm<CategoryFormData>({
     resolver: zodResolver(categorySchema),
@@ -118,12 +120,12 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FolderOpen className="h-5 w-5 text-primary" />
-            {mode === 'create' ? 'Nova Categoria' : 'Editar Categoria'}
+            {mode === 'create' ? t('categoryForm.newCategory') : t('categoryForm.editCategory')}
           </DialogTitle>
           <DialogDescription>
             {mode === 'create' 
-              ? 'Crie uma nova categoria de equipamentos' 
-              : 'Atualize as informações da categoria'}
+              ? t('categoryForm.createDescription')
+              : t('categoryForm.editDescription')}
           </DialogDescription>
         </DialogHeader>
 
@@ -134,9 +136,9 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome *</FormLabel>
+                  <FormLabel>{t('categoryForm.nameLabel')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ex: Extintores de Incêndio" {...field} />
+                    <Input placeholder={t('categoryForm.namePlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -148,10 +150,10 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Descrição</FormLabel>
+                  <FormLabel>{t('categoryForm.descriptionLabel')}</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="Descreva a categoria..."
+                      placeholder={t('categoryForm.descriptionPlaceholder')}
                       rows={3}
                       {...field} 
                     />
@@ -167,14 +169,14 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
                 name="icon"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Ícone *</FormLabel>
+                    <FormLabel>{t('categoryForm.iconLabel')}</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue>
                             <div className="flex items-center gap-2">
                               <IconComponent className="h-4 w-4" />
-                              <span>{selectedIcon?.label || 'Selecione'}</span>
+                              <span>{selectedIcon?.label || t('common.select')}</span>
                             </div>
                           </SelectValue>
                         </SelectTrigger>
@@ -200,11 +202,11 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
                 name="inspection_frequency"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Frequência de Inspeção *</FormLabel>
+                    <FormLabel>{t('categoryForm.frequencyLabel')}</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione" />
+                          <SelectValue placeholder={t('common.select')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -216,7 +218,7 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
                       </SelectContent>
                     </Select>
                     <FormDescription>
-                      Define quando inspeções devem ser realizadas
+                      {t('categoryForm.frequencyDescription')}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -226,18 +228,18 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
 
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancelar
+                {t('common.cancel')}
               </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Salvando...
+                    {t('common.saving')}
                   </>
                 ) : mode === 'create' ? (
-                  'Criar Categoria'
+                  t('common.createCategory')
                 ) : (
-                  'Salvar Alterações'
+                  t('common.saveChanges')
                 )}
               </Button>
             </div>

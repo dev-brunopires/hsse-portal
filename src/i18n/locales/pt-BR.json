@@ -59,7 +59,17 @@
     "deleteError": "Erro ao excluir",
     "language": "Idioma",
     "portuguese": "Português",
-    "english": "Inglês"
+    "english": "Inglês",
+    "saving": "Salvando...",
+    "transferring": "Transferindo...",
+    "confirmTransfer": "Confirmar Transferência",
+    "select": "Selecione",
+    "createCategory": "Criar Categoria",
+    "saveChanges": "Salvar Alterações",
+    "lightMode": "Modo Claro",
+    "darkMode": "Modo Escuro",
+    "equipment": "Equip.",
+    "profile": "Perfil"
   },
   "auth": {
     "login": "Entrar",
@@ -361,7 +371,17 @@
     "qrCodeDetected": "QR Code detectado",
     "startingInspection": "Iniciando inspeção para",
     "exportExcel": "Exportar Excel",
-    "exportPDF": "Exportar PDF"
+    "exportPDF": "Exportar PDF",
+    "deleteInspection": "Excluir Inspeção",
+    "deleteConfirmation": "Tem certeza que deseja excluir esta inspeção? Esta ação não pode ser desfeita.",
+    "inspectionTitle": "Inspeção",
+    "notIdentified": "Não identificado",
+    "notFound": "Não encontrado",
+    "noChecklistItems": "Nenhum item de checklist registrado.",
+    "photos": "Fotos",
+    "checklistOk": "OK",
+    "checklistFail": "Falha",
+    "checklistAttention": "Atenção"
   },
   "maintenance": {
     "title": "Manutenção",
@@ -952,6 +972,24 @@
     "deleting": "Excluindo...",
     "frequency": "Frequência",
     "equipmentCount": "Equipamentos"
+  },
+  "categoryForm": {
+    "newCategory": "Nova Categoria",
+    "editCategory": "Editar Categoria",
+    "createDescription": "Crie uma nova categoria de equipamentos",
+    "editDescription": "Atualize as informações da categoria",
+    "nameLabel": "Nome *",
+    "namePlaceholder": "Ex: Extintores de Incêndio",
+    "descriptionLabel": "Descrição",
+    "descriptionPlaceholder": "Descreva a categoria...",
+    "iconLabel": "Ícone *",
+    "frequencyLabel": "Frequência de Inspeção *",
+    "frequencyDescription": "Define quando inspeções devem ser realizadas",
+    "monthly": "Mensal",
+    "quarterly": "Trimestral",
+    "semiannual": "Semestral",
+    "annual": "Anual",
+    "custom": "Personalizada"
   },
   "usersPage": {
     "title": "Gestão de Usuários",

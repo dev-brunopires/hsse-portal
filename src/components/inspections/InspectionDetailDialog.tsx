@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -52,28 +53,13 @@ interface InspectionDetailDialogProps {
   onEdit?: (inspection: InspectionWithDetails) => void;
 }
 
-const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: typeof CheckCircle2; color: string }> = {
-  compliant: { label: 'Conforme', variant: 'default', icon: CheckCircle2, color: 'text-status-success' },
-  approved: { label: 'Aprovado', variant: 'default', icon: CheckCircle2, color: 'text-status-success' },
-  pending: { label: 'Pendente', variant: 'secondary', icon: Clock, color: 'text-status-warning' },
-  attention: { label: 'Atenção', variant: 'outline', icon: AlertTriangle, color: 'text-status-warning' },
-  rejected: { label: 'Reprovado', variant: 'destructive', icon: XCircle, color: 'text-status-danger' },
-  'non-compliant': { label: 'Não Conforme', variant: 'destructive', icon: XCircle, color: 'text-status-danger' },
-  conditional: { label: 'Condicional', variant: 'outline', icon: AlertTriangle, color: 'text-status-warning' },
-};
-
-const checklistStatusLabels: Record<string, { label: string; color: string }> = {
-  ok: { label: 'OK', color: 'text-status-success bg-status-success/10' },
-  fail: { label: 'Falha', color: 'text-status-danger bg-status-danger/10' },
-  attention: { label: 'Atenção', color: 'text-status-warning bg-status-warning/10' },
-};
-
 export function InspectionDetailDialog({ 
   open, 
   onOpenChange, 
   inspection,
   onEdit,
 }: InspectionDetailDialogProps) {
+  const { t } = useTranslation();
   const [checklistItems, setChecklistItems] = useState<InspectionChecklistItem[]>([]);
   const [photos, setPhotos] = useState<InspectionPhoto[]>([]);
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
@@ -86,6 +72,22 @@ export function InspectionDetailDialog({
   const isAdmin = role === 'admin' || (role as string) === 'admin_master';
   const canEdit = isAdmin || role === 'technician' || (role as string) === 'supervisor';
 
+  const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: typeof CheckCircle2; color: string }> = {
+    compliant: { label: t('inspections.statusCompliant'), variant: 'default', icon: CheckCircle2, color: 'text-status-success' },
+    approved: { label: t('inspections.statusApproved'), variant: 'default', icon: CheckCircle2, color: 'text-status-success' },
+    pending: { label: t('inspections.statusPending'), variant: 'secondary', icon: Clock, color: 'text-status-warning' },
+    attention: { label: t('inspections.statusAttention'), variant: 'outline', icon: AlertTriangle, color: 'text-status-warning' },
+    rejected: { label: t('inspections.statusRejected'), variant: 'destructive', icon: XCircle, color: 'text-status-danger' },
+    'non-compliant': { label: t('inspections.statusNonCompliant'), variant: 'destructive', icon: XCircle, color: 'text-status-danger' },
+    conditional: { label: t('inspections.statusConditional'), variant: 'outline', icon: AlertTriangle, color: 'text-status-warning' },
+  };
+
+  const checklistStatusLabels: Record<string, { label: string; color: string }> = {
+    ok: { label: t('inspections.checklistOk'), color: 'text-status-success bg-status-success/10' },
+    fail: { label: t('inspections.checklistFail'), color: 'text-status-danger bg-status-danger/10' },
+    attention: { label: t('inspections.checklistAttention'), color: 'text-status-warning bg-status-warning/10' },
+  };
+
   useEffect(() => {
     if (open && inspection?.id) {
       fetchDetails();
@@ -97,7 +99,6 @@ export function InspectionDetailDialog({
     
     setLoading(true);
     try {
-      // Fetch checklist items
       const { data: items } = await supabase
         .from('inspection_checklist_items')
         .select('*')
@@ -106,7 +107,6 @@ export function InspectionDetailDialog({
       
       setChecklistItems(items || []);
 
-      // Fetch photos
       const { data: photoData } = await supabase
         .from('inspection_photos')
         .select('*')
@@ -114,7 +114,6 @@ export function InspectionDetailDialog({
       
       setPhotos(photoData || []);
 
-      // Get signed URLs for photos
       if (photoData && photoData.length > 0) {
         const urls: Record<string, string> = {};
         for (const photo of photoData) {
@@ -167,7 +166,7 @@ export function InspectionDetailDialog({
                   <ClipboardCheck className={cn('h-5 w-5', config.color)} />
                 </div>
                 <div className="truncate">
-                  <span>Inspeção - {inspection.equipment?.internal_code}</span>
+                  <span>{t('inspections.inspectionTitle')} - {inspection.equipment?.internal_code}</span>
                 </div>
               </DialogTitle>
               <div className="flex items-center gap-2 mt-2 ml-12">
@@ -184,7 +183,7 @@ export function InspectionDetailDialog({
               {canEdit && onEdit && (
                 <Button variant="outline" size="sm" className="gap-2" onClick={() => onEdit(inspection)}>
                   <Edit className="h-4 w-4" />
-                  Editar
+                  {t('common.edit')}
                 </Button>
               )}
               {isAdmin && (
@@ -192,18 +191,18 @@ export function InspectionDetailDialog({
                   <AlertDialogTrigger asChild>
                     <Button variant="outline" size="sm" className="gap-2 text-destructive hover:text-destructive">
                       <Trash2 className="h-4 w-4" />
-                      Excluir
+                      {t('common.delete')}
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Excluir Inspeção</AlertDialogTitle>
+                      <AlertDialogTitle>{t('inspections.deleteInspection')}</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Tem certeza que deseja excluir esta inspeção? Esta ação não pode ser desfeita.
+                        {t('inspections.deleteConfirmation')}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                       <AlertDialogAction
                         onClick={handleDelete}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -212,7 +211,7 @@ export function InspectionDetailDialog({
                         {deleteInspection.isPending ? (
                           <Loader2 className="h-4 w-4 animate-spin mr-2" />
                         ) : null}
-                        Excluir
+                        {t('common.delete')}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
@@ -228,15 +227,14 @@ export function InspectionDetailDialog({
 
         <ScrollArea className="flex-1 pr-4 min-h-0">
           <div className="space-y-6 py-4 pr-1">
-            {/* Inspector & Equipment Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
                 <h3 className="font-semibold flex items-center gap-2">
                   <User className="h-4 w-4 text-primary" />
-                  Inspetor
+                  {t('inspections.inspector')}
                 </h3>
                 <div className="pl-6 space-y-1">
-                  <p className="font-medium">{inspection.profiles?.full_name || 'Não identificado'}</p>
+                  <p className="font-medium">{inspection.profiles?.full_name || t('inspections.notIdentified')}</p>
                   <p className="text-sm text-muted-foreground">{inspection.profiles?.email || '—'}</p>
                 </div>
               </div>
@@ -244,10 +242,10 @@ export function InspectionDetailDialog({
               <div className="space-y-3">
                 <h3 className="font-semibold flex items-center gap-2">
                   <Package className="h-4 w-4 text-primary" />
-                  Equipamento
+                  {t('navigation.equipment')}
                 </h3>
                 <div className="pl-6 space-y-1">
-                  <p className="font-medium">{inspection.equipment?.name || 'Não encontrado'}</p>
+                  <p className="font-medium">{inspection.equipment?.name || t('inspections.notFound')}</p>
                   <p className="text-sm text-muted-foreground font-mono">{inspection.equipment?.internal_code || '—'}</p>
                 </div>
               </div>
@@ -255,32 +253,26 @@ export function InspectionDetailDialog({
 
             <Separator />
 
-            {/* Dates */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
                 <h3 className="font-semibold flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-primary" />
-                  Data da Inspeção
+                  {t('inspections.inspectionDate')}
                 </h3>
-                <p className="pl-6">
-                  {formatDate(inspection.inspection_date)}
-                </p>
+                <p className="pl-6">{formatDate(inspection.inspection_date)}</p>
               </div>
               
               {inspection.next_inspection_date && (
                 <div className="space-y-3">
                   <h3 className="font-semibold flex items-center gap-2">
                     <Clock className="h-4 w-4 text-primary" />
-                    Próxima Inspeção
+                    {t('inspections.nextInspectionDate')}
                   </h3>
-                  <p className="pl-6">
-                    {formatDate(inspection.next_inspection_date)}
-                  </p>
+                  <p className="pl-6">{formatDate(inspection.next_inspection_date)}</p>
                 </div>
               )}
             </div>
 
-            {/* Actions Taken, Observations & Recommendations */}
             {(inspection.actions_taken || inspection.observations || inspection.recommendations) && (
               <>
                 <Separator />
@@ -289,7 +281,7 @@ export function InspectionDetailDialog({
                     <div className="space-y-2">
                       <h3 className="font-semibold flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-status-success" />
-                        Ações Tomadas
+                        {t('inspections.actionsTaken')}
                       </h3>
                       <div className="pl-6 p-3 rounded-md bg-status-success/5 border border-status-success/20">
                         <p className="text-sm whitespace-pre-wrap">{inspection.actions_taken}</p>
@@ -301,7 +293,7 @@ export function InspectionDetailDialog({
                     <div className="space-y-2">
                       <h3 className="font-semibold flex items-center gap-2">
                         <FileText className="h-4 w-4 text-primary" />
-                        Observações
+                        {t('common.observations')}
                       </h3>
                       <p className="pl-6 text-muted-foreground">{inspection.observations}</p>
                     </div>
@@ -311,7 +303,7 @@ export function InspectionDetailDialog({
                     <div className="space-y-2">
                       <h3 className="font-semibold flex items-center gap-2">
                         <AlertTriangle className="h-4 w-4 text-warning" />
-                        Recomendações
+                        {t('inspections.recommendations')}
                       </h3>
                       <div className="pl-6 p-3 rounded-md bg-warning/5 border border-warning/20">
                         <p className="text-sm whitespace-pre-wrap">{inspection.recommendations}</p>
@@ -322,12 +314,11 @@ export function InspectionDetailDialog({
               </>
             )}
 
-            {/* Checklist */}
             <Separator />
             <div className="space-y-4">
               <h3 className="font-semibold flex items-center gap-2">
                 <ClipboardCheck className="h-4 w-4 text-primary" />
-                Itens do Checklist ({checklistItems.length})
+                {t('inspections.checklistItems')} ({checklistItems.length})
               </h3>
               
               {loading ? (
@@ -337,28 +328,18 @@ export function InspectionDetailDialog({
                   ))}
                 </div>
               ) : checklistItems.length > 0 ? (
-                <ScrollArea
-                  className={cn(
-                    "pl-6 pr-2",
-                    checklistItems.length > 4 && "h-72",
-                  )}
-                >
+                <ScrollArea className={cn("pl-6 pr-2", checklistItems.length > 4 && "h-72")}>
                   <div className="space-y-2 pr-3">
                     {checklistItems.map((item) => {
-                      const statusConfig = checklistStatusLabels[item.status] || checklistStatusLabels.attention;
+                      const statusConf = checklistStatusLabels[item.status] || checklistStatusLabels.attention;
                       return (
-                        <div
-                          key={item.id}
-                          className="flex items-start gap-3 p-3 rounded-lg border border-border bg-muted/30"
-                        >
-                          <span className={cn('text-xs font-medium px-2 py-1 rounded', statusConfig.color)}>
-                            {statusConfig.label}
+                        <div key={item.id} className="flex items-start gap-3 p-3 rounded-lg border border-border bg-muted/30">
+                          <span className={cn('text-xs font-medium px-2 py-1 rounded', statusConf.color)}>
+                            {statusConf.label}
                           </span>
                           <div className="flex-1">
                             <p className="font-medium">{item.description}</p>
-                            {item.notes && (
-                              <p className="text-sm text-muted-foreground mt-1">{item.notes}</p>
-                            )}
+                            {item.notes && <p className="text-sm text-muted-foreground mt-1">{item.notes}</p>}
                           </div>
                         </div>
                       );
@@ -366,29 +347,24 @@ export function InspectionDetailDialog({
                   </div>
                 </ScrollArea>
               ) : (
-                <p className="pl-6 text-muted-foreground">Nenhum item de checklist registrado.</p>
+                <p className="pl-6 text-muted-foreground">{t('inspections.noChecklistItems')}</p>
               )}
             </div>
 
-            {/* Photos */}
             {photos.length > 0 && (
               <>
                 <Separator />
                 <div className="space-y-4">
                   <h3 className="font-semibold flex items-center gap-2">
                     <ImageIcon className="h-4 w-4 text-primary" />
-                    Fotos ({photos.length})
+                    {t('inspections.photos')} ({photos.length})
                   </h3>
                   
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pl-6">
                     {photos.map((photo) => (
                       <div key={photo.id} className="relative group">
                         {photoUrls[photo.id] ? (
-                          <img
-                            src={photoUrls[photo.id]}
-                            alt={photo.file_name}
-                            className="w-full h-32 object-cover rounded-lg border border-border"
-                          />
+                          <img src={photoUrls[photo.id]} alt={photo.file_name} className="w-full h-32 object-cover rounded-lg border border-border" />
                         ) : (
                           <div className="w-full h-32 bg-muted rounded-lg flex items-center justify-center">
                             <ImageIcon className="h-8 w-8 text-muted-foreground" />
