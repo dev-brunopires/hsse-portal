@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle, Clock, XCircle, AlertCircle, ArrowRight, Bell } from 'lucide-react';
 import { Alert } from '@/types/equipment';
 import { cn } from '@/lib/utils';
@@ -10,40 +11,41 @@ interface ModernAlertsListProps {
   alerts: Alert[];
 }
 
-const alertTypeConfig = {
-  expired: { 
-    icon: XCircle, 
-    color: 'text-red-600 dark:text-red-400', 
-    bg: 'bg-red-500/10',
-    label: 'Vencido'
-  },
-  expiring: { 
-    icon: Clock, 
-    color: 'text-amber-600 dark:text-amber-400', 
-    bg: 'bg-amber-500/10',
-    label: 'Expirando'
-  },
-  inspection_due: { 
-    icon: AlertCircle, 
-    color: 'text-blue-600 dark:text-blue-400', 
-    bg: 'bg-blue-500/10',
-    label: 'Inspeção'
-  },
-  non_compliant: { 
-    icon: AlertTriangle, 
-    color: 'text-red-600 dark:text-red-400', 
-    bg: 'bg-red-500/10',
-    label: 'Reprovado'
-  },
-};
-
-const severityBorder = {
-  high: 'border-l-red-500',
-  medium: 'border-l-amber-500',
-  low: 'border-l-blue-500',
-};
-
 export function ModernAlertsList({ alerts }: ModernAlertsListProps) {
+  const { t } = useTranslation();
+
+  const alertTypeConfig = {
+    expired: { 
+      icon: XCircle, 
+      color: 'text-red-600 dark:text-red-400', 
+      bg: 'bg-red-500/10',
+      label: t('dashboard.alertExpired')
+    },
+    expiring: { 
+      icon: Clock, 
+      color: 'text-amber-600 dark:text-amber-400', 
+      bg: 'bg-amber-500/10',
+      label: t('dashboard.alertExpiring')
+    },
+    inspection_due: { 
+      icon: AlertCircle, 
+      color: 'text-blue-600 dark:text-blue-400', 
+      bg: 'bg-blue-500/10',
+      label: t('dashboard.alertInspection')
+    },
+    non_compliant: { 
+      icon: AlertTriangle, 
+      color: 'text-red-600 dark:text-red-400', 
+      bg: 'bg-red-500/10',
+      label: t('dashboard.alertRejected')
+    },
+  };
+
+  const severityBorder = {
+    high: 'border-l-red-500',
+    medium: 'border-l-amber-500',
+    low: 'border-l-blue-500',
+  };
 
   return (
     <div className="bg-card rounded-2xl border shadow-sm overflow-hidden h-full flex flex-col">
@@ -54,8 +56,8 @@ export function ModernAlertsList({ alerts }: ModernAlertsListProps) {
               <Bell className="h-5 w-5 text-red-600 dark:text-red-400" />
             </div>
             <div>
-              <h3 className="font-semibold text-foreground">Alertas</h3>
-              <p className="text-sm text-muted-foreground">{alerts.length} itens requerem atenção</p>
+              <h3 className="font-semibold text-foreground">{t('dashboard.alerts')}</h3>
+              <p className="text-sm text-muted-foreground">{alerts.length} {t('dashboard.itemsRequireAttention')}</p>
             </div>
           </div>
         </div>
@@ -68,7 +70,7 @@ export function ModernAlertsList({ alerts }: ModernAlertsListProps) {
               <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
                 <Bell className="h-6 w-6 text-muted-foreground" />
               </div>
-              <p className="text-muted-foreground">Nenhum alerta no momento</p>
+              <p className="text-muted-foreground">{t('dashboard.noAlertsNow')}</p>
             </div>
           ) : (
             alerts.map((alert) => {
@@ -76,7 +78,7 @@ export function ModernAlertsList({ alerts }: ModernAlertsListProps) {
                 icon: AlertCircle,
                 color: 'text-muted-foreground',
                 bg: 'bg-muted',
-                label: 'Alerta'
+                label: t('dashboard.alert')
               };
               const Icon = config.icon;
               
@@ -122,7 +124,7 @@ export function ModernAlertsList({ alerts }: ModernAlertsListProps) {
       <div className="p-3 border-t bg-muted/20">
         <Button variant="ghost" size="sm" className="w-full gap-2" asChild>
           <Link to="/alerts">
-            Ver todos os alertas
+            {t('dashboard.viewAllAlerts')}
             <ArrowRight className="h-4 w-4" />
           </Link>
         </Button>

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { StatusStats } from '@/types/equipment';
 import { PieChart as PieChartIcon } from 'lucide-react';
@@ -8,15 +9,17 @@ interface ModernStatusChartProps {
   totalEquipment: number;
 }
 
-const statusConfig: Record<string, { label: string; color: string; bgColor: string }> = {
-  active: { label: 'Ativo', color: '#22c55e', bgColor: 'bg-emerald-500' },
-  maintenance: { label: 'Em Manutenção', color: '#f59e0b', bgColor: 'bg-amber-500' },
-  expired: { label: 'Vencido', color: '#ef4444', bgColor: 'bg-red-500' },
-  rejected: { label: 'Reprovado', color: '#dc2626', bgColor: 'bg-red-600' },
-  inactive: { label: 'Inativo', color: '#64748b', bgColor: 'bg-slate-500' },
-};
-
 export function ModernStatusChart({ data, totalEquipment }: ModernStatusChartProps) {
+  const { t } = useTranslation();
+
+  const statusConfig: Record<string, { label: string; color: string; bgColor: string }> = {
+    active: { label: t('dashboard.statusActive'), color: '#22c55e', bgColor: 'bg-emerald-500' },
+    maintenance: { label: t('dashboard.statusMaintenance'), color: '#f59e0b', bgColor: 'bg-amber-500' },
+    expired: { label: t('dashboard.statusExpired'), color: '#ef4444', bgColor: 'bg-red-500' },
+    rejected: { label: t('dashboard.statusRejected'), color: '#dc2626', bgColor: 'bg-red-600' },
+    inactive: { label: t('dashboard.statusInactive'), color: '#64748b', bgColor: 'bg-slate-500' },
+  };
+
   const chartData = data
     .filter(d => d.count > 0)
     .map(d => ({
@@ -34,11 +37,11 @@ export function ModernStatusChart({ data, totalEquipment }: ModernStatusChartPro
         <div className="bg-card border rounded-xl shadow-lg p-3 min-w-[140px]">
           <p className="font-semibold text-foreground mb-1">{data.name}</p>
           <div className="flex items-center justify-between gap-4 text-sm">
-            <span className="text-muted-foreground">Quantidade:</span>
+            <span className="text-muted-foreground">{t('dashboard.quantity')}:</span>
             <span className="font-medium">{data.value}</span>
           </div>
           <div className="flex items-center justify-between gap-4 text-sm">
-            <span className="text-muted-foreground">Percentual:</span>
+            <span className="text-muted-foreground">{t('dashboard.percentage')}:</span>
             <span className="font-medium">{data.percentage}%</span>
           </div>
         </div>
@@ -55,8 +58,8 @@ export function ModernStatusChart({ data, totalEquipment }: ModernStatusChartPro
             <PieChartIcon className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h3 className="font-semibold text-foreground">Status dos Equipamentos</h3>
-            <p className="text-sm text-muted-foreground">Visão geral por status</p>
+            <h3 className="font-semibold text-foreground">{t('dashboard.equipmentStatus')}</h3>
+            <p className="text-sm text-muted-foreground">{t('dashboard.overviewByStatus')}</p>
           </div>
         </div>
       </div>
@@ -88,7 +91,7 @@ export function ModernStatusChart({ data, totalEquipment }: ModernStatusChartPro
             {/* Center text */}
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
               <span className="text-lg font-bold text-foreground">{totalEquipment}</span>
-              <span className="text-[10px] text-muted-foreground">Total</span>
+              <span className="text-[10px] text-muted-foreground">{t('dashboard.total')}</span>
             </div>
           </div>
           
