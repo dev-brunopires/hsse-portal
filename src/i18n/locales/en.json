@@ -1077,5 +1077,33 @@
     "statusCompliant": "Compliant",
     "statusAttention": "Attention",
     "statusNonCompliant": "Non-Compliant"
+  },
+  "inspectionCalendar": {
+    "today": "Today",
+    "inspectionsOnDay": "inspection(s) on this day",
+    "scheduled": "Scheduled",
+    "weekDays": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    "statusCompliant": "Compliant",
+    "statusAttention": "Attention",
+    "statusNonCompliant": "Non-Compliant",
+    "statusPending": "Pending"
+  },
+  "inspectionTimeline": {
+    "noInspections": "No inspections registered",
+    "signed": "Signed",
+    "inspector": "Inspector",
+    "observations": "Observations",
+    "recommendations": "Recommendations",
+    "actionsTaken": "Actions Taken",
+    "nextInspection": "Next inspection",
+    "viewDetails": "View Details",
+    "edit": "Edit",
+    "delete": "Delete",
+    "showLess": "Show less",
+    "viewAllInspections": "View all {{count}} inspections",
+    "statusCompliant": "Compliant",
+    "statusAttention": "Attention",
+    "statusNonCompliant": "Non-Compliant",
+    "statusPending": "Pending"
   }
 }

@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   format, 
   startOfMonth, 
@@ -11,7 +12,7 @@ import {
   startOfWeek,
   endOfWeek,
 } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, CheckCircle, AlertTriangle, XCircle, Clock, CalendarDays, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,38 +32,42 @@ interface InspectionCalendarProps {
   onInspectionClick: (inspection: InspectionWithDetails) => void;
 }
 
-const statusConfig: Record<string, { label: string; color: string; bgColor: string; borderColor: string; icon: typeof CheckCircle }> = {
+const getStatusConfig = (t: (key: string) => string) => ({
   compliant: { 
-    label: 'Conforme', 
+    label: t('inspectionCalendar.statusCompliant'), 
     color: 'text-emerald-600 dark:text-emerald-400', 
     bgColor: 'bg-emerald-500', 
     borderColor: 'border-emerald-500/30',
     icon: CheckCircle 
   },
   attention: { 
-    label: 'Atenção', 
+    label: t('inspectionCalendar.statusAttention'), 
     color: 'text-amber-600 dark:text-amber-400', 
     bgColor: 'bg-amber-500', 
     borderColor: 'border-amber-500/30',
     icon: AlertTriangle 
   },
   'non-compliant': { 
-    label: 'Não Conforme', 
+    label: t('inspectionCalendar.statusNonCompliant'), 
     color: 'text-red-600 dark:text-red-400', 
     bgColor: 'bg-red-500', 
     borderColor: 'border-red-500/30',
     icon: XCircle 
   },
   pending: { 
-    label: 'Pendente', 
+    label: t('inspectionCalendar.statusPending'), 
     color: 'text-slate-600 dark:text-slate-400', 
     bgColor: 'bg-slate-400', 
     borderColor: 'border-slate-400/30',
     icon: Clock 
   },
-};
+});
 
 export function InspectionCalendar({ inspections, onInspectionClick }: InspectionCalendarProps) {
+  const { t, i18n } = useTranslation();
+  const statusConfig = getStatusConfig(t);
+  const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
+  
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [dayDialogOpen, setDayDialogOpen] = useState(false);
@@ -74,6 +79,8 @@ export function InspectionCalendar({ inspections, onInspectionClick }: Inspectio
   const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
 
   const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+  
+  const weekDays = t('inspectionCalendar.weekDays', { returnObjects: true }) as string[];
 
   // Group inspections by date - using parseLocalDate to avoid timezone issues
   const inspectionsByDate = useMemo(() => {
@@ -140,8 +147,6 @@ export function InspectionCalendar({ inspections, onInspectionClick }: Inspectio
 
   const selectedDateInspections = selectedDate ? getInspectionsForDay(selectedDate) : [];
 
-  const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-
   return (
     <>
       <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
@@ -154,7 +159,7 @@ export function InspectionCalendar({ inspections, onInspectionClick }: Inspectio
               </div>
               <div>
                 <h2 className="text-xl sm:text-2xl font-semibold capitalize">
-                  {format(currentMonth, 'MMMM', { locale: ptBR })}
+                  {format(currentMonth, 'MMMM', { locale: dateLocale })}
                 </h2>
                 <p className="text-sm text-muted-foreground">
                   {format(currentMonth, 'yyyy')}
@@ -176,7 +181,7 @@ export function InspectionCalendar({ inspections, onInspectionClick }: Inspectio
                 className="h-9 px-3 rounded-lg font-medium hidden sm:flex"
                 onClick={() => setCurrentMonth(new Date())}
               >
-                Hoje
+                {t('inspectionCalendar.today')}
               </Button>
               <Button
                 variant="ghost"
@@ -323,11 +328,11 @@ export function InspectionCalendar({ inspections, onInspectionClick }: Inspectio
             <DialogTitle className="flex items-center gap-2">
               <CalendarDays className="h-5 w-5 text-primary" />
               <span>
-                {selectedDate && format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                {selectedDate && format(selectedDate, "dd MMMM yyyy", { locale: dateLocale })}
               </span>
             </DialogTitle>
             <p className="text-sm text-muted-foreground">
-              {selectedDateInspections.length} inspeção(ões) neste dia
+              {selectedDateInspections.length} {t('inspectionCalendar.inspectionsOnDay')}
             </p>
           </DialogHeader>
           <ScrollArea className="max-h-[60vh] pr-4">
@@ -365,7 +370,7 @@ export function InspectionCalendar({ inspections, onInspectionClick }: Inspectio
                           </p>
                           {isUpcoming && (
                             <Badge variant="outline" className="text-xs bg-primary/5 border-primary/20 text-primary">
-                              Agendada
+                              {t('inspectionCalendar.scheduled')}
                             </Badge>
                           )}
                         </div>

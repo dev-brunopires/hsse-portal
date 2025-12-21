@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   CheckCircle, 
   AlertTriangle, 
@@ -19,45 +20,39 @@ import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS } from 'date-fns/locale';
 import type { InspectionWithDetails } from '@/hooks/useInspections';
 
-const statusConfig: Record<string, { 
-  label: string; 
-  color: string; 
-  bgColor: string;
-  borderColor: string;
-  icon: typeof CheckCircle 
-}> = {
+const getStatusConfig = (t: (key: string) => string) => ({
   compliant: { 
-    label: 'Conforme', 
+    label: t('inspectionTimeline.statusCompliant'), 
     color: 'text-status-success', 
     bgColor: 'bg-status-success/10',
     borderColor: 'border-status-success',
     icon: CheckCircle 
   },
   attention: { 
-    label: 'Atenção', 
+    label: t('inspectionTimeline.statusAttention'), 
     color: 'text-status-warning', 
     bgColor: 'bg-status-warning/10',
     borderColor: 'border-status-warning',
     icon: AlertTriangle 
   },
   'non-compliant': { 
-    label: 'Não Conforme', 
+    label: t('inspectionTimeline.statusNonCompliant'), 
     color: 'text-status-danger', 
     bgColor: 'bg-status-danger/10',
     borderColor: 'border-status-danger',
     icon: XCircle 
   },
   pending: { 
-    label: 'Pendente', 
+    label: t('inspectionTimeline.statusPending'), 
     color: 'text-muted-foreground', 
     bgColor: 'bg-muted/50',
     borderColor: 'border-muted',
     icon: Clock 
   },
-};
+});
 
 interface InspectionTimelineProps {
   inspections: InspectionWithDetails[];
@@ -74,6 +69,10 @@ export function InspectionTimeline({
   onDelete,
   maxItems 
 }: InspectionTimelineProps) {
+  const { t, i18n } = useTranslation();
+  const statusConfig = getStatusConfig(t);
+  const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
+  
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [showAll, setShowAll] = useState(false);
 
@@ -95,7 +94,7 @@ export function InspectionTimeline({
     return (
       <div className="text-center py-8 text-muted-foreground">
         <Clock className="h-12 w-12 mx-auto mb-3 opacity-50" />
-        <p>Nenhuma inspeção registrada</p>
+        <p>{t('inspectionTimeline.noInspections')}</p>
       </div>
     );
   }
@@ -143,7 +142,7 @@ export function InspectionTimeline({
                             {inspection.signature_data && (
                               <Badge variant="secondary" className="text-xs gap-1">
                                 <PenTool className="h-3 w-3" />
-                                Assinado
+                                {t('inspectionTimeline.signed')}
                               </Badge>
                             )}
                           </div>
@@ -156,13 +155,13 @@ export function InspectionTimeline({
                             <div className="flex items-center gap-1">
                               <User className="h-3.5 w-3.5" />
                               <span className="truncate max-w-[150px]">
-                                {inspection.profiles?.full_name || 'Inspetor'}
+                                {inspection.profiles?.full_name || t('inspectionTimeline.inspector')}
                               </span>
                             </div>
                             <div className="flex items-center gap-1">
                               <Clock className="h-3.5 w-3.5" />
                               <span>
-                                {format(inspectionDate, "dd/MM/yyyy", { locale: ptBR })}
+                                {format(inspectionDate, "dd/MM/yyyy", { locale: dateLocale })}
                               </span>
                             </div>
                           </div>
@@ -172,7 +171,7 @@ export function InspectionTimeline({
                           <span className="text-xs text-muted-foreground hidden sm:block">
                             {formatDistanceToNow(inspectionDate, { 
                               addSuffix: true, 
-                              locale: ptBR 
+                              locale: dateLocale 
                             })}
                           </span>
                           {isExpanded ? (
@@ -192,7 +191,7 @@ export function InspectionTimeline({
                           <div>
                             <h5 className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1">
                               <FileText className="h-3 w-3" />
-                              Observações
+                              {t('inspectionTimeline.observations')}
                             </h5>
                             <p className="text-sm text-foreground bg-muted/50 rounded p-2">
                               {inspection.observations}
@@ -203,7 +202,7 @@ export function InspectionTimeline({
                         {inspection.recommendations && (
                           <div>
                             <h5 className="text-xs font-medium text-muted-foreground mb-1">
-                              Recomendações
+                              {t('inspectionTimeline.recommendations')}
                             </h5>
                             <p className="text-sm text-foreground bg-muted/50 rounded p-2">
                               {inspection.recommendations}
@@ -214,7 +213,7 @@ export function InspectionTimeline({
                         {inspection.actions_taken && (
                           <div>
                             <h5 className="text-xs font-medium text-muted-foreground mb-1">
-                              Ações Tomadas
+                              {t('inspectionTimeline.actionsTaken')}
                             </h5>
                             <p className="text-sm text-foreground bg-muted/50 rounded p-2">
                               {inspection.actions_taken}
@@ -224,9 +223,9 @@ export function InspectionTimeline({
 
                         {inspection.next_inspection_date && (
                           <div className="flex items-center gap-2 text-sm">
-                            <span className="text-muted-foreground">Próxima inspeção:</span>
+                            <span className="text-muted-foreground">{t('inspectionTimeline.nextInspection')}:</span>
                             <Badge variant="outline">
-                              {format(new Date(inspection.next_inspection_date), "dd/MM/yyyy", { locale: ptBR })}
+                              {format(new Date(inspection.next_inspection_date), "dd/MM/yyyy", { locale: dateLocale })}
                             </Badge>
                           </div>
                         )}
@@ -242,7 +241,7 @@ export function InspectionTimeline({
                                 onViewDetails(inspection);
                               }}
                             >
-                              Ver Detalhes
+                              {t('inspectionTimeline.viewDetails')}
                             </Button>
                           )}
                           {onEdit && (
@@ -256,7 +255,7 @@ export function InspectionTimeline({
                               }}
                             >
                               <Edit className="h-3 w-3" />
-                              Editar
+                              {t('inspectionTimeline.edit')}
                             </Button>
                           )}
                           {onDelete && (
@@ -270,7 +269,7 @@ export function InspectionTimeline({
                               }}
                             >
                               <Trash2 className="h-3 w-3" />
-                              Excluir
+                              {t('inspectionTimeline.delete')}
                             </Button>
                           )}
                         </div>
@@ -291,9 +290,9 @@ export function InspectionTimeline({
           onClick={() => setShowAll(!showAll)}
         >
           {showAll ? (
-            <>Mostrar menos</>
+            <>{t('inspectionTimeline.showLess')}</>
           ) : (
-            <>Ver todas as {inspections.length} inspeções</>
+            <>{t('inspectionTimeline.viewAllInspections', { count: inspections.length })}</>
           )}
         </Button>
       )}
