@@ -422,7 +422,7 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
             >
               {/* Avatar with status indicator */}
               <div className="relative">
-                <div className="h-9 w-9 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center flex-shrink-0 shadow-sm ring-2 ring-background group-hover:ring-primary/20 transition-all duration-200">
+                <div className="h-9 w-9 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center flex-shrink-0 shadow-sm">
                   {profile?.avatar_url ? (
                     <img 
                       src={profile.avatar_url} 
@@ -436,7 +436,7 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
                   )}
                 </div>
                 {/* Online status indicator */}
-                <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-background" />
+                <div className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 border-[1.5px] border-card" />
               </div>
               
               {/* User info - hidden on mobile */}
