@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,6 +19,7 @@ interface DeleteShipDialogProps {
 }
 
 export function DeleteShipDialog({ open, onOpenChange, ship }: DeleteShipDialogProps) {
+  const { t } = useTranslation();
   const deleteShip = useDeleteShip();
 
   const handleDelete = async () => {
@@ -37,16 +39,17 @@ export function DeleteShipDialog({ open, onOpenChange, ship }: DeleteShipDialogP
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Remover Navio</AlertDialogTitle>
+          <AlertDialogTitle>{t('dialogs.removeShip')}</AlertDialogTitle>
           <AlertDialogDescription>
-            Tem certeza que deseja remover o navio <strong>{ship.name}</strong>?
+            <span dangerouslySetInnerHTML={{ 
+              __html: t('dialogs.removeShipConfirm', { name: ship.name }) 
+            }} />
             <br /><br />
-            Esta ação não pode ser desfeita. Equipamentos e inspeções associados a este navio 
-            perderão a referência.
+            {t('dialogs.removeShipWarning')}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -55,10 +58,10 @@ export function DeleteShipDialog({ open, onOpenChange, ship }: DeleteShipDialogP
             {deleteShip.isPending ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                Removendo...
+                {t('dialogs.removing')}
               </>
             ) : (
-              'Remover Navio'
+              t('dialogs.removeShip')
             )}
           </AlertDialogAction>
         </AlertDialogFooter>

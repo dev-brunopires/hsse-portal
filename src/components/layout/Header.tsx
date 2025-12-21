@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   Bell, 
   Search, 
@@ -46,20 +47,12 @@ import {
   useMarkAllNotificationsAsRead 
 } from '@/hooks/useNotifications';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS } from 'date-fns/locale';
 import {
   markSystemNotificationRead,
   readSystemNotificationsRead,
   type SystemNotificationId,
 } from '@/utils/systemNotificationsRead';
-
-const roleLabels: Record<string, string> = {
-  admin: 'Administrador',
-  admin_master: 'Admin Master',
-  supervisor: 'Supervisor',
-  technician: 'Técnico',
-  viewer: 'Visualizador',
-};
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -67,6 +60,7 @@ interface HeaderProps {
 }
 
 export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
+  const { t, i18n } = useTranslation();
   const { user, profile, role, signOut } = useAuth();
   const { selectedShipId, setSelectedShipId, isFilterEnabled } = useShipFilter();
   const { resolvedTheme, setTheme } = useTheme();
@@ -79,16 +73,26 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
   const markAsRead = useMarkNotificationAsRead();
   const markAllAsRead = useMarkAllNotificationsAsRead();
 
+  const dateLocale = i18n.language === 'en' ? enUS : ptBR;
+
+  const roleLabels: Record<string, string> = {
+    admin: t('roles.admin'),
+    admin_master: t('roles.admin_master'),
+    supervisor: t('roles.supervisor'),
+    technician: t('roles.technician'),
+    viewer: t('roles.viewer'),
+  };
+
   const toggleTheme = () => {
     setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
   };
 
   // Get the selected ship name for display
   const selectedShipName = useMemo(() => {
-    if (!selectedShipId) return 'Todas as Unidades';
+    if (!selectedShipId) return t('header.allUnits');
     const ship = ships.find(s => s.id === selectedShipId);
-    return ship?.name || 'Todas as Unidades';
-  }, [selectedShipId, ships]);
+    return ship?.name || t('header.allUnits');
+  }, [selectedShipId, ships, t]);
 
   const [systemRead, setSystemRead] = useState<Record<string, string>>(() =>
     readSystemNotificationsRead()
@@ -143,8 +147,8 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
       notifs.unshift({
         id: 'system-ship-filter',
         type: 'reminder',
-        title: 'Filtrar por Navio',
-        message: `Você tem acesso a ${userShips.length} navios. Lembre-se de filtrar os dados por navio no Dashboard.`,
+        title: t('header.filterByShip'),
+        message: t('header.shipFilterReminder', { count: userShips.length }),
         isRead: false,
         isSystem: true,
         canMarkRead: true,
@@ -160,8 +164,8 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
       notifs.unshift({
         id: 'system-high-priority',
         type: 'alert',
-        title: 'Alertas Críticos',
-        message: `${highPriorityCount} alerta(s) de alta prioridade requerem atenção.`,
+        title: t('header.criticalAlerts'),
+        message: t('header.criticalAlertsMessage', { count: highPriorityCount }),
         isRead,
         isSystem: true,
         canMarkRead: true,
@@ -169,7 +173,7 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
     }
 
     return notifs;
-  }, [allNotifications, userShips, highPriorityCount, isAdmin, systemRead]);
+  }, [allNotifications, userShips, highPriorityCount, isAdmin, systemRead, t]);
 
   const unreadCount = combinedNotifications.filter((n) => !n.isRead).length;
 
@@ -254,8 +258,8 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
             <Ship className="h-4 w-4 text-primary" />
             <span className="text-sm font-medium text-primary">
               {userShips.length === 1 
-                ? userShips[0]?.ship?.name || 'Navio'
-                : `${userShips.length} navios`
+                ? userShips[0]?.ship?.name || t('header.ship')
+                : `${userShips.length} ${t('header.ships')}`
               }
             </span>
           </div>
@@ -277,7 +281,7 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64 bg-popover border border-border shadow-lg z-50">
-              <DropdownMenuLabel>Filtrar por Unidade</DropdownMenuLabel>
+              <DropdownMenuLabel>{t('header.filterByUnit')}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <ScrollArea className="max-h-64">
                 <DropdownMenuItem 
@@ -286,7 +290,7 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
                 >
                   {selectedShipId === null && <Check className="h-4 w-4 text-primary" />}
                   <span className={selectedShipId === null ? 'font-medium' : ''}>
-                    Todas as Unidades
+                    {t('header.allUnits')}
                   </span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -322,10 +326,10 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
           <DropdownMenuContent align="end" className="w-80 sm:w-96 bg-popover border border-border shadow-lg z-50">
             <DropdownMenuLabel className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span>Notificações</span>
+                <span>{t('header.notifications')}</span>
                 {unreadCount > 0 && (
                   <Badge variant="secondary" className="text-xs">
-                    {unreadCount} não lidas
+                    {unreadCount} {t('header.unreadNotifications')}
                   </Badge>
                 )}
               </div>
@@ -341,7 +345,7 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
                   }}
                 >
                   <CheckCheck className="h-3 w-3" />
-                  <span className="hidden sm:inline">Marcar todas</span>
+                  <span className="hidden sm:inline">{t('header.markAll')}</span>
                 </Button>
               )}
             </DropdownMenuLabel>
@@ -350,8 +354,8 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
               {combinedNotifications.length === 0 ? (
                 <div className="p-6 text-center text-muted-foreground">
                   <Bell className="h-10 w-10 mx-auto mb-3 opacity-30" />
-                  <p className="text-sm font-medium">Nenhuma notificação</p>
-                  <p className="text-xs mt-1">Você está em dia!</p>
+                  <p className="text-sm font-medium">{t('header.noNotifications')}</p>
+                  <p className="text-xs mt-1">{t('header.upToDate')}</p>
                 </div>
               ) : (
                 <div className="p-2 space-y-2">
@@ -398,7 +402,7 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
               className="justify-center text-primary cursor-pointer"
               onClick={() => navigate('/alerts')}
             >
-              Ver todos os alertas
+              {t('header.viewAllAlerts')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -409,7 +413,7 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
           size="icon"
           onClick={toggleTheme}
           className="text-muted-foreground hover:text-foreground"
-          title={resolvedTheme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
+          title={resolvedTheme === 'dark' ? t('header.lightMode') : t('header.darkMode')}
         >
           {resolvedTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
         </Button>
@@ -453,7 +457,7 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
                     role === 'technician' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' :
                     'bg-muted text-muted-foreground'
                   }`}>
-                    {role ? roleLabels[role] : '...'}
+                    {role ? roleLabels[role] : t('common.loading')}
                   </span>
                 </div>
               </div>
@@ -488,7 +492,7 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
                     role === 'technician' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' :
                     'bg-muted text-muted-foreground'
                   }`}>
-                    {role ? roleLabels[role] : 'Carregando...'}
+                    {role ? roleLabels[role] : t('common.loading')}
                   </span>
                 </div>
               </div>
@@ -504,8 +508,8 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
                 <UserCircle className="h-4 w-4 text-muted-foreground" />
               </div>
               <div className="flex flex-col">
-                <span className="text-sm font-medium">Meu Perfil</span>
-                <span className="text-xs text-muted-foreground">Editar informações pessoais</span>
+                <span className="text-sm font-medium">{t('navigation.profile')}</span>
+                <span className="text-xs text-muted-foreground">{t('profile.updatePersonalInfo')}</span>
               </div>
             </DropdownMenuItem>
             
@@ -517,8 +521,8 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
                 <Settings className="h-4 w-4 text-muted-foreground" />
               </div>
               <div className="flex flex-col">
-                <span className="text-sm font-medium">Configurações</span>
-                <span className="text-xs text-muted-foreground">Preferências do sistema</span>
+                <span className="text-sm font-medium">{t('navigation.settings')}</span>
+                <span className="text-xs text-muted-foreground">{t('settings.subtitle')}</span>
               </div>
             </DropdownMenuItem>
             
@@ -532,8 +536,8 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
                 <LogOut className="h-4 w-4" />
               </div>
               <div className="flex flex-col">
-                <span className="text-sm font-medium">Sair</span>
-                <span className="text-xs opacity-70">Encerrar sessão</span>
+                <span className="text-sm font-medium">{t('auth.logout')}</span>
+                <span className="text-xs opacity-70">{t('auth.logoutSuccess')}</span>
               </div>
             </DropdownMenuItem>
           </DropdownMenuContent>

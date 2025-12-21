@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -22,6 +23,7 @@ interface UserShipsDialogProps {
 }
 
 export function UserShipsDialog({ open, onOpenChange, user }: UserShipsDialogProps) {
+  const { t } = useTranslation();
   const { data: ships, isLoading: shipsLoading } = useShips();
   const { data: userShips, isLoading: userShipsLoading } = useUserShips(user?.user_id);
   const updateUserShips = useUpdateUserShips();
@@ -69,18 +71,19 @@ export function UserShipsDialog({ open, onOpenChange, user }: UserShipsDialogPro
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Anchor className="h-5 w-5 text-primary" />
-            Atribuir Navios
+            {t('dialogs.assignShips')}
           </DialogTitle>
           <DialogDescription>
-            Selecione os navios que <strong>{user.full_name}</strong> terá acesso
+            <span dangerouslySetInnerHTML={{ 
+              __html: t('dialogs.selectShipsAccess', { name: user.full_name }) 
+            }} />
           </DialogDescription>
         </DialogHeader>
 
         {isAdminRole && (
           <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
             <p className="text-sm text-primary">
-              <strong>Nota:</strong> Usuários com perfil Admin ou Admin Master 
-              têm acesso a todos os navios automaticamente.
+              <strong>{t('common.notes')}:</strong> {t('dialogs.adminAutoAccess')}
             </p>
           </div>
         )}
@@ -92,8 +95,8 @@ export function UserShipsDialog({ open, onOpenChange, user }: UserShipsDialogPro
         ) : ships && ships.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
             <Ship className="h-12 w-12 mb-2" />
-            <p>Nenhum navio cadastrado</p>
-            <p className="text-sm">Cadastre navios primeiro na aba "Navios"</p>
+            <p>{t('dialogs.noShipsRegistered')}</p>
+            <p className="text-sm">{t('dialogs.registerShipsFirst')}</p>
           </div>
         ) : (
           <ScrollArea className="max-h-[300px] pr-4">
@@ -125,7 +128,7 @@ export function UserShipsDialog({ open, onOpenChange, user }: UserShipsDialogPro
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
+            {t('common.cancel')}
           </Button>
           <Button 
             onClick={handleSave} 
@@ -134,10 +137,10 @@ export function UserShipsDialog({ open, onOpenChange, user }: UserShipsDialogPro
             {updateUserShips.isPending ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                Salvando...
+                {t('dialogs.saving')}
               </>
             ) : (
-              'Salvar'
+              t('common.save')
             )}
           </Button>
         </DialogFooter>
