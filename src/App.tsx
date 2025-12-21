@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ShipFilterProvider } from "@/contexts/ShipFilterContext";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AppLayout } from "./components/layout/AppLayout";
@@ -42,139 +43,141 @@ function App() {
           <Sonner />
           <BrowserRouter>
             <AuthProvider>
-              <ShipFilterProvider>
-                <OnboardingProvider />
-            <Routes>
-              {/* Public Route */}
-              <Route path="/auth" element={<Auth />} />
-              
-              {/* Protected Routes */}
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <Index />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/equipment"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <EquipmentList />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/inspections"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <Inspections />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/reports"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <Reports />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/alerts"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <Alerts />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/pending"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <PendingRecommendations />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/maintenance"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <Maintenance />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/categories"
-                element={
-                  <ProtectedRoute requiredRole="technician">
-                    <AppLayout>
-                      <Categories />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/users"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AppLayout>
-                      <Users />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/settings"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AppLayout>
-                      <Settings />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/audit-log"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AppLayout>
-                      <AuditLog />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/profile"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <Profile />
-                    </AppLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            </ShipFilterProvider>
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
+              <LanguageProvider>
+                <ShipFilterProvider>
+                  <OnboardingProvider />
+              <Routes>
+                {/* Public Route */}
+                <Route path="/auth" element={<Auth />} />
+                
+                {/* Protected Routes */}
+                <Route
+                  path="/"
+                  element={
+                    <ProtectedRoute>
+                      <AppLayout>
+                        <Index />
+                      </AppLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/equipment"
+                  element={
+                    <ProtectedRoute>
+                      <AppLayout>
+                        <EquipmentList />
+                      </AppLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/inspections"
+                  element={
+                    <ProtectedRoute>
+                      <AppLayout>
+                        <Inspections />
+                      </AppLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/reports"
+                  element={
+                    <ProtectedRoute>
+                      <AppLayout>
+                        <Reports />
+                      </AppLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/alerts"
+                  element={
+                    <ProtectedRoute>
+                      <AppLayout>
+                        <Alerts />
+                      </AppLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/pending"
+                  element={
+                    <ProtectedRoute>
+                      <AppLayout>
+                        <PendingRecommendations />
+                      </AppLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/maintenance"
+                  element={
+                    <ProtectedRoute>
+                      <AppLayout>
+                        <Maintenance />
+                      </AppLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/categories"
+                  element={
+                    <ProtectedRoute requiredRole="technician">
+                      <AppLayout>
+                        <Categories />
+                      </AppLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/users"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AppLayout>
+                        <Users />
+                      </AppLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/settings"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AppLayout>
+                        <Settings />
+                      </AppLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/audit-log"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AppLayout>
+                        <AuditLog />
+                      </AppLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/profile"
+                  element={
+                    <ProtectedRoute>
+                      <AppLayout>
+                        <Profile />
+                      </AppLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+              </ShipFilterProvider>
+              </LanguageProvider>
+            </AuthProvider>
+          </BrowserRouter>
+        </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );
