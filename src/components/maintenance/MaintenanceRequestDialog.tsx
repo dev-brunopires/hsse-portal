@@ -59,7 +59,8 @@ export function MaintenanceRequestDialog({
   preSelectedEquipmentId 
 }: MaintenanceRequestDialogProps) {
   const [photos, setPhotos] = useState<File[]>([]);
-  const { data: equipment = [], isLoading: equipmentLoading } = useEquipment();
+  const { data: equipmentData, isLoading: equipmentLoading } = useEquipment();
+  const equipment = equipmentData ?? [];
   const createRequest = useCreateMaintenanceRequest();
   const { user } = useAuth();
 
