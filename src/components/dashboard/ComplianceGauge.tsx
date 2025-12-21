@@ -1,5 +1,6 @@
 import { TrendingUp, Target } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 interface ComplianceGaugeProps {
   value: number;
@@ -7,6 +8,7 @@ interface ComplianceGaugeProps {
 }
 
 export function ComplianceGauge({ value, target = 95 }: ComplianceGaugeProps) {
+  const { t } = useTranslation();
   const isAboveTarget = value >= target;
   const progress = Math.min((value / 100) * 100, 100);
   const targetProgress = Math.min((target / 100) * 100, 100);
@@ -22,7 +24,7 @@ export function ComplianceGauge({ value, target = 95 }: ComplianceGaugeProps) {
           <div>
             <div className="flex items-center gap-2 text-primary-foreground/80 mb-1">
               <TrendingUp className="h-4 w-4" />
-              <span className="text-sm font-medium">Taxa de Conformidade</span>
+              <span className="text-sm font-medium">{t('dashboard.complianceRate')}</span>
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-5xl font-bold tracking-tight">{value}</span>
@@ -33,7 +35,7 @@ export function ComplianceGauge({ value, target = 95 }: ComplianceGaugeProps) {
           <div className="text-right">
             <div className="flex items-center gap-1.5 text-primary-foreground/70 mb-1">
               <Target className="h-4 w-4" />
-              <span className="text-sm">Meta</span>
+              <span className="text-sm">{t('dashboard.target')}</span>
             </div>
             <span className="text-2xl font-bold">{target}%</span>
           </div>
@@ -62,7 +64,7 @@ export function ComplianceGauge({ value, target = 95 }: ComplianceGaugeProps) {
         {/* Status text */}
         <div className="mt-3 flex items-center justify-between text-sm">
           <span className="text-primary-foreground/70">
-            {isAboveTarget ? '✓ Meta atingida' : `${(target - value).toFixed(1)}% para a meta`}
+            {isAboveTarget ? t('dashboard.targetReached') : `${(target - value).toFixed(1)}% ${t('dashboard.toReachTarget')}`}
           </span>
           <span className={cn(
             "px-2 py-0.5 rounded-full text-xs font-medium",
@@ -70,7 +72,7 @@ export function ComplianceGauge({ value, target = 95 }: ComplianceGaugeProps) {
               ? "bg-emerald-400/20 text-emerald-200" 
               : "bg-amber-400/20 text-amber-200"
           )}>
-            {isAboveTarget ? 'Excelente' : 'Em progresso'}
+            {isAboveTarget ? t('dashboard.excellent') : t('dashboard.inProgress')}
           </span>
         </div>
       </div>
