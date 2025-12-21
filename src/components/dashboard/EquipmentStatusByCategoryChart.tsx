@@ -90,7 +90,7 @@ export function EquipmentStatusByCategoryChart() {
   }
 
   return (
-    <div className="bg-card rounded-2xl border shadow-sm overflow-hidden">
+    <div className="bg-card rounded-2xl border shadow-sm overflow-hidden h-[380px] flex flex-col">
       <div className="p-5 border-b bg-gradient-to-r from-muted/50 to-transparent">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -122,8 +122,8 @@ export function EquipmentStatusByCategoryChart() {
         </div>
       </div>
       
-      <div className="p-5">
-        <div className="h-52">
+      <div className="p-5 flex-1 flex flex-col">
+        <div className="flex-1 min-h-0">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />

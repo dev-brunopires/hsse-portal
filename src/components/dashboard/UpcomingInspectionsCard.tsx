@@ -78,7 +78,7 @@ export function UpcomingInspectionsCard() {
   }
 
   return (
-    <div className="bg-card rounded-2xl border shadow-sm overflow-hidden h-[420px] flex flex-col">
+    <div className="bg-card rounded-2xl border shadow-sm overflow-hidden h-[380px] flex flex-col">
       <div className="p-5 border-b bg-gradient-to-r from-muted/50 to-transparent shrink-0">
         <div className="flex items-center gap-3">
           <div className="p-2.5 bg-primary/10 rounded-xl">
