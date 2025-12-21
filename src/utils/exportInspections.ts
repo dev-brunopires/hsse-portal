@@ -3,7 +3,8 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import type { InspectionWithDetails } from '@/hooks/useInspections';
+import type { InspectionWithDetails, InspectionPhoto } from '@/hooks/useInspections';
+import { supabase } from '@/integrations/supabase/client';
 import {
   SBM_BLUE,
   DARK_GRAY,
@@ -17,6 +18,28 @@ import {
   addSectionHeader,
   preloadLogo,
 } from './pdfStyles';
+
+async function loadInspectionPhotoAsBase64(filePath: string): Promise<string | null> {
+  try {
+    const { data } = await supabase.storage
+      .from('inspection-photos')
+      .createSignedUrl(filePath, 60);
+    
+    if (!data?.signedUrl) return null;
+
+    const response = await fetch(data.signedUrl);
+    const blob = await response.blob();
+    
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
 
 const statusLabels: Record<string, string> = {
   approved: 'Aprovado',
@@ -123,7 +146,8 @@ export async function exportInspectionsToPDF(inspections: InspectionWithDetails[
 
 export async function exportSingleInspectionPDF(
   inspection: InspectionWithDetails, 
-  checklistItems: { description: string; status: string; notes: string | null }[] = []
+  checklistItems: { description: string; status: string; notes: string | null }[] = [],
+  photos: InspectionPhoto[] = []
 ) {
   // Preload logo
   await preloadLogo();
@@ -215,6 +239,73 @@ export async function exportSingleInspectionPDF(
     const lines = doc.splitTextToSize(inspection.recommendations, 180);
     doc.text(lines, 14, yPos);
     yPos += lines.length * 5 + 6;
+  }
+
+  // Photos section
+  if (photos && photos.length > 0) {
+    const pageHeight = doc.internal.pageSize.getHeight();
+    if (yPos > pageHeight - 80) {
+      doc.addPage();
+      yPos = 20;
+    }
+
+    yPos = addSectionHeader(doc, yPos, 'FOTOS', SBM_BLUE);
+    yPos += 4;
+
+    doc.setFontSize(9);
+    doc.setTextColor(...MEDIUM_GRAY);
+    doc.text(`${photos.length} foto(s) anexada(s)`, 14, yPos);
+    yPos += 8;
+
+    const photoWidth = 55;
+    const photoHeight = 40;
+    const photosPerRow = 3;
+    let photoX = 14;
+    let photoCount = 0;
+
+    for (const photo of photos) {
+      // Check if we need a new page
+      if (yPos > pageHeight - 50) {
+        doc.addPage();
+        yPos = 20;
+        photoX = 14;
+      }
+
+      try {
+        const base64 = await loadInspectionPhotoAsBase64(photo.file_path);
+        if (base64) {
+          doc.addImage(base64, 'JPEG', photoX, yPos, photoWidth, photoHeight);
+        } else {
+          // Placeholder for failed image
+          doc.setDrawColor(...MEDIUM_GRAY);
+          doc.setFillColor(248, 250, 252);
+          doc.rect(photoX, yPos, photoWidth, photoHeight, 'FD');
+          doc.setFontSize(8);
+          doc.setTextColor(...MEDIUM_GRAY);
+          doc.text('Imagem não disponível', photoX + 5, yPos + 22);
+        }
+      } catch {
+        doc.setDrawColor(...MEDIUM_GRAY);
+        doc.setFillColor(248, 250, 252);
+        doc.rect(photoX, yPos, photoWidth, photoHeight, 'FD');
+        doc.setFontSize(8);
+        doc.setTextColor(...MEDIUM_GRAY);
+        doc.text('Imagem não disponível', photoX + 5, yPos + 22);
+      }
+
+      photoCount++;
+      if (photoCount % photosPerRow === 0) {
+        photoX = 14;
+        yPos += photoHeight + 5;
+      } else {
+        photoX += photoWidth + 5;
+      }
+    }
+
+    // Move to next row if photos don't fill the row
+    if (photoCount % photosPerRow !== 0) {
+      yPos += photoHeight + 5;
+    }
   }
   
   // Signature section
