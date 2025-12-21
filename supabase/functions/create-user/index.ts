@@ -54,9 +54,9 @@ Deno.serve(async (req) => {
     }
 
     // Parse request body
-    const { email, password, fullName, role, shipIds } = await req.json()
+    const { email, password, fullName, role, shipIds, language } = await req.json()
 
-    console.log('Creating user with data:', { email, fullName, role, shipIds })
+    console.log('Creating user with data:', { email, fullName, role, shipIds, language })
 
     if (!email || !password || !fullName) {
       return new Response(
@@ -64,6 +64,9 @@ Deno.serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+
+    // Default language to pt-BR if not provided
+    const userLanguage = language || 'pt-BR'
 
     // Create admin client with service role key
     const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
@@ -99,6 +102,21 @@ Deno.serve(async (req) => {
     }
 
     console.log('User created with ID:', newUser.user.id)
+
+    // Update profile with language
+    if (userLanguage !== 'pt-BR') {
+      console.log('Updating user language to:', userLanguage)
+      const { error: langError } = await adminClient
+        .from('profiles')
+        .update({ language: userLanguage })
+        .eq('user_id', newUser.user.id)
+      
+      if (langError) {
+        console.error('Error updating language:', langError)
+      } else {
+        console.log('Language updated successfully')
+      }
+    }
 
     // Update role if different from default viewer
     if (role && role !== 'viewer') {
