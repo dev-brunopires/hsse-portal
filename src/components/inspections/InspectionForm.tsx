@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useTranslation } from 'react-i18next';
 import {
   Form,
   FormControl,
@@ -70,17 +71,17 @@ import {
 } from '@/components/ui/collapsible';
 import { QRCodeScannerDialog } from '@/components/equipment/QRCodeScannerDialog';
 
-const inspectionSchema = z.object({
-  equipmentId: z.string().min(1, 'Selecione o equipamento'),
-  inspectorId: z.string().min(1, 'Selecione o inspetor responsável'),
-  inspectionDate: z.string().min(1, 'Data é obrigatória'),
+const createInspectionSchema = (t: (key: string) => string) => z.object({
+  equipmentId: z.string().min(1, t('inspectionForm.equipmentRequired')),
+  inspectorId: z.string().min(1, t('inspectionForm.inspectorRequired')),
+  inspectionDate: z.string().min(1, t('common.required')),
   actionsTaken: z.string().optional(),
   observations: z.string().optional(),
   recommendations: z.string().optional(),
   nextInspectionDate: z.string().optional(),
 });
 
-type InspectionFormData = z.infer<typeof inspectionSchema>;
+type InspectionFormData = z.infer<ReturnType<typeof createInspectionSchema>>;
 
 interface ChecklistItem {
   id: string;
@@ -130,6 +131,7 @@ interface InspectionFormProps {
 }
 
 export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: InspectionFormProps) {
+  const { t } = useTranslation();
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
   const [uploadedPhotos, setUploadedPhotos] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -149,6 +151,50 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
   const { data: lastInspection } = useLastInspection(selectedEquipment?.id);
   const { data: userSignatureSettings } = useUserSignature();
   const createInspection = useCreateInspection();
+
+  const inspectionSchema = createInspectionSchema(t);
+
+  // Filter equipment based on search term - prioritize code matches
+  const filteredEquipment = useMemo(() => {
+    if (!equipmentSearchTerm.trim()) return equipment;
+    
+    const term = equipmentSearchTerm.toLowerCase().trim();
+    
+    // First, find exact code matches
+    const exactCodeMatches = equipment.filter(e => 
+      e.internal_code.toLowerCase() === term
+    );
+    
+    // Then, find partial code matches
+    const partialCodeMatches = equipment.filter(e => 
+      e.internal_code.toLowerCase().includes(term) &&
+      !exactCodeMatches.includes(e)
+    );
+    
+    // Finally, find name/location matches
+    const otherMatches = equipment.filter(e => 
+      (e.name.toLowerCase().includes(term) || 
+       e.location.toLowerCase().includes(term) ||
+       e.serial_number?.toLowerCase().includes(term)) &&
+      !exactCodeMatches.includes(e) &&
+      !partialCodeMatches.includes(e)
+    );
+    
+    return [...exactCodeMatches, ...partialCodeMatches, ...otherMatches];
+  }, [equipment, equipmentSearchTerm]);
+
+  const form = useForm<InspectionFormData>({
+    resolver: zodResolver(inspectionSchema),
+    defaultValues: {
+      equipmentId: '',
+      inspectorId: user?.id || '',
+      inspectionDate: new Date().toISOString().split('T')[0],
+      actionsTaken: '',
+      observations: '',
+      recommendations: '',
+      nextInspectionDate: '',
+    },
+  });
 
   // Filter equipment based on search term - prioritize code matches
   const filteredEquipment = useMemo(() => {
@@ -260,13 +306,13 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
     if (equip) {
       handleEquipmentSelect(equip);
       toast({
-        title: 'Equipamento Encontrado',
+        title: t('inspectionForm.equipmentFound'),
         description: `${equip.internal_code} - ${equip.name}`,
       });
     } else {
       toast({
-        title: 'Equipamento Não Encontrado',
-        description: 'O QR code não corresponde a nenhum equipamento cadastrado.',
+        title: t('inspectionForm.equipmentNotFound'),
+        description: t('inspectionForm.qrNotMatchEquipment'),
         variant: 'destructive',
       });
     }
@@ -276,8 +322,8 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
   const handleQuickInspection = async () => {
     if (!selectedEquipment) {
       toast({
-        title: "Equipamento Necessário",
-        description: "Selecione um equipamento antes de usar a inspeção rápida.",
+        title: t('inspectionForm.equipmentRequired'),
+        description: t('inspectionForm.selectEquipmentBeforeQuick'),
         variant: "destructive",
       });
       return;
@@ -286,8 +332,8 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
     const formData = form.getValues();
     if (!formData.inspectorId) {
       toast({
-        title: "Inspetor Necessário",
-        description: "Selecione o inspetor responsável.",
+        title: t('inspectionForm.inspectorRequired'),
+        description: t('inspectionForm.selectInspectorBefore'),
         variant: "destructive",
       });
       return;
@@ -315,7 +361,7 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
           inspection_date: formData.inspectionDate || new Date().toISOString().split('T')[0],
           status: 'compliant',
           actions_taken: null,
-          observations: 'Inspeção rápida - Todos os itens conformes',
+          observations: t('inspectionForm.quickInspection'),
           recommendations: null,
           next_inspection_date: formData.nextInspectionDate || null,
           signature_data: signatureData,
@@ -326,8 +372,8 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
       });
 
       toast({
-        title: "Inspeção Registrada",
-        description: `${selectedEquipment.internal_code} marcado como conforme.`,
+        title: t('inspectionForm.inspectionRegistered'),
+        description: t('inspectionForm.markedAsCompliant', { code: selectedEquipment.internal_code }),
       });
 
       form.reset();
@@ -348,8 +394,8 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
     const pendingItems = checklist.filter(item => item.status === 'pending' && item.required);
     if (pendingItems.length > 0) {
       toast({
-        title: "Checklist Incompleto",
-        description: `Existem ${pendingItems.length} item(s) obrigatório(s) não avaliados.`,
+        title: t('inspectionForm.incompleteChecklist'),
+        description: t('inspectionForm.pendingRequiredItems', { count: pendingItems.length }),
         variant: "destructive",
       });
       return;
@@ -404,10 +450,10 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
         <CardHeader className="pb-4 flex-shrink-0">
           <CardTitle className="flex items-center gap-2">
             <ClipboardCheck className="h-5 w-5 text-primary" />
-            Nova Inspeção
+            {t('inspectionForm.newInspection')}
           </CardTitle>
           <CardDescription>
-            Preencha os dados para registrar uma nova inspeção
+            {t('inspectionForm.newInspectionDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex-1 overflow-hidden min-h-0">
@@ -419,7 +465,7 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
                   <div className="flex items-center justify-between">
                     <FormLabel className="flex items-center gap-2">
                       <Search className="h-4 w-4" />
-                      Equipamento *
+                      {t('inspectionForm.equipment')} *
                     </FormLabel>
                     <Button
                       type="button"
@@ -429,7 +475,7 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
                       onClick={() => setQrScannerOpen(true)}
                     >
                       <QrCode className="h-4 w-4" />
-                      Escanear QR
+                      {t('inspectionForm.scanQr')}
                     </Button>
                   </div>
                   
@@ -453,8 +499,8 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
                                 {selectedEquipment 
                                   ? `${selectedEquipment.internal_code} - ${selectedEquipment.name}`
                                   : equipmentLoading 
-                                    ? 'Carregando...' 
-                                    : 'Selecione o equipamento'}
+                                    ? t('common.loading')
+                                    : t('inspectionForm.searchHint')}
                                 <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                               </Button>
                             </FormControl>
@@ -462,15 +508,15 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
                           <PopoverContent className="w-[350px] sm:w-[400px] p-0 bg-popover border border-border shadow-lg z-50" align="start">
                             <Command shouldFilter={false}>
                               <CommandInput 
-                                placeholder="Buscar por código, nome ou localização..." 
+                                placeholder={t('inspectionForm.searchByCodeNameLocation')}
                                 value={equipmentSearchTerm}
                                 onValueChange={setEquipmentSearchTerm}
                               />
                               <CommandList className="max-h-[300px]">
                                 <CommandEmpty>
                                   <div className="py-6 text-center text-sm">
-                                    <p>Nenhum equipamento encontrado.</p>
-                                    <p className="text-muted-foreground">Tente buscar pelo código interno.</p>
+                                    <p>{t('inspectionForm.noEquipmentFound')}</p>
+                                    <p className="text-muted-foreground">{t('inspectionForm.trySearchByCode')}</p>
                                   </div>
                                 </CommandEmpty>
                                 <CommandGroup>
@@ -494,7 +540,7 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
                                   ))}
                                   {filteredEquipment.length > 50 && (
                                     <div className="py-2 px-3 text-xs text-muted-foreground text-center">
-                                      Mostrando 50 de {filteredEquipment.length} resultados. Refine sua busca.
+                                      {t('inspectionForm.showing50of', { count: filteredEquipment.length })}
                                     </div>
                                   )}
                                 </CommandGroup>
@@ -526,12 +572,12 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
                   <FormItem>
                     <FormLabel className="flex items-center gap-2">
                       <User className="h-4 w-4" />
-                      Inspetor *
+                      {t('inspectionForm.responsibleInspector').replace(' *', '')} *
                     </FormLabel>
                     <Select onValueChange={field.onChange} value={field.value} disabled={inspectorsLoading}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder={inspectorsLoading ? 'Carregando...' : 'Selecione'} />
+                          <SelectValue placeholder={inspectorsLoading ? t('common.loading') : t('editInspection.select')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="bg-popover border border-border shadow-lg z-50">
@@ -554,13 +600,13 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
                   <FormItem className="flex flex-col">
                     <FormLabel className="flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
-                      Data *
+                      {t('inspectionForm.inspectionDate').replace(' *', '')} *
                     </FormLabel>
                     <FormControl>
                       <DatePickerField
                         value={field.value}
                         onChange={field.onChange}
-                        placeholder="Selecione a data"
+                        placeholder={t('inspectionForm.selectDate')}
                         fromYear={new Date().getFullYear() - 5}
                         toYear={new Date().getFullYear() + 1}
                       />
@@ -579,7 +625,7 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
                     <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50">
                       <div className="flex items-center gap-3">
                         <ClipboardCheck className="h-5 w-5 text-primary" />
-                        <h3 className="font-semibold">Checklist de Inspeção</h3>
+                        <h3 className="font-semibold">{t('inspectionForm.inspectionChecklist')}</h3>
                       </div>
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-3 text-sm">
@@ -639,17 +685,17 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
                                     className="flex items-center gap-1 text-sm cursor-pointer text-status-success"
                                   >
                                     <CheckCircle2 className="h-4 w-4" />
-                                    Conforme
+                                    {t('inspectionForm.conform')}
                                   </Label>
                                 </div>
                                 <div className="flex items-center space-x-2">
                                   <RadioGroupItem value="attention" id={`${item.id}-attention`} />
-                                  <Label 
+                                  <Label
                                     htmlFor={`${item.id}-attention`}
                                     className="flex items-center gap-1 text-sm cursor-pointer text-status-warning"
                                   >
                                     <AlertTriangle className="h-4 w-4" />
-                                    Atenção
+                                    {t('inspectionForm.attention')}
                                   </Label>
                                 </div>
                                 <div className="flex items-center space-x-2">
@@ -659,14 +705,14 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
                                     className="flex items-center gap-1 text-sm cursor-pointer text-status-danger"
                                   >
                                     <XCircle className="h-4 w-4" />
-                                    Não Conforme
+                                    {t('inspectionForm.notConform')}
                                   </Label>
                                 </div>
                               </RadioGroup>
 
                               {(item.status === 'attention' || item.status === 'fail') && (
                                 <Input
-                                  placeholder="Descreva o problema encontrado..."
+                                  placeholder={t('inspectionForm.describeProblem')}
                                   value={item.notes}
                                   onChange={(e) => updateChecklistItem(item.id, 'notes', e.target.value)}
                                   className="text-sm"
@@ -686,17 +732,17 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
             <Collapsible open={photosOpen} onOpenChange={setPhotosOpen}>
               <div className="border rounded-lg">
                 <CollapsibleTrigger asChild>
-                  <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50">
-                    <div className="flex items-center gap-3">
-                      <Camera className="h-5 w-5 text-primary" />
-                      <h3 className="font-semibold">Evidências Fotográficas</h3>
-                      {uploadedPhotos.length > 0 && (
-                        <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
-                          {uploadedPhotos.length}
-                        </span>
-                      )}
-                    </div>
-                    {photosOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                    <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50">
+                      <div className="flex items-center gap-3">
+                        <Camera className="h-5 w-5 text-primary" />
+                        <h3 className="font-semibold">{t('inspectionForm.photoEvidence')}</h3>
+                        {uploadedPhotos.length > 0 && (
+                          <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
+                            {uploadedPhotos.length}
+                          </span>
+                        )}
+                      </div>
+                      {photosOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
                   </div>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
@@ -711,13 +757,13 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
                         className="hidden"
                         id="photo-upload-form"
                       />
-                      <label 
-                        htmlFor="photo-upload-form"
-                        className="cursor-pointer flex flex-col items-center gap-2"
-                      >
-                        <Camera className="h-8 w-8 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">
-                          Clique para adicionar fotos
+                        <label 
+                          htmlFor="photo-upload-form"
+                          className="cursor-pointer flex flex-col items-center gap-2"
+                        >
+                          <Camera className="h-8 w-8 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">
+                            {t('inspectionForm.clickToAddPhotos')}
                         </span>
                       </label>
                     </div>
@@ -728,7 +774,7 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
                           <div key={index} className="relative group">
                             <img
                               src={URL.createObjectURL(photo)}
-                              alt={`Foto ${index + 1}`}
+                              alt={`${t('inspectionForm.photo')} ${index + 1}`}
                               className="w-full h-24 object-cover rounded-lg border"
                             />
                             <Button
@@ -753,14 +799,14 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
             <Collapsible open={observationsOpen} onOpenChange={setObservationsOpen}>
               <div className="border rounded-lg">
                 <CollapsibleTrigger asChild>
-                  <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50">
-                    <div className="flex items-center gap-3">
-                      <AlertTriangle className="h-5 w-5 text-primary" />
-                      <h3 className="font-semibold">Observações e Recomendações</h3>
+                    <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50">
+                      <div className="flex items-center gap-3">
+                        <AlertTriangle className="h-5 w-5 text-primary" />
+                        <h3 className="font-semibold">{t('inspectionForm.observationsAndRecommendations')}</h3>
+                      </div>
+                      {observationsOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
                     </div>
-                    {observationsOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-                  </div>
-                </CollapsibleTrigger>
+                  </CollapsibleTrigger>
                 <CollapsibleContent>
                   <Separator />
                   <div className="p-4 space-y-4">
@@ -771,17 +817,17 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
                         <FormItem>
                           <FormLabel className="flex items-center gap-2 text-primary">
                             <CheckCircle2 className="h-4 w-4" />
-                            Ações Tomadas
+                            {t('inspectionForm.actionsTaken')}
                           </FormLabel>
                           <FormControl>
                             <Textarea 
-                              placeholder="Descreva as ações realizadas em relação às pendências ou recomendações anteriores..."
+                              placeholder={t('inspectionForm.actionsTakenPlaceholder')}
                               className="min-h-[80px] border-primary/30 focus:border-primary"
                               {...field}
                             />
                           </FormControl>
                           <p className="text-xs text-muted-foreground">
-                            Registre aqui o que foi feito para resolver pendências de inspeções anteriores
+                            {t('inspectionForm.actionsTakenHint')}
                           </p>
                           <FormMessage />
                         </FormItem>
@@ -793,10 +839,10 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
                       name="observations"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Observações Gerais</FormLabel>
+                          <FormLabel>{t('inspectionForm.generalObservations')}</FormLabel>
                           <FormControl>
                             <Textarea 
-                              placeholder="Descreva observações relevantes sobre a inspeção..."
+                              placeholder={t('inspectionForm.observationsPlaceholderFull')}
                               className="min-h-[80px]"
                               {...field}
                             />
@@ -811,10 +857,10 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
                       name="recommendations"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Recomendações</FormLabel>
+                          <FormLabel>{t('inspections.recommendations')}</FormLabel>
                           <FormControl>
                             <Textarea 
-                              placeholder="Inclua recomendações ou ações corretivas necessárias..."
+                              placeholder={t('inspectionForm.recommendationsPlaceholder')}
                               className="min-h-[80px]"
                               {...field}
                             />
@@ -831,13 +877,13 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
                         <FormItem className="flex flex-col">
                           <FormLabel className="flex items-center gap-2">
                             <Calendar className="h-4 w-4" />
-                            Próxima Inspeção
+                            {t('inspectionForm.nextScheduledInspection')}
                           </FormLabel>
                           <FormControl>
                             <DatePickerField
                               value={field.value}
                               onChange={field.onChange}
-                              placeholder="Selecione a data"
+                              placeholder={t('inspectionForm.selectDate')}
                               fromYear={new Date().getFullYear()}
                               toYear={new Date().getFullYear() + 10}
                             />
@@ -862,13 +908,13 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
                 className="gap-2 bg-status-success/10 border-status-success/30 text-status-success hover:bg-status-success/20 hover:text-status-success"
               >
                 <Zap className="h-4 w-4" />
-                Lançar como Conforme
+                {t('inspectionForm.launchAs')} {t('inspectionForm.conform')}
               </Button>
 
               <div className="flex items-center gap-3">
                 {onCancel && (
                   <Button type="button" variant="outline" onClick={onCancel}>
-                    Cancelar
+                    {t('inspectionForm.cancel')}
                   </Button>
                 )}
                 <Button 
@@ -879,12 +925,12 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
                   {isSubmitting ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Registrando...
+                      {t('inspectionForm.registering')}
                     </>
                   ) : (
                     <>
                       <CheckCircle2 className="h-4 w-4" />
-                      Registrar Inspeção
+                      {t('inspectionForm.registerInspection')}
                     </>
                   )}
                 </Button>

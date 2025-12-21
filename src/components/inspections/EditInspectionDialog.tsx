@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -39,7 +40,7 @@ import { useUpdateInspection, type InspectionWithDetails } from '@/hooks/useInsp
 
 const editInspectionSchema = z.object({
   status: z.enum(['compliant', 'attention', 'non-compliant']),
-  inspection_date: z.string().min(1, 'Data é obrigatória'),
+  inspection_date: z.string().min(1, 'Required'),
   next_inspection_date: z.string().optional(),
   observations: z.string().optional(),
   recommendations: z.string().optional(),
@@ -55,20 +56,21 @@ interface EditInspectionDialogProps {
   onSuccess?: () => void;
 }
 
-const statusOptions = [
-  { value: 'compliant', label: 'Conforme' },
-  { value: 'attention', label: 'Atenção' },
-  { value: 'non-compliant', label: 'Não Conforme' },
-];
-
 export function EditInspectionDialog({ 
   open, 
   onOpenChange, 
   inspection,
   onSuccess,
 }: EditInspectionDialogProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const updateInspection = useUpdateInspection();
+
+  const statusOptions = [
+    { value: 'compliant', label: t('editInspection.statusCompliant') },
+    { value: 'attention', label: t('editInspection.statusAttention') },
+    { value: 'non-compliant', label: t('editInspection.statusNonCompliant') },
+  ];
 
   const form = useForm<EditInspectionFormData>({
     resolver: zodResolver(editInspectionSchema),
@@ -126,7 +128,7 @@ export function EditInspectionDialog({
         <DialogHeader className="pb-4 border-b border-border pr-0">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <ClipboardCheck className="h-5 w-5 text-primary" />
-            Editar Inspeção
+            {t('editInspection.title')}
           </DialogTitle>
           <DialogDescription className="text-sm">
             {inspection.equipment?.internal_code} - {inspection.equipment?.name}
@@ -143,11 +145,11 @@ export function EditInspectionDialog({
                     name="status"
                     render={({ field }) => (
                       <FormItem className="space-y-2">
-                        <FormLabel>Status *</FormLabel>
+                        <FormLabel>{t('editInspection.status')} *</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Selecione" />
+                              <SelectValue placeholder={t('editInspection.select')} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent className="bg-popover border border-border shadow-lg z-50">
@@ -168,12 +170,12 @@ export function EditInspectionDialog({
                     name="inspection_date"
                     render={({ field }) => (
                       <FormItem className="space-y-2">
-                        <FormLabel>Data *</FormLabel>
+                        <FormLabel>{t('editInspection.date')} *</FormLabel>
                         <FormControl>
                           <DatePickerField
                             value={field.value}
                             onChange={field.onChange}
-                            placeholder="Selecione"
+                            placeholder={t('editInspection.select')}
                             fromYear={new Date().getFullYear() - 5}
                             toYear={new Date().getFullYear() + 1}
                           />
@@ -188,12 +190,12 @@ export function EditInspectionDialog({
                     name="next_inspection_date"
                     render={({ field }) => (
                       <FormItem className="space-y-2">
-                        <FormLabel>Próxima</FormLabel>
+                        <FormLabel>{t('editInspection.next')}</FormLabel>
                         <FormControl>
                           <DatePickerField
                             value={field.value}
                             onChange={field.onChange}
-                            placeholder="Selecione"
+                            placeholder={t('editInspection.select')}
                             fromYear={new Date().getFullYear()}
                             toYear={new Date().getFullYear() + 5}
                           />
@@ -209,10 +211,10 @@ export function EditInspectionDialog({
                   name="actions_taken"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Ações Tomadas</FormLabel>
+                      <FormLabel>{t('editInspection.actionsTaken')}</FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder="Descreva as ações realizadas..."
+                          placeholder={t('editInspection.actionsTakenPlaceholder')}
                           className="min-h-[60px] resize-none"
                           {...field}
                         />
@@ -227,10 +229,10 @@ export function EditInspectionDialog({
                   name="observations"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Observações</FormLabel>
+                      <FormLabel>{t('editInspection.observations')}</FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder="Observações gerais..."
+                          placeholder={t('editInspection.observationsPlaceholder')}
                           className="min-h-[60px] resize-none"
                           {...field}
                         />
@@ -245,10 +247,10 @@ export function EditInspectionDialog({
                   name="recommendations"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Recomendações</FormLabel>
+                      <FormLabel>{t('editInspection.recommendations')}</FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder="Recomendações para próxima inspeção..."
+                          placeholder={t('editInspection.recommendationsPlaceholder')}
                           className="min-h-[60px] resize-none"
                           {...field}
                         />
@@ -266,7 +268,7 @@ export function EditInspectionDialog({
                 variant="outline"
                 onClick={() => onOpenChange(false)}
               >
-                Cancelar
+                {t('editInspection.cancel')}
               </Button>
               <Button
                 type="submit"
@@ -278,7 +280,7 @@ export function EditInspectionDialog({
                 ) : (
                   <Save className="h-4 w-4" />
                 )}
-                Salvar Alterações
+                {t('editInspection.saveChanges')}
               </Button>
             </div>
           </form>
