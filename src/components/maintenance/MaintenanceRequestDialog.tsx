@@ -41,6 +41,7 @@ const formSchema = z.object({
   title: z.string().min(3, 'Título deve ter pelo menos 3 caracteres').max(200),
   description: z.string().min(10, 'Descrição deve ter pelo menos 10 caracteres'),
   problem_identified: z.string().optional(),
+  work_order: z.string().optional(),
   scheduled_date: z.string().optional(),
   due_date: z.string().optional(),
 });
@@ -73,6 +74,7 @@ export function MaintenanceRequestDialog({
       title: '',
       description: '',
       problem_identified: '',
+      work_order: '',
       scheduled_date: '',
       due_date: '',
     },
@@ -105,6 +107,7 @@ export function MaintenanceRequestDialog({
         title: data.title,
         description: data.description,
         problem_identified: data.problem_identified || undefined,
+        work_order: data.work_order || undefined,
         scheduled_date: data.scheduled_date || undefined,
         due_date: data.due_date || undefined,
         requested_by: user.id,
@@ -251,6 +254,24 @@ export function MaintenanceRequestDialog({
                     </FormControl>
                     <p className="text-xs text-muted-foreground">
                       Data limite para conclusão desta manutenção
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Work Order */}
+              <FormField
+                control={form.control}
+                name="work_order"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>WO (Work Order)</FormLabel>
+                    <FormControl>
+                      <Input className="border-border focus-visible:ring-offset-0" placeholder="Número da Work Order relacionada" {...field} />
+                    </FormControl>
+                    <p className="text-xs text-muted-foreground">
+                      Número da ordem de serviço/trabalho externa relacionada
                     </p>
                     <FormMessage />
                   </FormItem>

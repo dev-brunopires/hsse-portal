@@ -246,6 +246,9 @@ export function MaintenanceDetailDialog({ open, onOpenChange, requestId }: Maint
                       {request.completed_at && (
                         <p><span className="text-muted-foreground">Concluído:</span> {formatDate(request.completed_at)}</p>
                       )}
+                      {request.work_order && (
+                        <p><span className="text-muted-foreground">WO:</span> <span className="font-mono font-medium">{request.work_order}</span></p>
+                      )}
                     </div>
                   </div>
                 </div>

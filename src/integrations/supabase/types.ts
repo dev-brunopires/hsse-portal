@@ -672,6 +672,7 @@ export type Database = {
           title: string
           type: Database["public"]["Enums"]["maintenance_type"]
           updated_at: string
+          work_order: string | null
           work_performed: string | null
         }
         Insert: {
@@ -701,6 +702,7 @@ export type Database = {
           title: string
           type?: Database["public"]["Enums"]["maintenance_type"]
           updated_at?: string
+          work_order?: string | null
           work_performed?: string | null
         }
         Update: {
@@ -730,6 +732,7 @@ export type Database = {
           title?: string
           type?: Database["public"]["Enums"]["maintenance_type"]
           updated_at?: string
+          work_order?: string | null
           work_performed?: string | null
         }
         Relationships: [
