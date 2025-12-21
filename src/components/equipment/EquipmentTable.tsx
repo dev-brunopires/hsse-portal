@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Table,
   TableBody,
@@ -75,14 +76,6 @@ interface EquipmentTableProps {
   inspectionFrequency?: string;
 }
 
-const frequencyLabels: Record<string, string> = {
-  monthly: 'Mensal',
-  quarterly: 'Trimestral',
-  semiannual: 'Semestral',
-  annual: 'Anual',
-  custom: 'Personalizada',
-};
-
 type SortField = 'internal_code' | 'name' | 'location' | 'status' | 'last_inspection' | 'next_inspection' | 'certificate_expiry' | 'capacity';
 type SortDirection = 'asc' | 'desc';
 
@@ -104,6 +97,7 @@ export function EquipmentTable({
   categoryDescription,
   inspectionFrequency 
 }: EquipmentTableProps) {
+  const { t } = useTranslation();
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -123,6 +117,14 @@ export function EquipmentTable({
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
 
   const deleteEquipment = useDeleteEquipment();
+
+  const frequencyLabels: Record<string, string> = {
+    monthly: t('equipmentTable.frequencyMonthly'),
+    quarterly: t('equipmentTable.frequencyQuarterly'),
+    semiannual: t('equipmentTable.frequencySemiannual'),
+    annual: t('equipmentTable.frequencyAnnual'),
+    custom: t('equipmentTable.frequencyCustom'),
+  };
 
   // Extract unique manufacturers and units for filters
   const manufacturers = useMemo(() => 
@@ -302,7 +304,7 @@ export function EquipmentTable({
             {inspectionFrequency && (
               <div className="flex items-center gap-2 text-sm">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Frequência de Inspeção:</span>
+                <span className="text-muted-foreground">{t('equipmentTable.inspectionFrequency')}:</span>
                 <span className="font-medium text-foreground">
                   {frequencyLabels[inspectionFrequency] || inspectionFrequency}
                 </span>
@@ -319,7 +321,7 @@ export function EquipmentTable({
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar equipamentos..."
+                placeholder={t('equipmentTable.searchEquipment')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -333,12 +335,12 @@ export function EquipmentTable({
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent className="bg-popover border border-border shadow-lg z-50">
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="active">Ativo</SelectItem>
-                  <SelectItem value="maintenance">Manutenção</SelectItem>
-                  <SelectItem value="expired">Vencido</SelectItem>
-                  <SelectItem value="rejected">Reprovado</SelectItem>
-                  <SelectItem value="inactive">Inativo</SelectItem>
+                  <SelectItem value="all">{t('equipmentTable.allStatus')}</SelectItem>
+                  <SelectItem value="active">{t('equipmentTable.statusActive')}</SelectItem>
+                  <SelectItem value="maintenance">{t('equipmentTable.statusMaintenance')}</SelectItem>
+                  <SelectItem value="expired">{t('equipmentTable.statusExpired')}</SelectItem>
+                  <SelectItem value="rejected">{t('equipmentTable.statusRejected')}</SelectItem>
+                  <SelectItem value="inactive">{t('equipmentTable.statusInactive')}</SelectItem>
                 </SelectContent>
               </Select>
               <Button 
@@ -358,44 +360,44 @@ export function EquipmentTable({
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-2 flex-shrink-0">
                   <Download className="h-4 w-4" />
-                  <span className="hidden sm:inline">Exportar</span>
+                  <span className="hidden sm:inline">{t('equipmentTable.export')}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-popover border border-border shadow-lg">
                 <DropdownMenuItem onClick={handleExportExcel} className="gap-2 cursor-pointer">
                   <FileSpreadsheet className="h-4 w-4" />
-                  Exportar Excel
+                  {t('equipmentTable.exportExcel')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleExportPDF} className="gap-2 cursor-pointer">
                   <FileText className="h-4 w-4" />
-                  Exportar PDF
+                  {t('equipmentTable.exportPDF')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <Button variant="outline" size="sm" className="gap-2 flex-shrink-0" onClick={() => setImportDialogOpen(true)}>
               <Upload className="h-4 w-4" />
-              <span className="hidden sm:inline">Importar</span>
+              <span className="hidden sm:inline">{t('equipmentTable.import')}</span>
             </Button>
             <Button size="sm" className="gap-2 flex-shrink-0 ml-auto" onClick={openCreateForm}>
               <Plus className="h-4 w-4" />
-              <span className="hidden xs:inline">Novo</span>
-              <span className="hidden sm:inline">Equipamento</span>
+              <span className="hidden xs:inline">{t('equipmentTable.new')}</span>
+              <span className="hidden sm:inline">{t('equipmentTable.equipmentName')}</span>
             </Button>
           </div>
 
           {selectedRows.length > 0 && (
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 bg-primary/5 rounded-lg border border-primary/20">
               <span className="text-sm font-medium">
-                {selectedRows.length} item(s) selecionado(s)
+                {selectedRows.length} {t('equipmentTable.itemsSelected')}
               </span>
               <div className="flex gap-2 flex-wrap">
                 <Button variant="outline" size="sm" onClick={handleExportExcel}>
-                  Exportar
+                  {t('equipmentTable.export')}
                 </Button>
                 <Button variant="outline" size="sm" onClick={handleExportPDF}>
-                  Relatório PDF
+                  {t('equipmentTable.pdfReport')}
                 </Button>
-                <Button variant="destructive" size="sm">Excluir</Button>
+                <Button variant="destructive" size="sm">{t('equipmentTable.delete')}</Button>
               </div>
             </div>
           )}
@@ -417,7 +419,7 @@ export function EquipmentTable({
                     className="flex items-center gap-1 cursor-pointer hover:text-foreground"
                     onClick={() => handleSort('internal_code')}
                   >
-                    Código {getSortIcon('internal_code')}
+                    {t('equipmentTable.code')} {getSortIcon('internal_code')}
                   </div>
                 </TableHead>
                 <TableHead className="font-semibold">
@@ -425,7 +427,7 @@ export function EquipmentTable({
                     className="flex items-center gap-1 cursor-pointer hover:text-foreground"
                     onClick={() => handleSort('name')}
                   >
-                    Equipamento {getSortIcon('name')}
+                    {t('equipmentTable.equipmentName')} {getSortIcon('name')}
                   </div>
                 </TableHead>
                 <TableHead className="font-semibold">
@@ -433,7 +435,7 @@ export function EquipmentTable({
                     className="flex items-center gap-1 cursor-pointer hover:text-foreground"
                     onClick={() => handleSort('capacity')}
                   >
-                    Capacidade {getSortIcon('capacity')}
+                    {t('equipmentTable.capacity')} {getSortIcon('capacity')}
                   </div>
                 </TableHead>
                 <TableHead className="font-semibold">
@@ -441,7 +443,7 @@ export function EquipmentTable({
                     className="flex items-center gap-1 cursor-pointer hover:text-foreground"
                     onClick={() => handleSort('location')}
                   >
-                    Localização {getSortIcon('location')}
+                    {t('equipmentTable.location')} {getSortIcon('location')}
                   </div>
                 </TableHead>
                 <TableHead className="font-semibold">
@@ -449,7 +451,7 @@ export function EquipmentTable({
                     className="flex items-center gap-1 cursor-pointer hover:text-foreground"
                     onClick={() => handleSort('status')}
                   >
-                    Status {getSortIcon('status')}
+                    {t('equipmentTable.status')} {getSortIcon('status')}
                   </div>
                 </TableHead>
                 <TableHead className="font-semibold">
@@ -457,7 +459,7 @@ export function EquipmentTable({
                     className="flex items-center gap-1 cursor-pointer hover:text-foreground"
                     onClick={() => handleSort('last_inspection')}
                   >
-                    Última Insp. {getSortIcon('last_inspection')}
+                    {t('equipmentTable.lastInsp')} {getSortIcon('last_inspection')}
                   </div>
                 </TableHead>
                 <TableHead className="font-semibold">
@@ -465,7 +467,7 @@ export function EquipmentTable({
                     className="flex items-center gap-1 cursor-pointer hover:text-foreground"
                     onClick={() => handleSort('next_inspection')}
                   >
-                    Próx. Insp. {getSortIcon('next_inspection')}
+                    {t('equipmentTable.nextInsp')} {getSortIcon('next_inspection')}
                   </div>
                 </TableHead>
                 <TableHead className="font-semibold">
@@ -473,11 +475,11 @@ export function EquipmentTable({
                     className="flex items-center gap-1 cursor-pointer hover:text-foreground"
                     onClick={() => handleSort('certificate_expiry')}
                   >
-                    Val. Cert. {getSortIcon('certificate_expiry')}
+                    {t('equipmentTable.certExpiry')} {getSortIcon('certificate_expiry')}
                   </div>
                 </TableHead>
                 <TableHead className="font-semibold hidden lg:table-cell">
-                  Cadastrado por
+                  {t('equipmentTable.createdBy')}
                 </TableHead>
                 <TableHead className="w-12"></TableHead>
               </TableRow>
@@ -486,7 +488,7 @@ export function EquipmentTable({
               {filteredAndSortedEquipment.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
-                    Nenhum equipamento encontrado
+                    {t('equipmentTable.noEquipmentFound')}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -550,32 +552,32 @@ export function EquipmentTable({
                             className="gap-2 cursor-pointer"
                             onClick={() => openDetailDialog(item)}
                           >
-                            <Eye className="h-4 w-4" /> Visualizar
+                            <Eye className="h-4 w-4" /> {t('equipmentTable.view')}
                           </DropdownMenuItem>
                           <DropdownMenuItem 
                             className="gap-2 cursor-pointer"
                             onClick={() => openEditForm(item)}
                           >
-                            <Edit className="h-4 w-4" /> Editar
+                            <Edit className="h-4 w-4" /> {t('equipmentTable.edit')}
                           </DropdownMenuItem>
                           <DropdownMenuItem 
                             className="gap-2 cursor-pointer"
                             onClick={() => openInspectionForm(item)}
                           >
-                            <ClipboardCheck className="h-4 w-4" /> Registrar Inspeção
+                            <ClipboardCheck className="h-4 w-4" /> {t('equipmentTable.registerInspection')}
                           </DropdownMenuItem>
                           <DropdownMenuItem 
                             className="gap-2 cursor-pointer"
                             onClick={() => openQRCodeDialog(item)}
                           >
-                            <QrCode className="h-4 w-4" /> Gerar QR Code
+                            <QrCode className="h-4 w-4" /> {t('equipmentTable.generateQRCode')}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem 
                             className="gap-2 text-destructive cursor-pointer"
                             onClick={() => openDeleteDialog(item)}
                           >
-                            <Trash2 className="h-4 w-4" /> Excluir
+                            <Trash2 className="h-4 w-4" /> {t('common.delete')}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -590,7 +592,7 @@ export function EquipmentTable({
         {/* Footer */}
         <div className="p-4 border-t border-border flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            Mostrando {filteredAndSortedEquipment.length} de {equipment.length} equipamentos
+            {t('equipmentTable.showing')} {filteredAndSortedEquipment.length} {t('equipmentTable.of')} {equipment.length} {t('equipmentTable.equipments')}
           </p>
         </div>
       </div>
@@ -716,14 +718,15 @@ export function EquipmentTable({
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir Equipamento</AlertDialogTitle>
+            <AlertDialogTitle>{t('equipmentTable.deleteEquipment')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir o equipamento <strong>{selectedEquipment?.name}</strong>?
-              Esta ação não pode ser desfeita.
+              <span dangerouslySetInnerHTML={{ 
+                __html: t('equipmentTable.deleteConfirmation', { name: selectedEquipment?.name }) 
+              }} />
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>{t('equipmentTable.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -732,10 +735,10 @@ export function EquipmentTable({
               {deleteEquipment.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Excluindo...
+                  {t('equipmentTable.deleting')}
                 </>
               ) : (
-                'Excluir'
+                t('common.delete')
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

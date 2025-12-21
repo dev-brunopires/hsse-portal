@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -62,12 +63,6 @@ interface EquipmentDetailDialogProps {
   onNewInspection?: () => void;
 }
 
-const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' }> = {
-  approved: { label: 'Aprovado', variant: 'default' },
-  pending: { label: 'Pendente', variant: 'secondary' },
-  rejected: { label: 'Reprovado', variant: 'destructive' },
-};
-
 function formatFileSize(bytes: number | null): string {
   if (!bytes) return '—';
   if (bytes < 1024) return `${bytes} B`;
@@ -88,6 +83,7 @@ export function EquipmentDetailDialog({
   onEdit,
   onNewInspection,
 }: EquipmentDetailDialogProps) {
+  const { t } = useTranslation();
   const [uploadingFile, setUploadingFile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -101,6 +97,12 @@ export function EquipmentDetailDialog({
   const { data: documents, isLoading: loadingDocuments } = useEquipmentDocuments(equipment?.id);
   const uploadDocument = useUploadDocument();
   const deleteDocument = useDeleteDocument();
+
+  const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' }> = {
+    approved: { label: t('equipmentDetail.approved'), variant: 'default' },
+    pending: { label: t('equipmentDetail.pending'), variant: 'secondary' },
+    rejected: { label: t('equipmentDetail.rejected'), variant: 'destructive' },
+  };
 
   if (!equipment) return null;
 
@@ -130,7 +132,7 @@ export function EquipmentDetailDialog({
 
   const handleView = async (filePath: string, fileType: string) => {
     try {
-      toast({ title: 'Carregando...', description: 'Abrindo documento.' });
+      toast({ title: t('equipmentDetail.loading'), description: t('equipmentDetail.openingDocument') });
       
       const { data, error } = await supabase.storage
         .from('equipment-documents')
@@ -149,8 +151,8 @@ export function EquipmentDetailDialog({
     } catch (error: any) {
       console.error('View error:', error);
       toast({
-        title: 'Erro ao visualizar',
-        description: error.message || 'Não foi possível abrir o documento. Verifique suas permissões.',
+        title: t('equipmentDetail.errorViewing'),
+        description: t('equipmentDetail.cannotOpenDocument'),
         variant: 'destructive',
       });
     }
@@ -158,7 +160,7 @@ export function EquipmentDetailDialog({
 
   const handleDownload = async (filePath: string, fileName: string) => {
     try {
-      toast({ title: 'Preparando download...', description: 'Gerando link do documento.' });
+      toast({ title: t('equipmentDetail.preparingDownload'), description: t('equipmentDetail.generatingLink') });
       
       const { data, error } = await supabase.storage
         .from('equipment-documents')
@@ -182,15 +184,15 @@ export function EquipmentDetailDialog({
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
         
-        toast({ title: 'Download iniciado!', description: fileName });
+        toast({ title: t('equipmentDetail.downloadStarted'), description: fileName });
       } else {
         throw new Error('URL não gerada');
       }
     } catch (error: any) {
       console.error('Download error:', error);
       toast({
-        title: 'Erro ao baixar',
-        description: error.message || 'Não foi possível baixar o documento. Verifique suas permissões.',
+        title: t('equipmentDetail.errorDownloading'),
+        description: t('equipmentDetail.cannotDownloadDocument'),
         variant: 'destructive',
       });
     }
@@ -209,8 +211,8 @@ export function EquipmentDetailDialog({
     } catch (error: any) {
       console.error('Delete error:', error);
       toast({
-        title: 'Erro ao excluir',
-        description: error.message || 'Não foi possível excluir o documento. Verifique suas permissões.',
+        title: t('equipmentDetail.errorDeleting'),
+        description: t('equipmentDetail.cannotDeleteDocument'),
         variant: 'destructive',
       });
     }
@@ -222,14 +224,13 @@ export function EquipmentDetailDialog({
       <AlertDialog open={deleteDocDialog.open} onOpenChange={(open) => setDeleteDocDialog({ open, doc: open ? deleteDocDialog.doc : null })}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir documento?</AlertDialogTitle>
+            <AlertDialogTitle>{t('equipmentDetail.deleteDocument')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir o documento "{deleteDocDialog.doc?.file_name}"? 
-              Esta ação não pode ser desfeita.
+              {t('equipmentDetail.deleteDocumentConfirm', { name: deleteDocDialog.doc?.file_name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>{t('equipmentDetail.cancel')}</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleDeleteConfirm}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -237,10 +238,10 @@ export function EquipmentDetailDialog({
               {deleteDocument.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Excluindo...
+                  {t('equipmentDetail.deleting')}
                 </>
               ) : (
-                'Excluir'
+                t('common.delete')
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -270,11 +271,11 @@ export function EquipmentDetailDialog({
               <div className="flex items-center gap-2 shrink-0">
                 <Button variant="outline" size="sm" className="gap-2" onClick={onEdit}>
                   <Edit className="h-4 w-4" />
-                  Editar
+                  {t('equipmentDetail.edit')}
                 </Button>
                 <Button size="sm" className="gap-2" onClick={onNewInspection}>
                   <ClipboardCheck className="h-4 w-4" />
-                  Nova Inspeção
+                  {t('equipmentDetail.newInspection')}
                 </Button>
               </div>
             </div>
@@ -287,21 +288,21 @@ export function EquipmentDetailDialog({
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
             >
               <Package className="h-4 w-4 mr-2" />
-              Detalhes
+              {t('equipmentDetail.details')}
             </TabsTrigger>
             <TabsTrigger 
               value="inspections"
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
             >
               <History className="h-4 w-4 mr-2" />
-              Inspeções ({inspections?.length || 0})
+              {t('equipmentDetail.inspections')} ({inspections?.length || 0})
             </TabsTrigger>
             <TabsTrigger 
               value="documents"
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
             >
               <FileText className="h-4 w-4 mr-2" />
-              Documentos ({documents?.length || 0})
+              {t('equipmentDetail.documents')} ({documents?.length || 0})
             </TabsTrigger>
           </TabsList>
 
@@ -313,23 +314,23 @@ export function EquipmentDetailDialog({
                 <div className="space-y-4">
                   <h3 className="font-semibold flex items-center gap-2">
                     <Tag className="h-4 w-4 text-primary" />
-                    Identificação
+                    {t('equipmentDetail.identification')}
                   </h3>
                   <div className="space-y-3 pl-6">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Código Interno</span>
+                      <span className="text-muted-foreground">{t('equipmentDetail.internalCode')}</span>
                       <span className="font-mono font-medium">{equipment.internalCode}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Nome</span>
+                      <span className="text-muted-foreground">{t('equipmentDetail.name')}</span>
                       <span className="font-medium">{equipment.name}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Categoria</span>
+                      <span className="text-muted-foreground">{t('equipmentDetail.category')}</span>
                       <span>{equipment.category || equipment.categoryName}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Tipo</span>
+                      <span className="text-muted-foreground">{t('equipmentDetail.type')}</span>
                       <span>{equipment.type}</span>
                     </div>
                   </div>
@@ -339,24 +340,24 @@ export function EquipmentDetailDialog({
                 <div className="space-y-4">
                   <h3 className="font-semibold flex items-center gap-2">
                     <Factory className="h-4 w-4 text-primary" />
-                    Dados Técnicos
+                    {t('equipmentDetail.technicalData')}
                   </h3>
                   <div className="space-y-3 pl-6">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Fabricante</span>
+                      <span className="text-muted-foreground">{t('equipmentDetail.manufacturer')}</span>
                       <span className="font-medium">{equipment.manufacturer}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Modelo</span>
+                      <span className="text-muted-foreground">{t('equipmentDetail.model')}</span>
                       <span>{equipment.model}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Número de Série</span>
+                      <span className="text-muted-foreground">{t('equipmentDetail.serialNumber')}</span>
                       <span className="font-mono">{equipment.serialNumber}</span>
                     </div>
                     {equipment.capacity && (
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Capacidade</span>
+                        <span className="text-muted-foreground">{t('equipmentDetail.capacity')}</span>
                         <span className="font-medium">{equipment.capacity}</span>
                       </div>
                     )}
@@ -367,15 +368,15 @@ export function EquipmentDetailDialog({
                 <div className="space-y-4">
                   <h3 className="font-semibold flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-primary" />
-                    Localização
+                    {t('equipmentDetail.locationSection')}
                   </h3>
                   <div className="space-y-3 pl-6">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Unidade</span>
+                      <span className="text-muted-foreground">{t('equipmentDetail.unit')}</span>
                       <span className="font-medium">{equipment.unit}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Local Físico</span>
+                      <span className="text-muted-foreground">{t('equipmentDetail.physicalLocation')}</span>
                       <span>{equipment.location}</span>
                     </div>
                   </div>
@@ -385,19 +386,19 @@ export function EquipmentDetailDialog({
                 <div className="space-y-4">
                   <h3 className="font-semibold flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-primary" />
-                    Datas
+                    {t('equipmentDetail.datesSection')}
                   </h3>
                   <div className="space-y-3 pl-6">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Fabricação</span>
+                      <span className="text-muted-foreground">{t('equipmentDetail.manufacturing')}</span>
                       <span>{formatDate(equipment.manufacturingDate)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Aquisição</span>
+                      <span className="text-muted-foreground">{t('equipmentDetail.acquisition')}</span>
                       <span>{formatDate(equipment.acquisitionDate)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Validade</span>
+                      <span className="text-muted-foreground">{t('equipmentDetail.validity')}</span>
                       <span>{formatDate(equipment.expiryDate)}</span>
                     </div>
                   </div>
@@ -412,14 +413,14 @@ export function EquipmentDetailDialog({
                 <div className="p-4 rounded-lg border border-border bg-muted/30">
                   <div className="flex items-center gap-2 mb-2">
                     <CheckCircle2 className="h-5 w-5 text-status-success" />
-                    <span className="font-medium">Última Inspeção</span>
+                    <span className="font-medium">{t('equipmentDetail.lastInspection')}</span>
                   </div>
                   <p className="text-2xl font-bold">
                     {equipment.lastInspection ? new Date(equipment.lastInspection).toLocaleDateString('pt-BR') : '—'}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {inspections?.[0]?.status === 'approved' ? 'Aprovado' : 
-                     inspections?.[0]?.status === 'rejected' ? 'Reprovado' : '—'}
+                    {inspections?.[0]?.status === 'approved' ? t('equipmentDetail.approved') : 
+                     inspections?.[0]?.status === 'rejected' ? t('equipmentDetail.rejected') : '—'}
                   </p>
                 </div>
 
@@ -441,7 +442,7 @@ export function EquipmentDetailDialog({
                         'text-muted-foreground'
                       ) : 'text-muted-foreground'
                     )} />
-                    <span className="font-medium">Próxima Inspeção</span>
+                    <span className="font-medium">{t('equipmentDetail.nextInspection')}</span>
                   </div>
                   <p className="text-2xl font-bold">
                     {equipment.nextInspection ? new Date(equipment.nextInspection).toLocaleDateString('pt-BR') : '—'}
@@ -454,7 +455,7 @@ export function EquipmentDetailDialog({
                       'text-muted-foreground'
                     ) : 'text-muted-foreground'
                   )}>
-                    {equipment.nextInspection ? (inspectionDays > 0 ? `Em ${inspectionDays} dias` : 'Vencida') : '—'}
+                    {equipment.nextInspection ? (inspectionDays > 0 ? t('equipmentDetail.inDays', { days: inspectionDays }) : t('equipmentDetail.expired')) : '—'}
                   </p>
                 </div>
 
@@ -476,7 +477,7 @@ export function EquipmentDetailDialog({
                         'text-muted-foreground'
                       ) : 'text-muted-foreground'
                     )} />
-                    <span className="font-medium">Validade Certificado</span>
+                    <span className="font-medium">{t('equipmentDetail.certificateValidity')}</span>
                   </div>
                   <p className="text-2xl font-bold">
                     {equipment.certificateExpiry ? new Date(equipment.certificateExpiry).toLocaleDateString('pt-BR') : '—'}
@@ -489,7 +490,7 @@ export function EquipmentDetailDialog({
                       'text-muted-foreground'
                     ) : 'text-muted-foreground'
                   )}>
-                    {equipment.certificateExpiry ? (certificateDays > 0 ? `${certificateDays} dias restantes` : 'Vencido') : '—'}
+                    {equipment.certificateExpiry ? (certificateDays > 0 ? t('equipmentDetail.daysRemaining', { days: certificateDays }) : t('equipmentDetail.certificateExpired')) : '—'}
                   </p>
                 </div>
               </div>
@@ -536,7 +537,7 @@ export function EquipmentDetailDialog({
                             </p>
                             <p className="text-sm text-muted-foreground flex items-center gap-1">
                               <User className="h-3 w-3" />
-                              {inspection.profiles?.full_name || 'Inspetor não identificado'}
+                              {inspection.profiles?.full_name || t('equipmentDetail.inspectorNotIdentified')}
                             </p>
                           </div>
                         </div>
@@ -546,20 +547,20 @@ export function EquipmentDetailDialog({
                       </div>
                       {inspection.observations && (
                         <div className="mt-3 ml-8">
-                          <p className="text-sm font-medium text-foreground">Observações:</p>
+                          <p className="text-sm font-medium text-foreground">{t('equipmentDetail.observations')}:</p>
                           <p className="text-sm text-muted-foreground">{inspection.observations}</p>
                         </div>
                       )}
                       {inspection.recommendations && (
                         <div className="mt-2 ml-8">
-                          <p className="text-sm font-medium text-foreground">Recomendações:</p>
+                          <p className="text-sm font-medium text-foreground">{t('equipmentDetail.recommendations')}:</p>
                           <p className="text-sm text-muted-foreground">{inspection.recommendations}</p>
                         </div>
                       )}
                       {inspection.next_inspection_date && (
                         <div className="mt-2 ml-8">
                           <p className="text-sm text-muted-foreground">
-                            Próxima inspeção programada: {new Date(inspection.next_inspection_date).toLocaleDateString('pt-BR')}
+                            {t('equipmentDetail.nextScheduledInspection')}: {new Date(inspection.next_inspection_date).toLocaleDateString('pt-BR')}
                           </p>
                         </div>
                       )}
@@ -569,13 +570,13 @@ export function EquipmentDetailDialog({
               ) : (
                 <div className="text-center py-12">
                   <History className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-lg font-medium">Nenhuma inspeção registrada</p>
+                  <p className="text-lg font-medium">{t('equipmentDetail.noInspectionRegistered')}</p>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Este equipamento ainda não possui inspeções.
+                    {t('equipmentDetail.noInspectionMessage')}
                   </p>
                   <Button onClick={onNewInspection} className="gap-2">
                     <ClipboardCheck className="h-4 w-4" />
-                    Registrar Primeira Inspeção
+                    {t('equipmentDetail.registerFirstInspection')}
                   </Button>
                 </div>
               )}
@@ -600,12 +601,12 @@ export function EquipmentDetailDialog({
                   {uploadingFile ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Enviando...
+                      {t('equipmentDetail.uploading')}
                     </>
                   ) : (
                     <>
                       <Upload className="h-4 w-4" />
-                      Enviar Documento
+                      {t('equipmentDetail.uploadDocument')}
                     </>
                   )}
                 </Button>
@@ -648,7 +649,7 @@ export function EquipmentDetailDialog({
                             onClick={() => handleView(doc.file_path, doc.file_type)}
                           >
                             <ExternalLink className="h-4 w-4" />
-                            Ver
+                            {t('equipmentDetail.view')}
                           </Button>
                           <Button 
                             variant="outline" 
@@ -657,7 +658,7 @@ export function EquipmentDetailDialog({
                             onClick={() => handleDownload(doc.file_path, doc.file_name)}
                           >
                             <Download className="h-4 w-4" />
-                            Baixar
+                            {t('equipmentDetail.download')}
                           </Button>
                           <Button 
                             variant="ghost" 
@@ -676,9 +677,9 @@ export function EquipmentDetailDialog({
               ) : (
                 <div className="text-center py-12">
                   <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-lg font-medium">Nenhum documento anexado</p>
+                  <p className="text-lg font-medium">{t('equipmentDetail.noDocumentAttached')}</p>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Adicione certificados, notas fiscais, manuais e outros documentos.
+                    {t('equipmentDetail.addDocumentsMessage')}
                   </p>
                   <Button 
                     variant="outline" 
@@ -686,7 +687,7 @@ export function EquipmentDetailDialog({
                     onClick={() => fileInputRef.current?.click()}
                   >
                     <Upload className="h-4 w-4" />
-                    Enviar Primeiro Documento
+                    {t('equipmentDetail.uploadFirstDocument')}
                   </Button>
                 </div>
               )}
