@@ -177,6 +177,7 @@ export type Database = {
           observations: string | null
           serial_number: string
           ship_id: string | null
+          short_code: string | null
           status: string
           type: string
           unit: string
@@ -202,6 +203,7 @@ export type Database = {
           observations?: string | null
           serial_number: string
           ship_id?: string | null
+          short_code?: string | null
           status?: string
           type: string
           unit: string
@@ -227,6 +229,7 @@ export type Database = {
           observations?: string | null
           serial_number?: string
           ship_id?: string | null
+          short_code?: string | null
           status?: string
           type?: string
           unit?: string
@@ -986,6 +989,7 @@ export type Database = {
     }
     Functions: {
       can_manage_users: { Args: { _user_id: string }; Returns: boolean }
+      generate_equipment_short_code: { Args: never; Returns: string }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]

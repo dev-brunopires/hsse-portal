@@ -17,6 +17,7 @@ interface QRCodeDialogProps {
     id: string;
     name: string;
     internalCode: string;
+    shortCode?: string;
     categoryName?: string;
     location?: string;
   } | null;
@@ -114,10 +115,25 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
             }
             .qr-container {
               flex-shrink: 0;
+              position: relative;
             }
             .qr-container svg {
               width: 32mm !important;
               height: 32mm !important;
+            }
+            .short-code-overlay {
+              position: absolute;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              background: white;
+              padding: 1px 3px;
+              border-radius: 2px;
+            }
+            .short-code {
+              font-size: 6pt;
+              font-weight: bold;
+              font-family: monospace;
             }
             .info {
               flex: 1;
@@ -126,16 +142,24 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
               justify-content: center;
               overflow: hidden;
             }
+            .quick-code {
+              font-size: 14pt;
+              font-weight: bold;
+              font-family: monospace;
+              color: #000;
+              margin-bottom: 1px;
+            }
             .code {
-              font-size: 11pt;
+              font-size: 8pt;
               font-weight: bold;
               margin-bottom: 2px;
               white-space: nowrap;
               overflow: hidden;
               text-overflow: ellipsis;
+              color: #666;
             }
             .name {
-              font-size: 8pt;
+              font-size: 7pt;
               color: #333;
               margin-bottom: 2px;
               display: -webkit-box;
@@ -144,31 +168,33 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
               overflow: hidden;
             }
             .location {
-              font-size: 7pt;
+              font-size: 6pt;
               color: #666;
               white-space: nowrap;
               overflow: hidden;
               text-overflow: ellipsis;
             }
             .scan-text {
-              font-size: 6pt;
+              font-size: 5pt;
               color: #999;
               margin-top: 2px;
             }
           </style>
         </head>
         <body>
-          <div class="label">
-            <div class="qr-container">
-              ${svg.outerHTML}
+            <div class="label">
+              <div class="qr-container">
+                ${svg.outerHTML}
+                ${equipment.shortCode ? `<div class="short-code-overlay"><span class="short-code">${equipment.shortCode}</span></div>` : ''}
+              </div>
+              <div class="info">
+                ${equipment.shortCode ? `<div class="quick-code">${equipment.shortCode}</div>` : ''}
+                <div class="code">${equipment.internalCode}</div>
+                <div class="name">${equipment.name}</div>
+                ${equipment.location ? `<div class="location">📍 ${equipment.location}</div>` : ''}
+                <div class="scan-text">Escaneie para inspeção</div>
+              </div>
             </div>
-            <div class="info">
-              <div class="code">${equipment.internalCode}</div>
-              <div class="name">${equipment.name}</div>
-              ${equipment.location ? `<div class="location">📍 ${equipment.location}</div>` : ''}
-              <div class="scan-text">Escaneie para inspeção</div>
-            </div>
-          </div>
           <script>
             window.onload = () => {
               setTimeout(() => {
@@ -211,9 +237,17 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
               border: 2px solid #000;
               border-radius: 16px;
             }
+            .quick-code {
+              font-size: 48px;
+              font-weight: bold;
+              font-family: monospace;
+              letter-spacing: 4px;
+              margin-bottom: 8px;
+            }
             h1 { 
-              font-size: 24px; 
-              margin-bottom: 4px; 
+              font-size: 18px; 
+              margin-bottom: 4px;
+              color: #666;
             }
             .name { 
               font-size: 18px; 
@@ -225,8 +259,25 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
               color: #666; 
               margin-bottom: 8px;
             }
-            svg { 
-              margin: 20px 0; 
+            .qr-wrapper {
+              position: relative;
+              display: inline-block;
+              margin: 20px 0;
+            }
+            .qr-wrapper svg { 
+              display: block;
+            }
+            .qr-center-code {
+              position: absolute;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              background: white;
+              padding: 4px 8px;
+              border-radius: 4px;
+              font-family: monospace;
+              font-weight: bold;
+              font-size: 14px;
             }
             .instructions {
               font-size: 14px;
@@ -236,17 +287,27 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
               background: #f5f5f5;
               border-radius: 8px;
             }
+            .search-note {
+              font-size: 12px;
+              color: #999;
+              margin-top: 8px;
+            }
           </style>
         </head>
         <body>
           <div class="container">
+            ${equipment.shortCode ? `<div class="quick-code">${equipment.shortCode}</div>` : ''}
             <h1>${equipment.internalCode}</h1>
             <div class="name">${equipment.name}</div>
             ${equipment.location ? `<div class="location">📍 ${equipment.location}</div>` : ''}
-            ${svg.outerHTML}
+            <div class="qr-wrapper">
+              ${svg.outerHTML}
+              ${equipment.shortCode ? `<div class="qr-center-code">${equipment.shortCode}</div>` : ''}
+            </div>
             <div class="instructions">
               📱 Escaneie o QR Code para registrar inspeção
             </div>
+            ${equipment.shortCode ? `<div class="search-note">Ou pesquise pelo código: <strong>${equipment.shortCode}</strong></div>` : ''}
           </div>
           <script>
             window.onload = () => {
@@ -273,15 +334,28 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
         </DialogHeader>
 
         <div className="flex flex-col items-center py-4">
-          <div ref={qrRef} className="bg-white p-4 rounded-lg border shadow-sm">
+          <div ref={qrRef} className="bg-white p-4 rounded-lg border shadow-sm relative">
             <QRCodeSVG 
               value={inspectionUrl} 
               size={180}
               level="H"
               includeMargin
             />
+            {/* Short code overlay in center of QR */}
+            {equipment.shortCode && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="bg-white px-2 py-1 rounded shadow-sm border">
+                  <span className="font-mono text-sm font-bold text-gray-800">
+                    {equipment.shortCode}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
-          <p className="font-mono text-lg font-bold mt-4">{equipment.internalCode}</p>
+          {equipment.shortCode && (
+            <p className="font-mono text-2xl font-bold mt-4 text-primary">{equipment.shortCode}</p>
+          )}
+          <p className="font-mono text-sm text-muted-foreground">{equipment.internalCode}</p>
           <p className="text-muted-foreground text-center">{equipment.name}</p>
           {equipment.location && (
             <p className="text-sm text-muted-foreground mt-1">📍 {equipment.location}</p>
