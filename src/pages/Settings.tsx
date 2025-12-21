@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Bell, Shield, Database, Mail, Plug, Rocket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +8,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { NotificationSettingsCard } from '@/components/dashboard/NotificationSettingsCard';
 import { IFSIntegrationCard } from '@/components/settings/IFSIntegrationCard';
 import { useOnboarding } from '@/hooks/useOnboarding';
+
 export default function Settings() {
+  const { t } = useTranslation();
   const { resetTour, startTour } = useOnboarding();
 
   const handleRestartTour = () => {
@@ -18,9 +21,9 @@ export default function Settings() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Configurações</h1>
+        <h1 className="text-2xl font-bold text-foreground">{t('settings.title')}</h1>
         <p className="text-muted-foreground">
-          Configurações gerais do sistema
+          {t('settings.subtitle')}
         </p>
       </div>
 
@@ -28,15 +31,15 @@ export default function Settings() {
         <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-flex">
           <TabsTrigger value="notifications" className="gap-2">
             <Bell className="h-4 w-4" />
-            <span className="hidden sm:inline">Notificações</span>
+            <span className="hidden sm:inline">{t('settings.notifications')}</span>
           </TabsTrigger>
           <TabsTrigger value="security" className="gap-2">
             <Shield className="h-4 w-4" />
-            <span className="hidden sm:inline">Segurança</span>
+            <span className="hidden sm:inline">{t('settings.security')}</span>
           </TabsTrigger>
           <TabsTrigger value="integrations" className="gap-2">
             <Plug className="h-4 w-4" />
-            <span className="hidden sm:inline">Integrações</span>
+            <span className="hidden sm:inline">{t('settings.integrations')}</span>
           </TabsTrigger>
         </TabsList>
 
@@ -47,29 +50,29 @@ export default function Settings() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Bell className="h-5 w-5 text-primary" />
-                Preferências de Alertas
+                {t('settings.alertPreferences')}
               </CardTitle>
-              <CardDescription>Configure quais tipos de alertas deseja receber</CardDescription>
+              <CardDescription>{t('settings.configureAlertTypes')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="email-alerts">Alertas por E-mail</Label>
-                  <p className="text-sm text-muted-foreground">Receba notificações por e-mail</p>
+                  <Label htmlFor="email-alerts">{t('settings.emailAlerts')}</Label>
+                  <p className="text-sm text-muted-foreground">{t('settings.emailAlertsDesc')}</p>
                 </div>
                 <Switch id="email-alerts" defaultChecked />
               </div>
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="dashboard-alerts">Alertas no Dashboard</Label>
-                  <p className="text-sm text-muted-foreground">Exibir alertas na tela principal</p>
+                  <Label htmlFor="dashboard-alerts">{t('settings.dashboardAlerts')}</Label>
+                  <p className="text-sm text-muted-foreground">{t('settings.dashboardAlertsDesc')}</p>
                 </div>
                 <Switch id="dashboard-alerts" defaultChecked />
               </div>
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="expiry-alerts">Alertas de Vencimento</Label>
-                  <p className="text-sm text-muted-foreground">Notificar sobre inspeções vencidas</p>
+                  <Label htmlFor="expiry-alerts">{t('settings.expiryAlerts')}</Label>
+                  <p className="text-sm text-muted-foreground">{t('settings.expiryAlertsDesc')}</p>
                 </div>
                 <Switch id="expiry-alerts" defaultChecked />
               </div>
@@ -82,19 +85,19 @@ export default function Settings() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Shield className="h-5 w-5 text-primary" />
-                Segurança
+                {t('settings.securitySettings')}
               </CardTitle>
-              <CardDescription>Configurações de segurança da conta</CardDescription>
+              <CardDescription>{t('settings.accountSecuritySettings')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <Button variant="outline" className="w-full justify-start">
-                Alterar Senha
+                {t('settings.changePassword')}
               </Button>
               <Button variant="outline" className="w-full justify-start">
-                Configurar Autenticação em Dois Fatores (2FA)
+                {t('settings.configureTwoFactor')}
               </Button>
               <Button variant="outline" className="w-full justify-start">
-                Gerenciar Sessões Ativas
+                {t('settings.manageSessions')}
               </Button>
             </CardContent>
           </Card>
@@ -105,19 +108,19 @@ export default function Settings() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Database className="h-5 w-5 text-primary" />
-                Dados
+                {t('settings.data')}
               </CardTitle>
-              <CardDescription>Gerenciamento de dados do sistema</CardDescription>
+              <CardDescription>{t('settings.dataManagement')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <Button variant="outline" className="w-full justify-start">
-                Exportar Dados
+                {t('settings.exportData')}
               </Button>
               <Button variant="outline" className="w-full justify-start">
-                Importar Dados
+                {t('settings.importData')}
               </Button>
               <Button variant="outline" className="w-full justify-start">
-                Backup Manual
+                {t('settings.manualBackup')}
               </Button>
             </CardContent>
           </Card>
@@ -126,22 +129,22 @@ export default function Settings() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Mail className="h-5 w-5 text-primary" />
-                Integrações Externas
+                {t('settings.externalIntegrations')}
               </CardTitle>
-              <CardDescription>Conectar com outros sistemas</CardDescription>
+              <CardDescription>{t('settings.connectOtherSystems')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>API Externa</Label>
-                  <p className="text-sm text-muted-foreground">Habilitar acesso via API</p>
+                  <Label>{t('settings.externalApi')}</Label>
+                  <p className="text-sm text-muted-foreground">{t('settings.enableApiAccess')}</p>
                 </div>
                 <Switch />
               </div>
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Sincronização SAP</Label>
-                  <p className="text-sm text-muted-foreground">Integrar com sistema SAP</p>
+                  <Label>{t('settings.sapSync')}</Label>
+                  <p className="text-sm text-muted-foreground">{t('settings.integrateWithSap')}</p>
                 </div>
                 <Switch />
               </div>
@@ -154,14 +157,14 @@ export default function Settings() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Rocket className="h-5 w-5 text-primary" />
-                Tour do Sistema
+                {t('settings.systemTour')}
               </CardTitle>
-              <CardDescription>Reinicie o tour de introdução ao sistema</CardDescription>
+              <CardDescription>{t('settings.restartTourDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
               <Button onClick={handleRestartTour} variant="outline" className="w-full">
                 <Rocket className="h-4 w-4 mr-2" />
-                Reiniciar Tour de Onboarding
+                {t('settings.restartOnboardingTour')}
               </Button>
             </CardContent>
           </Card>
