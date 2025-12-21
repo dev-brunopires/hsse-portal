@@ -145,8 +145,8 @@ export default function Profile() {
     } catch (error) {
       console.error('Error fetching profile:', error);
       toast({
-        title: 'Erro ao carregar perfil',
-        description: 'Não foi possível carregar seus dados.',
+        title: t('profilePage.errorLoadingProfile'),
+        description: t('profilePage.errorLoadingProfileDesc'),
         variant: 'destructive',
       });
     } finally {
@@ -177,8 +177,8 @@ export default function Profile() {
     }
     
     toast({
-      title: 'Foto recortada',
-      description: 'Clique em "Salvar Alterações" para confirmar.',
+      title: t('profilePage.photoCropped'),
+      description: t('profilePage.photoCroppedDesc'),
     });
   };
 
@@ -228,16 +228,16 @@ export default function Profile() {
       await refreshProfile();
 
       toast({
-        title: 'Perfil Atualizado',
-        description: 'Suas informações foram salvas com sucesso.',
+        title: t('profilePage.profileUpdated'),
+        description: t('profilePage.profileUpdatedDesc'),
       });
 
       fetchProfile();
     } catch (error) {
       console.error('Error updating profile:', error);
       toast({
-        title: 'Erro ao salvar',
-        description: 'Não foi possível salvar suas alterações.',
+        title: t('profilePage.errorSaving'),
+        description: t('profilePage.errorSavingDesc'),
         variant: 'destructive',
       });
     } finally {
@@ -248,16 +248,16 @@ export default function Profile() {
   const handleSignatureSave = (data: string) => {
     setSignatureData(data);
     toast({
-      title: 'Assinatura Capturada',
-      description: 'Clique em "Salvar Alterações" para confirmar.',
+      title: t('profilePage.signatureCaptured'),
+      description: t('profilePage.signatureCapturedDesc'),
     });
   };
 
   const handleClearSignature = () => {
     setSignatureData(null);
     toast({
-      title: 'Assinatura Removida',
-      description: 'A assinatura padrão foi removida.',
+      title: t('profilePage.signatureRemoved'),
+      description: t('profilePage.signatureRemovedDesc'),
     });
   };
 
@@ -282,9 +282,9 @@ export default function Profile() {
     <div className="space-y-6 animate-fade-in max-w-4xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Meu Perfil</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t('profilePage.myProfile')}</h1>
           <p className="text-muted-foreground">
-            Gerencie suas informações pessoais e preferências
+            {t('profilePage.manageInfo')}
           </p>
         </div>
       </div>
@@ -293,23 +293,23 @@ export default function Profile() {
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="personal" className="flex items-center gap-2">
             <User className="h-4 w-4" />
-            <span className="hidden sm:inline">Pessoal</span>
+            <span className="hidden sm:inline">{t('profilePage.personalTab')}</span>
           </TabsTrigger>
           <TabsTrigger value="signature" className="flex items-center gap-2">
             <PenTool className="h-4 w-4" />
-            <span className="hidden sm:inline">Assinatura</span>
+            <span className="hidden sm:inline">{t('profilePage.signatureTab')}</span>
           </TabsTrigger>
           <TabsTrigger value="appearance" className="flex items-center gap-2">
             <Palette className="h-4 w-4" />
-            <span className="hidden sm:inline">Aparência</span>
+            <span className="hidden sm:inline">{t('profilePage.appearanceTab')}</span>
           </TabsTrigger>
           <TabsTrigger value="notifications" className="flex items-center gap-2">
             <Bell className="h-4 w-4" />
-            <span className="hidden sm:inline">Notificações</span>
+            <span className="hidden sm:inline">{t('profilePage.notificationsTab')}</span>
           </TabsTrigger>
           <TabsTrigger value="security" className="flex items-center gap-2">
             <Shield className="h-4 w-4" />
-            <span className="hidden sm:inline">Segurança</span>
+            <span className="hidden sm:inline">{t('profilePage.securityTab')}</span>
           </TabsTrigger>
         </TabsList>
 
@@ -319,10 +319,10 @@ export default function Profile() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="h-5 w-5 text-primary" />
-                Informações Pessoais
+                {t('profilePage.personalInfo')}
               </CardTitle>
               <CardDescription>
-                Atualize seus dados de identificação e contato
+                {t('profilePage.updateYourData')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -370,10 +370,10 @@ export default function Profile() {
                         <FormItem>
                           <FormLabel className="flex items-center gap-2">
                             <User className="h-4 w-4" />
-                            Nome Completo
+                            {t('profilePage.fullName')}
                           </FormLabel>
                           <FormControl>
-                            <Input placeholder="Seu nome completo" {...field} />
+                            <Input placeholder={t('profilePage.fullName')} {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -387,13 +387,13 @@ export default function Profile() {
                         <FormItem>
                           <FormLabel className="flex items-center gap-2">
                             <Mail className="h-4 w-4" />
-                            Email
+                            {t('profilePage.email')}
                           </FormLabel>
                           <FormControl>
                             <Input {...field} disabled />
                           </FormControl>
                           <FormDescription>
-                            O email não pode ser alterado
+                            {t('profilePage.emailCantChange')}
                           </FormDescription>
                         </FormItem>
                       )}
@@ -406,7 +406,7 @@ export default function Profile() {
                         <FormItem>
                           <FormLabel className="flex items-center gap-2">
                             <Phone className="h-4 w-4" />
-                            Telefone
+                            {t('profilePage.phone')}
                           </FormLabel>
                           <FormControl>
                             <Input placeholder="(00) 00000-0000" {...field} />
@@ -422,10 +422,10 @@ export default function Profile() {
                         <FormItem>
                           <FormLabel className="flex items-center gap-2">
                             <Briefcase className="h-4 w-4" />
-                            Cargo
+                            {t('profilePage.position')}
                           </FormLabel>
                           <FormControl>
-                            <Input placeholder="Ex: Técnico de Segurança" {...field} />
+                            <Input placeholder={t('profilePage.position')} {...field} />
                           </FormControl>
                         </FormItem>
                       )}
@@ -438,10 +438,10 @@ export default function Profile() {
                         <FormItem className="md:col-span-2">
                           <FormLabel className="flex items-center gap-2">
                             <Building className="h-4 w-4" />
-                            Departamento
+                            {t('profilePage.department')}
                           </FormLabel>
                           <FormControl>
-                            <Input placeholder="Ex: Segurança do Trabalho" {...field} />
+                            <Input placeholder={t('profilePage.department')} {...field} />
                           </FormControl>
                         </FormItem>
                       )}
@@ -453,12 +453,12 @@ export default function Profile() {
                       {saving ? (
                         <>
                           <Loader2 className="h-4 w-4 animate-spin" />
-                          Salvando...
+                          {t('profilePage.saving')}
                         </>
                       ) : (
                         <>
                           <Save className="h-4 w-4" />
-                          Salvar Alterações
+                          {t('profilePage.saveChanges')}
                         </>
                       )}
                     </Button>
@@ -476,10 +476,10 @@ export default function Profile() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <PenTool className="h-5 w-5 text-primary" />
-                  Assinatura Digital Padrão
+                  {t('profilePage.defaultSignature')}
                 </CardTitle>
                 <CardDescription>
-                  Configure sua assinatura padrão para inspeções. Esta assinatura será usada automaticamente quando a opção estiver habilitada.
+                  {t('profilePage.signatureDescription')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -488,22 +488,22 @@ export default function Profile() {
                     <div className="p-4 rounded-lg border-2 border-status-success bg-status-success/10">
                       <div className="flex items-center gap-2 mb-3">
                         <CheckCircle2 className="h-5 w-5 text-status-success" />
-                        <span className="font-medium text-status-success">Assinatura Configurada</span>
+                        <span className="font-medium text-status-success">{t('profilePage.signatureConfigured')}</span>
                       </div>
                       <div className="bg-white rounded-lg p-4 border">
                         <img 
                           src={signatureData} 
-                          alt="Sua assinatura" 
+                          alt={t('profilePage.defaultSignature')} 
                           className="max-h-24 mx-auto"
                         />
                       </div>
                     </div>
                     <div className="flex gap-3">
                       <Button variant="outline" onClick={handleClearSignature} className="flex-1">
-                        Remover Assinatura
+                        {t('profilePage.removeSignature')}
                       </Button>
                       <Button variant="outline" onClick={() => setSignatureData(null)} className="flex-1">
-                        Criar Nova Assinatura
+                        {t('profilePage.createNewSignature')}
                       </Button>
                     </div>
                   </div>
@@ -518,10 +518,10 @@ export default function Profile() {
                 <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
                   <div className="space-y-1">
                     <Label htmlFor="auto-sign" className="font-medium">
-                      Assinar Inspeções Automaticamente
+                      {t('profilePage.autoSignInspections')}
                     </Label>
                     <p className="text-sm text-muted-foreground">
-                      Quando habilitado, suas inspeções serão automaticamente assinadas com sua assinatura padrão ao finalizar
+                      {t('profilePage.autoSignDescription')}
                     </p>
                   </div>
                   <Switch
@@ -535,7 +535,7 @@ export default function Profile() {
                 {!signatureData && autoSign && (
                   <p className="text-sm text-status-warning flex items-center gap-2">
                     <Settings className="h-4 w-4" />
-                    Configure uma assinatura padrão para habilitar a assinatura automática
+                    {t('profilePage.configureSignatureFirst')}
                   </p>
                 )}
 
@@ -544,12 +544,12 @@ export default function Profile() {
                     {saving ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        Salvando...
+                        {t('profilePage.saving')}
                       </>
                     ) : (
                       <>
                         <Save className="h-4 w-4" />
-                        Salvar Configurações
+                        {t('profilePage.saveSettings')}
                       </>
                     )}
                   </Button>
@@ -686,10 +686,10 @@ export default function Profile() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Bell className="h-5 w-5 text-primary" />
-                Preferências de Notificação
+                {t('profilePage.notificationPreferences')}
               </CardTitle>
               <CardDescription>
-                Configure como você deseja receber alertas e notificações
+                {t('profilePage.notificationDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -698,10 +698,10 @@ export default function Profile() {
                   <div className="space-y-1">
                     <Label htmlFor="notification-email" className="font-medium flex items-center gap-2">
                       <Mail className="h-4 w-4" />
-                      Notificações por Email
+                      {t('profilePage.emailNotifications')}
                     </Label>
                     <p className="text-sm text-muted-foreground">
-                      Receba alertas sobre inspeções vencendo e atualizações importantes
+                      {t('profilePage.emailNotificationsDesc')}
                     </p>
                   </div>
                   <Switch
@@ -715,10 +715,10 @@ export default function Profile() {
                   <div className="space-y-1">
                     <Label htmlFor="notification-app" className="font-medium flex items-center gap-2">
                       <Bell className="h-4 w-4" />
-                      Notificações no App
+                      {t('profilePage.appNotifications')}
                     </Label>
                     <p className="text-sm text-muted-foreground">
-                      Receba notificações push quando estiver usando o aplicativo
+                      {t('profilePage.appNotificationsDesc')}
                     </p>
                   </div>
                   <Switch
@@ -734,12 +734,12 @@ export default function Profile() {
                   {saving ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Salvando...
+                      {t('profilePage.saving')}
                     </>
                   ) : (
                     <>
                       <Save className="h-4 w-4" />
-                      Salvar Preferências
+                      {t('profilePage.savePreferences')}
                     </>
                   )}
                 </Button>
@@ -754,10 +754,10 @@ export default function Profile() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Shield className="h-5 w-5 text-primary" />
-                Segurança da Conta
+                {t('profilePage.accountSecurity')}
               </CardTitle>
               <CardDescription>
-                Gerencie a segurança da sua conta
+                {t('profilePage.manageAccountSecurity')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -767,9 +767,9 @@ export default function Profile() {
                     <Key className="h-5 w-5 text-primary" />
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-medium">Alterar Senha</h4>
+                    <h4 className="font-medium">{t('profilePage.changePasswordTitle')}</h4>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Atualize sua senha regularmente para manter sua conta segura
+                      {t('profilePage.changePasswordDesc')}
                     </p>
                     <Button variant="outline" className="mt-3" onClick={async () => {
                       const { error } = await supabase.auth.resetPasswordForEmail(
@@ -778,18 +778,18 @@ export default function Profile() {
                       );
                       if (error) {
                         toast({
-                          title: 'Erro',
+                          title: t('common.error'),
                           description: error.message,
                           variant: 'destructive',
                         });
                       } else {
                         toast({
-                          title: 'Email Enviado',
-                          description: 'Verifique seu email para redefinir sua senha.',
+                          title: t('profilePage.emailSent'),
+                          description: t('profilePage.emailSentDesc'),
                         });
                       }
                     }}>
-                      Enviar Email de Redefinição
+                      {t('profilePage.sendResetEmail')}
                     </Button>
                   </div>
                 </div>
@@ -798,21 +798,21 @@ export default function Profile() {
               <Separator />
 
               <div className="space-y-3">
-                <h4 className="font-medium">Informações da Sessão</h4>
+                <h4 className="font-medium">{t('profilePage.sessionInfo')}</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-muted-foreground">Email:</span>
+                    <span className="text-muted-foreground">{t('profilePage.email')}:</span>
                     <p className="font-medium">{user?.email}</p>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">ID do Usuário:</span>
+                    <span className="text-muted-foreground">{t('profilePage.userId')}:</span>
                     <p className="font-mono text-xs truncate">{user?.id}</p>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Último Acesso:</span>
+                    <span className="text-muted-foreground">{t('profilePage.lastAccess')}:</span>
                     <p className="font-medium">
                       {user?.last_sign_in_at 
-                        ? new Date(user.last_sign_in_at).toLocaleString('pt-BR')
+                        ? new Date(user.last_sign_in_at).toLocaleString(language === 'pt-BR' ? 'pt-BR' : 'en-US')
                         : 'N/A'
                       }
                     </p>
