@@ -1,26 +1,28 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { User, ClipboardList, Package, QrCode, Bell } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { QRCodeScannerDialog } from '@/components/equipment/QRCodeScannerDialog';
 
 interface NavItem {
   icon: React.ElementType;
-  label: string;
+  labelKey: string;
   path: string;
 }
 
 const leftNavItems: NavItem[] = [
-  { icon: User, label: 'Perfil', path: '/profile' },
-  { icon: ClipboardList, label: 'Inspeções', path: '/inspections' },
+  { icon: User, labelKey: 'common.profile', path: '/profile' },
+  { icon: ClipboardList, labelKey: 'navigation.inspections', path: '/inspections' },
 ];
 
 const rightNavItems: NavItem[] = [
-  { icon: Package, label: 'Equip.', path: '/equipment' },
-  { icon: Bell, label: 'Alertas', path: '/alerts' },
+  { icon: Package, labelKey: 'common.equipment', path: '/equipment' },
+  { icon: Bell, labelKey: 'navigation.alerts', path: '/alerts' },
 ];
 
 export function MobileBottomNav() {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const [scannerOpen, setScannerOpen] = useState(false);
@@ -57,7 +59,7 @@ export function MobileBottomNav() {
                     "h-5 w-5",
                     isActive(item.path) && "stroke-[2.5]"
                   )} />
-                  <span className="text-[10px] font-medium">{item.label}</span>
+                  <span className="text-[10px] font-medium">{t(item.labelKey)}</span>
                 </button>
               ))}
 
@@ -80,7 +82,7 @@ export function MobileBottomNav() {
                     "h-5 w-5",
                     isActive(item.path) && "stroke-[2.5]"
                   )} />
-                  <span className="text-[10px] font-medium">{item.label}</span>
+                  <span className="text-[10px] font-medium">{t(item.labelKey)}</span>
                 </button>
               ))}
             </div>
