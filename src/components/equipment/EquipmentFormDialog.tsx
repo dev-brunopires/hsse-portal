@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useForm, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -60,19 +61,19 @@ import { useEquipmentDocuments, useDeleteDocument, type EquipmentDocument } from
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
 
-const equipmentSchema = z.object({
+const createEquipmentSchema = (t: (key: string) => string) => z.object({
   // Dados Gerais
-  internalCode: z.string().min(1, 'Código interno é obrigatório'),
-  name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
-  categoryId: z.string().min(1, 'Selecione uma categoria'),
-  type: z.string().min(1, 'Tipo é obrigatório'),
+  internalCode: z.string().min(1, t('equipmentForm.internalCodeRequired')),
+  name: z.string().min(2, t('equipmentForm.nameMinChars')),
+  categoryId: z.string().min(1, t('equipmentForm.categoryRequired')),
+  type: z.string().min(1, t('equipmentForm.typeRequired')),
   manufacturer: z.string().optional(),
   model: z.string().optional(),
-  serialNumber: z.string().min(1, 'Número de série é obrigatório'),
+  serialNumber: z.string().min(1, t('equipmentForm.serialNumberRequired')),
   capacity: z.string().optional(),
   // Localização
-  shipId: z.string().min(1, 'Selecione um navio'),
-  location: z.string().min(1, 'Localização é obrigatória'),
+  shipId: z.string().min(1, t('equipmentForm.shipRequired')),
+  location: z.string().min(1, t('equipmentForm.locationRequired')),
   // Datas
   manufacturingDate: z.string().optional(),
   acquisitionDate: z.string().optional(),
@@ -82,7 +83,7 @@ const equipmentSchema = z.object({
   observations: z.string().optional(),
 });
 
-type EquipmentFormData = z.infer<typeof equipmentSchema>;
+type EquipmentFormData = z.infer<ReturnType<typeof createEquipmentSchema>>;
 
 interface EquipmentFormDialogProps {
   open: boolean;
@@ -100,6 +101,7 @@ export function EquipmentFormDialog({
   initialData,
   onSuccess,
 }: EquipmentFormDialogProps) {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('general');
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -107,6 +109,8 @@ export function EquipmentFormDialog({
   const [deletingDocId, setDeletingDocId] = useState<string | null>(null);
   const { toast } = useToast();
   const { user, role, isAdmin } = useAuth();
+  
+  const equipmentSchema = createEquipmentSchema(t);
   
   // Fetch existing documents for edit mode
   const { data: existingDocuments = [], isLoading: documentsLoading } = useEquipmentDocuments(
@@ -280,8 +284,8 @@ export function EquipmentFormDialog({
       }
     } catch (error) {
       toast({
-        title: 'Erro ao abrir documento',
-        description: 'Não foi possível abrir o documento.',
+        title: t('equipmentForm.errorOpenDocument'),
+        description: t('equipmentForm.cannotOpenDocument'),
         variant: 'destructive',
       });
     }
@@ -307,8 +311,8 @@ export function EquipmentFormDialog({
       }
     } catch (error) {
       toast({
-        title: 'Erro ao baixar documento',
-        description: 'Não foi possível baixar o documento.',
+        title: t('equipmentForm.errorDownloadDocument'),
+        description: t('equipmentForm.cannotDownloadDocument'),
         variant: 'destructive',
       });
     }
@@ -369,7 +373,7 @@ export function EquipmentFormDialog({
         await updateEquipment.mutateAsync({ id: initialData.id, ...equipmentData });
         equipmentId = initialData.id;
       } else {
-        throw new Error('ID do equipamento não encontrado');
+        throw new Error(t('equipmentForm.equipmentIdNotFound'));
       }
 
       // Upload documents
@@ -386,8 +390,8 @@ export function EquipmentFormDialog({
     } catch (error: any) {
       console.error('Error saving equipment:', error);
       toast({
-        title: 'Erro ao salvar equipamento',
-        description: error?.message || 'Não foi possível salvar o equipamento. Verifique suas permissões e o navio selecionado.',
+        title: t('equipmentForm.errorSaving'),
+        description: error?.message || t('equipmentForm.checkPermissionsAndShip'),
         variant: 'destructive',
       });
     } finally {
@@ -411,8 +415,8 @@ export function EquipmentFormDialog({
     else if (hasErrors(tabFields.dates)) setActiveTab('dates');
 
     toast({
-      title: 'Campos obrigatórios',
-      description: 'Revise os campos marcados com * antes de cadastrar.',
+      title: t('equipmentForm.requiredFields'),
+      description: t('equipmentForm.requiredFieldsMessage'),
       variant: 'destructive',
     });
   };
@@ -430,10 +434,10 @@ export function EquipmentFormDialog({
         <DialogHeader className="pb-4 border-b border-border pr-0">
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Package className="h-5 w-5 text-primary" />
-            {mode === 'create' ? 'Novo Equipamento' : 'Editar Equipamento'}
+            {mode === 'create' ? t('equipmentForm.newEquipment') : t('equipmentForm.editEquipment')}
           </DialogTitle>
           <DialogDescription>
-            Preencha as informações do equipamento de segurança. Campos com * são obrigatórios.
+            {t('equipmentForm.fillEquipmentInfo')}
           </DialogDescription>
         </DialogHeader>
 
@@ -443,28 +447,28 @@ export function EquipmentFormDialog({
               <TabsList className="grid w-full grid-cols-4 mb-4">
                 <TabsTrigger value="general" className="gap-2 relative">
                   <Package className="h-4 w-4" />
-                  <span className="hidden sm:inline">Geral</span>
+                  <span className="hidden sm:inline">{t('equipmentForm.general')}</span>
                   {tabProgress.general && (
                     <CheckCircle2 className="h-3 w-3 text-status-success absolute -top-1 -right-1" />
                   )}
                 </TabsTrigger>
                 <TabsTrigger value="location" className="gap-2 relative">
                   <Building2 className="h-4 w-4" />
-                  <span className="hidden sm:inline">Localização</span>
+                  <span className="hidden sm:inline">{t('equipmentForm.location')}</span>
                   {tabProgress.location && (
                     <CheckCircle2 className="h-3 w-3 text-status-success absolute -top-1 -right-1" />
                   )}
                 </TabsTrigger>
                 <TabsTrigger value="dates" className="gap-2 relative">
                   <Calendar className="h-4 w-4" />
-                  <span className="hidden sm:inline">Datas</span>
+                  <span className="hidden sm:inline">{t('equipmentForm.dates')}</span>
                   {tabProgress.dates && (
                     <CheckCircle2 className="h-3 w-3 text-status-success absolute -top-1 -right-1" />
                   )}
                 </TabsTrigger>
                 <TabsTrigger value="documents" className="gap-2 relative">
                   <FileText className="h-4 w-4" />
-                  <span className="hidden sm:inline">Documentos</span>
+                  <span className="hidden sm:inline">{t('equipmentForm.documents')}</span>
                   {(uploadedFiles.length > 0 || existingDocuments.length > 0) && (
                     <span className="absolute -top-1 -right-1 h-4 w-4 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center">
                       {uploadedFiles.length + existingDocuments.length}
@@ -482,12 +486,12 @@ export function EquipmentFormDialog({
                       name="internalCode"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Código Interno *</FormLabel>
+                          <FormLabel>{t('equipmentForm.internalCode')} *</FormLabel>
                           <FormControl>
-                            <Input placeholder="EXT-FPSO-001" {...field} />
+                            <Input placeholder={t('equipmentForm.internalCodePlaceholder')} {...field} />
                           </FormControl>
                           <FormDescription>
-                            Código único de identificação interna
+                            {t('equipmentForm.internalCodeDescription')}
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -499,11 +503,11 @@ export function EquipmentFormDialog({
                       name="categoryId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Categoria *</FormLabel>
+                          <FormLabel>{t('equipmentForm.category')} *</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value} disabled={categoriesLoading}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder={categoriesLoading ? 'Carregando...' : 'Selecione a categoria'} />
+                                <SelectValue placeholder={categoriesLoading ? t('equipmentForm.loading') : t('equipmentForm.selectCategory')} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent className="bg-popover border border-border shadow-lg z-50">
@@ -525,9 +529,9 @@ export function EquipmentFormDialog({
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Nome do Equipamento *</FormLabel>
+                        <FormLabel>{t('equipmentForm.equipmentName')} *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Ex: Extintor CO2 6kg" {...field} />
+                          <Input placeholder={t('equipmentForm.equipmentNamePlaceholder')} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -540,9 +544,9 @@ export function EquipmentFormDialog({
                       name="type"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Tipo *</FormLabel>
+                          <FormLabel>{t('equipmentForm.type')} *</FormLabel>
                           <FormControl>
-                            <Input placeholder="Ex: CO2, PQS, Água" {...field} />
+                            <Input placeholder={t('equipmentForm.typePlaceholder')} {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -554,9 +558,9 @@ export function EquipmentFormDialog({
                       name="serialNumber"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Número de Série *</FormLabel>
+                          <FormLabel>{t('equipmentForm.serialNumber')} *</FormLabel>
                           <FormControl>
-                            <Input placeholder="Ex: KD2024001234" {...field} />
+                            <Input placeholder={t('equipmentForm.serialNumberPlaceholder')} {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -570,9 +574,9 @@ export function EquipmentFormDialog({
                       name="manufacturer"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Fabricante</FormLabel>
+                          <FormLabel>{t('equipmentForm.manufacturer')}</FormLabel>
                           <FormControl>
-                            <Input placeholder="Ex: Kidde, MSA, Dräger" {...field} />
+                            <Input placeholder={t('equipmentForm.manufacturerPlaceholder')} {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -584,9 +588,9 @@ export function EquipmentFormDialog({
                       name="model"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Modelo</FormLabel>
+                          <FormLabel>{t('equipmentForm.model')}</FormLabel>
                           <FormControl>
-                            <Input placeholder="Ex: Pro 10 CO2" {...field} />
+                            <Input placeholder={t('equipmentForm.modelPlaceholder')} {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -598,9 +602,9 @@ export function EquipmentFormDialog({
                       name="capacity"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Capacidade</FormLabel>
+                          <FormLabel>{t('equipmentForm.capacity')}</FormLabel>
                           <FormControl>
-                            <Input placeholder="Ex: 6kg, 10L, 45min" {...field} />
+                            <Input placeholder={t('equipmentForm.capacityPlaceholder')} {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
