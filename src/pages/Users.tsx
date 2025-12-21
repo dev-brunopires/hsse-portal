@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   Users as UsersIcon, 
   Shield, 
@@ -51,17 +52,22 @@ import { TableSkeleton, CardSkeleton } from '@/components/ui/table-skeleton';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS } from 'date-fns/locale';
+import i18n from '@/i18n';
 
-const roleConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive'; icon: React.ElementType; order: number }> = {
-  admin_master: { label: 'Admin Master', variant: 'destructive', icon: Crown, order: 0 },
-  admin: { label: 'Administrador', variant: 'default', icon: Shield, order: 1 },
-  supervisor: { label: 'Supervisor', variant: 'secondary', icon: UserCheck, order: 2 },
-  technician: { label: 'Técnico', variant: 'outline', icon: User, order: 3 },
-  viewer: { label: 'Visualizador', variant: 'outline', icon: Eye, order: 4 },
-};
+const getRoleConfig = (t: (key: string) => string) => ({
+  admin_master: { label: t('roles.admin_master'), variant: 'destructive' as const, icon: Crown, order: 0 },
+  admin: { label: t('roles.admin'), variant: 'default' as const, icon: Shield, order: 1 },
+  supervisor: { label: t('roles.supervisor'), variant: 'secondary' as const, icon: UserCheck, order: 2 },
+  technician: { label: t('roles.technician'), variant: 'outline' as const, icon: User, order: 3 },
+  viewer: { label: t('roles.viewer'), variant: 'outline' as const, icon: Eye, order: 4 },
+});
 
 export default function Users() {
+  const { t } = useTranslation();
+  const roleConfig = getRoleConfig(t);
+  const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
+  
   const { data: profiles, isLoading } = useProfiles();
   const { data: ships, isLoading: shipsLoading } = useShips();
   const { data: allUserShips } = useAllUserShips();
@@ -182,9 +188,9 @@ export default function Users() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Gestão de Usuários</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t('usersPage.title')}</h1>
           <p className="text-muted-foreground">
-            Gerencie usuários, permissões e navios
+            {t('usersPage.subtitle')}
           </p>
         </div>
       </div>
@@ -193,11 +199,11 @@ export default function Users() {
         <TabsList>
           <TabsTrigger value="users" className="gap-2">
             <UsersIcon className="h-4 w-4" />
-            Usuários
+            {t('usersPage.usersTab')}
           </TabsTrigger>
           <TabsTrigger value="ships" className="gap-2">
             <Ship className="h-4 w-4" />
-            Navios
+            {t('usersPage.shipsTab')}
           </TabsTrigger>
         </TabsList>
 
@@ -206,7 +212,7 @@ export default function Users() {
           <div className="flex justify-end">
             <Button className="gap-2" onClick={() => setCreateDialogOpen(true)}>
               <Plus className="h-4 w-4" />
-              Novo Usuário
+              {t('dialogs.newUser')}
             </Button>
           </div>
 
@@ -216,7 +222,7 @@ export default function Users() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <UsersIcon className="h-4 w-4" />
-                  Total
+                  {t('common.total')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -227,7 +233,7 @@ export default function Users() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <Crown className="h-4 w-4" />
-                  Admin Master
+                  {t('roles.admin_master')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -238,7 +244,7 @@ export default function Users() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <Shield className="h-4 w-4" />
-                  Admins
+                  {t('roles.admin')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -249,7 +255,7 @@ export default function Users() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <UserCheck className="h-4 w-4" />
-                  Supervisores
+                  {t('roles.supervisor')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -260,7 +266,7 @@ export default function Users() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <User className="h-4 w-4" />
-                  Técnicos
+                  {t('roles.technician')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -271,7 +277,7 @@ export default function Users() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <Eye className="h-4 w-4" />
-                  Visualizadores
+                  {t('roles.viewer')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -285,13 +291,13 @@ export default function Users() {
             <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                  <CardTitle>Usuários do Sistema</CardTitle>
-                  <CardDescription>Todos os usuários cadastrados</CardDescription>
+                  <CardTitle>{t('usersPage.systemUsers')}</CardTitle>
+                  <CardDescription>{t('usersPage.allRegisteredUsers')}</CardDescription>
                 </div>
                 <div className="relative w-full sm:w-64">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Buscar usuários..."
+                    placeholder={t('usersPage.searchUsers')}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-9"
@@ -303,19 +309,19 @@ export default function Users() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Usuário</TableHead>
-                    <TableHead>E-mail</TableHead>
-                    <TableHead>Perfil</TableHead>
-                    <TableHead>Navios</TableHead>
-                    <TableHead>Cadastro</TableHead>
-                    <TableHead className="w-24 text-right">Ações</TableHead>
+                    <TableHead>{t('dialogs.user')}</TableHead>
+                    <TableHead>{t('dialogs.email')}</TableHead>
+                    <TableHead>{t('dialogs.role')}</TableHead>
+                    <TableHead>{t('usersPage.shipsTab')}</TableHead>
+                    <TableHead>{t('usersPage.registration')}</TableHead>
+                    <TableHead className="w-24 text-right">{t('common.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredUsers.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                        {searchTerm ? 'Nenhum usuário encontrado' : 'Nenhum usuário cadastrado'}
+                        {searchTerm ? t('usersPage.noUserFound') : t('usersPage.noUserRegistered')}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -339,7 +345,7 @@ export default function Users() {
                               <div>
                                 <p className="font-medium">{user.full_name}</p>
                                 {isCurrentUser && (
-                                  <span className="text-xs text-muted-foreground">(você)</span>
+                                  <span className="text-xs text-muted-foreground">({t('usersPage.you')})</span>
                                 )}
                               </div>
                             </div>
@@ -353,7 +359,7 @@ export default function Users() {
                           </TableCell>
                           <TableCell>
                             {isAdmin ? (
-                              <span className="text-xs text-muted-foreground italic">Todos</span>
+                              <span className="text-xs text-muted-foreground italic">{t('usersPage.allShipsAccess')}</span>
                             ) : userShipsNames.length > 0 ? (
                               <div className="flex flex-wrap gap-1">
                                 {userShipsNames.slice(0, 2).map((name, i) => (
@@ -369,11 +375,11 @@ export default function Users() {
                                 )}
                               </div>
                             ) : (
-                              <span className="text-xs text-muted-foreground">Nenhum</span>
+                              <span className="text-xs text-muted-foreground">{t('common.none')}</span>
                             )}
                           </TableCell>
                           <TableCell className="text-muted-foreground">
-                            {format(new Date(user.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                            {format(new Date(user.created_at), "dd/MM/yyyy", { locale: dateLocale })}
                           </TableCell>
                           <TableCell className="text-right">
                             <DropdownMenu>
@@ -383,19 +389,19 @@ export default function Users() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                                <DropdownMenuLabel>{t('common.actions')}</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={() => handleEdit(user)}>
                                   <Edit className="h-4 w-4 mr-2" />
-                                  Editar Dados
+                                  {t('usersPage.editData')}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleRoleChange(user)}>
                                   <Shield className="h-4 w-4 mr-2" />
-                                  Alterar Perfil
+                                  {t('usersPage.changeProfile')}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleManageShips(user)}>
                                   <Anchor className="h-4 w-4 mr-2" />
-                                  Gerenciar Navios
+                                  {t('usersPage.manageShips')}
                                 </DropdownMenuItem>
                                 {!isCurrentUser && (
                                   <>
@@ -405,7 +411,7 @@ export default function Users() {
                                       className="text-destructive focus:text-destructive"
                                     >
                                       <Trash2 className="h-4 w-4 mr-2" />
-                                      Remover Usuário
+                                      {t('usersPage.removeUser')}
                                     </DropdownMenuItem>
                                   </>
                                 )}
@@ -427,7 +433,7 @@ export default function Users() {
           <div className="flex justify-end">
             <Button className="gap-2" onClick={handleNewShip}>
               <Plus className="h-4 w-4" />
-              Novo Navio
+              {t('dialogs.newShip')}
             </Button>
           </div>
 
@@ -437,16 +443,16 @@ export default function Users() {
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     <Ship className="h-5 w-5" />
-                    Navios Cadastrados
+                    {t('usersPage.registeredShips')}
                   </CardTitle>
                   <CardDescription>
-                    Gerencie os navios e controle de acesso por embarcação
+                    {t('dialogs.manageShips')}
                   </CardDescription>
                 </div>
                 <div className="relative w-full sm:w-64">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Buscar navios..."
+                    placeholder={t('usersPage.searchShips')}
                     value={shipSearchTerm}
                     onChange={(e) => setShipSearchTerm(e.target.value)}
                     className="pl-9"
@@ -462,23 +468,23 @@ export default function Users() {
               ) : filteredShips.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                   <Ship className="h-16 w-16 mb-4" />
-                  <p className="text-lg font-medium">Nenhum navio cadastrado</p>
-                  <p className="text-sm mb-4">Cadastre navios para controlar acesso de usuários</p>
+                  <p className="text-lg font-medium">{t('usersPage.noShipRegistered')}</p>
+                  <p className="text-sm mb-4">{t('dialogs.manageShips')}</p>
                   <Button onClick={handleNewShip} className="gap-2">
                     <Plus className="h-4 w-4" />
-                    Cadastrar Primeiro Navio
+                    {t('dialogs.newShip')}
                   </Button>
                 </div>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Navio</TableHead>
-                      <TableHead>Código</TableHead>
-                      <TableHead>Descrição</TableHead>
-                      <TableHead>Usuários</TableHead>
-                      <TableHead>Cadastro</TableHead>
-                      <TableHead className="w-24 text-right">Ações</TableHead>
+                      <TableHead>{t('dialogs.shipName')}</TableHead>
+                      <TableHead>{t('dialogs.code')}</TableHead>
+                      <TableHead>{t('common.description')}</TableHead>
+                      <TableHead>{t('usersPage.usersTab')}</TableHead>
+                      <TableHead>{t('usersPage.registration')}</TableHead>
+                      <TableHead className="w-24 text-right">{t('common.actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -503,11 +509,11 @@ export default function Users() {
                           </TableCell>
                           <TableCell>
                             <Badge variant="secondary">
-                              {usersCount} usuário{usersCount !== 1 ? 's' : ''}
+                              {usersCount} {t('dialogs.user').toLowerCase()}{usersCount !== 1 ? 's' : ''}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-muted-foreground">
-                            {format(new Date(ship.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                            {format(new Date(ship.created_at), "dd/MM/yyyy", { locale: dateLocale })}
                           </TableCell>
                           <TableCell className="text-right">
                             <DropdownMenu>
@@ -517,11 +523,11 @@ export default function Users() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                                <DropdownMenuLabel>{t('common.actions')}</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={() => handleEditShip(ship)}>
                                   <Edit className="h-4 w-4 mr-2" />
-                                  Editar Navio
+                                  {t('dialogs.editShip')}
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem 
@@ -529,7 +535,7 @@ export default function Users() {
                                   className="text-destructive focus:text-destructive"
                                 >
                                   <Trash2 className="h-4 w-4 mr-2" />
-                                  Remover Navio
+                                  {t('dialogs.deleteShip')}
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>

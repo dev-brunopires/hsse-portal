@@ -1,7 +1,9 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { History, Search, Filter, ChevronDown, ChevronUp, Package, ClipboardCheck, User, Calendar, ArrowRight, Ship, Settings, UserCircle, Download, FileSpreadsheet, FileText } from 'lucide-react';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS } from 'date-fns/locale';
+import i18n from '@/i18n';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -16,53 +18,59 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { exportAuditLogsPDF, exportAuditLogsExcel } from '@/utils/exportAuditLogs';
 import { toast } from 'sonner';
 
-const actionLabels: Record<string, { label: string; color: string }> = {
-  INSERT: { label: 'Criação', color: 'bg-green-500/20 text-green-600 border-green-500/30' },
-  UPDATE: { label: 'Atualização', color: 'bg-blue-500/20 text-blue-600 border-blue-500/30' },
-  DELETE: { label: 'Exclusão', color: 'bg-red-500/20 text-red-600 border-red-500/30' },
-};
+const getActionLabels = (t: (key: string) => string) => ({
+  INSERT: { label: t('auditLogPage.actionCreate'), color: 'bg-green-500/20 text-green-600 border-green-500/30' },
+  UPDATE: { label: t('auditLogPage.actionUpdate'), color: 'bg-blue-500/20 text-blue-600 border-blue-500/30' },
+  DELETE: { label: t('auditLogPage.actionDelete'), color: 'bg-red-500/20 text-red-600 border-red-500/30' },
+});
 
-const tableLabels: Record<string, { label: string; icon: typeof Package }> = {
-  equipment: { label: 'Equipamento', icon: Package },
-  inspections: { label: 'Inspeção', icon: ClipboardCheck },
-  categories: { label: 'Categoria', icon: Settings },
-  ships: { label: 'Embarcação', icon: Ship },
-  profiles: { label: 'Perfil', icon: UserCircle },
-};
+const getTableLabels = (t: (key: string) => string) => ({
+  equipment: { label: t('auditLogPage.tableEquipment'), icon: Package },
+  inspections: { label: t('auditLogPage.tableInspection'), icon: ClipboardCheck },
+  categories: { label: t('auditLogPage.tableCategory'), icon: Settings },
+  ships: { label: t('auditLogPage.tableShip'), icon: Ship },
+  profiles: { label: t('auditLogPage.tableProfile'), icon: UserCircle },
+});
 
-const fieldLabels: Record<string, string> = {
-  name: 'Nome',
-  internal_code: 'Código Interno',
-  status: 'Status',
-  category_id: 'Categoria',
-  ship_id: 'Embarcação',
-  location: 'Localização',
-  manufacturer: 'Fabricante',
-  model: 'Modelo',
-  serial_number: 'Número de Série',
-  acquisition_date: 'Data de Aquisição',
-  manufacturing_date: 'Data de Fabricação',
-  expiry_date: 'Data de Validade',
-  certificate_expiry: 'Validade do Certificado',
-  next_inspection: 'Próxima Inspeção',
-  last_inspection: 'Última Inspeção',
-  observations: 'Observações',
-  inspection_date: 'Data da Inspeção',
-  inspector_id: 'Inspetor',
-  recommendations: 'Recomendações',
-  actions_taken: 'Ações Tomadas',
-  full_name: 'Nome Completo',
-  email: 'Email',
-  phone: 'Telefone',
-  position: 'Cargo',
-  department: 'Departamento',
-  description: 'Descrição',
-  icon: 'Ícone',
-  inspection_frequency: 'Frequência de Inspeção',
-  code: 'Código',
-};
+const getFieldLabels = (t: (key: string) => string): Record<string, string> => ({
+  name: t('auditLogPage.fieldName'),
+  internal_code: t('auditLogPage.fieldInternalCode'),
+  status: t('auditLogPage.fieldStatus'),
+  category_id: t('auditLogPage.fieldCategory'),
+  ship_id: t('auditLogPage.fieldShip'),
+  location: t('auditLogPage.fieldLocation'),
+  manufacturer: t('auditLogPage.fieldManufacturer'),
+  model: t('auditLogPage.fieldModel'),
+  serial_number: t('auditLogPage.fieldSerialNumber'),
+  acquisition_date: t('auditLogPage.fieldAcquisitionDate'),
+  manufacturing_date: t('auditLogPage.fieldManufacturingDate'),
+  expiry_date: t('auditLogPage.fieldExpiryDate'),
+  certificate_expiry: t('auditLogPage.fieldCertificateExpiry'),
+  next_inspection: t('auditLogPage.fieldNextInspection'),
+  last_inspection: t('auditLogPage.fieldLastInspection'),
+  observations: t('auditLogPage.fieldObservations'),
+  inspection_date: t('auditLogPage.fieldInspectionDate'),
+  inspector_id: t('auditLogPage.fieldInspector'),
+  recommendations: t('auditLogPage.fieldRecommendations'),
+  actions_taken: t('auditLogPage.fieldActionsTaken'),
+  full_name: t('auditLogPage.fieldFullName'),
+  email: t('auditLogPage.fieldEmail'),
+  phone: t('auditLogPage.fieldPhone'),
+  position: t('auditLogPage.fieldPosition'),
+  department: t('auditLogPage.fieldDepartment'),
+  description: t('auditLogPage.fieldDescription'),
+  icon: t('auditLogPage.fieldIcon'),
+  inspection_frequency: t('auditLogPage.fieldInspectionFrequency'),
+  code: t('auditLogPage.fieldCode'),
+});
 
 function AuditLogItem({ log }: { log: AuditLog }) {
+  const { t } = useTranslation();
+  const actionLabels = getActionLabels(t);
+  const tableLabels = getTableLabels(t);
+  const fieldLabels = getFieldLabels(t);
+  const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
+  
   const [isOpen, setIsOpen] = useState(false);
   const action = actionLabels[log.action] || { label: log.action, color: 'bg-muted' };
   const table = tableLabels[log.table_name] || { label: log.table_name, icon: Package };
