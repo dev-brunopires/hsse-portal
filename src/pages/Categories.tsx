@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   FolderOpen, 
   Plus, 
@@ -34,14 +35,6 @@ import { useEquipment } from '@/hooks/useEquipment';
 import { CategoryFormDialog } from '@/components/categories/CategoryFormDialog';
 import { getCategoryIcon } from '@/utils/categoryIcons';
 
-const frequencyLabels: Record<string, string> = {
-  monthly: 'Mensal',
-  quarterly: 'Trimestral',
-  semiannual: 'Semestral',
-  annual: 'Anual',
-  custom: 'Personalizada',
-};
-
 const frequencyColors: Record<string, string> = {
   monthly: 'bg-blue-500/10 text-blue-700 border-blue-500/20',
   quarterly: 'bg-green-500/10 text-green-700 border-green-500/20',
@@ -51,6 +44,7 @@ const frequencyColors: Record<string, string> = {
 };
 
 export default function Categories() {
+  const { t } = useTranslation();
   const { data: categories, isLoading } = useCategories();
   const { data: equipment } = useEquipment();
   const deleteCategory = useDeleteCategory();
@@ -61,6 +55,14 @@ export default function Categories() {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+
+  const frequencyLabels: Record<string, string> = {
+    monthly: t('categories.frequencyMonthly'),
+    quarterly: t('categories.frequencyQuarterly'),
+    semiannual: t('categories.frequencySemiannual'),
+    annual: t('categories.frequencyAnnual'),
+    custom: t('common.optional'),
+  };
 
   const filteredCategories = categories?.filter(cat =>
     cat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -106,8 +108,8 @@ export default function Categories() {
                 <FolderOpen className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <CardTitle>Categorias de Equipamentos</CardTitle>
-                <CardDescription>Carregando...</CardDescription>
+                <CardTitle>{t('categoriesPage.equipmentCategories')}</CardTitle>
+                <CardDescription>{t('common.loading')}</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -131,15 +133,15 @@ export default function Categories() {
                 <FolderOpen className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <CardTitle>Categorias de Equipamentos</CardTitle>
+                <CardTitle>{t('categoriesPage.equipmentCategories')}</CardTitle>
                 <CardDescription>
-                  Gerencie as categorias e suas frequências de inspeção
+                  {t('categoriesPage.manageFrequencies')}
                 </CardDescription>
               </div>
             </div>
             <Button onClick={handleCreate} className="gap-2">
               <Plus className="h-4 w-4" />
-              Nova Categoria
+              {t('categories.newCategory')}
             </Button>
           </div>
         </CardHeader>
@@ -149,7 +151,7 @@ export default function Categories() {
             <div className="relative max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar categorias..."
+                placeholder={t('categoriesPage.searchCategories')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -162,10 +164,10 @@ export default function Categories() {
             <div className="text-center py-12">
               <FolderOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-lg font-medium text-muted-foreground">
-                {searchTerm ? 'Nenhuma categoria encontrada' : 'Nenhuma categoria cadastrada'}
+                {searchTerm ? t('categoriesPage.noCategoryFound') : t('categoriesPage.noCategoryRegistered')}
               </p>
               <p className="text-sm text-muted-foreground mt-1">
-                {searchTerm ? 'Tente uma busca diferente' : 'Clique em "Nova Categoria" para começar'}
+                {searchTerm ? t('categoriesPage.tryDifferentSearch') : t('categoriesPage.clickNewCategory')}
               </p>
             </div>
           ) : (
@@ -174,11 +176,11 @@ export default function Categories() {
                 <TableHeader>
                   <TableRow className="bg-muted/50">
                     <TableHead className="w-12"></TableHead>
-                    <TableHead>Nome</TableHead>
-                    <TableHead className="hidden md:table-cell">Descrição</TableHead>
-                    <TableHead>Frequência</TableHead>
-                    <TableHead className="text-center">Equipamentos</TableHead>
-                    <TableHead className="w-24">Ações</TableHead>
+                    <TableHead>{t('common.name')}</TableHead>
+                    <TableHead className="hidden md:table-cell">{t('common.description')}</TableHead>
+                    <TableHead>{t('categoriesPage.frequency')}</TableHead>
+                    <TableHead className="text-center">{t('categoriesPage.equipmentCount')}</TableHead>
+                    <TableHead className="w-24">{t('common.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -250,14 +252,15 @@ export default function Categories() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogTitle>{t('categoriesPage.confirmDelete')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir a categoria "{categoryToDelete?.name}"? 
-              Esta ação não pode ser desfeita.
+              <span dangerouslySetInnerHTML={{ 
+                __html: t('categoriesPage.confirmDeleteCategory', { name: categoryToDelete?.name }) 
+              }} />
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -265,10 +268,10 @@ export default function Categories() {
               {deleteCategory.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Excluindo...
+                  {t('categoriesPage.deleting')}
                 </>
               ) : (
-                'Excluir'
+                t('common.delete')
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
