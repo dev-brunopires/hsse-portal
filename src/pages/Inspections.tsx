@@ -99,21 +99,29 @@ export default function Inspections() {
   const [showNewInspectionForm, setShowNewInspectionForm] = useState(false);
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'calendar' | 'timeline' | 'category'>('list');
+  const [preselectedEquipmentId, setPreselectedEquipmentId] = useState<string | null>(null);
 
-  // Auto-open form when scanning QR code
+  // Auto-open form when scanning QR code - trigger immediately on scan param
   useEffect(() => {
-    if (scanEquipmentId && scannedEquipment) {
+    if (scanEquipmentId) {
+      console.log('[Inspections] QR scan detected, opening form for equipment:', scanEquipmentId);
+      setPreselectedEquipmentId(scanEquipmentId);
       setShowNewInspectionForm(true);
-      toast({
-        title: 'QR Code detectado',
-        description: `Iniciando inspeção para: ${scannedEquipment.internal_code} - ${scannedEquipment.name}`,
-      });
+      
+      // Show toast when equipment data is loaded
+      if (scannedEquipment) {
+        toast({
+          title: 'QR Code detectado',
+          description: `Iniciando inspeção para: ${scannedEquipment.internal_code} - ${scannedEquipment.name}`,
+        });
+      }
     }
   }, [scanEquipmentId, scannedEquipment, toast]);
 
   // Clear scan param after form closes
   const handleFormSuccess = () => {
     setShowNewInspectionForm(false);
+    setPreselectedEquipmentId(null);
     if (scanEquipmentId) {
       setSearchParams({});
     }
@@ -121,6 +129,7 @@ export default function Inspections() {
 
   const handleFormCancel = () => {
     setShowNewInspectionForm(false);
+    setPreselectedEquipmentId(null);
     if (scanEquipmentId) {
       setSearchParams({});
     }
@@ -267,7 +276,10 @@ export default function Inspections() {
         open={showQRScanner}
         onOpenChange={setShowQRScanner}
         onScan={(equipmentId) => {
+          console.log('[Inspections] QR scanned from internal scanner:', equipmentId);
           setSearchParams({ scan: equipmentId });
+          setPreselectedEquipmentId(equipmentId);
+          setShowNewInspectionForm(true);
           setShowQRScanner(false);
         }}
       />

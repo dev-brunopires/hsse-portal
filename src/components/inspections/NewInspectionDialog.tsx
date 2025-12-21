@@ -71,11 +71,21 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
   // Auto-select equipment when preSelectedEquipmentId is provided (from QR scan)
   useEffect(() => {
     if (open && preSelectedEquipmentId && equipmentList.length > 0 && !hasAutoSelected) {
-      const equipment = equipmentList.find(eq => eq.id === preSelectedEquipmentId);
+      // Try to find by ID first
+      let equipment = equipmentList.find(eq => eq.id === preSelectedEquipmentId);
+      
+      // If not found by ID, try by short_code (for manual search by 6-digit code)
+      if (!equipment) {
+        equipment = equipmentList.find(eq => (eq as any).short_code === preSelectedEquipmentId);
+      }
+      
       if (equipment) {
+        console.log('[NewInspectionDialog] Auto-selecting equipment:', equipment.internal_code);
         setHasAutoSelected(true);
         // Trigger the selection flow (which will check for warnings)
         setPendingEquipment(equipment);
+      } else {
+        console.log('[NewInspectionDialog] Equipment not found for ID:', preSelectedEquipmentId);
       }
     }
   }, [open, preSelectedEquipmentId, equipmentList, hasAutoSelected]);
