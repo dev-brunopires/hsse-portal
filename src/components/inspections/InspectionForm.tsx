@@ -196,48 +196,6 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
     },
   });
 
-  // Filter equipment based on search term - prioritize code matches
-  const filteredEquipment = useMemo(() => {
-    if (!equipmentSearchTerm.trim()) return equipment;
-    
-    const term = equipmentSearchTerm.toLowerCase().trim();
-    
-    // First, find exact code matches
-    const exactCodeMatches = equipment.filter(e => 
-      e.internal_code.toLowerCase() === term
-    );
-    
-    // Then, find partial code matches
-    const partialCodeMatches = equipment.filter(e => 
-      e.internal_code.toLowerCase().includes(term) &&
-      !exactCodeMatches.includes(e)
-    );
-    
-    // Finally, find name/location matches
-    const otherMatches = equipment.filter(e => 
-      (e.name.toLowerCase().includes(term) || 
-       e.location.toLowerCase().includes(term) ||
-       e.serial_number?.toLowerCase().includes(term)) &&
-      !exactCodeMatches.includes(e) &&
-      !partialCodeMatches.includes(e)
-    );
-    
-    return [...exactCodeMatches, ...partialCodeMatches, ...otherMatches];
-  }, [equipment, equipmentSearchTerm]);
-
-  const form = useForm<InspectionFormData>({
-    resolver: zodResolver(inspectionSchema),
-    defaultValues: {
-      equipmentId: '',
-      inspectorId: user?.id || '',
-      inspectionDate: new Date().toISOString().split('T')[0],
-      actionsTaken: '',
-      observations: '',
-      recommendations: '',
-      nextInspectionDate: '',
-    },
-  });
-
   useEffect(() => {
     if (user?.id) {
       form.setValue('inspectorId', user.id);
