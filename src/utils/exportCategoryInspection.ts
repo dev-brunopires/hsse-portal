@@ -9,6 +9,9 @@ import type { Category } from '@/hooks/useCategories';
 interface CategoryInspectionResult {
   equipment: EquipmentWithCategory;
   status: 'compliant' | 'attention' | 'non-compliant';
+  lastInspectionDate?: string;
+  lastInspectorName?: string;
+  expiryStatus?: 'ok' | 'expiry_expired' | 'certificate_expired' | 'both_expired';
 }
 
 interface CategoryInspectionPDFData {
@@ -28,6 +31,13 @@ const statusLabels: Record<string, string> = {
   'compliant': 'Conforme',
   'attention': 'Atenção',
   'non-compliant': 'Não Conforme',
+};
+
+const expiryStatusLabels: Record<string, string> = {
+  'ok': '—',
+  'expiry_expired': 'Val. vencida',
+  'certificate_expired': 'Cert. vencido',
+  'both_expired': 'Ambos vencidos',
 };
 
 export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFData): Promise<void> {
@@ -147,49 +157,62 @@ export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFDat
     String(index + 1),
     result.equipment.internal_code,
     result.equipment.name,
-    result.equipment.type,
-    result.equipment.location,
+    result.lastInspectionDate ? format(new Date(result.lastInspectionDate), 'dd/MM/yy', { locale: ptBR }) : '—',
+    result.lastInspectorName || '—',
     statusLabels[result.status] || result.status,
+    expiryStatusLabels[result.expiryStatus || 'ok'],
   ]);
 
   autoTable(doc, {
     startY: yPosition,
-    head: [['#', 'Código', 'Equipamento', 'Tipo', 'Localização', 'Status']],
+    head: [['#', 'Código', 'Equipamento', 'Últ. Inspeção', 'Inspetor', 'Status', 'Vencimento']],
     body: tableData,
     margin: { left: margin, right: margin },
     headStyles: {
       fillColor: [0, 82, 147],
       textColor: [255, 255, 255],
-      fontSize: 9,
+      fontSize: 8,
       fontStyle: 'bold',
     },
     bodyStyles: {
-      fontSize: 8,
+      fontSize: 7,
       textColor: [33, 37, 41],
     },
     alternateRowStyles: {
       fillColor: [248, 249, 250],
     },
     columnStyles: {
-      0: { cellWidth: 10, halign: 'center' },
-      1: { cellWidth: 25 },
+      0: { cellWidth: 8, halign: 'center' },
+      1: { cellWidth: 22 },
       2: { cellWidth: 'auto' },
-      3: { cellWidth: 30 },
+      3: { cellWidth: 20, halign: 'center' },
       4: { cellWidth: 30 },
-      5: { cellWidth: 25, halign: 'center' },
+      5: { cellWidth: 20, halign: 'center' },
+      6: { cellWidth: 28, halign: 'center' },
     },
     didParseCell: (hookData) => {
-      if (hookData.section === 'body' && hookData.column.index === 5) {
-        const status = data.results[hookData.row.index]?.status;
-        if (status === 'compliant') {
-          hookData.cell.styles.textColor = [40, 167, 69];
-          hookData.cell.styles.fontStyle = 'bold';
-        } else if (status === 'attention') {
-          hookData.cell.styles.textColor = [255, 193, 7];
-          hookData.cell.styles.fontStyle = 'bold';
-        } else if (status === 'non-compliant') {
-          hookData.cell.styles.textColor = [220, 53, 69];
-          hookData.cell.styles.fontStyle = 'bold';
+      if (hookData.section === 'body') {
+        // Status column styling
+        if (hookData.column.index === 5) {
+          const status = data.results[hookData.row.index]?.status;
+          if (status === 'compliant') {
+            hookData.cell.styles.textColor = [40, 167, 69];
+            hookData.cell.styles.fontStyle = 'bold';
+          } else if (status === 'attention') {
+            hookData.cell.styles.textColor = [255, 193, 7];
+            hookData.cell.styles.fontStyle = 'bold';
+          } else if (status === 'non-compliant') {
+            hookData.cell.styles.textColor = [220, 53, 69];
+            hookData.cell.styles.fontStyle = 'bold';
+          }
+        }
+        // Expiry column styling
+        if (hookData.column.index === 6) {
+          const expiryStatus = data.results[hookData.row.index]?.expiryStatus;
+          if (expiryStatus && expiryStatus !== 'ok') {
+            hookData.cell.styles.textColor = [220, 53, 69];
+            hookData.cell.styles.fontStyle = 'bold';
+          }
         }
       }
     },
