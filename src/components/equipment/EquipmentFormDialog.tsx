@@ -620,18 +620,18 @@ export function EquipmentFormDialog({
                     name="shipId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Navio / FPSO *</FormLabel>
+                        <FormLabel>{t('equipmentForm.shipFpso')} *</FormLabel>
                         {isShipLocked ? (
                           // Technician/Supervisor: show locked ship badge instead of dropdown
                           isLoadingShips ? (
                             <div className="flex items-center gap-2 p-3 rounded-md border border-border bg-muted/50">
                               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                              <span className="text-muted-foreground">Carregando navio...</span>
+                              <span className="text-muted-foreground">{t('equipmentForm.loadingShip')}</span>
                             </div>
                           ) : !defaultUserShip ? (
                             <div className="flex items-center gap-2 p-3 rounded-md border border-border bg-destructive/10">
                               <Ship className="h-4 w-4 text-destructive" />
-                              <span className="text-destructive">Nenhum navio vinculado à sua conta</span>
+                              <span className="text-destructive">{t('equipmentForm.noShipLinked')}</span>
                             </div>
                           ) : (
                             <div className="flex items-center gap-2 p-3 rounded-md border border-border bg-muted/50">
@@ -651,13 +651,13 @@ export function EquipmentFormDialog({
                           >
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder={isLoadingShips ? 'Carregando...' : 'Selecione o navio'} />
+                                <SelectValue placeholder={isLoadingShips ? t('equipmentForm.loading') : t('equipmentForm.selectShip')} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent className="bg-popover border border-border shadow-lg z-50">
                               {availableShips.length === 0 ? (
                                 <SelectItem value="__no_ships__" disabled>
-                                  Nenhum navio cadastrado
+                                  {t('equipmentForm.noShipRegistered')}
                                 </SelectItem>
                               ) : (
                                 availableShips.map((ship) => (
@@ -671,7 +671,7 @@ export function EquipmentFormDialog({
                         )}
                         {isShipLocked && (
                           <FormDescription>
-                            Navio padrão da sua conta
+                            {t('equipmentForm.defaultShip')}
                           </FormDescription>
                         )}
                         <FormMessage />
@@ -684,12 +684,12 @@ export function EquipmentFormDialog({
                     name="location"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Localização Física *</FormLabel>
+                        <FormLabel>{t('equipmentForm.physicalLocation')} *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Ex: Deck Principal - Área de Processo" {...field} />
+                          <Input placeholder={t('equipmentForm.physicalLocationPlaceholder')} {...field} />
                         </FormControl>
                         <FormDescription>
-                          Descreva a localização exata do equipamento na unidade
+                          {t('equipmentForm.locationDescription')}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -701,10 +701,10 @@ export function EquipmentFormDialog({
                     name="observations"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Observações</FormLabel>
+                        <FormLabel>{t('equipmentForm.observations')}</FormLabel>
                         <FormControl>
                           <Textarea 
-                            placeholder="Informações adicionais sobre o equipamento..."
+                            placeholder={t('equipmentForm.observationsPlaceholder')}
                             rows={4}
                             {...field} 
                           />
@@ -723,12 +723,12 @@ export function EquipmentFormDialog({
                       name="manufacturingDate"
                       render={({ field }) => (
                         <FormItem className="flex flex-col">
-                          <FormLabel>Data de Fabricação</FormLabel>
+                          <FormLabel>{t('equipmentForm.manufacturingDate')}</FormLabel>
                           <FormControl>
                             <DatePickerField
                               value={field.value}
                               onChange={field.onChange}
-                              placeholder="Selecione a data"
+                              placeholder={t('equipmentForm.selectDate')}
                               fromYear={1950}
                               toYear={new Date().getFullYear()}
                             />
@@ -743,12 +743,12 @@ export function EquipmentFormDialog({
                       name="acquisitionDate"
                       render={({ field }) => (
                         <FormItem className="flex flex-col">
-                          <FormLabel>Data de Aquisição</FormLabel>
+                          <FormLabel>{t('equipmentForm.acquisitionDate')}</FormLabel>
                           <FormControl>
                             <DatePickerField
                               value={field.value}
                               onChange={field.onChange}
-                              placeholder="Selecione a data"
+                              placeholder={t('equipmentForm.selectDate')}
                               fromYear={1990}
                               toYear={new Date().getFullYear() + 1}
                             />
@@ -765,18 +765,18 @@ export function EquipmentFormDialog({
                       name="expiryDate"
                       render={({ field }) => (
                         <FormItem className="flex flex-col">
-                          <FormLabel>Data de Validade</FormLabel>
+                          <FormLabel>{t('equipmentForm.expiryDate')}</FormLabel>
                           <FormControl>
                             <DatePickerField
                               value={field.value}
                               onChange={field.onChange}
-                              placeholder="Selecione a data"
+                              placeholder={t('equipmentForm.selectDate')}
                               fromYear={new Date().getFullYear()}
                               toYear={new Date().getFullYear() + 30}
                             />
                           </FormControl>
                           <FormDescription>
-                            Validade do equipamento (se aplicável)
+                            {t('equipmentForm.expiryDateDescription')}
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -788,18 +788,18 @@ export function EquipmentFormDialog({
                       name="certificateExpiry"
                       render={({ field }) => (
                         <FormItem className="flex flex-col">
-                          <FormLabel>Validade do Certificado</FormLabel>
+                          <FormLabel>{t('equipmentForm.certificateExpiry')}</FormLabel>
                           <FormControl>
                             <DatePickerField
                               value={field.value}
                               onChange={field.onChange}
-                              placeholder="Selecione a data"
+                              placeholder={t('equipmentForm.selectDate')}
                               fromYear={new Date().getFullYear()}
                               toYear={new Date().getFullYear() + 30}
                             />
                           </FormControl>
                           <FormDescription>
-                            Data de vencimento da certificação
+                            {t('equipmentForm.certificateExpiryDescription')}
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -861,10 +861,10 @@ export function EquipmentFormDialog({
                     <label htmlFor="file-upload" className="cursor-pointer">
                       <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                       <p className="font-medium text-foreground text-sm">
-                        Arraste arquivos ou clique para fazer upload
+                        {t('equipmentForm.clickOrDragFiles')}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        PDF, imagens ou documentos (máx. 10MB cada)
+                        {t('equipmentForm.filesAccepted')}
                       </p>
                     </label>
                   </div>
@@ -874,7 +874,7 @@ export function EquipmentFormDialog({
                     <div className="space-y-2">
                       <h4 className="font-medium text-sm flex items-center gap-2">
                         <FileText className="h-4 w-4" />
-                        Documentos Salvos ({existingDocuments.length})
+                        {t('equipmentForm.existingDocuments')} ({existingDocuments.length})
                       </h4>
                       <div className="space-y-2 max-h-[200px] overflow-y-auto">
                         {existingDocuments.map((doc) => (
@@ -940,7 +940,7 @@ export function EquipmentFormDialog({
                   {mode === 'edit' && documentsLoading && (
                     <div className="flex items-center justify-center py-4">
                       <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                      <span className="ml-2 text-sm text-muted-foreground">Carregando documentos...</span>
+                      <span className="ml-2 text-sm text-muted-foreground">{t('equipmentForm.loading')}</span>
                     </div>
                   )}
 
@@ -949,7 +949,7 @@ export function EquipmentFormDialog({
                     <div className="space-y-2">
                       <h4 className="font-medium text-sm flex items-center gap-2">
                         <Upload className="h-4 w-4" />
-                        Novos Arquivos ({uploadedFiles.length})
+                        {t('equipmentForm.addNewDocuments')} ({uploadedFiles.length})
                       </h4>
                       <div className="space-y-2 max-h-[150px] overflow-y-auto">
                         {uploadedFiles.map((file, index) => (
@@ -999,14 +999,14 @@ export function EquipmentFormDialog({
                       if (currentIndex > 0) setActiveTab(tabs[currentIndex - 1]);
                     }}
                   >
-                    Anterior
+                    {t('common.previous')}
                   </Button>
                 )}
               </div>
               
               <div className="flex items-center gap-2">
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                  Cancelar
+                  {t('equipmentForm.cancel')}
                 </Button>
                 
                 {activeTab !== 'documents' ? (
@@ -1020,8 +1020,8 @@ export function EquipmentFormDialog({
                       const ok = await form.trigger(tabFields[currentTab]);
                       if (!ok) {
                         toast({
-                          title: 'Campos obrigatórios',
-                          description: 'Complete os campos marcados com * para avançar.',
+                          title: t('equipmentForm.requiredFields'),
+                          description: t('equipmentForm.requiredFieldsMessage'),
                           variant: 'destructive',
                         });
                         return;
@@ -1030,19 +1030,19 @@ export function EquipmentFormDialog({
                       if (currentIndex < tabs.length - 1) setActiveTab(tabs[currentIndex + 1]);
                     }}
                   >
-                    Próximo
+                    {t('common.next')}
                   </Button>
                 ) : (
                   <Button type="submit" disabled={isSubmitting} className="gap-2">
                     {isSubmitting ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        Salvando...
+                        {t('equipmentForm.saving')}
                       </>
                     ) : (
                       <>
                         <CheckCircle2 className="h-4 w-4" />
-                        {mode === 'create' ? 'Cadastrar Equipamento' : 'Salvar Alterações'}
+                        {t('equipmentForm.save')}
                       </>
                     )}
                   </Button>
