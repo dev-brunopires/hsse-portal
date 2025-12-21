@@ -416,53 +416,124 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
         {/* User Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="gap-2 px-2 lg:px-3">
-              <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                {profile?.avatar_url ? (
-                  <img 
-                    src={profile.avatar_url} 
-                    alt={profile.full_name} 
-                    className="h-8 w-8 rounded-full object-cover"
-                  />
-                ) : (
-                  <User className="h-4 w-4 text-primary-foreground" />
-                )}
+            <Button 
+              variant="ghost" 
+              className="gap-3 px-2 lg:px-4 h-12 hover:bg-muted/50 rounded-xl transition-all duration-200 group"
+            >
+              {/* Avatar with status indicator */}
+              <div className="relative">
+                <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center flex-shrink-0 shadow-sm ring-2 ring-background group-hover:ring-primary/20 transition-all duration-200">
+                  {profile?.avatar_url ? (
+                    <img 
+                      src={profile.avatar_url} 
+                      alt={profile.full_name} 
+                      className="h-9 w-9 rounded-xl object-cover"
+                    />
+                  ) : (
+                    <span className="text-sm font-semibold text-primary-foreground">
+                      {profile?.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'U'}
+                    </span>
+                  )}
+                </div>
+                {/* Online status indicator */}
+                <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-background" />
               </div>
-              <div className="text-left hidden lg:block">
-                <p className="text-sm font-medium truncate max-w-[120px]">{profile?.full_name || user?.email}</p>
-                <p className="text-xs text-muted-foreground">
-                  {role ? roleLabels[role] : 'Carregando...'}
+              
+              {/* User info - hidden on mobile */}
+              <div className="text-left hidden lg:flex flex-col min-w-0">
+                <p className="text-sm font-semibold truncate max-w-[140px] text-foreground group-hover:text-primary transition-colors">
+                  {profile?.full_name || user?.email}
                 </p>
+                <div className="flex items-center gap-1.5">
+                  <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                    role === 'admin_master' ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400' :
+                    role === 'admin' ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400' :
+                    role === 'supervisor' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' :
+                    role === 'technician' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' :
+                    'bg-muted text-muted-foreground'
+                  }`}>
+                    {role ? roleLabels[role] : '...'}
+                  </span>
+                </div>
               </div>
-              <ChevronDown className="h-4 w-4 text-muted-foreground hidden lg:block" />
+              
+              <ChevronDown className="h-4 w-4 text-muted-foreground hidden lg:block group-hover:text-primary transition-colors" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 bg-popover border border-border shadow-lg z-50">
-            <DropdownMenuLabel>
-              <div className="lg:hidden">
-                <p className="font-medium">{profile?.full_name || user?.email}</p>
-                <p className="text-xs text-muted-foreground font-normal">
-                  {role ? roleLabels[role] : 'Carregando...'}
-                </p>
+          <DropdownMenuContent align="end" className="w-64 bg-popover border border-border shadow-xl z-50 rounded-xl p-1">
+            {/* User header in dropdown */}
+            <div className="px-3 py-3 bg-muted/50 rounded-lg mx-1 mb-1">
+              <div className="flex items-center gap-3">
+                <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-sm">
+                  {profile?.avatar_url ? (
+                    <img 
+                      src={profile.avatar_url} 
+                      alt={profile.full_name} 
+                      className="h-11 w-11 rounded-xl object-cover"
+                    />
+                  ) : (
+                    <span className="text-base font-semibold text-primary-foreground">
+                      {profile?.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'U'}
+                    </span>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm truncate">{profile?.full_name || user?.email}</p>
+                  <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                  <span className={`inline-flex items-center mt-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                    role === 'admin_master' ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400' :
+                    role === 'admin' ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400' :
+                    role === 'supervisor' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' :
+                    role === 'technician' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' :
+                    'bg-muted text-muted-foreground'
+                  }`}>
+                    {role ? roleLabels[role] : 'Carregando...'}
+                  </span>
+                </div>
               </div>
-              <span className="hidden lg:block">Minha Conta</span>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => navigate('/profile')}>
-              <UserCircle className="h-4 w-4" />
-              Perfil
-            </DropdownMenuItem>
-            <DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => navigate('/settings')}>
-              <Settings className="h-4 w-4" />
-              Configurações
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
+            </div>
+            
+            <DropdownMenuSeparator className="my-1" />
+            
             <DropdownMenuItem 
-              className="gap-2 cursor-pointer text-destructive focus:text-destructive" 
+              className="gap-3 cursor-pointer py-2.5 px-3 rounded-lg mx-1 focus:bg-primary/10" 
+              onClick={() => navigate('/profile')}
+            >
+              <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center">
+                <UserCircle className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">Meu Perfil</span>
+                <span className="text-xs text-muted-foreground">Editar informações pessoais</span>
+              </div>
+            </DropdownMenuItem>
+            
+            <DropdownMenuItem 
+              className="gap-3 cursor-pointer py-2.5 px-3 rounded-lg mx-1 focus:bg-primary/10" 
+              onClick={() => navigate('/settings')}
+            >
+              <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center">
+                <Settings className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">Configurações</span>
+                <span className="text-xs text-muted-foreground">Preferências do sistema</span>
+              </div>
+            </DropdownMenuItem>
+            
+            <DropdownMenuSeparator className="my-1" />
+            
+            <DropdownMenuItem 
+              className="gap-3 cursor-pointer py-2.5 px-3 rounded-lg mx-1 text-destructive focus:text-destructive focus:bg-destructive/10" 
               onClick={handleSignOut}
             >
-              <LogOut className="h-4 w-4" />
-              Sair
+              <div className="h-8 w-8 rounded-lg bg-destructive/10 flex items-center justify-center">
+                <LogOut className="h-4 w-4" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">Sair</span>
+                <span className="text-xs opacity-70">Encerrar sessão</span>
+              </div>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
