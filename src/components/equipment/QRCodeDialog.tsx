@@ -23,17 +23,17 @@ interface QRCodeDialogProps {
   } | null;
 }
 
-// SBM Logo SVG as base64 data URL (orange version)
-const SBM_LOGO_SVG = `<svg width="120" height="40" viewBox="0 0 437 150" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M30.4461 0.0790735C10.4387 0.0790735 0 17.1605 0 34.0047C0 50.8489 10.4387 67.9303 30.4461 67.9303H123.129V0L30.4461 0.0790735Z" fill="#F36F27"/>
-<path d="M238.349 0.079071H145.667V68.0094H238.349C258.357 68.0094 268.795 50.928 268.795 34.0838C268.795 17.1605 258.357 0.079071 238.349 0.079071Z" fill="#F36F27"/>
-<path d="M238.349 82.9557H145.667V150.886H238.349C258.357 150.886 268.795 133.805 268.795 116.96C268.795 100.037 258.357 82.9557 238.349 82.9557Z" fill="#F36F27"/>
-<path d="M320.198 0.079071C303.354 0.079071 286.272 10.5177 286.272 30.5251V150.886H354.203V30.5251C354.123 10.5177 337.042 0.079071 320.198 0.079071Z" fill="#F36F27"/>
-<path d="M402.995 0.079071C386.151 0.079071 369.07 10.5177 369.07 30.5251V150.886H437V30.5251C437 10.5177 419.919 0.079071 402.995 0.079071Z" fill="#F36F27"/>
-<path d="M97.7437 82.9557H5.0611V150.886H97.7437C117.751 150.886 128.19 133.805 128.19 116.96C128.19 100.037 117.751 82.9557 97.7437 82.9557Z" fill="#F36F27"/>
+// SBM Logo SVG as base64 data URL (white version for orange header)
+const SBM_LOGO_WHITE_SVG = `<svg width="120" height="40" viewBox="0 0 437 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M30.4461 0.0790735C10.4387 0.0790735 0 17.1605 0 34.0047C0 50.8489 10.4387 67.9303 30.4461 67.9303H123.129V0L30.4461 0.0790735Z" fill="white"/>
+<path d="M238.349 0.079071H145.667V68.0094H238.349C258.357 68.0094 268.795 50.928 268.795 34.0838C268.795 17.1605 258.357 0.079071 238.349 0.079071Z" fill="white"/>
+<path d="M238.349 82.9557H145.667V150.886H238.349C258.357 150.886 268.795 133.805 268.795 116.96C268.795 100.037 258.357 82.9557 238.349 82.9557Z" fill="white"/>
+<path d="M320.198 0.079071C303.354 0.079071 286.272 10.5177 286.272 30.5251V150.886H354.203V30.5251C354.123 10.5177 337.042 0.079071 320.198 0.079071Z" fill="white"/>
+<path d="M402.995 0.079071C386.151 0.079071 369.07 10.5177 369.07 30.5251V150.886H437V30.5251C437 10.5177 419.919 0.079071 402.995 0.079071Z" fill="white"/>
+<path d="M97.7437 82.9557H5.0611V150.886H97.7437C117.751 150.886 128.19 133.805 128.19 116.96C128.19 100.037 117.751 82.9557 97.7437 82.9557Z" fill="white"/>
 </svg>`;
 
-const SBM_LOGO_BASE64 = `data:image/svg+xml;base64,${btoa(SBM_LOGO_SVG)}`;
+const SBM_LOGO_WHITE_BASE64 = `data:image/svg+xml;base64,${btoa(SBM_LOGO_WHITE_SVG)}`;
 
 export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProps) {
   const qrRef = useRef<HTMLDivElement>(null);
@@ -90,21 +90,14 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
       ctx.fillText('SBM', width / 2, padding + 32);
       drawContent();
     };
-    logoImg.src = SBM_LOGO_BASE64;
+    logoImg.src = SBM_LOGO_WHITE_BASE64;
 
     const drawContent = () => {
-      // Short code (big)
-      if (equipment.shortCode) {
-        ctx.fillStyle = '#000000';
-        ctx.font = 'bold 48px monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText(equipment.shortCode, width / 2, padding + 110);
-      }
-
       // Internal code
       ctx.fillStyle = '#666666';
       ctx.font = '14px Arial';
-      ctx.fillText(equipment.internalCode, width / 2, padding + 135);
+      ctx.textAlign = 'center';
+      ctx.fillText(equipment.internalCode, width / 2, padding + 90);
 
       // QR Code
       const qrSvg = qrRef.current?.querySelector('svg');
@@ -112,37 +105,36 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
         const qrData = new XMLSerializer().serializeToString(qrSvg);
         const qrImg = new Image();
         qrImg.onload = () => {
-          const qrSize = 180;
+          const qrSize = 230;
           const qrX = (width - qrSize) / 2;
-          const qrY = padding + 150;
-          
+          const qrY = padding + 110;
+
           // White background for QR
           ctx.fillStyle = '#ffffff';
           ctx.fillRect(qrX - 10, qrY - 10, qrSize + 20, qrSize + 20);
-          
+
           ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
 
-          // Short code in center of QR
+          // Short code in center of QR (only place we show it)
           if (equipment.shortCode) {
             ctx.fillStyle = '#ffffff';
-            ctx.fillRect(qrX + qrSize/2 - 35, qrY + qrSize/2 - 12, 70, 24);
+            ctx.fillRect(qrX + qrSize / 2 - 46, qrY + qrSize / 2 - 16, 92, 32);
             ctx.fillStyle = '#000000';
-            ctx.font = 'bold 14px monospace';
-            ctx.fillText(equipment.shortCode, width / 2, qrY + qrSize/2 + 5);
+            ctx.font = 'bold 18px monospace';
+            ctx.fillText(equipment.shortCode, width / 2, qrY + qrSize / 2 + 7);
           }
 
           // Equipment name
           ctx.fillStyle = '#333333';
           ctx.font = '14px Arial';
-          const maxNameWidth = width - padding * 4;
           const name = equipment.name.length > 40 ? equipment.name.substring(0, 37) + '...' : equipment.name;
-          ctx.fillText(name, width / 2, qrY + qrSize + 30);
+          ctx.fillText(name, width / 2, qrY + qrSize + 28);
 
           // Location
           if (equipment.location) {
             ctx.fillStyle = '#666666';
             ctx.font = '12px Arial';
-            ctx.fillText(`📍 ${equipment.location}`, width / 2, qrY + qrSize + 50);
+            ctx.fillText(`📍 ${equipment.location}`, width / 2, qrY + qrSize + 48);
           }
 
           // Footer instruction
@@ -243,8 +235,8 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
               position: relative;
             }
             .qr-container svg {
-              width: 34mm !important;
-              height: 34mm !important;
+              width: 30mm !important;
+              height: 30mm !important;
             }
             .short-code-overlay {
               position: absolute;
@@ -256,7 +248,7 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
               border-radius: 2px;
             }
             .short-code {
-              font-size: 6pt;
+              font-size: 7pt;
               font-weight: bold;
               font-family: monospace;
             }
@@ -384,14 +376,6 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
             .body {
               padding: 24px;
             }
-            .quick-code {
-              font-size: 56px;
-              font-weight: bold;
-              font-family: monospace;
-              letter-spacing: 6px;
-              margin-bottom: 8px;
-              color: #F36F27;
-            }
             .internal-code { 
               font-size: 14px; 
               margin-bottom: 4px;
@@ -419,6 +403,8 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
             }
             .qr-wrapper svg { 
               display: block;
+              width: 260px;
+              height: 260px;
             }
             .qr-center-code {
               position: absolute;
@@ -426,11 +412,11 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
               left: 50%;
               transform: translate(-50%, -50%);
               background: white;
-              padding: 4px 10px;
-              border-radius: 4px;
+              padding: 6px 12px;
+              border-radius: 6px;
               font-family: monospace;
               font-weight: bold;
-              font-size: 14px;
+              font-size: 18px;
               border: 1px solid #eee;
             }
             .footer {
@@ -470,7 +456,6 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
               </svg>
             </div>
             <div class="body">
-              ${equipment.shortCode ? `<div class="quick-code">${equipment.shortCode}</div>` : ''}
               <div class="internal-code">${equipment.internalCode}</div>
               <div class="name">${equipment.name}</div>
               ${equipment.location ? `<div class="location">📍 ${equipment.location}</div>` : ''}
@@ -478,7 +463,6 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
                 ${svg.outerHTML}
                 ${equipment.shortCode ? `<div class="qr-center-code">${equipment.shortCode}</div>` : ''}
               </div>
-              ${equipment.shortCode ? `<div class="search-note">Não conseguiu escanear? Pesquise: <strong>${equipment.shortCode}</strong></div>` : ''}
             </div>
             <div class="footer">📱 ESCANEIE PARA REGISTRAR INSPEÇÃO</div>
           </div>
@@ -523,22 +507,19 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
 
             {/* Content */}
             <div className="bg-white p-4 flex flex-col items-center">
-              {equipment.shortCode && (
-                <p className="font-mono text-3xl font-bold text-primary tracking-wider">{equipment.shortCode}</p>
-              )}
               <p className="font-mono text-xs text-muted-foreground">{equipment.internalCode}</p>
               
-              <div ref={qrRef} className="bg-white p-3 rounded-lg border mt-3 relative">
+              <div ref={qrRef} className="bg-white p-4 rounded-lg border mt-3 relative">
                 <QRCodeSVG 
                   value={inspectionUrl} 
-                  size={140}
+                  size={190}
                   level="H"
                   includeMargin
                 />
                 {equipment.shortCode && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="bg-white px-2 py-0.5 rounded border shadow-sm">
-                      <span className="font-mono text-xs font-bold text-gray-800">
+                    <div className="bg-white px-3 py-1 rounded border shadow-sm">
+                      <span className="font-mono text-sm font-bold text-foreground">
                         {equipment.shortCode}
                       </span>
                     </div>
