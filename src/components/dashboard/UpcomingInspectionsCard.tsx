@@ -29,8 +29,7 @@ export function UpcomingInspectionsCard() {
           daysUntil: differenceInDays(nextDate, now),
         };
       })
-      .sort((a, b) => a.daysUntil - b.daysUntil)
-      .slice(0, 5);
+      .sort((a, b) => a.daysUntil - b.daysUntil);
   }, [inspections]);
 
   const stats = useMemo(() => {
@@ -79,8 +78,8 @@ export function UpcomingInspectionsCard() {
   }
 
   return (
-    <div className="bg-card rounded-2xl border shadow-sm overflow-hidden">
-      <div className="p-5 border-b bg-gradient-to-r from-muted/50 to-transparent">
+    <div className="bg-card rounded-2xl border shadow-sm overflow-hidden h-[420px] flex flex-col">
+      <div className="p-5 border-b bg-gradient-to-r from-muted/50 to-transparent shrink-0">
         <div className="flex items-center gap-3">
           <div className="p-2.5 bg-primary/10 rounded-xl">
             <Calendar className="h-5 w-5 text-primary" />
@@ -92,7 +91,7 @@ export function UpcomingInspectionsCard() {
         </div>
       </div>
       
-      <div className="p-5 space-y-4">
+      <div className="p-5 space-y-4 flex-1 flex flex-col min-h-0">
         {/* Stats */}
         <div className="grid grid-cols-2 gap-3">
           <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
@@ -112,7 +111,7 @@ export function UpcomingInspectionsCard() {
         </div>
 
         {/* List */}
-        <div className="space-y-2">
+        <div className="space-y-2 flex-1 overflow-y-auto pr-1">
           {upcomingInspections.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <CheckCircle className="h-10 w-10 text-emerald-500 mb-2" />
