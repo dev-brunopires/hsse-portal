@@ -77,17 +77,17 @@ function AuditLogItem({ log }: { log: AuditLog }) {
   const TableIcon = table.icon;
 
   const getChangeSummary = () => {
-    if (log.action === 'INSERT') return 'Registro criado';
-    if (log.action === 'DELETE') return 'Registro excluído';
+    if (log.action === 'INSERT') return t('auditLogPage.recordCreated');
+    if (log.action === 'DELETE') return t('auditLogPage.recordDeleted');
     if (log.changed_fields && log.changed_fields.length > 0) {
       const fieldNames = log.changed_fields
         .filter(f => f !== 'updated_at')
         .map(f => fieldLabels[f] || f)
         .slice(0, 3);
       const remaining = log.changed_fields.length - 3;
-      return fieldNames.join(', ') + (remaining > 0 ? ` e mais ${remaining}` : '');
+      return fieldNames.join(', ') + (remaining > 0 ? ` ${t('auditLogPage.andMore', { count: remaining })}` : '');
     }
-    return 'Alterações realizadas';
+    return t('auditLogPage.changesPerformed');
   };
 
   const renderFieldChange = (field: string) => {
@@ -100,7 +100,7 @@ function AuditLogItem({ log }: { log: AuditLog }) {
 
     const formatValue = (val: any) => {
       if (val === null || val === undefined) return '—';
-      if (typeof val === 'boolean') return val ? 'Sim' : 'Não';
+      if (typeof val === 'boolean') return val ? t('common.yes') : t('common.no');
       if (typeof val === 'object') return JSON.stringify(val);
       return String(val);
     };
@@ -147,11 +147,11 @@ function AuditLogItem({ log }: { log: AuditLog }) {
                 <div className="text-right hidden sm:block">
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <User className="h-3 w-3" />
-                    <span>{log.user_name || 'Sistema'}</span>
+                    <span>{log.user_name || t('auditLogPage.system')}</span>
                   </div>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Calendar className="h-3 w-3" />
-                    <span>{format(new Date(log.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
+                    <span>{format(new Date(log.created_at), "dd/MM/yyyy HH:mm", { locale: dateLocale })}</span>
                   </div>
                 </div>
                 {isOpen ? (
@@ -168,19 +168,19 @@ function AuditLogItem({ log }: { log: AuditLog }) {
             <div className="bg-muted/30 rounded-lg p-3">
               {log.action === 'UPDATE' && log.changed_fields ? (
                 <div className="space-y-1">
-                  <h4 className="text-xs font-semibold text-muted-foreground mb-2">Alterações:</h4>
+                  <h4 className="text-xs font-semibold text-muted-foreground mb-2">{t('auditLogPage.changesLabel')}</h4>
                   {log.changed_fields.map(field => renderFieldChange(field))}
                 </div>
               ) : log.action === 'INSERT' ? (
                 <div className="space-y-1">
-                  <h4 className="text-xs font-semibold text-muted-foreground mb-2">Dados criados:</h4>
+                  <h4 className="text-xs font-semibold text-muted-foreground mb-2">{t('auditLogPage.createdData')}</h4>
                   <pre className="text-xs bg-background/50 p-2 rounded overflow-auto max-h-40">
                     {JSON.stringify(log.new_data, null, 2)}
                   </pre>
                 </div>
               ) : (
                 <div className="space-y-1">
-                  <h4 className="text-xs font-semibold text-muted-foreground mb-2">Dados excluídos:</h4>
+                  <h4 className="text-xs font-semibold text-muted-foreground mb-2">{t('auditLogPage.deletedData')}</h4>
                   <pre className="text-xs bg-background/50 p-2 rounded overflow-auto max-h-40">
                     {JSON.stringify(log.old_data, null, 2)}
                   </pre>
@@ -189,11 +189,11 @@ function AuditLogItem({ log }: { log: AuditLog }) {
               <div className="mt-3 pt-3 border-t border-border/50 flex items-center gap-4 text-xs text-muted-foreground sm:hidden">
                 <div className="flex items-center gap-1">
                   <User className="h-3 w-3" />
-                  <span>{log.user_name || 'Sistema'}</span>
+                  <span>{log.user_name || t('auditLogPage.system')}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Calendar className="h-3 w-3" />
-                  <span>{format(new Date(log.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}</span>
+                  <span>{format(new Date(log.created_at), "dd/MM/yyyy HH:mm", { locale: dateLocale })}</span>
                 </div>
               </div>
             </div>
@@ -205,11 +205,17 @@ function AuditLogItem({ log }: { log: AuditLog }) {
 }
 
 export default function AuditLogPage() {
+  const { t } = useTranslation();
+  const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
+  
   const [search, setSearch] = useState('');
   const [tableFilter, setTableFilter] = useState<string>('all');
   const [actionFilter, setActionFilter] = useState<string>('all');
   const [shipFilter, setShipFilter] = useState<string>('all');
   const [isExporting, setIsExporting] = useState(false);
+  
+  const actionLabels = getActionLabels(t);
+  const tableLabels = getTableLabels(t);
   
   const { data: logs = [], isLoading } = useAuditLogs({ limit: 200 });
   const { data: ships = [] } = useShips();
@@ -275,10 +281,10 @@ export default function AuditLogPage() {
         action: actionFilter !== 'all' ? actionFilter : undefined,
       };
       await exportAuditLogsPDF(filteredLogs, filters);
-      toast.success('PDF exportado com sucesso!');
+      toast.success(t('auditLogPage.pdfExported'));
     } catch (error) {
-      console.error('Erro ao exportar PDF:', error);
-      toast.error('Erro ao exportar PDF');
+      console.error('Error exporting PDF:', error);
+      toast.error(t('auditLogPage.exportError'));
     } finally {
       setIsExporting(false);
     }
@@ -292,10 +298,10 @@ export default function AuditLogPage() {
         action: actionFilter !== 'all' ? actionFilter : undefined,
       };
       exportAuditLogsExcel(filteredLogs, filters);
-      toast.success('Excel exportado com sucesso!');
+      toast.success(t('auditLogPage.excelExported'));
     } catch (error) {
-      console.error('Erro ao exportar Excel:', error);
-      toast.error('Erro ao exportar Excel');
+      console.error('Error exporting Excel:', error);
+      toast.error(t('auditLogPage.exportError'));
     }
   };
 
@@ -328,8 +334,8 @@ export default function AuditLogPage() {
             <History className="h-8 w-8 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Histórico de Alterações</h1>
-            <p className="text-muted-foreground mt-1">Auditoria completa de todas as modificações no sistema</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{t('auditLogPage.changeHistory')}</h1>
+            <p className="text-muted-foreground mt-1">{t('auditLogPage.fullAudit')}</p>
           </div>
         </div>
         
@@ -338,17 +344,17 @@ export default function AuditLogPage() {
           <DropdownMenuTrigger asChild>
             <Button variant="outline" disabled={isExporting || filteredLogs.length === 0}>
               <Download className="h-4 w-4 mr-2" />
-              Exportar
+              {t('common.export')}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={handleExportPDF}>
               <FileText className="h-4 w-4 mr-2" />
-              Exportar PDF
+              {t('auditLogPage.exportPDF')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleExportExcel}>
               <FileSpreadsheet className="h-4 w-4 mr-2" />
-              Exportar Excel
+              {t('auditLogPage.exportExcel')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -359,25 +365,25 @@ export default function AuditLogPage() {
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold">{stats.total}</div>
-            <p className="text-sm text-muted-foreground">Total de Registros</p>
+            <p className="text-sm text-muted-foreground">{t('auditLogPage.totalRecords')}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-primary">{stats.today}</div>
-            <p className="text-sm text-muted-foreground">Alterações Hoje</p>
+            <p className="text-sm text-muted-foreground">{t('auditLogPage.changestoday')}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold">{stats.equipment}</div>
-            <p className="text-sm text-muted-foreground">Em Equipamentos</p>
+            <p className="text-sm text-muted-foreground">{t('auditLogPage.inEquipment')}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold">{stats.inspections}</div>
-            <p className="text-sm text-muted-foreground">Em Inspeções</p>
+            <p className="text-sm text-muted-foreground">{t('auditLogPage.inInspections')}</p>
           </CardContent>
         </Card>
       </div>
@@ -387,7 +393,7 @@ export default function AuditLogPage() {
         <CardHeader className="pb-4">
           <CardTitle className="text-base flex items-center gap-2">
             <Filter className="h-4 w-4" />
-            Filtros
+            {t('common.filter')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -395,7 +401,7 @@ export default function AuditLogPage() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar por usuário ou dados..."
+                placeholder={t('auditLogPage.searchByUserOrData')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9"
@@ -404,10 +410,10 @@ export default function AuditLogPage() {
             <Select value={shipFilter} onValueChange={setShipFilter}>
               <SelectTrigger>
                 <Ship className="h-4 w-4 mr-2 text-muted-foreground" />
-                <SelectValue placeholder="Embarcação" />
+                <SelectValue placeholder={t('auditLogPage.ships')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todas as embarcações</SelectItem>
+                <SelectItem value="all">{t('auditLogPage.allShips')}</SelectItem>
                 {ships.map(ship => (
                   <SelectItem key={ship.id} value={ship.id}>{ship.name}</SelectItem>
                 ))}
@@ -415,26 +421,26 @@ export default function AuditLogPage() {
             </Select>
             <Select value={tableFilter} onValueChange={setTableFilter}>
               <SelectTrigger>
-                <SelectValue placeholder="Tipo de registro" />
+                <SelectValue placeholder={t('auditLogPage.recordType')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos os tipos</SelectItem>
-                <SelectItem value="equipment">Equipamentos</SelectItem>
-                <SelectItem value="inspections">Inspeções</SelectItem>
-                <SelectItem value="categories">Categorias</SelectItem>
-                <SelectItem value="ships">Embarcações</SelectItem>
-                <SelectItem value="profiles">Perfis</SelectItem>
+                <SelectItem value="all">{t('auditLogPage.allTypes')}</SelectItem>
+                <SelectItem value="equipment">{t('auditLogPage.equipments')}</SelectItem>
+                <SelectItem value="inspections">{t('auditLogPage.inspections')}</SelectItem>
+                <SelectItem value="categories">{t('auditLogPage.categories')}</SelectItem>
+                <SelectItem value="ships">{t('auditLogPage.ships')}</SelectItem>
+                <SelectItem value="profiles">{t('auditLogPage.profiles')}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={actionFilter} onValueChange={setActionFilter}>
               <SelectTrigger>
-                <SelectValue placeholder="Tipo de ação" />
+                <SelectValue placeholder={t('auditLogPage.actionType')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todas as ações</SelectItem>
-                <SelectItem value="INSERT">Criações</SelectItem>
-                <SelectItem value="UPDATE">Atualizações</SelectItem>
-                <SelectItem value="DELETE">Exclusões</SelectItem>
+                <SelectItem value="all">{t('auditLogPage.allActions')}</SelectItem>
+                <SelectItem value="INSERT">{t('auditLogPage.creations')}</SelectItem>
+                <SelectItem value="UPDATE">{t('auditLogPage.updates')}</SelectItem>
+                <SelectItem value="DELETE">{t('auditLogPage.deletions')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -444,9 +450,9 @@ export default function AuditLogPage() {
       {/* Logs List */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Registros de Auditoria</CardTitle>
+          <CardTitle className="text-base">{t('auditLogPage.auditRecords')}</CardTitle>
           <CardDescription>
-            {filteredLogs.length} registro(s) encontrado(s)
+            {t('auditLogPage.recordsFound', { count: filteredLogs.length })}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -454,7 +460,7 @@ export default function AuditLogPage() {
             {filteredLogs.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <History className="h-12 w-12 text-muted-foreground/50 mb-4" />
-                <p className="text-muted-foreground">Nenhum registro encontrado</p>
+                <p className="text-muted-foreground">{t('auditLogPage.noRecordFound')}</p>
               </div>
             ) : (
               filteredLogs.map(log => (
