@@ -3,11 +3,15 @@ import { XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Area, AreaCh
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { useInspections } from '@/hooks/useInspections';
 import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useTranslation } from 'react-i18next';
 
 export function InspectionTrendChart() {
+  const { t, i18n } = useTranslation();
   const { data: inspections = [], isLoading } = useInspections();
+  
+  const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
 
   const chartData = useMemo(() => {
     const months = [];
@@ -27,8 +31,8 @@ export function InspectionTrendChart() {
       const nonCompliant = monthInspections.filter(i => i.status === 'non-compliant' || i.status === 'attention').length;
       
       months.push({
-        month: format(monthDate, 'MMM', { locale: ptBR }),
-        fullMonth: format(monthDate, 'MMMM yyyy', { locale: ptBR }),
+        month: format(monthDate, 'MMM', { locale: dateLocale }),
+        fullMonth: format(monthDate, 'MMMM yyyy', { locale: dateLocale }),
         total: monthInspections.length,
         compliant,
         nonCompliant,
@@ -36,7 +40,7 @@ export function InspectionTrendChart() {
     }
     
     return months;
-  }, [inspections]);
+  }, [inspections, dateLocale]);
 
   const trend = useMemo(() => {
     if (chartData.length < 2) return 0;
@@ -56,15 +60,15 @@ export function InspectionTrendChart() {
           <p className="font-semibold text-foreground mb-2 capitalize">{data.fullMonth}</p>
           <div className="space-y-1 text-sm">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Total:</span>
+              <span className="text-muted-foreground">{t('dashboard.total')}:</span>
               <span className="font-medium">{data.total}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-emerald-500">Conformes:</span>
+              <span className="text-emerald-500">{t('dashboard.compliant')}:</span>
               <span className="font-medium">{data.compliant}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-red-500">Não conformes:</span>
+              <span className="text-red-500">{t('dashboard.nonCompliant')}:</span>
               <span className="font-medium">{data.nonCompliant}</span>
             </div>
           </div>
@@ -92,15 +96,15 @@ export function InspectionTrendChart() {
               <TrendingUp className="h-5 w-5 text-accent" />
             </div>
             <div>
-              <h3 className="font-semibold text-foreground">Tendência de Inspeções</h3>
-              <p className="text-sm text-muted-foreground">Últimos 6 meses</p>
+              <h3 className="font-semibold text-foreground">{t('dashboard.inspectionTrend')}</h3>
+              <p className="text-sm text-muted-foreground">{t('dashboard.last6Months')}</p>
             </div>
           </div>
           
           <div className="flex items-center gap-2">
             <div className="text-right">
               <p className="text-2xl font-bold text-foreground">{totalInspections}</p>
-              <p className="text-xs text-muted-foreground">Total período</p>
+              <p className="text-xs text-muted-foreground">{t('dashboard.totalPeriod')}</p>
             </div>
             <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
               trend > 0 ? 'bg-emerald-500/10 text-emerald-600' : 
@@ -155,12 +159,12 @@ export function InspectionTrendChart() {
         <div className="flex items-center justify-center gap-6 mt-4 pt-4 border-t">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-emerald-500" />
-            <span className="text-xs text-muted-foreground">Conformes</span>
+            <span className="text-xs text-muted-foreground">{t('dashboard.compliant')}</span>
             <span className="text-xs font-medium">{chartData.reduce((s, m) => s + m.compliant, 0)}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-red-500" />
-            <span className="text-xs text-muted-foreground">Não conformes</span>
+            <span className="text-xs text-muted-foreground">{t('dashboard.nonCompliant')}</span>
             <span className="text-xs font-medium">{chartData.reduce((s, m) => s + m.nonCompliant, 0)}</span>
           </div>
         </div>

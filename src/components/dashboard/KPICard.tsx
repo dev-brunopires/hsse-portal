@@ -1,5 +1,6 @@
 import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 interface KPICardProps {
   title: string;
@@ -14,6 +15,8 @@ interface KPICardProps {
 }
 
 export function KPICard({ title, value, subtitle, icon: Icon, trend, variant = 'default' }: KPICardProps) {
+  const { t } = useTranslation();
+  
   const variantStyles = {
     default: 'bg-primary/10 text-primary',
     success: 'bg-status-success/10 text-status-success',
@@ -35,7 +38,7 @@ export function KPICard({ title, value, subtitle, icon: Icon, trend, variant = '
               'text-sm font-medium',
               trend.isPositive ? 'text-status-success' : 'text-status-danger'
             )}>
-              {trend.isPositive ? '↑' : '↓'} {Math.abs(trend.value)}% vs mês anterior
+              {trend.isPositive ? '↑' : '↓'} {Math.abs(trend.value)}% {t('dashboard.trendVsLastMonth')}
             </p>
           )}
         </div>
