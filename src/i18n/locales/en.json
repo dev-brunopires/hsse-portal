@@ -97,7 +97,9 @@
     "alerts": "Alerts",
     "auditLog": "Audit Log",
     "ships": "Ships",
-    "pendingRecommendations": "Pending Recommendations"
+    "pendingRecommendations": "Pending Recommendations",
+    "collapse": "Collapse",
+    "expand": "Expand"
   },
   "dashboard": {
     "title": "Dashboard",

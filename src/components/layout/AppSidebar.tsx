@@ -135,7 +135,7 @@ export function AppSidebar() {
           {collapsed ? <ChevronRight size={18} /> : (
             <span className="flex items-center gap-2">
               <ChevronLeft size={18} />
-              <span className="text-sm">Recolher</span>
+              <span className="text-sm">{t('navigation.collapse')}</span>
             </span>
           )}
         </Button>
