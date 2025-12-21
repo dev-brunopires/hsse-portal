@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   Bell, AlertTriangle, Clock, XCircle, CheckCircle, 
   Filter, Search, Ship, Calendar, ChevronRight,
@@ -27,69 +28,71 @@ import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Alert } from '@/types/equipment';
 
-const alertTypeConfig = {
-  expired: { 
-    icon: XCircle, 
-    color: 'text-status-danger', 
-    bg: 'bg-status-danger/10', 
-    border: 'border-status-danger/30',
-    label: 'Vencido',
-    description: 'Equipamento com prazo expirado'
-  },
-  expiring: { 
-    icon: Clock, 
-    color: 'text-status-warning', 
-    bg: 'bg-status-warning/10', 
-    border: 'border-status-warning/30',
-    label: 'Expirando',
-    description: 'Equipamento próximo do vencimento'
-  },
-  inspection_due: { 
-    icon: Bell, 
-    color: 'text-accent', 
-    bg: 'bg-accent/10', 
-    border: 'border-accent/30',
-    label: 'Inspeção Pendente',
-    description: 'Inspeção agendada ou atrasada'
-  },
-  non_compliant: { 
-    icon: AlertTriangle, 
-    color: 'text-status-danger', 
-    bg: 'bg-status-danger/10', 
-    border: 'border-status-danger/30',
-    label: 'Não Conforme',
-    description: 'Equipamento não conforme'
-  },
-  maintenance_overdue: {
-    icon: AlertTriangle,
-    color: 'text-status-danger',
-    bg: 'bg-status-danger/10',
-    border: 'border-status-danger/30',
-    label: 'Manutenção Atrasada',
-    description: 'Manutenção passou do prazo de conclusão'
-  },
-  maintenance_pending: {
-    icon: Clock,
-    color: 'text-status-warning',
-    bg: 'bg-status-warning/10',
-    border: 'border-status-warning/30',
-    label: 'Manutenção Pendente',
-    description: 'Manutenção aguardando execução'
-  },
-};
-
-const severityConfig = {
-  high: { label: 'Alta', color: 'text-status-danger', bg: 'bg-status-danger/10', border: 'border-status-danger/30' },
-  medium: { label: 'Média', color: 'text-status-warning', bg: 'bg-status-warning/10', border: 'border-status-warning/30' },
-  low: { label: 'Baixa', color: 'text-accent', bg: 'bg-accent/10', border: 'border-accent/30' },
-};
-
 interface AlertCardProps {
   alert: Alert;
   onViewDetails: (alert: Alert) => void;
 }
 
 function AlertCard({ alert, onViewDetails }: AlertCardProps) {
+  const { t } = useTranslation();
+  
+  const alertTypeConfig = {
+    expired: { 
+      icon: XCircle, 
+      color: 'text-status-danger', 
+      bg: 'bg-status-danger/10', 
+      border: 'border-status-danger/30',
+      label: t('alerts.typeExpired'),
+      description: t('alerts.descExpired')
+    },
+    expiring: { 
+      icon: Clock, 
+      color: 'text-status-warning', 
+      bg: 'bg-status-warning/10', 
+      border: 'border-status-warning/30',
+      label: t('alerts.typeExpiring'),
+      description: t('alerts.descExpiring')
+    },
+    inspection_due: { 
+      icon: Bell, 
+      color: 'text-accent', 
+      bg: 'bg-accent/10', 
+      border: 'border-accent/30',
+      label: t('alerts.typeInspectionDue'),
+      description: t('alerts.descInspectionDue')
+    },
+    non_compliant: { 
+      icon: AlertTriangle, 
+      color: 'text-status-danger', 
+      bg: 'bg-status-danger/10', 
+      border: 'border-status-danger/30',
+      label: t('alerts.typeNonCompliant'),
+      description: t('alerts.descNonCompliant')
+    },
+    maintenance_overdue: {
+      icon: AlertTriangle,
+      color: 'text-status-danger',
+      bg: 'bg-status-danger/10',
+      border: 'border-status-danger/30',
+      label: t('alerts.typeMaintenanceOverdue'),
+      description: t('alerts.descMaintenanceOverdue')
+    },
+    maintenance_pending: {
+      icon: Clock,
+      color: 'text-status-warning',
+      bg: 'bg-status-warning/10',
+      border: 'border-status-warning/30',
+      label: t('alerts.typeMaintenancePending'),
+      description: t('alerts.descMaintenancePending')
+    },
+  };
+
+  const severityConfig = {
+    high: { label: t('alerts.high'), color: 'text-status-danger', bg: 'bg-status-danger/10', border: 'border-status-danger/30' },
+    medium: { label: t('alerts.medium'), color: 'text-status-warning', bg: 'bg-status-warning/10', border: 'border-status-warning/30' },
+    low: { label: t('alerts.low'), color: 'text-accent', bg: 'bg-accent/10', border: 'border-accent/30' },
+  };
+
   const config = alertTypeConfig[alert.type];
   const severity = severityConfig[alert.severity];
   const Icon = config.icon;
@@ -120,7 +123,7 @@ function AlertCard({ alert, onViewDetails }: AlertCardProps) {
                 {config.label}
               </Badge>
               <Badge variant="outline" className={cn('text-xs', severity.bg, severity.color, severity.border)}>
-                Prioridade {severity.label}
+                {t('alerts.priority')} {severity.label}
               </Badge>
             </div>
             
@@ -192,6 +195,7 @@ function StatCard({
 }
 
 export default function Alerts() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const navigate = useNavigate();
   const markAllNotificationsAsRead = useMarkAllNotificationsAsRead();
@@ -236,8 +240,8 @@ export default function Alerts() {
     }
     markAllNotificationsAsRead.mutate();
     toast({
-      title: 'Marcado como lido',
-      description: 'As notificações foram marcadas como lidas.',
+      title: t('alerts.markedAsRead'),
+      description: t('alerts.notificationsMarkedAsRead'),
     });
   };
 
@@ -283,9 +287,9 @@ export default function Alerts() {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-4">
         <ShieldAlert className="h-12 w-12 text-destructive" />
-        <p className="text-destructive font-medium">Erro ao carregar alertas</p>
+        <p className="text-destructive font-medium">{t('alerts.errorLoadingAlerts')}</p>
         <Button variant="outline" onClick={() => window.location.reload()}>
-          Tentar novamente
+          {t('common.tryAgain')}
         </Button>
       </div>
     );
@@ -297,10 +301,10 @@ export default function Alerts() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">
-            Central de Alertas
+            {t('alerts.title')}
           </h1>
           <p className="text-muted-foreground mt-1">
-            Monitore e gerencie todos os alertas do sistema
+            {t('alerts.subtitle')}
           </p>
         </div>
         <Button 
@@ -310,35 +314,35 @@ export default function Alerts() {
           disabled={alerts.length === 0}
         >
           <CheckCircle className="h-4 w-4" />
-          Marcar todos como lidos
+          {t('alerts.markAllAsRead')}
         </Button>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Total de Alertas"
+          title={t('alerts.totalAlerts')}
           value={alerts.length}
           icon={Bell}
           color="text-foreground"
           bgColor="bg-primary"
         />
         <StatCard
-          title="Alta Prioridade"
+          title={t('alerts.highPriority')}
           value={highCount}
           icon={AlertTriangle}
           color="text-status-danger"
           bgColor="bg-status-danger"
         />
         <StatCard
-          title="Média Prioridade"
+          title={t('alerts.mediumPriority')}
           value={mediumCount}
           icon={Clock}
           color="text-status-warning"
           bgColor="bg-status-warning"
         />
         <StatCard
-          title="Baixa Prioridade"
+          title={t('alerts.lowPriority')}
           value={lowCount}
           icon={Package}
           color="text-accent"
@@ -351,9 +355,9 @@ export default function Alerts() {
         <CardHeader className="pb-4">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
-              <CardTitle>Lista de Alertas</CardTitle>
+              <CardTitle>{t('alerts.alertList')}</CardTitle>
               <CardDescription>
-                {filteredAlerts.length} de {alerts.length} alertas
+                {filteredAlerts.length} {t('alerts.ofAlerts', { total: alerts.length })}
               </CardDescription>
             </div>
             
@@ -361,7 +365,7 @@ export default function Alerts() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar alertas..."
+                  placeholder={t('alerts.searchAlerts')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-9 w-full sm:w-[200px]"
@@ -371,16 +375,16 @@ export default function Alerts() {
               <Select value={typeFilter} onValueChange={setTypeFilter}>
                 <SelectTrigger className="w-full sm:w-[180px]">
                   <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Tipo" />
+                  <SelectValue placeholder={t('common.type')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos os tipos</SelectItem>
-                  <SelectItem value="expired">Vencido</SelectItem>
-                  <SelectItem value="expiring">Expirando</SelectItem>
-                  <SelectItem value="inspection_due">Inspeção</SelectItem>
-                  <SelectItem value="non_compliant">Não Conforme</SelectItem>
-                  <SelectItem value="maintenance_overdue">Manutenção Atrasada</SelectItem>
-                  <SelectItem value="maintenance_pending">Manutenção Pendente</SelectItem>
+                  <SelectItem value="all">{t('alerts.allTypes')}</SelectItem>
+                  <SelectItem value="expired">{t('alerts.expired')}</SelectItem>
+                  <SelectItem value="expiring">{t('alerts.expiring')}</SelectItem>
+                  <SelectItem value="inspection_due">{t('alerts.inspection')}</SelectItem>
+                  <SelectItem value="non_compliant">{t('alerts.nonCompliant')}</SelectItem>
+                  <SelectItem value="maintenance_overdue">{t('alerts.maintenanceOverdue')}</SelectItem>
+                  <SelectItem value="maintenance_pending">{t('alerts.maintenancePending')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -391,25 +395,25 @@ export default function Alerts() {
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="w-full justify-start bg-muted/50 p-1">
               <TabsTrigger value="all" className="gap-2">
-                Todos
+                {t('alerts.all')}
                 <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
                   {alerts.length}
                 </Badge>
               </TabsTrigger>
               <TabsTrigger value="high" className="gap-2">
-                <span className="hidden sm:inline">Alta</span>
+                <span className="hidden sm:inline">{t('alerts.high')}</span>
                 <Badge className="bg-status-danger/20 text-status-danger hover:bg-status-danger/30 h-5 px-1.5 text-xs">
                   {highCount}
                 </Badge>
               </TabsTrigger>
               <TabsTrigger value="medium" className="gap-2">
-                <span className="hidden sm:inline">Média</span>
+                <span className="hidden sm:inline">{t('alerts.medium')}</span>
                 <Badge className="bg-status-warning/20 text-status-warning hover:bg-status-warning/30 h-5 px-1.5 text-xs">
                   {mediumCount}
                 </Badge>
               </TabsTrigger>
               <TabsTrigger value="low" className="gap-2">
-                <span className="hidden sm:inline">Baixa</span>
+                <span className="hidden sm:inline">{t('alerts.low')}</span>
                 <Badge className="bg-accent/20 text-accent hover:bg-accent/30 h-5 px-1.5 text-xs">
                   {lowCount}
                 </Badge>
@@ -424,13 +428,13 @@ export default function Alerts() {
                   </div>
                   <p className="text-lg font-medium text-foreground">
                     {searchTerm || typeFilter !== 'all' 
-                      ? 'Nenhum alerta encontrado' 
-                      : 'Nenhum alerta ativo'}
+                      ? t('alerts.noAlertFound') 
+                      : t('alerts.noActiveAlerts')}
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">
                     {searchTerm || typeFilter !== 'all'
-                      ? 'Tente ajustar os filtros de busca'
-                      : 'Todos os equipamentos estão em conformidade'}
+                      ? t('alerts.adjustFilters')
+                      : t('alerts.allEquipmentCompliant')}
                   </p>
                 </div>
               ) : (
