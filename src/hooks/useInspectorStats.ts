@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { startOfMonth, endOfMonth, subMonths, differenceInHours } from 'date-fns';
+import { useShipFilter } from '@/contexts/ShipFilterContext';
 
 export interface InspectorStats {
   inspectorId: string;
@@ -24,17 +25,18 @@ export interface PerformanceMetrics {
 }
 
 export function useInspectorStats(startDate?: Date, endDate?: Date) {
+  const { selectedShipId, isFilterEnabled } = useShipFilter();
   const defaultStartDate = startOfMonth(subMonths(new Date(), 2));
   const defaultEndDate = endOfMonth(new Date());
 
   return useQuery({
-    queryKey: ['inspector-stats', startDate?.toISOString(), endDate?.toISOString()],
+    queryKey: ['inspector-stats', startDate?.toISOString(), endDate?.toISOString(), selectedShipId],
     queryFn: async (): Promise<PerformanceMetrics> => {
       const from = (startDate || defaultStartDate).toISOString().split('T')[0];
       const to = (endDate || defaultEndDate).toISOString().split('T')[0];
 
       // Fetch inspections with inspector profiles
-      const { data: inspections, error } = await supabase
+      let query = supabase
         .from('inspections')
         .select(`
           id,
@@ -45,6 +47,13 @@ export function useInspectorStats(startDate?: Date, endDate?: Date) {
         `)
         .gte('inspection_date', from)
         .lte('inspection_date', to);
+      
+      // Apply ship filter when enabled
+      if (isFilterEnabled && selectedShipId) {
+        query = query.eq('ship_id', selectedShipId);
+      }
+      
+      const { data: inspections, error } = await query;
 
       if (error) throw error;
 
