@@ -905,6 +905,38 @@
       "inactive": "Inactive",
       "maintenance": "Maintenance",
       "rejected": "Rejected"
-    }
+    },
+    "selectDate": "Select date",
+    "showing50of": "Showing 50 of {{count}} results. Refine your search.",
+    "trySearchByCode": "Try searching by internal code.",
+    "inspectionChecklist": "Inspection Checklist",
+    "photoEvidence": "Photo Evidence",
+    "clickToAddPhotos": "Click to add photos",
+    "photo": "Photo",
+    "observationsAndRecommendations": "Observations and Recommendations",
+    "actionsTaken": "Actions Taken",
+    "actionsTakenPlaceholder": "Describe the actions taken regarding previous pending items or recommendations...",
+    "actionsTakenHint": "Record here what was done to resolve pending items from previous inspections",
+    "observationsPlaceholderFull": "Describe relevant observations about the inspection...",
+    "recommendationsPlaceholder": "Include recommendations or necessary corrective actions...",
+    "quickInspection": "Quick inspection - All items compliant"
+  },
+  "editInspection": {
+    "title": "Edit Inspection",
+    "status": "Status",
+    "date": "Date",
+    "next": "Next",
+    "actionsTaken": "Actions Taken",
+    "actionsTakenPlaceholder": "Describe the actions performed...",
+    "observations": "Observations",
+    "observationsPlaceholder": "General observations...",
+    "recommendations": "Recommendations",
+    "recommendationsPlaceholder": "Recommendations for next inspection...",
+    "cancel": "Cancel",
+    "saveChanges": "Save Changes",
+    "select": "Select",
+    "statusCompliant": "Compliant",
+    "statusAttention": "Attention",
+    "statusNonCompliant": "Non-Compliant"
   }
 }

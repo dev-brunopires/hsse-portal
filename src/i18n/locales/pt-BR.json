@@ -905,6 +905,38 @@
       "inactive": "Inativo",
       "maintenance": "Manutenção",
       "rejected": "Rejeitado"
-    }
+    },
+    "selectDate": "Selecione a data",
+    "showing50of": "Mostrando 50 de {{count}} resultados. Refine sua busca.",
+    "trySearchByCode": "Tente buscar pelo código interno.",
+    "inspectionChecklist": "Checklist de Inspeção",
+    "photoEvidence": "Evidências Fotográficas",
+    "clickToAddPhotos": "Clique para adicionar fotos",
+    "photo": "Foto",
+    "observationsAndRecommendations": "Observações e Recomendações",
+    "actionsTaken": "Ações Tomadas",
+    "actionsTakenPlaceholder": "Descreva as ações realizadas em relação às pendências ou recomendações anteriores...",
+    "actionsTakenHint": "Registre aqui o que foi feito para resolver pendências de inspeções anteriores",
+    "observationsPlaceholderFull": "Descreva observações relevantes sobre a inspeção...",
+    "recommendationsPlaceholder": "Inclua recomendações ou ações corretivas necessárias...",
+    "quickInspection": "Inspeção rápida - Todos os itens conformes"
+  },
+  "editInspection": {
+    "title": "Editar Inspeção",
+    "status": "Status",
+    "date": "Data",
+    "next": "Próxima",
+    "actionsTaken": "Ações Tomadas",
+    "actionsTakenPlaceholder": "Descreva as ações realizadas...",
+    "observations": "Observações",
+    "observationsPlaceholder": "Observações gerais...",
+    "recommendations": "Recomendações",
+    "recommendationsPlaceholder": "Recomendações para próxima inspeção...",
+    "cancel": "Cancelar",
+    "saveChanges": "Salvar Alterações",
+    "select": "Selecione",
+    "statusCompliant": "Conforme",
+    "statusAttention": "Atenção",
+    "statusNonCompliant": "Não Conforme"
   }
 }
