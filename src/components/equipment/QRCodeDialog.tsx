@@ -234,8 +234,8 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
             .content {
               display: flex;
               align-items: center;
-              gap: 6px;
-              padding: 4px 6px;
+              gap: 4px;
+              padding: 3px 4px;
               flex: 1;
             }
             .qr-container {
@@ -243,8 +243,8 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
               position: relative;
             }
             .qr-container svg {
-              width: 28mm !important;
-              height: 28mm !important;
+              width: 34mm !important;
+              height: 34mm !important;
             }
             .short-code-overlay {
               position: absolute;
@@ -252,11 +252,11 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
               left: 50%;
               transform: translate(-50%, -50%);
               background: white;
-              padding: 1px 3px;
+              padding: 1px 4px;
               border-radius: 2px;
             }
             .short-code {
-              font-size: 5pt;
+              font-size: 6pt;
               font-weight: bold;
               font-family: monospace;
             }
@@ -267,21 +267,14 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
               justify-content: center;
               overflow: hidden;
             }
-            .quick-code {
-              font-size: 16pt;
-              font-weight: bold;
-              font-family: monospace;
-              color: #F36F27;
-              margin-bottom: 1px;
-            }
             .code {
-              font-size: 7pt;
+              font-size: 8pt;
               font-weight: bold;
               margin-bottom: 2px;
               white-space: nowrap;
               overflow: hidden;
               text-overflow: ellipsis;
-              color: #666;
+              color: #333;
             }
             .name {
               font-size: 6pt;
@@ -327,7 +320,6 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
                 ${equipment.shortCode ? `<div class="short-code-overlay"><span class="short-code">${equipment.shortCode}</span></div>` : ''}
               </div>
               <div class="info">
-                ${equipment.shortCode ? `<div class="quick-code">${equipment.shortCode}</div>` : ''}
                 <div class="code">${equipment.internalCode}</div>
                 <div class="name">${equipment.name}</div>
                 ${equipment.location ? `<div class="location">📍 ${equipment.location}</div>` : ''}
