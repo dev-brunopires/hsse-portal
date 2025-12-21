@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { FileText, Download, Calendar, Filter, AlertTriangle, Ship, Loader2, BarChart3, Wrench, ClipboardCheck } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { FileText, Download, Calendar, Filter, AlertTriangle, Loader2, BarChart3, Wrench, ClipboardCheck, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -14,9 +14,11 @@ import { useShips } from '@/hooks/useShips';
 import { useMaintenanceRequests } from '@/hooks/useMaintenanceRequests';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfiles } from '@/hooks/useProfiles';
-import { exportToExcel, exportToPDF } from '@/utils/exportEquipment';
+import { useUserSignature } from '@/hooks/useUserSignature';
 import { exportInspectionsToExcel, exportInspectionsToPDF } from '@/utils/exportInspections';
 import { exportCategoryInspectionPDF } from '@/utils/exportCategoryInspection';
+import { addPDFHeader, addPDFFooter, addSignatureSection, preloadLogo } from '@/utils/pdfStyles';
+import { ReportPreviewDialog } from '@/components/reports/ReportPreviewDialog';
 import { toast } from 'sonner';
 import { format, isAfter, isBefore, addDays, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -52,6 +54,15 @@ const maintenanceTypeLabels: Record<string, string> = {
   preventive: 'Preventiva',
 };
 
+const inspectionStatusLabels: Record<string, string> = {
+  compliant: 'Conforme',
+  attention: 'Atenção',
+  'non-compliant': 'Não Conforme',
+  rejected: 'Reprovado',
+};
+
+type ReportType = 'inspections' | 'maintenance' | 'category' | 'expiry' | 'non-conformities' | 'category-inspection' | null;
+
 export default function Reports() {
   const { user } = useAuth();
   const { data: profiles = [] } = useProfiles();
@@ -60,6 +71,13 @@ export default function Reports() {
   const { data: categories = [] } = useCategories();
   const { data: ships = [] } = useShips();
   const { data: maintenanceRequests = [], isLoading: maintenanceLoading } = useMaintenanceRequests();
+  const { data: signatureData } = useUserSignature();
+  const signature = signatureData?.default_signature;
+
+  // Preload logo for PDFs
+  useEffect(() => {
+    preloadLogo();
+  }, []);
 
   // Get full profile with position
   const currentUserProfile = useMemo(() => {
@@ -71,6 +89,10 @@ export default function Reports() {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [startDateStr, setStartDateStr] = useState<string>('');
   const [endDateStr, setEndDateStr] = useState<string>('');
+
+  // Preview dialog state
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewReport, setPreviewReport] = useState<ReportType>(null);
 
   const isLoading = equipmentLoading || inspectionsLoading || maintenanceLoading;
 
@@ -130,17 +152,18 @@ export default function Reports() {
   };
 
   // Report 2: Category Report
-  const handleCategoryReportPDF = () => {
+  const handleCategoryReportPDF = async () => {
     if (filteredEquipment.length === 0) {
       toast.error('Nenhum equipamento encontrado para exportar');
       return;
     }
 
     const doc = new jsPDF('landscape');
-    doc.setFontSize(18);
-    doc.text('Relatório por Categoria', 14, 22);
-    doc.setFontSize(10);
-    doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, 14, 30);
+    const startY = await addPDFHeader(
+      doc,
+      'Relatório por Categoria',
+      `Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`
+    );
 
     // Group by category
     const groupedByCategory = categories.map(cat => {
@@ -165,14 +188,25 @@ export default function Reports() {
     }).filter(row => parseInt(row[1]) > 0);
 
     autoTable(doc, {
-      startY: 38,
+      startY: startY,
       head: [['Categoria', 'Total', 'Ativos', 'Manutenção', 'Vencidos', 'Reprovados', 'Conformidade']],
       body: groupedByCategory,
       styles: { fontSize: 9 },
-      headStyles: { fillColor: [30, 41, 59] },
+      headStyles: { fillColor: [22, 85, 154] },
       alternateRowStyles: { fillColor: [248, 250, 252] },
     });
 
+    // Add signature
+    const finalY = (doc as any).lastAutoTable?.finalY || startY + 50;
+    addSignatureSection(
+      doc,
+      finalY + 10,
+      currentUserProfile?.full_name || 'Usuário',
+      currentUserProfile?.position,
+      signature
+    );
+
+    addPDFFooter(doc, 'SBM Offshore - Sistema de Gestão', 'Documento gerado automaticamente');
     doc.save(`relatorio_categorias_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
     toast.success('Relatório por categoria exportado em PDF');
   };
@@ -227,18 +261,18 @@ export default function Reports() {
     });
   }, [filteredEquipment]);
 
-  const handleExpiryReportPDF = () => {
+  const handleExpiryReportPDF = async () => {
     if (expiringEquipment.length === 0) {
       toast.error('Nenhum equipamento com certificado próximo do vencimento');
       return;
     }
 
     const doc = new jsPDF('landscape');
-    doc.setFontSize(18);
-    doc.text('Relatório de Vencimentos', 14, 22);
-    doc.setFontSize(10);
-    doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, 14, 30);
-    doc.text(`Equipamentos com certificados vencendo nos próximos 30 dias: ${expiringEquipment.length}`, 14, 36);
+    const startY = await addPDFHeader(
+      doc,
+      'Relatório de Vencimentos',
+      `Equipamentos com certificados vencendo nos próximos 30 dias: ${expiringEquipment.length}`
+    );
 
     const tableData = expiringEquipment.map(item => {
       const expiryDate = new Date(item.certificate_expiry!);
@@ -257,7 +291,7 @@ export default function Reports() {
     });
 
     autoTable(doc, {
-      startY: 44,
+      startY: startY,
       head: [['Código', 'Equipamento', 'Categoria', 'Localização', 'Vencimento', 'Status']],
       body: tableData,
       styles: { fontSize: 9 },
@@ -265,6 +299,16 @@ export default function Reports() {
       alternateRowStyles: { fillColor: [254, 242, 242] },
     });
 
+    const finalY = (doc as any).lastAutoTable?.finalY || startY + 50;
+    addSignatureSection(
+      doc,
+      finalY + 10,
+      currentUserProfile?.full_name || 'Usuário',
+      currentUserProfile?.position,
+      signature
+    );
+
+    addPDFFooter(doc, 'SBM Offshore - Sistema de Gestão', 'Documento gerado automaticamente');
     doc.save(`relatorio_vencimentos_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
     toast.success('Relatório de vencimentos exportado em PDF');
   };
@@ -305,18 +349,18 @@ export default function Reports() {
     );
   }, [filteredInspections]);
 
-  const handleNonConformitiesReportPDF = () => {
+  const handleNonConformitiesReportPDF = async () => {
     if (nonConformities.length === 0) {
       toast.error('Nenhuma não conformidade encontrada');
       return;
     }
 
     const doc = new jsPDF('landscape');
-    doc.setFontSize(18);
-    doc.text('Relatório de Não Conformidades', 14, 22);
-    doc.setFontSize(10);
-    doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, 14, 30);
-    doc.text(`Total de não conformidades: ${nonConformities.length}`, 14, 36);
+    const startY = await addPDFHeader(
+      doc,
+      'Relatório de Não Conformidades',
+      `Total de não conformidades: ${nonConformities.length}`
+    );
 
     const tableData = nonConformities.map(item => [
       format(new Date(item.inspection_date), 'dd/MM/yyyy', { locale: ptBR }),
@@ -329,7 +373,7 @@ export default function Reports() {
     ]);
 
     autoTable(doc, {
-      startY: 44,
+      startY: startY,
       head: [['Data', 'Equipamento', 'Código', 'Inspetor', 'Status', 'Observações', 'Recomendações']],
       body: tableData,
       styles: { fontSize: 8 },
@@ -337,6 +381,16 @@ export default function Reports() {
       alternateRowStyles: { fillColor: [255, 247, 237] },
     });
 
+    const finalY = (doc as any).lastAutoTable?.finalY || startY + 50;
+    addSignatureSection(
+      doc,
+      finalY + 10,
+      currentUserProfile?.full_name || 'Usuário',
+      currentUserProfile?.position,
+      signature
+    );
+
+    addPDFFooter(doc, 'SBM Offshore - Sistema de Gestão', 'Documento gerado automaticamente');
     doc.save(`relatorio_nao_conformidades_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
     toast.success('Relatório de não conformidades exportado em PDF');
   };
@@ -366,24 +420,24 @@ export default function Reports() {
   };
 
   // Report 5: Maintenance Report
-  const handleMaintenanceReportPDF = () => {
+  const handleMaintenanceReportPDF = async () => {
     if (filteredMaintenance.length === 0) {
       toast.error('Nenhuma manutenção encontrada para exportar');
       return;
     }
 
     const doc = new jsPDF('landscape');
-    doc.setFontSize(18);
-    doc.text('Relatório de Manutenções', 14, 22);
-    doc.setFontSize(10);
-    doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, 14, 30);
-    doc.text(`Total de manutenções: ${filteredMaintenance.length}`, 14, 36);
-
+    
     // Stats
     const pending = filteredMaintenance.filter(m => m.status === 'pending').length;
     const inProgress = filteredMaintenance.filter(m => m.status === 'in_progress').length;
     const completed = filteredMaintenance.filter(m => m.status === 'completed').length;
-    doc.text(`Pendentes: ${pending} | Em Execução: ${inProgress} | Concluídas: ${completed}`, 14, 42);
+    
+    const startY = await addPDFHeader(
+      doc,
+      'Relatório de Manutenções',
+      `Total: ${filteredMaintenance.length} | Pendentes: ${pending} | Em Execução: ${inProgress} | Concluídas: ${completed}`
+    );
 
     const tableData = filteredMaintenance.map(item => [
       format(new Date(item.created_at), 'dd/MM/yyyy', { locale: ptBR }),
@@ -397,7 +451,7 @@ export default function Reports() {
     ]);
 
     autoTable(doc, {
-      startY: 48,
+      startY: startY,
       head: [['Data Abertura', 'Título', 'Equipamento', 'Tipo', 'Prioridade', 'Status', 'Prazo', 'Conclusão']],
       body: tableData,
       styles: { fontSize: 8 },
@@ -405,6 +459,16 @@ export default function Reports() {
       alternateRowStyles: { fillColor: [248, 250, 252] },
     });
 
+    const finalY = (doc as any).lastAutoTable?.finalY || startY + 50;
+    addSignatureSection(
+      doc,
+      finalY + 10,
+      currentUserProfile?.full_name || 'Usuário',
+      currentUserProfile?.position,
+      signature
+    );
+
+    addPDFFooter(doc, 'SBM Offshore - Sistema de Gestão', 'Documento gerado automaticamente');
     doc.save(`relatorio_manutencoes_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
     toast.success('Relatório de manutenções exportado em PDF');
   };
@@ -437,21 +501,18 @@ export default function Reports() {
     toast.success('Relatório de manutenções exportado em Excel');
   };
 
-  // Report 6: Category Inspection Report (like batch inspection)
+  // Report 6: Category Inspection Report
   const categoryInspectionData = useMemo(() => {
-    // Get latest inspection per equipment in the filtered set
     const equipmentInspections = new Map<string, {
       equipment: typeof equipment[0];
       status: 'compliant' | 'attention' | 'non-compliant';
       inspectionDate: string;
     }>();
 
-    // Sort inspections by date descending
     const sortedInspections = [...filteredInspections].sort(
       (a, b) => new Date(b.inspection_date).getTime() - new Date(a.inspection_date).getTime()
     );
 
-    // Get the latest inspection status for each equipment
     sortedInspections.forEach(insp => {
       if (!equipmentInspections.has(insp.equipment_id)) {
         const eq = equipment.find(e => e.id === insp.equipment_id);
@@ -499,6 +560,7 @@ export default function Reports() {
         email: currentUserProfile?.email || '',
       },
       inspectionDate: new Date().toISOString().split('T')[0],
+      signatureData: signature,
     });
 
     toast.success('Relatório de inspeção por categoria exportado em PDF');
@@ -510,12 +572,6 @@ export default function Reports() {
       return;
     }
 
-    const statusLabels: Record<string, string> = {
-      'compliant': 'Conforme',
-      'attention': 'Atenção',
-      'non-compliant': 'Não Conforme',
-    };
-
     const data = categoryInspectionData.map((item, index) => ({
       '#': index + 1,
       'Código': item.equipment.internal_code,
@@ -523,7 +579,7 @@ export default function Reports() {
       'Tipo': item.equipment.type,
       'Categoria': item.equipment.categories?.name || '—',
       'Localização': item.equipment.location,
-      'Status': statusLabels[item.status] || item.status,
+      'Status': inspectionStatusLabels[item.status] || item.status,
       'Data Inspeção': format(new Date(item.inspectionDate), 'dd/MM/yyyy', { locale: ptBR }),
     }));
 
@@ -543,70 +599,230 @@ export default function Reports() {
 
   const hasFilters = shipFilter !== 'all' || categoryFilter !== 'all' || startDateStr || endDateStr;
 
+  // Preview data configurations
+  const getPreviewData = () => {
+    switch (previewReport) {
+      case 'inspections':
+        return {
+          title: 'Pré-visualização: Relatório de Inspeções',
+          description: `${filteredInspections.length} inspeções encontradas`,
+          data: filteredInspections.map(i => ({
+            date: format(new Date(i.inspection_date), 'dd/MM/yyyy', { locale: ptBR }),
+            equipment: i.equipment?.name || '—',
+            code: i.equipment?.internal_code || '—',
+            inspector: i.profiles?.full_name || '—',
+            status: inspectionStatusLabels[i.status] || i.status,
+          })),
+          columns: [
+            { key: 'date', label: 'Data' },
+            { key: 'equipment', label: 'Equipamento' },
+            { key: 'code', label: 'Código' },
+            { key: 'inspector', label: 'Inspetor' },
+            { key: 'status', label: 'Status' },
+          ],
+          onExportPDF: handleInspectionReportPDF,
+          onExportExcel: handleInspectionReportExcel,
+        };
+      case 'maintenance':
+        return {
+          title: 'Pré-visualização: Relatório de Manutenções',
+          description: `${filteredMaintenance.length} manutenções encontradas`,
+          data: filteredMaintenance.map(m => ({
+            date: format(new Date(m.created_at), 'dd/MM/yyyy', { locale: ptBR }),
+            title: m.title,
+            equipment: m.equipment?.name || '—',
+            type: maintenanceTypeLabels[m.type] || m.type,
+            priority: maintenancePriorityLabels[m.priority] || m.priority,
+            status: maintenanceStatusLabels[m.status] || m.status,
+          })),
+          columns: [
+            { key: 'date', label: 'Data' },
+            { key: 'title', label: 'Título' },
+            { key: 'equipment', label: 'Equipamento' },
+            { key: 'type', label: 'Tipo' },
+            { key: 'priority', label: 'Prioridade' },
+            { key: 'status', label: 'Status' },
+          ],
+          onExportPDF: handleMaintenanceReportPDF,
+          onExportExcel: handleMaintenanceReportExcel,
+          summary: [
+            { label: 'Pendentes', value: filteredMaintenance.filter(m => m.status === 'pending').length },
+            { label: 'Em Execução', value: filteredMaintenance.filter(m => m.status === 'in_progress').length },
+            { label: 'Concluídas', value: filteredMaintenance.filter(m => m.status === 'completed').length },
+          ],
+        };
+      case 'expiry':
+        return {
+          title: 'Pré-visualização: Relatório de Vencimentos',
+          description: `${expiringEquipment.length} equipamentos com certificados a vencer`,
+          data: expiringEquipment.map(e => {
+            const expiryDate = new Date(e.certificate_expiry!);
+            const daysUntilExpiry = Math.ceil((expiryDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+            return {
+              code: e.internal_code,
+              name: e.name,
+              category: e.categories?.name || '—',
+              expiry: format(expiryDate, 'dd/MM/yyyy', { locale: ptBR }),
+              days: daysUntilExpiry < 0 ? 'VENCIDO' : `${daysUntilExpiry} dias`,
+            };
+          }),
+          columns: [
+            { key: 'code', label: 'Código' },
+            { key: 'name', label: 'Equipamento' },
+            { key: 'category', label: 'Categoria' },
+            { key: 'expiry', label: 'Vencimento' },
+            { key: 'days', label: 'Dias Restantes' },
+          ],
+          onExportPDF: handleExpiryReportPDF,
+          onExportExcel: handleExpiryReportExcel,
+        };
+      case 'non-conformities':
+        return {
+          title: 'Pré-visualização: Relatório de Não Conformidades',
+          description: `${nonConformities.length} não conformidades encontradas`,
+          data: nonConformities.map(i => ({
+            date: format(new Date(i.inspection_date), 'dd/MM/yyyy', { locale: ptBR }),
+            equipment: i.equipment?.name || '—',
+            code: i.equipment?.internal_code || '—',
+            status: i.status === 'attention' ? 'Atenção' : 'Não Conforme',
+            observations: i.observations?.substring(0, 50) || '—',
+          })),
+          columns: [
+            { key: 'date', label: 'Data' },
+            { key: 'equipment', label: 'Equipamento' },
+            { key: 'code', label: 'Código' },
+            { key: 'status', label: 'Status' },
+            { key: 'observations', label: 'Observações' },
+          ],
+          onExportPDF: handleNonConformitiesReportPDF,
+          onExportExcel: handleNonConformitiesReportExcel,
+        };
+      case 'category':
+        const categoryData = categories.map(cat => {
+          const catEquipment = filteredEquipment.filter(e => e.category_id === cat.id);
+          const active = catEquipment.filter(e => e.status === 'active').length;
+          const maintenance = catEquipment.filter(e => e.status === 'maintenance').length;
+          const expired = catEquipment.filter(e => e.status === 'expired').length;
+          const compliance = catEquipment.length > 0 
+            ? Math.round((active / catEquipment.length) * 100) 
+            : 0;
+          return {
+            name: cat.name,
+            total: catEquipment.length,
+            active,
+            maintenance,
+            expired,
+            compliance: `${compliance}%`,
+          };
+        }).filter(c => c.total > 0);
+        
+        return {
+          title: 'Pré-visualização: Relatório por Categoria',
+          description: `${categoryData.length} categorias com equipamentos`,
+          data: categoryData,
+          columns: [
+            { key: 'name', label: 'Categoria' },
+            { key: 'total', label: 'Total' },
+            { key: 'active', label: 'Ativos' },
+            { key: 'maintenance', label: 'Manutenção' },
+            { key: 'expired', label: 'Vencidos' },
+            { key: 'compliance', label: 'Conformidade' },
+          ],
+          onExportPDF: handleCategoryReportPDF,
+          onExportExcel: handleCategoryReportExcel,
+        };
+      case 'category-inspection':
+        return {
+          title: 'Pré-visualização: Inspeção por Categoria',
+          description: `${categoryInspectionData.length} equipamentos inspecionados`,
+          data: categoryInspectionData.map((item, index) => ({
+            num: index + 1,
+            code: item.equipment.internal_code,
+            name: item.equipment.name,
+            category: item.equipment.categories?.name || '—',
+            status: inspectionStatusLabels[item.status] || item.status,
+            date: format(new Date(item.inspectionDate), 'dd/MM/yyyy', { locale: ptBR }),
+          })),
+          columns: [
+            { key: 'num', label: '#' },
+            { key: 'code', label: 'Código' },
+            { key: 'name', label: 'Equipamento' },
+            { key: 'category', label: 'Categoria' },
+            { key: 'status', label: 'Status' },
+            { key: 'date', label: 'Data' },
+          ],
+          onExportPDF: handleCategoryInspectionReportPDF,
+          onExportExcel: handleCategoryInspectionReportExcel,
+          summary: [
+            { label: 'Conforme', value: categoryInspectionData.filter(i => i.status === 'compliant').length, color: 'bg-emerald-100 text-emerald-700' },
+            { label: 'Atenção', value: categoryInspectionData.filter(i => i.status === 'attention').length, color: 'bg-amber-100 text-amber-700' },
+            { label: 'Não Conforme', value: categoryInspectionData.filter(i => i.status === 'non-compliant').length, color: 'bg-red-100 text-red-700' },
+          ],
+        };
+      default:
+        return null;
+    }
+  };
+
+  const openPreview = (reportType: ReportType) => {
+    setPreviewReport(reportType);
+    setPreviewOpen(true);
+  };
+
+  const previewData = getPreviewData();
+
   const reportTypes = [
     {
-      id: 'category-inspection',
+      id: 'category-inspection' as ReportType,
       title: 'Relatório de Inspeção por Categoria',
       description: 'Relatório no formato de inspeção em lote com status de conformidade',
       icon: ClipboardCheck,
       count: categoryInspectionData.length,
-      onPDF: handleCategoryInspectionReportPDF,
-      onExcel: handleCategoryInspectionReportExcel,
       iconColor: 'text-white',
       bgColor: 'bg-emerald-600',
     },
     {
-      id: 'inspections',
+      id: 'inspections' as ReportType,
       title: 'Relatório de Inspeções',
       description: 'Relatório detalhado de inspeções por equipamento',
       icon: FileText,
       count: filteredInspections.length,
-      onPDF: handleInspectionReportPDF,
-      onExcel: handleInspectionReportExcel,
       iconColor: 'text-white',
       bgColor: 'bg-blue-600',
     },
     {
-      id: 'maintenance',
+      id: 'maintenance' as ReportType,
       title: 'Relatório de Manutenções',
       description: 'Histórico e status de solicitações de manutenção',
       icon: Wrench,
       count: filteredMaintenance.length,
-      onPDF: handleMaintenanceReportPDF,
-      onExcel: handleMaintenanceReportExcel,
       iconColor: 'text-white',
       bgColor: 'bg-teal-600',
     },
     {
-      id: 'category',
+      id: 'category' as ReportType,
       title: 'Relatório por Categoria',
       description: 'Análise de equipamentos agrupados por categoria',
       icon: BarChart3,
       count: categories.filter(c => filteredEquipment.some(e => e.category_id === c.id)).length,
-      onPDF: handleCategoryReportPDF,
-      onExcel: handleCategoryReportExcel,
       iconColor: 'text-white',
       bgColor: 'bg-purple-600',
     },
     {
-      id: 'expiry',
+      id: 'expiry' as ReportType,
       title: 'Relatório de Vencimentos',
       description: 'Equipamentos com certificados próximos do vencimento',
       icon: Calendar,
       count: expiringEquipment.length,
-      onPDF: handleExpiryReportPDF,
-      onExcel: handleExpiryReportExcel,
       iconColor: 'text-white',
       bgColor: 'bg-red-600',
     },
     {
-      id: 'non-conformities',
+      id: 'non-conformities' as ReportType,
       title: 'Relatório de Não Conformidades',
       description: 'Histórico de não conformidades e ações corretivas',
       icon: AlertTriangle,
       count: nonConformities.length,
-      onPDF: handleNonConformitiesReportPDF,
-      onExcel: handleNonConformitiesReportExcel,
       iconColor: 'text-white',
       bgColor: 'bg-orange-500',
     },
@@ -707,10 +923,10 @@ export default function Reports() {
           {reportTypes.map((report) => (
             <Card key={report.id} className="hover:border-primary/50 transition-colors">
               <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2.5 rounded-lg ${report.bgColor}`}>
-                        <report.icon className={`h-5 w-5 ${report.iconColor}`} />
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2.5 rounded-lg ${report.bgColor}`}>
+                      <report.icon className={`h-5 w-5 ${report.iconColor}`} />
                     </div>
                     <div>
                       <CardTitle className="text-base">{report.title}</CardTitle>
@@ -724,26 +940,14 @@ export default function Reports() {
               </CardHeader>
               <CardContent>
                 <Separator className="mb-4" />
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    className="gap-2 flex-1"
-                    onClick={report.onPDF}
-                    disabled={report.count === 0}
-                  >
-                    <Download className="h-4 w-4" />
-                    PDF
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="gap-2 flex-1"
-                    onClick={report.onExcel}
-                    disabled={report.count === 0}
-                  >
-                    <Download className="h-4 w-4" />
-                    Excel
-                  </Button>
-                </div>
+                <Button 
+                  className="gap-2 w-full"
+                  onClick={() => openPreview(report.id)}
+                  disabled={report.count === 0}
+                >
+                  <Eye className="h-4 w-4" />
+                  Visualizar e Exportar
+                </Button>
               </CardContent>
             </Card>
           ))}
@@ -774,6 +978,21 @@ export default function Reports() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Preview Dialog */}
+      {previewData && (
+        <ReportPreviewDialog
+          open={previewOpen}
+          onOpenChange={setPreviewOpen}
+          title={previewData.title}
+          description={previewData.description}
+          data={previewData.data}
+          columns={previewData.columns}
+          onExportPDF={previewData.onExportPDF}
+          onExportExcel={previewData.onExportExcel}
+          summary={previewData.summary}
+        />
       )}
     </div>
   );

@@ -232,3 +232,102 @@ export function addSectionHeader(
   
   return yPos + 10;
 }
+
+/**
+ * Adds digital signature section to PDF
+ */
+export function addSignatureSection(
+  doc: jsPDF,
+  yPos: number,
+  signerName: string,
+  signerPosition?: string,
+  signatureData?: string | null
+): number {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 14;
+  
+  // Check if we need a new page
+  if (yPos > pageHeight - 60) {
+    doc.addPage();
+    yPos = 20;
+  }
+  
+  const signatureBoxWidth = 180;
+  const signatureBoxX = (pageWidth - signatureBoxWidth) / 2;
+  
+  // Section header
+  yPos += 10;
+  doc.setFillColor(...LIGHT_GRAY);
+  doc.rect(margin, yPos, pageWidth - margin * 2, 8, 'F');
+  doc.setFillColor(...SBM_BLUE);
+  doc.rect(margin, yPos, 4, 8, 'F');
+  
+  doc.setTextColor(...DARK_GRAY);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Assinatura do Responsável', margin + 10, yPos + 5.5);
+  
+  yPos += 15;
+  
+  // Signature box
+  doc.setDrawColor(...BORDER_GRAY);
+  doc.setLineWidth(0.5);
+  doc.rect(signatureBoxX, yPos, signatureBoxWidth, 35);
+  
+  // Add signature image if available
+  if (signatureData) {
+    try {
+      doc.addImage(signatureData, 'PNG', signatureBoxX + 10, yPos + 2, 160, 25);
+    } catch (error) {
+      console.error('Error adding signature to PDF:', error);
+      // Fallback: Show placeholder text
+      doc.setTextColor(...MEDIUM_GRAY);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'italic');
+      doc.text('Assinatura digital não disponível', signatureBoxX + signatureBoxWidth / 2, yPos + 18, { align: 'center' });
+    }
+  } else {
+    // Placeholder for signature
+    doc.setTextColor(...MEDIUM_GRAY);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'italic');
+    doc.text('Assinatura digital', signatureBoxX + signatureBoxWidth / 2, yPos + 18, { align: 'center' });
+  }
+  
+  yPos += 38;
+  
+  // Signature line
+  doc.setDrawColor(...DARK_GRAY);
+  doc.setLineWidth(0.3);
+  doc.line(signatureBoxX + 20, yPos, signatureBoxX + signatureBoxWidth - 20, yPos);
+  
+  yPos += 5;
+  
+  // Signer name
+  doc.setTextColor(...DARK_GRAY);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.text(signerName, signatureBoxX + signatureBoxWidth / 2, yPos, { align: 'center' });
+  
+  yPos += 5;
+  
+  // Signer position
+  if (signerPosition) {
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...MEDIUM_GRAY);
+    doc.text(signerPosition, signatureBoxX + signatureBoxWidth / 2, yPos, { align: 'center' });
+    yPos += 5;
+  }
+  
+  // Date and time
+  yPos += 3;
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...MEDIUM_GRAY);
+  const dateStr = `Documento gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm:ss", { locale: ptBR })}`;
+  doc.text(dateStr, signatureBoxX + signatureBoxWidth / 2, yPos, { align: 'center' });
+  
+  return yPos + 10;
+}
