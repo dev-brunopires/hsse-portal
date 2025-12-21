@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -39,6 +40,7 @@ const shipSchema = z.object({
 type ShipFormData = z.infer<typeof shipSchema>;
 
 export function ShipFormDialog({ open, onOpenChange, ship }: ShipFormDialogProps) {
+  const { t } = useTranslation();
   const createShip = useCreateShip();
   const updateShip = useUpdateShip();
   const isEditing = !!ship;
@@ -98,10 +100,10 @@ export function ShipFormDialog({ open, onOpenChange, ship }: ShipFormDialogProps
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Ship className="h-5 w-5 text-primary" />
-            {isEditing ? 'Editar Navio' : 'Cadastrar Novo Navio'}
+            {isEditing ? t('dialogs.editShip') : t('dialogs.createShip')}
           </DialogTitle>
           <DialogDescription>
-            {isEditing ? 'Atualize os dados do navio' : 'Preencha os dados para cadastrar um novo navio'}
+            {isEditing ? t('dialogs.updateShipData') : t('dialogs.fillShipData')}
           </DialogDescription>
         </DialogHeader>
 
@@ -112,7 +114,7 @@ export function ShipFormDialog({ open, onOpenChange, ship }: ShipFormDialogProps
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome do Navio *</FormLabel>
+                  <FormLabel>{t('dialogs.shipName')} *</FormLabel>
                   <FormControl>
                     <Input placeholder="Ex: Navio Atlântico Sul" {...field} />
                   </FormControl>
@@ -126,7 +128,7 @@ export function ShipFormDialog({ open, onOpenChange, ship }: ShipFormDialogProps
               name="code"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Código / Identificação</FormLabel>
+                  <FormLabel>{t('dialogs.shipCode')}</FormLabel>
                   <FormControl>
                     <Input placeholder="Ex: NAS-001" {...field} />
                   </FormControl>
@@ -140,10 +142,10 @@ export function ShipFormDialog({ open, onOpenChange, ship }: ShipFormDialogProps
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Descrição</FormLabel>
+                  <FormLabel>{t('common.description')}</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="Descrição ou observações sobre o navio" 
+                      placeholder={t('common.observations')} 
                       className="resize-none"
                       rows={3}
                       {...field} 
@@ -156,16 +158,16 @@ export function ShipFormDialog({ open, onOpenChange, ship }: ShipFormDialogProps
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancelar
+                {t('common.cancel')}
               </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    {isEditing ? 'Salvando...' : 'Criando...'}
+                    {isEditing ? t('dialogs.saving') : t('dialogs.creating')}
                   </>
                 ) : (
-                  isEditing ? 'Salvar' : 'Criar Navio'
+                  isEditing ? t('common.save') : t('dialogs.createShipBtn')
                 )}
               </Button>
             </DialogFooter>

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useTranslation } from 'react-i18next';
 import { Mail, Lock, Loader2, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,19 +22,20 @@ import sbmLogo from '@/assets/sbm-logo.svg';
 
 const REMEMBER_EMAIL_KEY = 'sbm_remembered_email';
 
-const loginSchema = z.object({
-  email: z.string().email('Email inválido').min(1, 'Email é obrigatório'),
-  password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
-
 export default function Auth() {
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const { signIn, user } = useAuth();
   const navigate = useNavigate();
+
+  const loginSchema = z.object({
+    email: z.string().email(t('errors.invalidEmail')).min(1, t('validation.required')),
+    password: z.string().min(6, t('validation.minLength', { count: 6 })),
+  });
+
+  type LoginFormData = z.infer<typeof loginSchema>;
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -90,13 +92,13 @@ export default function Auth() {
           <div className="mb-8">
             <img src={sbmLogo} alt="SBM Offshore" className="h-10 mb-4 hidden lg:block" />
             <h2 className="text-lg font-semibold text-primary mb-2">
-              Sistema de Gestão de Equipamentos
+              {t('authPage.equipmentManagement')}
             </h2>
             <h1 className="text-2xl font-bold text-foreground mb-2">
-              Bem-vindo de volta
+              {t('authPage.welcomeBack')}
             </h1>
             <p className="text-muted-foreground">
-              Entre com suas credenciais para acessar o sistema
+              {t('authPage.enterCredentials')}
             </p>
           </div>
 
@@ -108,7 +110,7 @@ export default function Auth() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>{t('authPage.email')}</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -130,7 +132,7 @@ export default function Auth() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Senha</FormLabel>
+                    <FormLabel>{t('authPage.password')}</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -171,11 +173,11 @@ export default function Auth() {
                     htmlFor="remember"
                     className="text-sm text-muted-foreground cursor-pointer select-none"
                   >
-                    Lembrar meu email
+                    {t('authPage.rememberEmail')}
                   </label>
                 </div>
                 <button type="button" className="text-sm text-primary hover:underline">
-                  Esqueceu sua senha?
+                  {t('authPage.forgotPassword')}
                 </button>
               </div>
 
@@ -183,10 +185,10 @@ export default function Auth() {
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Entrando...
+                    {t('authPage.loggingIn')}
                   </>
                 ) : (
-                  'Entrar'
+                  t('authPage.login')
                 )}
               </Button>
             </form>
@@ -194,11 +196,11 @@ export default function Auth() {
 
           {/* Terms */}
           <p className="mt-8 text-xs text-center text-muted-foreground">
-            Ao continuar, você concorda com os{' '}
-            <span className="text-primary hover:underline cursor-pointer">termos de uso</span>
-            {' '}e{' '}
-            <span className="text-primary hover:underline cursor-pointer">política de privacidade</span>
-            {' '}da SBM Offshore.
+            {t('authPage.termsAgreement')}{' '}
+            <span className="text-primary hover:underline cursor-pointer">{t('authPage.termsOfUse')}</span>
+            {' '}{t('authPage.and')}{' '}
+            <span className="text-primary hover:underline cursor-pointer">{t('authPage.privacyPolicy')}</span>
+            {' '}{t('authPage.of')}
           </p>
         </div>
       </div>
@@ -214,7 +216,7 @@ export default function Auth() {
         {/* Overlay Content */}
         <div className="absolute bottom-0 right-0 p-8 lg:p-12">
           <p className="text-white/80 text-sm drop-shadow-md text-right">
-            © {new Date().getFullYear()} SBM Offshore. Todos os direitos reservados.
+            © {new Date().getFullYear()} SBM Offshore. {t('authPage.allRightsReserved')}
           </p>
         </div>
       </div>

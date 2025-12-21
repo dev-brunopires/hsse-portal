@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,6 +20,7 @@ interface DeleteUserDialogProps {
 }
 
 export function DeleteUserDialog({ open, onOpenChange, user }: DeleteUserDialogProps) {
+  const { t } = useTranslation();
   const deleteUser = useDeleteUser();
 
   const handleDelete = async () => {
@@ -34,15 +36,17 @@ export function DeleteUserDialog({ open, onOpenChange, user }: DeleteUserDialogP
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Remover Usuário</AlertDialogTitle>
+          <AlertDialogTitle>{t('dialogs.removeUser')}</AlertDialogTitle>
           <AlertDialogDescription>
-            Tem certeza que deseja remover <strong>{user.full_name}</strong> do sistema?
+            <span dangerouslySetInnerHTML={{ 
+              __html: t('dialogs.removeUserConfirm', { name: user.full_name }) 
+            }} />
             <br /><br />
-            Esta ação não pode ser desfeita. O usuário perderá todo o acesso ao sistema.
+            {t('dialogs.removeUserWarning')}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -51,10 +55,10 @@ export function DeleteUserDialog({ open, onOpenChange, user }: DeleteUserDialogP
             {deleteUser.isPending ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                Removendo...
+                {t('dialogs.removing')}
               </>
             ) : (
-              'Remover Usuário'
+              t('dialogs.removeUser')
             )}
           </AlertDialogAction>
         </AlertDialogFooter>

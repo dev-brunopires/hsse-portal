@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -30,43 +31,44 @@ interface UserRoleDialogProps {
   user: ProfileWithRole | null;
 }
 
-const roleOptions: { value: AppRole; label: string; description: string; icon: React.ElementType }[] = [
-  { 
-    value: 'admin_master', 
-    label: 'Admin Master', 
-    description: 'Acesso total e irrestrito ao sistema, pode fazer tudo',
-    icon: Crown 
-  },
-  { 
-    value: 'admin', 
-    label: 'Administrador', 
-    description: 'Acesso total ao sistema, pode gerenciar usuários e configurações',
-    icon: Shield 
-  },
-  { 
-    value: 'supervisor', 
-    label: 'Supervisor', 
-    description: 'Pode supervisionar inspeções e aprovar relatórios',
-    icon: UserCheck 
-  },
-  { 
-    value: 'technician', 
-    label: 'Técnico', 
-    description: 'Pode criar e editar equipamentos e inspeções',
-    icon: User 
-  },
-  { 
-    value: 'viewer', 
-    label: 'Visualizador', 
-    description: 'Apenas visualização de dados',
-    icon: Eye 
-  },
-];
-
 export function UserRoleDialog({ open, onOpenChange, user }: UserRoleDialogProps) {
+  const { t } = useTranslation();
   const [selectedRole, setSelectedRole] = useState<AppRole>('viewer');
   const updateRole = useUpdateUserRole();
   const { isAdminMaster } = useAuth();
+
+  const roleOptions: { value: AppRole; label: string; description: string; icon: React.ElementType }[] = [
+    { 
+      value: 'admin_master', 
+      label: t('roles.admin_master'), 
+      description: t('roles.adminMasterDesc'),
+      icon: Crown 
+    },
+    { 
+      value: 'admin', 
+      label: t('roles.admin'), 
+      description: t('roles.adminDesc'),
+      icon: Shield 
+    },
+    { 
+      value: 'supervisor', 
+      label: t('roles.supervisor'), 
+      description: t('roles.supervisorDesc'),
+      icon: UserCheck 
+    },
+    { 
+      value: 'technician', 
+      label: t('roles.technician'), 
+      description: t('roles.technicianDesc'),
+      icon: User 
+    },
+    { 
+      value: 'viewer', 
+      label: t('roles.viewer'), 
+      description: t('roles.viewerDesc'),
+      icon: Eye 
+    },
+  ];
 
   // Get the current role of the user being edited
   const userCurrentRole = user?.user_roles?.[0]?.role as AppRole | undefined;
@@ -114,15 +116,15 @@ export function UserRoleDialog({ open, onOpenChange, user }: UserRoleDialogProps
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Alterar Perfil de Acesso</DialogTitle>
+          <DialogTitle>{t('dialogs.changeAccessProfile')}</DialogTitle>
           <DialogDescription>
-            Definindo permissões para <strong>{user.full_name}</strong>
+            {t('dialogs.settingPermissionsFor')} <strong>{user.full_name}</strong>
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label>E-mail</Label>
+            <Label>{t('auth.email')}</Label>
             <p className="text-sm text-muted-foreground">{user.email}</p>
           </div>
 
@@ -130,13 +132,13 @@ export function UserRoleDialog({ open, onOpenChange, user }: UserRoleDialogProps
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                Você não tem permissão para editar um Admin Master. Apenas outro Admin Master pode fazer isso.
+                {t('dialogs.cannotEditAdminMaster')}
               </AlertDescription>
             </Alert>
           ) : (
             <>
               <div className="space-y-2">
-                <Label>Perfil de Acesso</Label>
+                <Label>{t('dialogs.accessProfile')}</Label>
                 <Select value={selectedRole} onValueChange={(v) => setSelectedRole(v as AppRole)}>
                   <SelectTrigger>
                     <SelectValue />
@@ -165,17 +167,17 @@ export function UserRoleDialog({ open, onOpenChange, user }: UserRoleDialogProps
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
+            {t('common.cancel')}
           </Button>
           {!cannotEditUser && (
             <Button onClick={handleSubmit} disabled={updateRole.isPending}>
               {updateRole.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Salvando...
+                  {t('dialogs.saving')}
                 </>
               ) : (
-                'Salvar Alterações'
+                t('dialogs.saveChanges')
               )}
             </Button>
           )}
