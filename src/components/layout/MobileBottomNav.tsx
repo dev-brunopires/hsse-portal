@@ -27,7 +27,8 @@ export function MobileBottomNav() {
 
   const handleScan = (equipmentId: string) => {
     setScannerOpen(false);
-    navigate(`/equipment?scan=${equipmentId}`);
+    // Navigate to inspections page with scan parameter to open inspection form
+    navigate(`/inspections?scan=${equipmentId}`);
   };
 
   const isActive = (path: string) => location.pathname === path;

@@ -91,10 +91,13 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
     if (!equipmentList || !Array.isArray(equipmentList)) return [];
     
     return equipmentList.filter(eq => {
+      // Include short_code in search for quick lookup
+      const shortCode = (eq as any).short_code || '';
       const matchesSearch = 
         eq.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         eq.internal_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        eq.location.toLowerCase().includes(searchTerm.toLowerCase());
+        eq.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        shortCode.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesCategory = categoryFilter === 'all' || eq.category_id === categoryFilter;
       

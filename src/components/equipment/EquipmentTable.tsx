@@ -140,12 +140,14 @@ export function EquipmentTable({
 
   const filteredAndSortedEquipment = useMemo(() => {
     let result = equipment.filter(item => {
-      // Search filter
+      // Search filter - includes short_code for quick search
+      const shortCode = (item as any).short_code || '';
       const matchesSearch = 
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.internal_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.serial_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        shortCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (item.capacity?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
       
       // Status filter
@@ -694,6 +696,7 @@ export function EquipmentTable({
           id: selectedEquipment.id,
           name: selectedEquipment.name,
           internalCode: selectedEquipment.internal_code,
+          shortCode: (selectedEquipment as any).short_code,
           categoryName: selectedEquipment.categories?.name,
           location: selectedEquipment.location,
         } : null}
