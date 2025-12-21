@@ -16,17 +16,25 @@ import {
   Cell
 } from 'recharts';
 import { cn } from '@/lib/utils';
+import { useShipFilter } from '@/contexts/ShipFilterContext';
 
 export function InspectionHeatmapCard() {
+  const { selectedShipId, isFilterEnabled } = useShipFilter();
+  
   const { data: inspections = [], isLoading } = useQuery({
-    queryKey: ['inspections-weekly-chart'],
+    queryKey: ['inspections-weekly-chart', selectedShipId],
     queryFn: async () => {
       const twelveWeeksAgo = subWeeks(new Date(), 12);
-      const { data, error } = await supabase
+      let query = supabase
         .from('inspections')
         .select('inspection_date, status')
         .gte('inspection_date', twelveWeeksAgo.toISOString().split('T')[0]);
 
+      if (isFilterEnabled && selectedShipId) {
+        query = query.eq('ship_id', selectedShipId);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data || [];
     },
