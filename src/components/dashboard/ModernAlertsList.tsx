@@ -72,7 +72,12 @@ export function ModernAlertsList({ alerts }: ModernAlertsListProps) {
             </div>
           ) : (
             alerts.map((alert) => {
-              const config = alertTypeConfig[alert.type];
+              const config = alertTypeConfig[alert.type as keyof typeof alertTypeConfig] || {
+                icon: AlertCircle,
+                color: 'text-muted-foreground',
+                bg: 'bg-muted',
+                label: 'Alerta'
+              };
               const Icon = config.icon;
               
               return (
