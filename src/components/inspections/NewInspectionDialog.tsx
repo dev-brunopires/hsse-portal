@@ -88,6 +88,8 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
   }, [open]);
 
   const filteredEquipment = useMemo(() => {
+    if (!equipmentList || !Array.isArray(equipmentList)) return [];
+    
     return equipmentList.filter(eq => {
       const matchesSearch = 
         eq.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
