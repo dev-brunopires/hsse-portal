@@ -144,7 +144,8 @@ export function InspectionDetailDialog({
         description: item.description,
         status: item.status,
         notes: item.notes,
-      }))
+      })),
+      photos
     );
   };
 

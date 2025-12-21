@@ -2,8 +2,9 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { addPDFHeader, addPDFFooter, addSectionHeader, SBM_BLUE, DARK_GRAY, DANGER_RED } from './pdfStyles';
+import { addPDFHeader, addPDFFooter, addSectionHeader, SBM_BLUE, DARK_GRAY, DANGER_RED, MEDIUM_GRAY } from './pdfStyles';
 import type { MaintenanceRequestWithDetails, MaintenancePhoto } from '@/hooks/useMaintenanceRequests';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MaintenanceHistory {
   id: string;
@@ -51,6 +52,28 @@ function addInfoRow(doc: jsPDF, label: string, value: string, yPos: number): num
   doc.setFont('helvetica', 'normal');
   doc.text(value || 'N/A', 60, yPos);
   return yPos + 6;
+}
+
+async function loadPhotoAsBase64(filePath: string): Promise<string | null> {
+  try {
+    const { data } = await supabase.storage
+      .from('maintenance-photos')
+      .createSignedUrl(filePath, 60);
+    
+    if (!data?.signedUrl) return null;
+
+    const response = await fetch(data.signedUrl);
+    const blob = await response.blob();
+    
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
 }
 
 export async function generateMaintenancePDF(data: MaintenanceDetailData): Promise<void> {
@@ -148,6 +171,74 @@ export async function generateMaintenancePDF(data: MaintenanceDetailData): Promi
     const problemLines = doc.splitTextToSize(data.problem_identified, pageWidth - 28);
     doc.text(problemLines, 14, yPos);
     yPos += problemLines.length * 5 + 5;
+  }
+
+  // Check if we need a new page
+  if (yPos > 240) {
+    doc.addPage();
+    yPos = 20;
+  }
+
+  // Photos section
+  if (data.photos && data.photos.length > 0) {
+    yPos += 5;
+    yPos = addSectionHeader(doc, yPos, 'Fotos');
+    yPos += 8;
+
+    doc.setFontSize(9);
+    doc.setTextColor(...MEDIUM_GRAY);
+    doc.text(`${data.photos.length} foto(s) anexada(s)`, 14, yPos);
+    yPos += 8;
+
+    const photoWidth = 55;
+    const photoHeight = 40;
+    const photosPerRow = 3;
+    let photoX = 14;
+    let photoCount = 0;
+
+    for (const photo of data.photos) {
+      // Check if we need a new page
+      if (yPos > 240) {
+        doc.addPage();
+        yPos = 20;
+        photoX = 14;
+      }
+
+      try {
+        const base64 = await loadPhotoAsBase64(photo.file_path);
+        if (base64) {
+          doc.addImage(base64, 'JPEG', photoX, yPos, photoWidth, photoHeight);
+        } else {
+          // Placeholder for failed image
+          doc.setDrawColor(...MEDIUM_GRAY);
+          doc.setFillColor(248, 250, 252);
+          doc.rect(photoX, yPos, photoWidth, photoHeight, 'FD');
+          doc.setFontSize(8);
+          doc.setTextColor(...MEDIUM_GRAY);
+          doc.text('Imagem não disponível', photoX + 5, yPos + 22);
+        }
+      } catch {
+        doc.setDrawColor(...MEDIUM_GRAY);
+        doc.setFillColor(248, 250, 252);
+        doc.rect(photoX, yPos, photoWidth, photoHeight, 'FD');
+        doc.setFontSize(8);
+        doc.setTextColor(...MEDIUM_GRAY);
+        doc.text('Imagem não disponível', photoX + 5, yPos + 22);
+      }
+
+      photoCount++;
+      if (photoCount % photosPerRow === 0) {
+        photoX = 14;
+        yPos += photoHeight + 5;
+      } else {
+        photoX += photoWidth + 5;
+      }
+    }
+
+    // Move to next row if photos don't fill the row
+    if (photoCount % photosPerRow !== 0) {
+      yPos += photoHeight + 5;
+    }
   }
 
   // Check if we need a new page
