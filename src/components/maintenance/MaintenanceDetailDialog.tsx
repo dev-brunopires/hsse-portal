@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -58,27 +59,8 @@ interface MaintenanceDetailDialogProps {
   requestId: string | null;
 }
 
-const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: typeof CheckCircle2; color: string }> = {
-  pending: { label: 'Pendente', variant: 'secondary', icon: Clock, color: 'text-amber-600' },
-  approved: { label: 'Aprovada', variant: 'outline', icon: CheckCircle2, color: 'text-blue-600' },
-  in_progress: { label: 'Em Execução', variant: 'default', icon: Play, color: 'text-primary' },
-  completed: { label: 'Concluída', variant: 'default', icon: CheckCircle2, color: 'text-green-600' },
-  rejected: { label: 'Rejeitada', variant: 'destructive', icon: XCircle, color: 'text-destructive' },
-};
-
-const typeLabels: Record<string, string> = {
-  preventive: 'Preventiva',
-  corrective: 'Corretiva',
-};
-
-const priorityConfig: Record<string, { label: string; color: string }> = {
-  low: { label: 'Baixa', color: 'text-muted-foreground bg-muted' },
-  medium: { label: 'Média', color: 'text-blue-600 bg-blue-50' },
-  high: { label: 'Alta', color: 'text-orange-600 bg-orange-50' },
-  critical: { label: 'Crítica', color: 'text-red-600 bg-red-50' },
-};
-
 export function MaintenanceDetailDialog({ open, onOpenChange, requestId }: MaintenanceDetailDialogProps) {
+  const { t } = useTranslation();
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
@@ -99,6 +81,26 @@ export function MaintenanceDetailDialog({ open, onOpenChange, requestId }: Maint
   const canApprove = isAdmin || isSupervisor;
   const canEdit = isAdmin || role === 'technician' || isSupervisor;
   const canEditRequest = canEdit && request?.status !== 'completed' && request?.status !== 'rejected';
+
+  const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: typeof CheckCircle2; color: string }> = {
+    pending: { label: t('maintenance.statusPending'), variant: 'secondary', icon: Clock, color: 'text-amber-600' },
+    approved: { label: t('maintenance.statusApproved'), variant: 'outline', icon: CheckCircle2, color: 'text-blue-600' },
+    in_progress: { label: t('maintenance.statusInProgress'), variant: 'default', icon: Play, color: 'text-primary' },
+    completed: { label: t('maintenance.statusCompleted'), variant: 'default', icon: CheckCircle2, color: 'text-green-600' },
+    rejected: { label: t('maintenance.statusRejected'), variant: 'destructive', icon: XCircle, color: 'text-destructive' },
+  };
+
+  const typeLabels: Record<string, string> = {
+    preventive: t('maintenanceForm.preventive'),
+    corrective: t('maintenanceForm.corrective'),
+  };
+
+  const priorityConfig: Record<string, { label: string; color: string }> = {
+    low: { label: t('maintenance.priorityLow'), color: 'text-muted-foreground bg-muted' },
+    medium: { label: t('maintenance.priorityMedium'), color: 'text-blue-600 bg-blue-50' },
+    high: { label: t('maintenance.priorityHigh'), color: 'text-orange-600 bg-orange-50' },
+    critical: { label: t('maintenance.priorityCritical'), color: 'text-red-600 bg-red-50' },
+  };
 
   // Fetch photo URLs
   useEffect(() => {
@@ -175,7 +177,7 @@ export function MaintenanceDetailDialog({ open, onOpenChange, requestId }: Maint
                     <Wrench className={cn('h-5 w-5', config.color)} />
                   </div>
                   <span className="truncate">
-                    {isLoading ? 'Carregando...' : request?.title}
+                    {isLoading ? t('common.loading') : request?.title}
                   </span>
                 </DialogTitle>
                 {request && (
@@ -200,7 +202,7 @@ export function MaintenanceDetailDialog({ open, onOpenChange, requestId }: Maint
                     onClick={() => setShowEditDialog(true)}
                   >
                     <Pencil className="h-4 w-4" />
-                    Editar
+                    {t('maintenance.edit')}
                   </Button>
                 )}
                 <Button variant="outline" size="sm" className="gap-2" onClick={handleExportPDF}>
@@ -237,7 +239,7 @@ export function MaintenanceDetailDialog({ open, onOpenChange, requestId }: Maint
                   <div className="space-y-3">
                     <h3 className="font-semibold flex items-center gap-2">
                       <User className="h-4 w-4 text-primary" />
-                      Solicitante
+                      {t('maintenance.requester')}
                     </h3>
                     <div className="pl-6 space-y-1">
                       <p className="font-medium">{request.requester?.full_name || 'N/A'}</p>
@@ -248,18 +250,18 @@ export function MaintenanceDetailDialog({ open, onOpenChange, requestId }: Maint
                   <div className="space-y-3">
                     <h3 className="font-semibold flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-primary" />
-                      Datas
+                      {t('maintenance.dates')}
                     </h3>
                     <div className="pl-6 space-y-1 text-sm">
-                      <p><span className="text-muted-foreground">Solicitado:</span> {formatDate(request.requested_at)}</p>
+                      <p><span className="text-muted-foreground">{t('maintenance.requested')}:</span> {formatDate(request.requested_at)}</p>
                       {request.scheduled_date && (
-                        <p><span className="text-muted-foreground">Programado:</span> {formatDate(request.scheduled_date)}</p>
+                        <p><span className="text-muted-foreground">{t('maintenance.scheduled')}:</span> {formatDate(request.scheduled_date)}</p>
                       )}
                       {request.approved_at && (
-                        <p><span className="text-muted-foreground">Aprovado:</span> {formatDate(request.approved_at)}</p>
+                        <p><span className="text-muted-foreground">{t('common.approved')}:</span> {formatDate(request.approved_at)}</p>
                       )}
                       {request.completed_at && (
-                        <p><span className="text-muted-foreground">Concluído:</span> {formatDate(request.completed_at)}</p>
+                        <p><span className="text-muted-foreground">{t('common.completed')}:</span> {formatDate(request.completed_at)}</p>
                       )}
                       {request.work_order && (
                         <p><span className="text-muted-foreground">WO:</span> <span className="font-mono font-medium">{request.work_order}</span></p>
@@ -274,23 +276,23 @@ export function MaintenanceDetailDialog({ open, onOpenChange, requestId }: Maint
                 <div className="space-y-3">
                   <h3 className="font-semibold flex items-center gap-2">
                     <Package className="h-4 w-4 text-primary" />
-                    Equipamento
+                    {t('navigation.equipment')}
                   </h3>
                   <div className="pl-6 grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <p className="text-muted-foreground">Código</p>
+                      <p className="text-muted-foreground">{t('equipment.internalCode')}</p>
                       <p className="font-mono font-medium">{request.equipment?.internal_code}</p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Nome</p>
+                      <p className="text-muted-foreground">{t('common.name')}</p>
                       <p className="font-medium">{request.equipment?.name}</p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Nº Série</p>
+                      <p className="text-muted-foreground">{t('equipment.serialNumber')}</p>
                       <p>{request.equipment?.serial_number || 'N/A'}</p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Localização</p>
+                      <p className="text-muted-foreground">{t('common.location')}</p>
                       <p className="flex items-center gap-1">
                         <MapPin className="h-3 w-3" />
                         {request.equipment?.location}
@@ -305,13 +307,13 @@ export function MaintenanceDetailDialog({ open, onOpenChange, requestId }: Maint
                 <div className="space-y-3">
                   <h3 className="font-semibold flex items-center gap-2">
                     <FileText className="h-4 w-4 text-primary" />
-                    Descrição do Problema
+                    {t('maintenance.problemDescription')}
                   </h3>
                   <div className="pl-6 space-y-3">
                     <p className="text-sm">{request.description}</p>
                     {request.problem_identified && (
                       <div className="p-3 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                        <p className="text-sm font-medium text-amber-800 dark:text-amber-200 mb-1">Problema Identificado:</p>
+                        <p className="text-sm font-medium text-amber-800 dark:text-amber-200 mb-1">{t('maintenance.problemIdentified')}:</p>
                         <p className="text-sm text-amber-700 dark:text-amber-300">{request.problem_identified}</p>
                       </div>
                     )}
@@ -325,7 +327,7 @@ export function MaintenanceDetailDialog({ open, onOpenChange, requestId }: Maint
                     <div className="space-y-3">
                       <h3 className="font-semibold flex items-center gap-2">
                         <ImageIcon className="h-4 w-4 text-primary" />
-                        Fotos ({request.photos.length})
+                        {t('maintenance.photos')} ({request.photos.length})
                       </h3>
                       <div className="pl-6 grid grid-cols-3 gap-3">
                         {request.photos.map(photo => (
@@ -355,19 +357,19 @@ export function MaintenanceDetailDialog({ open, onOpenChange, requestId }: Maint
                     <div className="space-y-3">
                       <h3 className="font-semibold flex items-center gap-2 text-green-600">
                         <CheckCircle2 className="h-4 w-4" />
-                        Trabalho Realizado
+                        {t('maintenance.workPerformedSection')}
                       </h3>
                       <div className="pl-6 space-y-3 text-sm">
                         <p>{request.work_performed}</p>
                         {request.parts_used && (
                           <div>
-                            <p className="font-medium mb-1">Peças/Materiais:</p>
+                            <p className="font-medium mb-1">{t('maintenance.partsMaterials')}:</p>
                             <p className="text-muted-foreground">{request.parts_used}</p>
                           </div>
                         )}
                         {request.observations && (
                           <div>
-                            <p className="font-medium mb-1">Observações:</p>
+                            <p className="font-medium mb-1">{t('common.observations')}:</p>
                             <p className="text-muted-foreground">{request.observations}</p>
                           </div>
                         )}
@@ -383,7 +385,7 @@ export function MaintenanceDetailDialog({ open, onOpenChange, requestId }: Maint
                     <div className="space-y-3">
                       <h3 className="font-semibold flex items-center gap-2 text-destructive">
                         <XCircle className="h-4 w-4" />
-                        Motivo da Rejeição
+                        {t('maintenance.rejectionReason')}
                       </h3>
                       <div className="pl-6 p-3 rounded-md bg-destructive/10 border border-destructive/20">
                         <p className="text-sm">{request.rejection_reason}</p>
@@ -399,7 +401,7 @@ export function MaintenanceDetailDialog({ open, onOpenChange, requestId }: Maint
                     <div className="space-y-3">
                       <h3 className="font-semibold flex items-center gap-2">
                         <History className="h-4 w-4 text-primary" />
-                        Histórico de Manutenções
+                        {t('maintenance.maintenanceHistory')}
                       </h3>
                       <div className="pl-6 space-y-2">
                         {request.history.slice(0, 5).map(h => (
@@ -429,7 +431,7 @@ export function MaintenanceDetailDialog({ open, onOpenChange, requestId }: Maint
                           >
                             {updateStatus.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
                             <CheckCircle2 className="h-4 w-4" />
-                            Aprovar
+                            {t('maintenance.approve')}
                           </Button>
                           <Button
                             variant="destructive"
@@ -438,7 +440,7 @@ export function MaintenanceDetailDialog({ open, onOpenChange, requestId }: Maint
                             className="gap-2"
                           >
                             <XCircle className="h-4 w-4" />
-                            Rejeitar
+                            {t('maintenance.reject')}
                           </Button>
                         </>
                       )}
@@ -450,7 +452,7 @@ export function MaintenanceDetailDialog({ open, onOpenChange, requestId }: Maint
                         >
                           {updateStatus.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
                           <Play className="h-4 w-4" />
-                          Iniciar Execução
+                          {t('maintenance.startExecution')}
                         </Button>
                       )}
                       {request.status === 'in_progress' && (
@@ -460,7 +462,7 @@ export function MaintenanceDetailDialog({ open, onOpenChange, requestId }: Maint
                           className="gap-2 bg-green-600 hover:bg-green-700"
                         >
                           <CheckCircle2 className="h-4 w-4" />
-                          Concluir Manutenção
+                          {t('maintenance.completeMaintenance')}
                         </Button>
                       )}
                     </div>
@@ -494,28 +496,28 @@ export function MaintenanceDetailDialog({ open, onOpenChange, requestId }: Maint
       <AlertDialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Rejeitar Solicitação</AlertDialogTitle>
+            <AlertDialogTitle>{t('maintenance.rejectRequest')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Informe o motivo da rejeição desta solicitação de manutenção.
+              {t('maintenance.rejectRequestDesc')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4">
-            <Label>Motivo da Rejeição *</Label>
+            <Label>{t('maintenance.rejectionReasonLabel')} *</Label>
             <Textarea
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
-              placeholder="Descreva o motivo..."
+              placeholder={t('maintenance.describeReason')}
               className="mt-2"
             />
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => handleStatusChange('rejected', { rejection_reason: rejectionReason })}
               disabled={!rejectionReason.trim() || updateStatus.isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Rejeitar
+              {t('maintenance.reject')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -525,42 +527,42 @@ export function MaintenanceDetailDialog({ open, onOpenChange, requestId }: Maint
       <AlertDialog open={showCompleteDialog} onOpenChange={setShowCompleteDialog}>
         <AlertDialogContent className="max-w-lg">
           <AlertDialogHeader>
-            <AlertDialogTitle>Concluir Manutenção</AlertDialogTitle>
+            <AlertDialogTitle>{t('maintenance.completeMaintenanceTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Descreva o trabalho realizado para gerar o relatório.
+              {t('maintenance.completeMaintenanceDesc')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-4 py-4">
             <div>
-              <Label>Trabalho Realizado *</Label>
+              <Label>{t('maintenance.workPerformedLabel')} *</Label>
               <Textarea
                 value={workPerformed}
                 onChange={(e) => setWorkPerformed(e.target.value)}
-                placeholder="Descreva as ações executadas..."
+                placeholder={t('maintenance.describeActions')}
                 className="mt-2"
               />
             </div>
             <div>
-              <Label>Peças/Materiais Utilizados</Label>
+              <Label>{t('maintenance.partsMaterialsLabel')}</Label>
               <Textarea
                 value={partsUsed}
                 onChange={(e) => setPartsUsed(e.target.value)}
-                placeholder="Liste os materiais utilizados..."
+                placeholder={t('maintenance.listMaterials')}
                 className="mt-2"
               />
             </div>
             <div>
-              <Label>Observações</Label>
+              <Label>{t('common.observations')}</Label>
               <Textarea
                 value={observations}
                 onChange={(e) => setObservations(e.target.value)}
-                placeholder="Observações adicionais..."
+                placeholder={t('maintenance.additionalObservations')}
                 className="mt-2"
               />
             </div>
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => handleStatusChange('completed', { 
                 work_performed: workPerformed,
@@ -570,7 +572,7 @@ export function MaintenanceDetailDialog({ open, onOpenChange, requestId }: Maint
               disabled={!workPerformed.trim() || updateStatus.isPending}
               className="bg-green-600 hover:bg-green-700"
             >
-              Concluir
+              {t('maintenance.complete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -580,20 +582,20 @@ export function MaintenanceDetailDialog({ open, onOpenChange, requestId }: Maint
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir Solicitação</AlertDialogTitle>
+            <AlertDialogTitle>{t('maintenance.deleteRequest')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir esta solicitação? Esta ação não pode ser desfeita.
+              {t('maintenance.deleteRequestDesc')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={deleteRequest.isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleteRequest.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Excluir
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
