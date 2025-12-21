@@ -17,6 +17,7 @@ export interface MaintenanceRequest {
   title: string;
   description: string;
   problem_identified: string | null;
+  work_order: string | null;
   requested_at: string;
   requested_by: string | null;
   approved_at: string | null;
@@ -82,6 +83,7 @@ export interface CreateMaintenanceRequestData {
   title: string;
   description: string;
   problem_identified?: string;
+  work_order?: string;
   scheduled_date?: string;
   due_date?: string;
   requested_by: string;
