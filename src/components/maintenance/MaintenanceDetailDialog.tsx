@@ -18,7 +18,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -166,9 +165,9 @@ export function MaintenanceDetailDialog({ open, onOpenChange, requestId }: Maint
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-3xl max-h-[90vh] p-0 overflow-hidden flex flex-col bg-card border border-border">
+        <DialogContent className="max-w-3xl h-[90vh] p-0 overflow-hidden flex flex-col bg-card border border-border">
           {/* Fixed Header */}
-          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0">
+          <DialogHeader className="p-6 pb-4 pr-14 border-b border-border shrink-0">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
                 <DialogTitle className="flex items-center gap-3 text-xl pr-8">
@@ -223,7 +222,7 @@ export function MaintenanceDetailDialog({ open, onOpenChange, requestId }: Maint
           </DialogHeader>
 
           {/* Scrollable Content */}
-          <ScrollArea className="flex-1 min-h-0">
+          <div className="flex-1 min-h-0 overflow-y-auto">
             <div className="p-6 pt-4">
               {isLoading ? (
                 <div className="space-y-4 py-4">
@@ -470,7 +469,7 @@ export function MaintenanceDetailDialog({ open, onOpenChange, requestId }: Maint
                 </div>
               ) : null}
             </div>
-          </ScrollArea>
+          </div>
         </DialogContent>
       </Dialog>
 
