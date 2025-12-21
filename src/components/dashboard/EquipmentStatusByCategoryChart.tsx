@@ -45,35 +45,33 @@ export function EquipmentStatusByCategoryChart() {
     if (active && payload && payload.length) {
       const data = payload[0]?.payload;
       return (
-        <div className="bg-card border rounded-xl shadow-lg p-3 min-w-[180px]">
-          <p className="font-semibold text-foreground mb-2">{data?.fullName}</p>
-          <div className="space-y-1.5 text-sm">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+        <div className="bg-card border rounded-lg shadow-lg p-2.5 min-w-[160px]">
+          <p className="font-semibold text-foreground text-sm mb-1.5">{data?.fullName}</p>
+          <div className="space-y-1 text-xs">
+            <div className="flex justify-between items-center gap-4">
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-emerald-500" />
                 <span className="text-muted-foreground">Ativos:</span>
               </div>
               <span className="font-medium">{data?.Ativos}</span>
             </div>
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                <span className="text-muted-foreground">Em Manutenção:</span>
+            <div className="flex justify-between items-center gap-4">
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-amber-500" />
+                <span className="text-muted-foreground">Manutenção:</span>
               </div>
               <span className="font-medium">{data?.['Em Manutenção']}</span>
             </div>
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
+            <div className="flex justify-between items-center gap-4">
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-red-500" />
                 <span className="text-muted-foreground">Vencidos:</span>
               </div>
               <span className="font-medium">{data?.['Vencidos/Reprovados']}</span>
             </div>
-            <div className="pt-1.5 border-t mt-1.5">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground font-medium">Total:</span>
-                <span className="font-bold">{data?.total}</span>
-              </div>
+            <div className="pt-1 border-t mt-1 flex justify-between">
+              <span className="text-muted-foreground font-medium">Total:</span>
+              <span className="font-bold">{data?.total}</span>
             </div>
           </div>
         </div>
