@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Shield, User, Eye, Loader2, Crown, UserCheck, UserPlus, Info } from 'lucide-react';
+import { Shield, User, Eye, Loader2, Crown, UserCheck, UserPlus, Info, Globe } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
@@ -42,6 +42,7 @@ const createUserSchema = z.object({
   email: z.string().email('E-mail inválido'),
   password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
   fullName: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
+  nationality: z.enum(['brazilian', 'foreigner']),
   role: z.enum(['admin_master', 'admin', 'supervisor', 'technician', 'viewer']),
 });
 
@@ -96,6 +97,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
       email: '',
       password: '',
       fullName: '',
+      nationality: 'brazilian',
       role: 'viewer',
     },
   });
@@ -108,6 +110,9 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
   const onSubmit = async (data: CreateUserFormData) => {
     setIsSubmitting(true);
 
+    // Define language based on nationality
+    const language = data.nationality === 'brazilian' ? 'pt-BR' : 'en';
+
     try {
       // Use backend function so the admin session is not affected
       const { data: result, error } = await supabase.functions.invoke('create-user', {
@@ -116,6 +121,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
           password: data.password,
           fullName: data.fullName,
           role: data.role,
+          language: language,
         },
       });
 
@@ -201,6 +207,44 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                     <Input type="password" placeholder="Mínimo 6 caracteres" {...field} />
                   </FormControl>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="nationality"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2">
+                    <Globe className="h-4 w-4" />
+                    Nacionalidade *
+                  </FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a nacionalidade" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent className="bg-popover border border-border shadow-lg z-50">
+                      <SelectItem value="brazilian">
+                        <div className="flex items-center gap-2">
+                          🇧🇷 Brasileiro
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="foreigner">
+                        <div className="flex items-center gap-2">
+                          🌍 Estrangeiro (English)
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                  <p className="text-xs text-muted-foreground">
+                    {field.value === 'brazilian' 
+                      ? 'Sistema será configurado em Português' 
+                      : 'System will be configured in English'}
+                  </p>
                 </FormItem>
               )}
             />
