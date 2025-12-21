@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -31,7 +30,6 @@ import {
   FileText,
   CheckCircle2,
   XCircle,
-  AlertTriangle,
   Clock,
   Play,
   Download,
@@ -40,9 +38,10 @@ import {
   Image as ImageIcon,
   History,
   MapPin,
+  Pencil,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { formatDate, formatDateLong } from '@/utils/dateFormat';
+import { formatDate } from '@/utils/dateFormat';
 import { 
   useMaintenanceRequestDetails, 
   useUpdateMaintenanceStatus, 
@@ -52,6 +51,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { generateMaintenancePDF } from '@/utils/generateMaintenancePDF';
+import { EditMaintenanceDialog } from './EditMaintenanceDialog';
 
 interface MaintenanceDetailDialogProps {
   open: boolean;
@@ -84,6 +84,7 @@ export function MaintenanceDetailDialog({ open, onOpenChange, requestId }: Maint
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [workPerformed, setWorkPerformed] = useState('');
   const [partsUsed, setPartsUsed] = useState('');
@@ -98,6 +99,7 @@ export function MaintenanceDetailDialog({ open, onOpenChange, requestId }: Maint
   const isSupervisor = (role as string) === 'supervisor';
   const canApprove = isAdmin || isSupervisor;
   const canEdit = isAdmin || role === 'technician' || isSupervisor;
+  const canEditRequest = canEdit && request?.status !== 'completed' && request?.status !== 'rejected';
 
   // Fetch photo URLs
   useEffect(() => {
@@ -164,11 +166,12 @@ export function MaintenanceDetailDialog({ open, onOpenChange, requestId }: Maint
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col bg-card border border-border">
-          <DialogHeader className="pb-4 border-b border-border">
-            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-              <div className="min-w-0">
-                <DialogTitle className="flex items-center gap-3 text-xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] p-0 overflow-hidden flex flex-col bg-card border border-border">
+          {/* Fixed Header */}
+          <DialogHeader className="p-6 pb-4 border-b border-border shrink-0">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0 flex-1">
+                <DialogTitle className="flex items-center gap-3 text-xl pr-8">
                   <div className={cn('p-2 rounded-lg shrink-0', config.color.replace('text-', 'bg-') + '/10')}>
                     <Wrench className={cn('h-5 w-5', config.color)} />
                   </div>
@@ -177,7 +180,7 @@ export function MaintenanceDetailDialog({ open, onOpenChange, requestId }: Maint
                   </span>
                 </DialogTitle>
                 {request && (
-                  <div className="flex items-center gap-2 mt-2 ml-12 flex-wrap">
+                  <div className="flex items-center gap-2 mt-3 ml-12 flex-wrap">
                     <Badge variant={config.variant} className="gap-1">
                       <StatusIcon className="h-3 w-3" />
                       {config.label}
@@ -189,7 +192,18 @@ export function MaintenanceDetailDialog({ open, onOpenChange, requestId }: Maint
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-2 shrink-0 flex-wrap">
+              <div className="flex items-center gap-2 shrink-0">
+                {canEditRequest && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="gap-2"
+                    onClick={() => setShowEditDialog(true)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                    Editar
+                  </Button>
+                )}
                 <Button variant="outline" size="sm" className="gap-2" onClick={handleExportPDF}>
                   <Download className="h-4 w-4" />
                   PDF
@@ -208,15 +222,17 @@ export function MaintenanceDetailDialog({ open, onOpenChange, requestId }: Maint
             </div>
           </DialogHeader>
 
-          <ScrollArea className="flex-1 pr-4 min-h-0">
-            {isLoading ? (
-              <div className="space-y-4 py-4">
-                <Skeleton className="h-20 w-full" />
-                <Skeleton className="h-20 w-full" />
-                <Skeleton className="h-40 w-full" />
-              </div>
-            ) : request ? (
-              <div className="space-y-6 py-4">
+          {/* Scrollable Content */}
+          <ScrollArea className="flex-1 min-h-0">
+            <div className="p-6 pt-4">
+              {isLoading ? (
+                <div className="space-y-4 py-4">
+                  <Skeleton className="h-20 w-full" />
+                  <Skeleton className="h-20 w-full" />
+                  <Skeleton className="h-40 w-full" />
+                </div>
+              ) : request ? (
+                <div className="space-y-6">
                 {/* Request Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-3">
@@ -451,11 +467,29 @@ export function MaintenanceDetailDialog({ open, onOpenChange, requestId }: Maint
                     </div>
                   </>
                 )}
-              </div>
-            ) : null}
+                </div>
+              ) : null}
+            </div>
           </ScrollArea>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Dialog */}
+      <EditMaintenanceDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        request={request ? {
+          id: request.id,
+          type: request.type,
+          priority: request.priority,
+          title: request.title,
+          description: request.description,
+          problem_identified: request.problem_identified,
+          work_order: request.work_order,
+          scheduled_date: request.scheduled_date,
+          due_date: request.due_date,
+        } : null}
+      />
 
       {/* Reject Dialog */}
       <AlertDialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
