@@ -291,9 +291,9 @@ export default function Inspections() {
           <CardContent className="flex items-center gap-3 py-4">
             <QrCode className="h-6 w-6 text-primary" />
             <div className="flex-1">
-              <p className="font-medium">Inspeção via QR Code</p>
+              <p className="font-medium">{t('inspectionsPage.qrCodeInspection')}</p>
               <p className="text-sm text-muted-foreground">
-                Equipamento: {scannedEquipment.internal_code} - {scannedEquipment.name}
+                {t('inspectionsPage.qrCodeEquipment')}: {scannedEquipment.internal_code} - {scannedEquipment.name}
               </p>
             </div>
             <Button variant="ghost" size="sm" onClick={handleFormCancel}>
@@ -319,9 +319,9 @@ export default function Inspections() {
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
               <ClipboardCheck className="h-5 w-5 text-primary" />
-              Total
+              {t('inspectionsPage.total')}
             </CardTitle>
-            <CardDescription>Todas as inspeções</CardDescription>
+            <CardDescription>{t('inspectionsPage.allInspections')}</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -336,9 +336,9 @@ export default function Inspections() {
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
               <Calendar className="h-5 w-5 text-status-warning" />
-              Pendentes
+              {t('inspectionsPage.pending')}
             </CardTitle>
-            <CardDescription>Inspeções agendadas</CardDescription>
+            <CardDescription>{t('inspectionsPage.scheduledInspections')}</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -353,9 +353,9 @@ export default function Inspections() {
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
               <CheckCircle className="h-5 w-5 text-status-success" />
-              Realizadas (Mês)
+              {t('inspectionsPage.completedMonth')}
             </CardTitle>
-            <CardDescription>Inspeções concluídas</CardDescription>
+            <CardDescription>{t('inspectionsPage.completedInspections')}</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -370,9 +370,9 @@ export default function Inspections() {
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
               <AlertTriangle className="h-5 w-5 text-status-danger" />
-              Não Conformes
+              {t('inspectionsPage.nonConformant')}
             </CardTitle>
-            <CardDescription>Requerem ação</CardDescription>
+            <CardDescription>{t('inspectionsPage.requireAction')}</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -389,19 +389,19 @@ export default function Inspections() {
         <TabsList>
           <TabsTrigger value="list" className="gap-2">
             <List className="h-4 w-4" />
-            Lista
+            {t('inspectionsPage.list')}
           </TabsTrigger>
           <TabsTrigger value="category" className="gap-2">
             <Layers className="h-4 w-4" />
-            Por Categoria
+            {t('inspectionsPage.byCategory')}
           </TabsTrigger>
           <TabsTrigger value="timeline" className="gap-2">
             <GitCommitHorizontal className="h-4 w-4" />
-            Timeline
+            {t('inspectionsPage.timeline')}
           </TabsTrigger>
           <TabsTrigger value="calendar" className="gap-2">
             <CalendarDays className="h-4 w-4" />
-            Calendário
+            {t('inspectionsPage.calendar')}
           </TabsTrigger>
         </TabsList>
 
@@ -409,15 +409,15 @@ export default function Inspections() {
         <TabsContent value="list" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Histórico de Inspeções</CardTitle>
-              <CardDescription>Todas as inspeções realizadas no sistema</CardDescription>
+              <CardTitle>{t('inspectionsPage.historyTitle')}</CardTitle>
+              <CardDescription>{t('inspectionsPage.historySubtitle')}</CardDescription>
             </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar por equipamento ou inspetor..."
+                placeholder={t('inspectionsPage.searchPlaceholder')}
                 className="pl-10"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -429,20 +429,20 @@ export default function Inspections() {
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent className="bg-popover border border-border shadow-lg z-50">
-                <SelectItem value="all">Todos Status</SelectItem>
-                <SelectItem value="compliant">Conforme</SelectItem>
-                <SelectItem value="attention">Atenção</SelectItem>
-                <SelectItem value="non-compliant">Não Conforme</SelectItem>
+                <SelectItem value="all">{t('inspectionsPage.allStatus')}</SelectItem>
+                <SelectItem value="compliant">{t('inspectionsPage.statusCompliant')}</SelectItem>
+                <SelectItem value="attention">{t('inspectionsPage.statusAttention')}</SelectItem>
+                <SelectItem value="non-compliant">{t('inspectionsPage.statusNonCompliant')}</SelectItem>
               </SelectContent>
             </Select>
 
             <Select value={inspectorFilter} onValueChange={setInspectorFilter}>
               <SelectTrigger className="w-full lg:w-[200px]">
                 <User className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Inspetor" />
+                <SelectValue placeholder={t('inspections.inspector')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos Inspetores</SelectItem>
+                <SelectItem value="all">{t('inspectionsPage.allInspectors')}</SelectItem>
                 {inspectors.map(inspector => (
                   <SelectItem key={inspector.id} value={inspector.id}>
                     {inspector.name}
@@ -455,7 +455,7 @@ export default function Inspections() {
               <DatePicker
                 value={dateFrom}
                 onChange={setDateFrom}
-                placeholder="De"
+                placeholder={t('inspections.dateFrom')}
                 className="w-full lg:w-[160px]"
                 fromYear={new Date().getFullYear() - 10}
                 toYear={new Date().getFullYear() + 1}
@@ -463,7 +463,7 @@ export default function Inspections() {
               <DatePicker
                 value={dateTo}
                 onChange={setDateTo}
-                placeholder="Até"
+                placeholder={t('inspections.dateTo')}
                 className="w-full lg:w-[160px]"
                 fromYear={new Date().getFullYear() - 10}
                 toYear={new Date().getFullYear() + 1}
@@ -480,7 +480,7 @@ export default function Inspections() {
           {hasActiveFilters && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Filter className="h-4 w-4" />
-              Mostrando {filteredInspections.length} de {inspections.length} inspeções
+              {t('inspectionsPage.showingOf', { filtered: filteredInspections.length, total: inspections.length })}
             </div>
           )}
 
@@ -489,13 +489,13 @@ export default function Inspections() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Equipamento</TableHead>
-                  <TableHead>Código</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Inspetor</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Próxima</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                  <TableHead>{t('inspectionsPage.tableEquipment')}</TableHead>
+                  <TableHead>{t('inspectionsPage.tableCode')}</TableHead>
+                  <TableHead>{t('inspectionsPage.tableDate')}</TableHead>
+                  <TableHead>{t('inspectionsPage.tableInspector')}</TableHead>
+                  <TableHead>{t('inspectionsPage.tableStatus')}</TableHead>
+                  <TableHead>{t('inspectionsPage.tableNext')}</TableHead>
+                  <TableHead className="text-right">{t('inspectionsPage.tableActions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -515,8 +515,8 @@ export default function Inspections() {
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                       {searchTerm || hasActiveFilters
-                        ? 'Nenhuma inspeção encontrada com os filtros aplicados.' 
-                        : 'Nenhuma inspeção registrada ainda.'}
+                        ? t('inspectionsPage.noInspectionFiltered') 
+                        : t('inspectionsPage.noInspectionRegistered')}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -527,7 +527,7 @@ export default function Inspections() {
                       onDoubleClick={() => openDetailDialog(inspection)}
                     >
                       <TableCell className="font-medium">
-                        {inspection.equipment?.name || 'Equipamento não encontrado'}
+                        {inspection.equipment?.name || t('inspectionsPage.equipmentNotFound')}
                       </TableCell>
                       <TableCell className="text-muted-foreground font-mono">
                         {inspection.equipment?.internal_code || '-'}
@@ -536,7 +536,7 @@ export default function Inspections() {
                         {formatDate(inspection.inspection_date)}
                       </TableCell>
                       <TableCell>
-                        {inspection.profiles?.full_name || 'Inspetor não encontrado'}
+                        {inspection.profiles?.full_name || t('inspectionsPage.inspectorNotFound')}
                       </TableCell>
                       <TableCell>
                         {getStatusBadge(inspection.status)}
@@ -559,21 +559,21 @@ export default function Inspections() {
                               className="gap-2 cursor-pointer"
                             >
                               <Eye className="h-4 w-4" />
-                              Ver Detalhes
+                              {t('inspectionsPage.viewDetails')}
                             </DropdownMenuItem>
                             <DropdownMenuItem 
                               onClick={() => handleEditInspection(inspection)}
                               className="gap-2 cursor-pointer"
                             >
                               <Edit className="h-4 w-4" />
-                              Editar
+                              {t('inspectionsPage.edit')}
                             </DropdownMenuItem>
                             <DropdownMenuItem 
                               onClick={() => openDetailDialog(inspection)}
                               className="gap-2 cursor-pointer text-destructive focus:text-destructive"
                             >
                               <Trash2 className="h-4 w-4" />
-                              Excluir
+                              {t('inspectionsPage.delete')}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -586,7 +586,7 @@ export default function Inspections() {
           </div>
 
           <div className="text-sm text-muted-foreground">
-            Total: {filteredInspections.length} inspeções
+            {t('inspectionsPage.totalInspections', { count: filteredInspections.length })}
           </div>
         </CardContent>
           </Card>
@@ -596,8 +596,8 @@ export default function Inspections() {
         <TabsContent value="timeline" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Timeline de Inspeções</CardTitle>
-              <CardDescription>Histórico visual das inspeções realizadas</CardDescription>
+              <CardTitle>{t('inspectionsPage.timelineTitle')}</CardTitle>
+              <CardDescription>{t('inspectionsPage.timelineSubtitle')}</CardDescription>
             </CardHeader>
             <CardContent>
               <InspectionTimeline 
@@ -633,9 +633,9 @@ export default function Inspections() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-primary" />
-              Próximas Inspeções
+              {t('inspectionsPage.upcomingTitle')}
             </CardTitle>
-            <CardDescription>Inspeções agendadas para os próximos 30 dias</CardDescription>
+            <CardDescription>{t('inspectionsPage.upcomingSubtitle')}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">

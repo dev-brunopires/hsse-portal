@@ -1,10 +1,11 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useEquipment } from '@/hooks/useEquipment';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AlertTriangle, Calendar, ChevronRight, ShieldAlert } from 'lucide-react';
+import { Calendar, ShieldAlert } from 'lucide-react';
 import { formatDate } from '@/utils/dateFormat';
 import { differenceInDays, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -12,6 +13,7 @@ import { cn } from '@/lib/utils';
 type ExpiryRange = '30' | '60' | '90';
 
 export function ExpiringCertificatesCard() {
+  const { t } = useTranslation();
   const { data: equipment = [] } = useEquipment();
   const [selectedRange, setSelectedRange] = useState<ExpiryRange>('30');
   
@@ -49,13 +51,19 @@ export function ExpiringCertificatesCard() {
 
   const expiringItems = getExpiringEquipment(parseInt(selectedRange));
 
+  const getDaysText = (daysLeft: number) => {
+    if (daysLeft === 0) return t('expiringCertificates.today');
+    if (daysLeft === 1) return `1 ${t('expiringCertificates.day')}`;
+    return `${daysLeft} ${t('expiringCertificates.days')}`;
+  };
+
   return (
     <Card className="border-border">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg">
             <ShieldAlert className="h-5 w-5 text-orange-500" />
-            Certificados a Vencer
+            {t('expiringCertificates.title')}
           </CardTitle>
         </div>
         <div className="flex gap-2 mt-2">
@@ -67,7 +75,7 @@ export function ExpiringCertificatesCard() {
               onClick={() => setSelectedRange(range)}
               className="gap-1"
             >
-              {range} dias
+              {range} {t('expiringCertificates.days')}
               <Badge 
                 variant="secondary" 
                 className={cn(
@@ -88,7 +96,7 @@ export function ExpiringCertificatesCard() {
               <Calendar className="h-6 w-6 text-green-500" />
             </div>
             <p className="text-sm text-muted-foreground">
-              Nenhum certificado a vencer nos próximos {selectedRange} dias
+              {t('expiringCertificates.noCertificatesExpiring', { days: selectedRange })}
             </p>
           </div>
         ) : (
@@ -118,13 +126,13 @@ export function ExpiringCertificatesCard() {
                     </div>
                     <div className="flex items-center gap-3 flex-shrink-0">
                       <div className="text-right">
-                        <p className="text-xs text-muted-foreground">Vence em</p>
+                        <p className="text-xs text-muted-foreground">{t('expiringCertificates.expiresIn')}</p>
                         <p className={cn("text-sm font-semibold px-2 py-0.5 rounded", urgencyClass)}>
-                          {daysLeft === 0 ? 'Hoje' : daysLeft === 1 ? '1 dia' : `${daysLeft} dias`}
+                          {getDaysText(daysLeft)}
                         </p>
                       </div>
                       <div className="text-right hidden sm:block">
-                        <p className="text-xs text-muted-foreground">Data</p>
+                        <p className="text-xs text-muted-foreground">{t('expiringCertificates.date')}</p>
                         <p className="text-sm">{formatDate(item.certificate_expiry)}</p>
                       </div>
                     </div>
