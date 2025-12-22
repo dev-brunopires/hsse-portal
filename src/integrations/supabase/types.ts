@@ -61,6 +61,7 @@ export type Database = {
           id: string
           inspection_frequency: string
           name: string
+          organization_id: string | null
           updated_at: string
         }
         Insert: {
@@ -70,6 +71,7 @@ export type Database = {
           id?: string
           inspection_frequency?: string
           name: string
+          organization_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -79,9 +81,18 @@ export type Database = {
           id?: string
           inspection_frequency?: string
           name?: string
+          organization_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "categories_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       checklist_template_items: {
         Row: {
@@ -126,6 +137,7 @@ export type Database = {
           id: string
           is_default: boolean | null
           name: string
+          organization_id: string | null
           updated_at: string
         }
         Insert: {
@@ -135,6 +147,7 @@ export type Database = {
           id?: string
           is_default?: boolean | null
           name: string
+          organization_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -144,6 +157,7 @@ export type Database = {
           id?: string
           is_default?: boolean | null
           name?: string
+          organization_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -152,6 +166,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklist_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -791,6 +812,7 @@ export type Database = {
           expires_at: string | null
           id: string
           message: string
+          organization_id: string | null
           ship_id: string | null
           title: string
           type: string
@@ -801,6 +823,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           message: string
+          organization_id?: string | null
           ship_id?: string | null
           title: string
           type?: string
@@ -811,11 +834,19 @@ export type Database = {
           expires_at?: string | null
           id?: string
           message?: string
+          organization_id?: string | null
           ship_id?: string | null
           title?: string
           type?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "notifications_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "notifications_ship_id_fkey"
             columns: ["ship_id"]
@@ -824,6 +855,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      organizations: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          logo_url: string | null
+          logo_white_url: string | null
+          name: string
+          slug: string
+          subdomain: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          logo_white_url?: string | null
+          name: string
+          slug: string
+          subdomain: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          logo_white_url?: string | null
+          name?: string
+          slug?: string
+          subdomain?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      platform_owners: {
+        Row: {
+          created_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -839,6 +924,7 @@ export type Database = {
           notification_app: boolean | null
           notification_email: boolean | null
           onboarding_completed: boolean | null
+          organization_id: string | null
           phone: string | null
           position: string | null
           unit: string | null
@@ -858,6 +944,7 @@ export type Database = {
           notification_app?: boolean | null
           notification_email?: boolean | null
           onboarding_completed?: boolean | null
+          organization_id?: string | null
           phone?: string | null
           position?: string | null
           unit?: string | null
@@ -877,13 +964,22 @@ export type Database = {
           notification_app?: boolean | null
           notification_email?: boolean | null
           onboarding_completed?: boolean | null
+          organization_id?: string | null
           phone?: string | null
           position?: string | null
           unit?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ships: {
         Row: {
@@ -892,6 +988,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          organization_id: string | null
           updated_at: string
         }
         Insert: {
@@ -900,6 +997,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          organization_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -908,9 +1006,18 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          organization_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ships_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_favorites: {
         Row: {
@@ -936,26 +1043,66 @@ export type Database = {
         }
         Relationships: []
       }
+      user_organizations: {
+        Row: {
+          created_at: string | null
+          id: string
+          organization_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          organization_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          organization_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_organizations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
           id: string
+          organization_id: string | null
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
+          organization_id?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
           created_at?: string
           id?: string
+          organization_id?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_ships: {
         Row: {
@@ -993,6 +1140,7 @@ export type Database = {
     Functions: {
       can_manage_users: { Args: { _user_id: string }; Returns: boolean }
       generate_equipment_short_code: { Args: never; Returns: string }
+      get_user_organization_id: { Args: { _user_id: string }; Returns: string }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -1007,6 +1155,11 @@ export type Database = {
       }
       is_admin_master: { Args: { _user_id: string }; Returns: boolean }
       is_admin_or_technician: { Args: { _user_id: string }; Returns: boolean }
+      is_platform_owner: { Args: { _user_id: string }; Returns: boolean }
+      user_belongs_to_organization: {
+        Args: { _organization_id: string; _user_id: string }
+        Returns: boolean
+      }
       user_has_ship_access: {
         Args: { _ship_id: string; _user_id: string }
         Returns: boolean

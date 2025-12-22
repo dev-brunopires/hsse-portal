@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ShipFilterProvider } from "@/contexts/ShipFilterContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { OrganizationProvider } from "@/contexts/OrganizationContext";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AppLayout } from "./components/layout/AppLayout";
@@ -23,6 +24,7 @@ import Profile from "./pages/Profile";
 import PendingRecommendations from "./pages/PendingRecommendations";
 import AuditLog from "./pages/AuditLog";
 import Maintenance from "./pages/Maintenance";
+import PlatformAdmin from "./pages/PlatformAdmin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -44,11 +46,17 @@ function App() {
           <BrowserRouter>
             <AuthProvider>
               <LanguageProvider>
+                <OrganizationProvider>
                 <ShipFilterProvider>
                   <OnboardingProvider />
               <Routes>
                 {/* Public Route */}
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/platform-admin" element={
+                  <ProtectedRoute>
+                    <PlatformAdmin />
+                  </ProtectedRoute>
+                } />
                 
                 {/* Protected Routes */}
                 <Route
@@ -174,6 +182,7 @@ function App() {
                 <Route path="*" element={<NotFound />} />
               </Routes>
               </ShipFilterProvider>
+                </OrganizationProvider>
               </LanguageProvider>
             </AuthProvider>
           </BrowserRouter>
