@@ -5,8 +5,10 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useInspectorStats } from '@/hooks/useInspectorStats';
+import { useTranslation } from 'react-i18next';
 
 export function InspectorPerformanceCard() {
+  const { t } = useTranslation();
   const { data, isLoading } = useInspectorStats();
 
   if (isLoading) {
@@ -15,7 +17,7 @@ export function InspectorPerformanceCard() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Desempenho dos Inspetores
+            {t('inspectorPerformance.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -35,13 +37,13 @@ export function InspectorPerformanceCard() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Desempenho dos Inspetores
+            {t('inspectorPerformance.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-muted-foreground">
             <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">Nenhuma inspeção registrada no período</p>
+            <p className="text-sm">{t('inspectorPerformance.noInspections')}</p>
           </div>
         </CardContent>
       </Card>
@@ -57,8 +59,8 @@ export function InspectorPerformanceCard() {
               <Users className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-base">Desempenho dos Inspetores</CardTitle>
-              <CardDescription>Últimos 3 meses</CardDescription>
+              <CardTitle className="text-base">{t('inspectorPerformance.title')}</CardTitle>
+              <CardDescription>{t('inspectorPerformance.last3Months')}</CardDescription>
             </div>
           </div>
         </div>
@@ -67,11 +69,11 @@ export function InspectorPerformanceCard() {
         <div className="flex flex-wrap gap-2 mt-4">
           <Badge variant="outline" className="gap-1">
             <TrendingUp className="h-3 w-3" />
-            {data.overallStats.totalInspections} inspeções
+            {data.overallStats.totalInspections} {t('inspectorPerformance.inspections')}
           </Badge>
           <Badge variant="outline" className="gap-1 bg-green-500/10 text-green-600">
             <Award className="h-3 w-3" />
-            Melhor: {data.overallStats.bestPerformer}
+            {t('inspectorPerformance.best')}: {data.overallStats.bestPerformer}
           </Badge>
         </div>
       </CardHeader>
@@ -94,12 +96,12 @@ export function InspectorPerformanceCard() {
                     )}
                     <span className="font-medium text-sm">{inspector.inspectorName}</span>
                   </div>
-                  <Badge variant="secondary">{inspector.totalInspections} inspeções</Badge>
+                  <Badge variant="secondary">{inspector.totalInspections} {t('inspectorPerformance.inspections')}</Badge>
                 </div>
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">Taxa de aprovação</span>
+                    <span className="text-muted-foreground">{t('inspectorPerformance.approvalRate')}</span>
                     <span className="font-medium">{inspector.approvalRate.toFixed(1)}%</span>
                   </div>
                   <Progress value={inspector.approvalRate} className="h-2" />
@@ -107,15 +109,15 @@ export function InspectorPerformanceCard() {
                   <div className="grid grid-cols-3 gap-2 mt-2 text-xs">
                     <div className="text-center p-1 rounded bg-green-500/10">
                       <span className="text-green-600 font-medium">{inspector.approvedCount}</span>
-                      <p className="text-muted-foreground">Aprovadas</p>
+                      <p className="text-muted-foreground">{t('inspectorPerformance.approved')}</p>
                     </div>
                     <div className="text-center p-1 rounded bg-amber-500/10">
                       <span className="text-amber-600 font-medium">{inspector.attentionCount}</span>
-                      <p className="text-muted-foreground">Atenção</p>
+                      <p className="text-muted-foreground">{t('inspectorPerformance.attention')}</p>
                     </div>
                     <div className="text-center p-1 rounded bg-red-500/10">
                       <span className="text-red-600 font-medium">{inspector.rejectedCount}</span>
-                      <p className="text-muted-foreground">Reprovadas</p>
+                      <p className="text-muted-foreground">{t('inspectorPerformance.rejected')}</p>
                     </div>
                   </div>
                 </div>

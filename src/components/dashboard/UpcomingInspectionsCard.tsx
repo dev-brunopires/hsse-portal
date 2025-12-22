@@ -2,13 +2,16 @@ import { useMemo } from 'react';
 import { Calendar, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useInspections } from '@/hooks/useInspections';
 import { format, addDays, isAfter, isBefore, differenceInDays } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { parseLocalDate } from '@/utils/dateFormat';
+import { useTranslation } from 'react-i18next';
 
 export function UpcomingInspectionsCard() {
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
   const { data: inspections = [], isLoading } = useInspections();
 
   const upcomingInspections = useMemo(() => {
@@ -85,8 +88,8 @@ export function UpcomingInspectionsCard() {
             <Calendar className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h3 className="font-semibold text-foreground">Próximas Inspeções</h3>
-            <p className="text-sm text-muted-foreground">Agenda dos próximos 30 dias</p>
+            <h3 className="font-semibold text-foreground">{t('upcomingInspections.title')}</h3>
+            <p className="text-sm text-muted-foreground">{t('upcomingInspections.subtitle')}</p>
           </div>
         </div>
       </div>
@@ -97,14 +100,14 @@ export function UpcomingInspectionsCard() {
           <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
             <div className="flex items-center gap-2 mb-1">
               <Clock className="h-4 w-4 text-amber-600" />
-              <span className="text-xs font-medium text-amber-600">Esta semana</span>
+              <span className="text-xs font-medium text-amber-600">{t('upcomingInspections.thisWeek')}</span>
             </div>
             <p className="text-2xl font-bold text-amber-700">{stats.thisWeek}</p>
           </div>
           <div className="p-4 rounded-xl bg-accent/10 border border-accent/20">
             <div className="flex items-center gap-2 mb-1">
               <Calendar className="h-4 w-4 text-accent" />
-              <span className="text-xs font-medium text-accent">Este mês</span>
+              <span className="text-xs font-medium text-accent">{t('upcomingInspections.thisMonth')}</span>
             </div>
             <p className="text-2xl font-bold text-accent">{stats.thisMonth}</p>
           </div>
@@ -115,8 +118,8 @@ export function UpcomingInspectionsCard() {
           {upcomingInspections.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <CheckCircle className="h-10 w-10 text-emerald-500 mb-2" />
-              <p className="text-sm font-medium text-foreground">Tudo em dia!</p>
-              <p className="text-xs text-muted-foreground">Nenhuma inspeção programada</p>
+              <p className="text-sm font-medium text-foreground">{t('upcomingInspections.allCaughtUp')}</p>
+              <p className="text-xs text-muted-foreground">{t('upcomingInspections.noScheduled')}</p>
             </div>
           ) : (
             upcomingInspections.map((insp) => (
@@ -128,7 +131,7 @@ export function UpcomingInspectionsCard() {
                   "flex items-center justify-center w-10 h-10 rounded-lg text-xs font-bold",
                   getUrgencyColor(insp.daysUntil)
                 )}>
-                  {insp.daysUntil}d
+                  {insp.daysUntil}{t('upcomingInspections.daysAbbrev')}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">
@@ -140,10 +143,10 @@ export function UpcomingInspectionsCard() {
                 </div>
                 <div className="text-right">
                   <p className="text-xs font-medium text-foreground">
-                    {format(parseLocalDate(insp.next_inspection_date!)!, 'dd/MM', { locale: ptBR })}
+                    {format(parseLocalDate(insp.next_inspection_date!)!, 'dd/MM', { locale: dateLocale })}
                   </p>
                   <p className="text-xs text-muted-foreground capitalize">
-                    {format(parseLocalDate(insp.next_inspection_date!)!, 'EEE', { locale: ptBR })}
+                    {format(parseLocalDate(insp.next_inspection_date!)!, 'EEE', { locale: dateLocale })}
                   </p>
                 </div>
               </div>
