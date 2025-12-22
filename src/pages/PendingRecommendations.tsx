@@ -49,10 +49,11 @@ import { useEquipment, type EquipmentWithCategory } from '@/hooks/useEquipment';
 import { useInspections, type InspectionWithDetails } from '@/hooks/useInspections';
 import { useCategories } from '@/hooks/useCategories';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS } from 'date-fns/locale';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { getEffectiveEquipmentStatus, type EffectiveStatusResult } from '@/utils/equipmentStatus';
+import { getEffectiveEquipmentStatus } from '@/utils/equipmentStatus';
+import { useTranslation } from 'react-i18next';
 
 interface PendingItem {
   equipment: EquipmentWithCategory;
@@ -68,6 +69,8 @@ interface PendingItem {
 }
 
 export default function PendingRecommendations() {
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
   const navigate = useNavigate();
   const { data: equipment = [], isLoading: equipmentLoading } = useEquipment();
   const { data: inspections = [], isLoading: inspectionsLoading } = useInspections();
@@ -207,28 +210,28 @@ export default function PendingRecommendations() {
     // Header
     doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
-    doc.text('RELATÓRIO DE PENDÊNCIAS', pageWidth / 2, yPos, { align: 'center' });
+    doc.text(t('pendingRecommendations.pdfReport.title'), pageWidth / 2, yPos, { align: 'center' });
     
     yPos += 7;
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Gerado em ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, pageWidth / 2, yPos, { align: 'center' });
+    doc.text(`${t('pendingRecommendations.pdfReport.generatedAt')} ${format(new Date(), "dd/MM/yyyy", { locale: dateLocale })} ${t('pendingRecommendations.pdfReport.at')} ${format(new Date(), "HH:mm", { locale: dateLocale })}`, pageWidth / 2, yPos, { align: 'center' });
 
     // Summary
     yPos += 10;
     doc.setFontSize(10);
-    doc.text(`Total de Pendências: ${stats.total} | Recomendações: ${stats.unresolvedRecommendations} | Certificados Vencidos: ${stats.expiredCertificates} | Inspeções Atrasadas: ${stats.overdueInspections}`, 14, yPos);
+    doc.text(`${t('pendingRecommendations.pdfReport.totalPendencies')}: ${stats.total} | ${t('pendingRecommendations.pdfReport.recommendations')}: ${stats.unresolvedRecommendations} | ${t('pendingRecommendations.pdfReport.expiredCertificates')}: ${stats.expiredCertificates} | ${t('pendingRecommendations.pdfReport.overdueInspections')}: ${stats.overdueInspections}`, 14, yPos);
 
     // Table
     yPos += 5;
     const tableBody = filteredItems.map(item => {
       const issues: string[] = [];
-      if (item.isAutoRejected) issues.push('REPROVADO (Auto)');
-      if (item.isCertificateExpired) issues.push('Cert. Vencido');
-      if (item.isEquipmentExpired) issues.push('Validade Vencida');
-      if (item.isInspectionOverdue) issues.push(`Insp. Atrasada (${item.daysOverdue}d)`);
-      if (item.hasUnresolvedRecommendations) issues.push('Recomend. Pendente');
-      if (item.hasCriticalStatus && !item.isAutoRejected) issues.push('Status Crítico');
+      if (item.isAutoRejected) issues.push(t('pendingRecommendations.autoRejected'));
+      if (item.isCertificateExpired) issues.push(t('pendingRecommendations.certExpired'));
+      if (item.isEquipmentExpired) issues.push(t('pendingRecommendations.expiryExpired'));
+      if (item.isInspectionOverdue) issues.push(`${t('pendingRecommendations.inspOverdue')} (${item.daysOverdue}${t('pendingRecommendations.days')})`);
+      if (item.hasUnresolvedRecommendations) issues.push(t('pendingRecommendations.pendingRecommendation'));
+      if (item.hasCriticalStatus && !item.isAutoRejected) issues.push(t('pendingRecommendations.criticalStatusBadge'));
 
       return [
         item.equipment.internal_code,
@@ -243,7 +246,15 @@ export default function PendingRecommendations() {
 
     autoTable(doc, {
       startY: yPos,
-      head: [['Código', 'Equipamento', 'Categoria', 'Localização', 'Última Insp.', 'Pendências', 'Recomendações']],
+      head: [[
+        t('pendingRecommendations.pdfReport.codeHeader'),
+        t('pendingRecommendations.pdfReport.equipmentHeader'),
+        t('pendingRecommendations.pdfReport.categoryHeader'),
+        t('pendingRecommendations.pdfReport.locationHeader'),
+        t('pendingRecommendations.pdfReport.lastInspHeader'),
+        t('pendingRecommendations.pdfReport.pendenciesHeader'),
+        t('pendingRecommendations.pdfReport.recommendationsHeader')
+      ]],
       body: tableBody,
       theme: 'striped',
       styles: { fontSize: 8, cellPadding: 2 },
@@ -265,7 +276,7 @@ export default function PendingRecommendations() {
       doc.setPage(i);
       doc.setFontSize(8);
       doc.text(
-        `Página ${i} de ${pageCount}`,
+        `${t('pendingRecommendations.pdfReport.page')} ${i} ${t('pendingRecommendations.pdfReport.of')} ${pageCount}`,
         pageWidth / 2,
         doc.internal.pageSize.getHeight() - 10,
         { align: 'center' }
@@ -280,14 +291,14 @@ export default function PendingRecommendations() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Pendências</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t('pendingRecommendations.title')}</h1>
           <p className="text-muted-foreground">
-            Equipamentos com recomendações não resolvidas e alertas críticos
+            {t('pendingRecommendations.subtitle')}
           </p>
         </div>
         <Button className="gap-2" onClick={exportToPDF}>
           <Download className="h-4 w-4" />
-          Exportar PDF
+          {t('pendingRecommendations.exportPDF')}
         </Button>
       </div>
 
@@ -297,7 +308,7 @@ export default function PendingRecommendations() {
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
               <AlertTriangle className="h-5 w-5 text-status-danger" />
-              Total
+              {t('pendingRecommendations.total')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -313,9 +324,9 @@ export default function PendingRecommendations() {
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
               <ShieldAlert className="h-5 w-5 text-red-500" />
-              Reprovados
+              {t('pendingRecommendations.rejected')}
             </CardTitle>
-            <CardDescription>Automático (vencido)</CardDescription>
+            <CardDescription>{t('pendingRecommendations.automatic')}</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -330,9 +341,9 @@ export default function PendingRecommendations() {
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
               <MessageSquare className="h-5 w-5 text-primary" />
-              Recomendações
+              {t('pendingRecommendations.recommendations')}
             </CardTitle>
-            <CardDescription>Não resolvidas</CardDescription>
+            <CardDescription>{t('pendingRecommendations.unresolved')}</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -347,9 +358,9 @@ export default function PendingRecommendations() {
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
               <FileText className="h-5 w-5 text-status-danger" />
-              Certificados
+              {t('pendingRecommendations.certificates')}
             </CardTitle>
-            <CardDescription>Vencidos</CardDescription>
+            <CardDescription>{t('pendingRecommendations.expired')}</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -364,9 +375,9 @@ export default function PendingRecommendations() {
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
               <Clock className="h-5 w-5 text-status-warning" />
-              Inspeções
+              {t('pendingRecommendations.inspectionsCard')}
             </CardTitle>
-            <CardDescription>Atrasadas</CardDescription>
+            <CardDescription>{t('pendingRecommendations.overdue')}</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -381,9 +392,9 @@ export default function PendingRecommendations() {
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
               <X className="h-5 w-5 text-destructive" />
-              Status Crítico
+              {t('pendingRecommendations.criticalStatus')}
             </CardTitle>
-            <CardDescription>Reprovado/Vencido</CardDescription>
+            <CardDescription>{t('pendingRecommendations.rejectedExpired')}</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -398,9 +409,9 @@ export default function PendingRecommendations() {
       {/* Filters and Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Pendências</CardTitle>
+          <CardTitle>{t('pendingRecommendations.pendingList')}</CardTitle>
           <CardDescription>
-            Equipamentos que requerem atenção ou ação imediata
+            {t('pendingRecommendations.requireAttention')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -409,7 +420,7 @@ export default function PendingRecommendations() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar por código, nome ou localização..."
+                placeholder={t('pendingRecommendations.searchPlaceholder')}
                 className="pl-10"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -418,10 +429,10 @@ export default function PendingRecommendations() {
 
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="w-full lg:w-[180px]">
-                <SelectValue placeholder="Categoria" />
+                <SelectValue placeholder={t('common.category')} />
               </SelectTrigger>
               <SelectContent className="bg-popover border border-border shadow-lg z-50">
-                <SelectItem value="all">Todas Categorias</SelectItem>
+                <SelectItem value="all">{t('pendingRecommendations.allCategories')}</SelectItem>
                 {categories.map((cat) => (
                   <SelectItem key={cat.id} value={cat.id}>
                     {cat.name}
@@ -433,14 +444,14 @@ export default function PendingRecommendations() {
             <Select value={issueTypeFilter} onValueChange={setIssueTypeFilter}>
               <SelectTrigger className="w-full lg:w-[200px]">
                 <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Tipo de Pendência" />
+                <SelectValue placeholder={t('common.filter')} />
               </SelectTrigger>
               <SelectContent className="bg-popover border border-border shadow-lg z-50">
-                <SelectItem value="all">Todas Pendências</SelectItem>
-                <SelectItem value="recommendations">Recomendações Pendentes</SelectItem>
-                <SelectItem value="certificate">Certificado Vencido</SelectItem>
-                <SelectItem value="inspection">Inspeção Atrasada</SelectItem>
-                <SelectItem value="status">Status Crítico</SelectItem>
+                <SelectItem value="all">{t('pendingRecommendations.allPendencies')}</SelectItem>
+                <SelectItem value="recommendations">{t('pendingRecommendations.pendingRecommendationsFilter')}</SelectItem>
+                <SelectItem value="certificate">{t('pendingRecommendations.expiredCertificate')}</SelectItem>
+                <SelectItem value="inspection">{t('pendingRecommendations.overdueInspection')}</SelectItem>
+                <SelectItem value="status">{t('pendingRecommendations.criticalStatusFilter')}</SelectItem>
               </SelectContent>
             </Select>
 
@@ -454,7 +465,7 @@ export default function PendingRecommendations() {
           {hasActiveFilters && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Filter className="h-4 w-4" />
-              Mostrando {filteredItems.length} de {pendingItems.length} pendências
+              {t('pendingRecommendations.showingFiltered', { count: filteredItems.length, total: pendingItems.length })}
             </div>
           )}
 
@@ -463,12 +474,12 @@ export default function PendingRecommendations() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Equipamento</TableHead>
-                  <TableHead>Categoria</TableHead>
-                  <TableHead>Localização</TableHead>
-                  <TableHead>Última Inspeção</TableHead>
-                  <TableHead>Pendências</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                  <TableHead>{t('pendingRecommendations.equipmentColumn')}</TableHead>
+                  <TableHead>{t('pendingRecommendations.categoryColumn')}</TableHead>
+                  <TableHead>{t('common.location')}</TableHead>
+                  <TableHead>{t('pendingRecommendations.lastInspectionColumn')}</TableHead>
+                  <TableHead>{t('pendingRecommendations.pendenciesColumn')}</TableHead>
+                  <TableHead className="text-right">{t('common.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -487,8 +498,8 @@ export default function PendingRecommendations() {
                   <TableRow>
                     <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
                       <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-status-success" />
-                      <p>Nenhuma pendência encontrada</p>
-                      <p className="text-sm">Todos os equipamentos estão em conformidade!</p>
+                      <p>{t('pendingRecommendations.noResults')}</p>
+                      <p className="text-sm">{t('pendingRecommendations.noResultsDescription')}</p>
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -550,7 +561,7 @@ export default function PendingRecommendations() {
                         <div className="flex flex-wrap gap-1">
                           {item.isAutoRejected && (
                             <Badge className="text-xs bg-red-500 text-white font-bold">
-                              REPROVADO
+                              {t('common.rejected').toUpperCase()}
                             </Badge>
                           )}
                           {item.isAutoRejected && item.autoRejectedReasons.map((reason, idx) => (
@@ -560,27 +571,27 @@ export default function PendingRecommendations() {
                           ))}
                           {!item.isAutoRejected && item.isCertificateExpired && (
                             <Badge variant="destructive" className="text-xs">
-                              Cert. Vencido
+                              {t('pendingRecommendations.certExpired')}
                             </Badge>
                           )}
                           {!item.isAutoRejected && item.isEquipmentExpired && (
                             <Badge variant="destructive" className="text-xs">
-                              Validade Vencida
+                              {t('pendingRecommendations.expiryExpired')}
                             </Badge>
                           )}
                           {item.isInspectionOverdue && (
                             <Badge className="text-xs bg-status-warning text-status-warning-foreground">
-                              Insp. Atrasada ({item.daysOverdue}d)
+                              {t('pendingRecommendations.inspOverdue')} ({item.daysOverdue}{t('pendingRecommendations.days')})
                             </Badge>
                           )}
                           {item.hasUnresolvedRecommendations && (
                             <Badge variant="outline" className="text-xs border-primary text-primary">
-                              Recomend. Pendente
+                              {t('pendingRecommendations.pendingRecommendation')}
                             </Badge>
                           )}
                           {!item.isAutoRejected && item.hasCriticalStatus && (
                             <Badge variant="destructive" className="text-xs">
-                              {item.equipment.status === 'rejected' ? 'Reprovado' : 'Vencido'}
+                              {item.equipment.status === 'rejected' ? t('common.rejected') : t('pendingRecommendations.expired')}
                             </Badge>
                           )}
                         </div>
@@ -598,7 +609,7 @@ export default function PendingRecommendations() {
                             size="sm"
                             onClick={() => handleStartInspection(item.equipment.id)}
                           >
-                            Inspecionar
+                            {t('pendingRecommendations.startInspection')}
                           </Button>
                         </div>
                       </TableCell>
@@ -617,7 +628,7 @@ export default function PendingRecommendations() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-status-warning" />
-              Detalhes da Pendência
+              {t('pendingRecommendations.detailDialog.pendenciesFor')}
             </DialogTitle>
             <DialogDescription>
               {selectedItem?.equipment.internal_code} - {selectedItem?.equipment.name}
@@ -630,30 +641,30 @@ export default function PendingRecommendations() {
                 {/* Equipment Info */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-muted-foreground">Localização</p>
+                    <p className="text-sm text-muted-foreground">{t('pendingRecommendations.detailDialog.location')}</p>
                     <p className="font-medium">{selectedItem.equipment.location}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Categoria</p>
+                    <p className="text-sm text-muted-foreground">{t('pendingRecommendations.detailDialog.category')}</p>
                     <p className="font-medium">{selectedItem.equipment.categories?.name || '-'}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Última Inspeção</p>
+                    <p className="text-sm text-muted-foreground">{t('pendingRecommendations.detailDialog.lastInspection')}</p>
                     <p className="font-medium">
                       {selectedItem.lastInspection 
-                        ? format(new Date(selectedItem.lastInspection.inspection_date), "dd/MM/yyyy", { locale: ptBR })
-                        : 'Nunca inspecionado'
+                        ? format(new Date(selectedItem.lastInspection.inspection_date), "dd/MM/yyyy", { locale: dateLocale })
+                        : t('inspections.neverInspected')
                       }
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Próxima Inspeção</p>
+                    <p className="text-sm text-muted-foreground">{t('pendingRecommendations.detailDialog.nextInspection')}</p>
                     <p className={`font-medium ${selectedItem.isInspectionOverdue ? 'text-status-danger' : ''}`}>
                       {selectedItem.equipment.next_inspection 
-                        ? format(new Date(selectedItem.equipment.next_inspection), "dd/MM/yyyy", { locale: ptBR })
+                        ? format(new Date(selectedItem.equipment.next_inspection), "dd/MM/yyyy", { locale: dateLocale })
                         : '-'
                       }
-                      {selectedItem.isInspectionOverdue && ` (${selectedItem.daysOverdue} dias atrasada)`}
+                      {selectedItem.isInspectionOverdue && ` (${selectedItem.daysOverdue} ${t('pendingRecommendations.overdue').toLowerCase()})`}
                     </p>
                   </div>
                 </div>
@@ -664,14 +675,14 @@ export default function PendingRecommendations() {
                 <div className="space-y-3">
                   <h4 className="font-semibold text-status-danger flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4" />
-                    Pendências Identificadas
+                    {t('pendingRecommendations.detailDialog.identifiedPendencies')}
                   </h4>
 
                   {selectedItem.isAutoRejected && (
                     <div className="p-3 rounded-lg bg-red-500/10 border-2 border-red-500/50">
                       <p className="font-bold text-red-500 flex items-center gap-2">
                         <ShieldAlert className="h-4 w-4" />
-                        EQUIPAMENTO REPROVADO AUTOMATICAMENTE
+                        {t('pendingRecommendations.autoRejected')}
                       </p>
                       <ul className="text-sm mt-1 list-disc list-inside">
                         {selectedItem.autoRejectedReasons.map((reason, idx) => (
@@ -683,19 +694,19 @@ export default function PendingRecommendations() {
 
                   {selectedItem.isCertificateExpired && !selectedItem.isAutoRejected && (
                     <div className="p-3 rounded-lg bg-status-danger/10 border border-status-danger/30">
-                      <p className="font-medium text-status-danger">Certificado Vencido</p>
+                      <p className="font-medium text-status-danger">{t('pendingRecommendations.expiredCertificate')}</p>
                       <p className="text-sm">
-                        Venceu em {format(new Date(selectedItem.equipment.certificate_expiry + 'T00:00:00'), "dd/MM/yyyy", { locale: ptBR })}
+                        {t('preInspectionWarning.expiredOn')} {format(new Date(selectedItem.equipment.certificate_expiry + 'T00:00:00'), "dd/MM/yyyy", { locale: dateLocale })}
                       </p>
                     </div>
                   )}
 
                   {selectedItem.isInspectionOverdue && (
                     <div className="p-3 rounded-lg bg-status-warning/10 border border-status-warning/30">
-                      <p className="font-medium text-status-warning">Inspeção Atrasada</p>
+                      <p className="font-medium text-status-warning">{t('pendingRecommendations.overdueInspection')}</p>
                       <p className="text-sm">
-                        Era prevista para {format(new Date(selectedItem.equipment.next_inspection + 'T00:00:00'), "dd/MM/yyyy", { locale: ptBR })} 
-                        {' '}({selectedItem.daysOverdue} dias de atraso)
+                        {t('preInspectionWarning.scheduledFor')} {format(new Date(selectedItem.equipment.next_inspection + 'T00:00:00'), "dd/MM/yyyy", { locale: dateLocale })} 
+                        {' '}({selectedItem.daysOverdue} {t('pendingRecommendations.days')} {t('pendingRecommendations.overdue').toLowerCase()})
                       </p>
                     </div>
                   )}
@@ -703,7 +714,7 @@ export default function PendingRecommendations() {
                   {selectedItem.hasCriticalStatus && !selectedItem.isAutoRejected && (
                     <div className="p-3 rounded-lg bg-status-danger/10 border border-status-danger/30">
                       <p className="font-medium text-status-danger">
-                        Status: {selectedItem.equipment.status === 'rejected' ? 'Reprovado' : 'Vencido'}
+                        {t('common.status')}: {selectedItem.equipment.status === 'rejected' ? t('common.rejected') : t('pendingRecommendations.expired')}
                       </p>
                     </div>
                   )}
@@ -716,12 +727,12 @@ export default function PendingRecommendations() {
                     <div className="space-y-3">
                       <h4 className="font-semibold text-primary flex items-center gap-2">
                         <MessageSquare className="h-4 w-4" />
-                        Recomendações da Última Inspeção
+                        {t('pendingRecommendations.detailDialog.pendingRecommendations')}
                       </h4>
                       <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
                         <p className="text-sm whitespace-pre-wrap">{selectedItem.lastInspection.recommendations}</p>
                         <p className="text-xs text-muted-foreground mt-3">
-                          Registrado em {format(new Date(selectedItem.lastInspection.inspection_date), "dd/MM/yyyy", { locale: ptBR })}
+                          {t('equipmentWarning.registeredOn')} {format(new Date(selectedItem.lastInspection.inspection_date), "dd/MM/yyyy", { locale: dateLocale })}
                         </p>
                       </div>
 
@@ -729,7 +740,7 @@ export default function PendingRecommendations() {
                         <div className="p-4 rounded-lg bg-status-success/5 border border-status-success/20">
                           <div className="flex items-center gap-2 text-status-success font-medium text-sm mb-2">
                             <CheckCircle2 className="h-4 w-4" />
-                            Ações Tomadas:
+                            {t('equipmentWarning.actionsTakenLastInspection')}:
                           </div>
                           <p className="text-sm whitespace-pre-wrap">{selectedItem.lastInspection.actions_taken}</p>
                         </div>
@@ -737,7 +748,7 @@ export default function PendingRecommendations() {
                         <div className="p-4 rounded-lg bg-status-warning/10 border border-status-warning/30">
                           <div className="flex items-center gap-2 text-status-warning font-medium text-sm">
                             <AlertTriangle className="h-4 w-4" />
-                            Nenhuma ação registrada para estas recomendações
+                            {t('preInspectionWarning.noActionsRegisteredMessage')}
                           </div>
                         </div>
                       )}
@@ -755,7 +766,7 @@ export default function PendingRecommendations() {
                     }}
                   >
                     <ClipboardCheck className="h-4 w-4" />
-                    Iniciar Inspeção
+                    {t('pendingRecommendations.startInspection')}
                   </Button>
                 </div>
               </div>
