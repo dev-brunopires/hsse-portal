@@ -1,15 +1,15 @@
 import { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Building2, Link, Upload, Trash2, Edit, Users, ExternalLink } from 'lucide-react';
+import { Plus, Building2, Upload, Trash2, Edit, ExternalLink, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useIsPlatformOwner, useOrganizations, useCreateOrganization, useUpdateOrganization, useDeleteOrganization, Organization } from '@/hooks/useOrganizations';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,6 +34,12 @@ export default function PlatformAdmin() {
     logo_url: '',
     logo_white_url: '',
   });
+  const [adminData, setAdminData] = useState({
+    email: '',
+    password: '',
+    fullName: '',
+  });
+  const [creatingAdmin, setCreatingAdmin] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingWhiteLogo, setUploadingWhiteLogo] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -111,12 +117,62 @@ export default function PlatformAdmin() {
         ...formData,
       });
     } else {
-      await createOrg.mutateAsync(formData);
+      // Validate admin data for new organization
+      if (!adminData.email || !adminData.password || !adminData.fullName) {
+        toast({
+          title: t('common.error'),
+          description: t('platformAdmin.fillAdminRequired'),
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (adminData.password.length < 6) {
+        toast({
+          title: t('common.error'),
+          description: t('platformAdmin.passwordTooShort'),
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      setCreatingAdmin(true);
+      try {
+        // Create organization first
+        const newOrg = await createOrg.mutateAsync(formData);
+
+        // Create admin master user via edge function
+        const { data, error } = await supabase.functions.invoke('create-user', {
+          body: {
+            email: adminData.email,
+            password: adminData.password,
+            fullName: adminData.fullName,
+            role: 'admin_master',
+            organizationId: newOrg.id,
+          },
+        });
+
+        if (error) throw error;
+
+        toast({
+          title: t('platformAdmin.adminCreated'),
+          description: t('platformAdmin.adminCreatedDesc', { email: adminData.email }),
+        });
+      } catch (error: any) {
+        toast({
+          title: t('platformAdmin.adminCreateError'),
+          description: error.message,
+          variant: 'destructive',
+        });
+      } finally {
+        setCreatingAdmin(false);
+      }
     }
 
     setIsCreateDialogOpen(false);
     setEditingOrg(null);
     setFormData({ name: '', slug: '', subdomain: '', logo_url: '', logo_white_url: '' });
+    setAdminData({ email: '', password: '', fullName: '' });
   };
 
   const handleEdit = (org: Organization) => {
@@ -165,6 +221,7 @@ export default function PlatformAdmin() {
             <Button onClick={() => {
               setEditingOrg(null);
               setFormData({ name: '', slug: '', subdomain: '', logo_url: '', logo_white_url: '' });
+              setAdminData({ email: '', password: '', fullName: '' });
             }}>
               <Plus className="mr-2 h-4 w-4" />
               {t('platformAdmin.createOrganization')}
@@ -277,14 +334,61 @@ export default function PlatformAdmin() {
                   </div>
                 </div>
               </div>
+
+              {/* Admin Master Section - Only for new organizations */}
+              {!editingOrg && (
+                <>
+                  <Separator className="my-4" />
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <UserPlus className="h-5 w-5 text-primary" />
+                      <h3 className="font-semibold">{t('platformAdmin.adminMasterSection')}</h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {t('platformAdmin.adminMasterDesc')}
+                    </p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="adminFullName">{t('platformAdmin.adminFullName')} *</Label>
+                        <Input
+                          id="adminFullName"
+                          value={adminData.fullName}
+                          onChange={(e) => setAdminData(prev => ({ ...prev, fullName: e.target.value }))}
+                          placeholder="João Silva"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="adminEmail">{t('platformAdmin.adminEmail')} *</Label>
+                        <Input
+                          id="adminEmail"
+                          type="email"
+                          value={adminData.email}
+                          onChange={(e) => setAdminData(prev => ({ ...prev, email: e.target.value }))}
+                          placeholder="admin@empresa.com"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="adminPassword">{t('platformAdmin.adminPassword')} *</Label>
+                      <Input
+                        id="adminPassword"
+                        type="password"
+                        value={adminData.password}
+                        onChange={(e) => setAdminData(prev => ({ ...prev, password: e.target.value }))}
+                        placeholder="Mínimo 6 caracteres"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                 {t('common.cancel')}
               </Button>
-              <Button onClick={handleSubmit} disabled={createOrg.isPending || updateOrg.isPending}>
-                {editingOrg ? t('common.save') : t('common.create')}
+              <Button onClick={handleSubmit} disabled={createOrg.isPending || updateOrg.isPending || creatingAdmin}>
+                {creatingAdmin ? t('common.creating') : editingOrg ? t('common.save') : t('common.create')}
               </Button>
             </DialogFooter>
           </DialogContent>
