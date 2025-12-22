@@ -962,7 +962,8 @@
     "lightMode": "Light Mode",
     "darkMode": "Dark Mode",
     "ships": "ships",
-    "ship": "Ship"
+    "ship": "Ship",
+    "language": "Language"
   },
   "authPage": {
     "equipmentManagement": "Equipment Management System",

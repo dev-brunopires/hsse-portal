@@ -962,7 +962,8 @@
     "lightMode": "Modo Claro",
     "darkMode": "Modo Escuro",
     "ships": "navios",
-    "ship": "Navio"
+    "ship": "Navio",
+    "language": "Idioma"
   },
   "authPage": {
     "equipmentManagement": "Sistema de Gestão de Equipamentos",
