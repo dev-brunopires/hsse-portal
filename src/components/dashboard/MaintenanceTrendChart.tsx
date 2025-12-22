@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { format, subMonths, startOfMonth, endOfMonth, eachMonthOfInterval } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS } from 'date-fns/locale';
 import { Wrench, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useQuery } from '@tanstack/react-query';
@@ -17,8 +17,11 @@ import {
 } from 'recharts';
 import { cn } from '@/lib/utils';
 import { useShipFilter } from '@/contexts/ShipFilterContext';
+import { useTranslation } from 'react-i18next';
 
 export function MaintenanceTrendChart() {
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
   const { selectedShipId, isFilterEnabled } = useShipFilter();
 
   const { data: maintenance = [], isLoading } = useQuery({
@@ -78,14 +81,14 @@ export function MaintenanceTrendChart() {
       }).length;
 
       return {
-        month: format(monthStart, 'MMM', { locale: ptBR }),
-        monthFull: format(monthStart, "MMMM 'de' yyyy", { locale: ptBR }),
+        month: format(monthStart, 'MMM', { locale: dateLocale }),
+        monthFull: format(monthStart, "MMMM 'de' yyyy", { locale: dateLocale }),
         abertas: opened,
         concluidas: completed,
         pendentes: pending,
       };
     });
-  }, [maintenance]);
+  }, [maintenance, dateLocale]);
 
   // Stats
   const stats = useMemo(() => {
@@ -124,8 +127,8 @@ export function MaintenanceTrendChart() {
               <Wrench className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-base">Tendência de Manutenções</CardTitle>
-              <CardDescription>Últimos 6 meses</CardDescription>
+              <CardTitle className="text-base">{t('maintenanceTrend.title')}</CardTitle>
+              <CardDescription>{t('maintenanceTrend.last6Months')}</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -145,20 +148,20 @@ export function MaintenanceTrendChart() {
               <Wrench className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-base">Tendência de Manutenções</CardTitle>
-              <CardDescription>Últimos 6 meses</CardDescription>
+              <CardTitle className="text-base">{t('maintenanceTrend.title')}</CardTitle>
+              <CardDescription>{t('maintenanceTrend.last6Months')}</CardDescription>
             </div>
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right">
-              <div className="text-sm text-muted-foreground">Conclusão</div>
+              <div className="text-sm text-muted-foreground">{t('maintenanceTrend.completion')}</div>
               <div className="flex items-center gap-1">
                 <span className="text-xl font-bold text-foreground">{stats.completionRate}%</span>
                 <TrendIcon className={cn("h-4 w-4", trendColor)} />
               </div>
             </div>
             <div className="text-right">
-              <div className="text-sm text-muted-foreground">Pendentes</div>
+              <div className="text-sm text-muted-foreground">{t('maintenanceTrend.pending')}</div>
               <div className="text-xl font-bold text-amber-500">{stats.pending}</div>
             </div>
           </div>
@@ -201,9 +204,9 @@ export function MaintenanceTrendChart() {
                 labelFormatter={(_, payload) => payload?.[0]?.payload?.monthFull || ''}
                 formatter={(value: number, name: string) => {
                   const labels: Record<string, string> = {
-                    abertas: 'Abertas',
-                    concluidas: 'Concluídas',
-                    pendentes: 'Pendentes',
+                    abertas: t('maintenanceTrend.opened'),
+                    concluidas: t('maintenanceTrend.completed'),
+                    pendentes: t('maintenanceTrend.pending'),
                   };
                   return [value, labels[name] || name];
                 }}
@@ -213,8 +216,8 @@ export function MaintenanceTrendChart() {
                 height={36}
                 formatter={(value) => {
                   const labels: Record<string, string> = {
-                    abertas: 'Abertas',
-                    concluidas: 'Concluídas',
+                    abertas: t('maintenanceTrend.opened'),
+                    concluidas: t('maintenanceTrend.completed'),
                   };
                   return <span className="text-xs">{labels[value] || value}</span>;
                 }}
