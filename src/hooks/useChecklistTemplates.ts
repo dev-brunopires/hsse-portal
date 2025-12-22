@@ -27,10 +27,10 @@ export interface ChecklistTemplateItem {
 }
 
 export function useChecklistTemplates(categoryId?: string) {
-  const { organization } = useOrganization();
+  const { organization, isPlatformOwnerWithoutOrg, isLoading: isOrgLoading } = useOrganization();
   
   return useQuery({
-    queryKey: ['checklist-templates', categoryId, organization?.id],
+    queryKey: ['checklist-templates', categoryId, organization?.id, isPlatformOwnerWithoutOrg],
     queryFn: async (): Promise<ChecklistTemplate[]> => {
       let query = supabase
         .from('checklist_templates')
@@ -45,9 +45,12 @@ export function useChecklistTemplates(categoryId?: string) {
         query = query.eq('category_id', categoryId);
       }
       
-      // Filter by organization
+      // Filter by organization (unless platform owner without org)
       if (organization?.id) {
         query = query.eq('organization_id', organization.id);
+      } else if (!isPlatformOwnerWithoutOrg) {
+        // No org and not platform owner - return empty
+        return [];
       }
 
       const { data, error } = await query;
@@ -58,15 +61,15 @@ export function useChecklistTemplates(categoryId?: string) {
         items: t.checklist_template_items?.sort((a: any, b: any) => a.order_index - b.order_index) || [],
       })) as unknown as ChecklistTemplate[];
     },
-    enabled: !!organization?.id,
+    enabled: !isOrgLoading && (!!organization?.id || isPlatformOwnerWithoutOrg),
   });
 }
 
 export function useDefaultChecklistTemplate(categoryId?: string) {
-  const { organization } = useOrganization();
+  const { organization, isPlatformOwnerWithoutOrg, isLoading: isOrgLoading } = useOrganization();
   
   return useQuery({
-    queryKey: ['default-checklist-template', categoryId, organization?.id],
+    queryKey: ['default-checklist-template', categoryId, organization?.id, isPlatformOwnerWithoutOrg],
     queryFn: async (): Promise<ChecklistTemplate | null> => {
       if (!categoryId) return null;
 
@@ -79,9 +82,11 @@ export function useDefaultChecklistTemplate(categoryId?: string) {
         .eq('category_id', categoryId)
         .eq('is_default', true);
       
-      // Filter by organization
+      // Filter by organization (unless platform owner without org)
       if (organization?.id) {
         query = query.eq('organization_id', organization.id);
+      } else if (!isPlatformOwnerWithoutOrg) {
+        return null;
       }
       
       const { data, error } = await query.maybeSingle();
@@ -95,7 +100,7 @@ export function useDefaultChecklistTemplate(categoryId?: string) {
         items: data.checklist_template_items?.sort((a: any, b: any) => a.order_index - b.order_index) || [],
       } as unknown as ChecklistTemplate;
     },
-    enabled: !!categoryId && !!organization?.id,
+    enabled: !!categoryId && !isOrgLoading && (!!organization?.id || isPlatformOwnerWithoutOrg),
   });
 }
 
