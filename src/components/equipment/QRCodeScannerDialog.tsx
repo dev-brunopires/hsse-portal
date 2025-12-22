@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Camera, CameraOff, Loader2, QrCode, CheckCircle2, AlertCircle, Scan, SwitchCamera } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 interface QRCodeScannerDialogProps {
   open: boolean;
@@ -21,6 +22,7 @@ interface QRCodeScannerDialogProps {
 type ScannerState = 'initializing' | 'scanning' | 'success' | 'error' | 'permission-denied';
 
 export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScannerDialogProps) {
+  const { t } = useTranslation();
   const [scannerState, setScannerState] = useState<ScannerState>('initializing');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [containerId, setContainerId] = useState(() => `qr-reader-${Date.now()}`);
@@ -48,19 +50,14 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
     if (scanner) {
       try {
         const state = scanner.getState();
-        console.log('[QR Scanner] Cleanup - current state:', state);
         
         // State 2 = SCANNING, State 1 = NOT_STARTED
         if (state === 2) {
-          console.log('[QR Scanner] Stopping camera...');
           await scanner.stop();
-          console.log('[QR Scanner] Camera stopped');
         }
         
         scanner.clear();
-        console.log('[QR Scanner] Scanner cleared');
       } catch (err) {
-        console.log('[QR Scanner] Cleanup error (usually safe to ignore):', err);
         // Force stop even if there's an error
         try {
           await scanner.stop();
@@ -117,10 +114,10 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
         onOpenChange(false);
       } else {
         setScannerState('error');
-        setErrorMessage('QR Code inválido. Certifique-se de escanear um QR code de equipamento válido.');
+        setErrorMessage(t('qrScanner.invalidQRCode'));
       }
     }, 600);
-  }, [cleanupScanner, onScan, onOpenChange]);
+  }, [cleanupScanner, onScan, onOpenChange, t]);
 
   const attemptStartScanning = useCallback(async (attempt: number, cameraFacingMode: 'environment' | 'user') => {
     if (!isMountedRef.current || isCleaningUpRef.current) return;
@@ -137,7 +134,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
 
       if (isMountedRef.current) {
         setScannerState('error');
-        setErrorMessage('Não foi possível inicializar o leitor de QR code. Feche e abra novamente para tentar.');
+        setErrorMessage(t('qrScanner.couldNotInitialize'));
         setIsSwitchingCamera(false);
       }
       return;
@@ -158,7 +155,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       await scannerRef.current.start(
         { facingMode: cameraFacingMode },
         {
-          fps: 20, // Higher FPS helps capture clear frames between moiré shifts
+          fps: 20,
           qrbox: { width: 200, height: 200 },
           aspectRatio: 1.0,
         },
@@ -183,25 +180,23 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
           });
         }, 200);
       }
-    } catch (err: any) {
-      console.error('Error starting scanner:', err);
-
+    } catch (err: unknown) {
       if (isMountedRef.current) {
         setIsSwitchingCamera(false);
         const errStr = String(err);
         if (errStr.includes('Permission') || errStr.includes('NotAllowedError')) {
           setScannerState('permission-denied');
-          setErrorMessage('Acesso à câmera negado. Verifique as permissões do navegador e tente novamente.');
+          setErrorMessage(t('qrScanner.permissionDeniedError'));
         } else if (errStr.includes('NotFoundError') || errStr.includes('NotFound')) {
           setScannerState('error');
-          setErrorMessage('Nenhuma câmera encontrada no dispositivo.');
+          setErrorMessage(t('qrScanner.noCameraFound'));
         } else {
           setScannerState('error');
-          setErrorMessage('Erro ao iniciar a câmera. Verifique se seu dispositivo possui câmera e se o site está em HTTPS.');
+          setErrorMessage(t('qrScanner.cameraStartError'));
         }
       }
     }
-  }, [cleanupScanner, containerId, handleScanSuccess, isSwitchingCamera]);
+  }, [cleanupScanner, containerId, handleScanSuccess, isSwitchingCamera, t]);
 
   const startScanning = useCallback(async (cameraFacingMode?: 'environment' | 'user') => {
     await attemptStartScanning(0, cameraFacingMode || facingMode);
@@ -235,12 +230,9 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       setIsSwitchingCamera(false);
       setContainerId(`qr-reader-${Date.now()}`);
     } else {
-      // Ensure cleanup happens when dialog closes
-      console.log('[QR Scanner] Dialog closing - triggering cleanup');
       cleanupScanner();
     }
     
-    // Also cleanup when this effect re-runs with open=true (dialog reopened)
     return () => {
       if (!open) {
         cleanupScanner();
@@ -263,13 +255,11 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden && scannerRef.current) {
-        console.log('[QR Scanner] Page hidden - stopping camera');
         cleanupScanner();
       }
     };
 
     const handleBeforeUnload = () => {
-      console.log('[QR Scanner] Page unloading - stopping camera');
       cleanupScanner();
     };
 
@@ -280,7 +270,6 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('beforeunload', handleBeforeUnload);
       isMountedRef.current = false;
-      console.log('[QR Scanner] Component unmounting - final cleanup');
       cleanupScanner();
     };
   }, [cleanupScanner]);
@@ -296,8 +285,8 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       case 'initializing':
         return {
           icon: Camera,
-          title: 'Inicializando câmera...',
-          subtitle: 'Aguarde enquanto preparamos o scanner',
+          title: t('qrScanner.initializingCamera'),
+          subtitle: t('qrScanner.waitingScanner'),
           color: 'text-muted-foreground',
           bgColor: 'bg-muted',
           showLoader: true,
@@ -305,10 +294,10 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       case 'scanning':
         return {
           icon: Scan,
-          title: isSwitchingCamera ? 'Alternando câmera...' : 'Escaneando...',
+          title: isSwitchingCamera ? t('qrScanner.switchingCamera') : t('qrScanner.scanning'),
           subtitle: isSwitchingCamera 
-            ? 'Aguarde a troca de câmera' 
-            : 'Posicione o QR code dentro da área de leitura',
+            ? t('qrScanner.waitCameraSwitch') 
+            : t('qrScanner.positionQRCode'),
           color: 'text-primary',
           bgColor: 'bg-primary/5',
           showLoader: isSwitchingCamera,
@@ -316,8 +305,8 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       case 'success':
         return {
           icon: CheckCircle2,
-          title: 'QR Code detectado!',
-          subtitle: 'Processando equipamento...',
+          title: t('qrScanner.qrCodeDetected'),
+          subtitle: t('qrScanner.processingEquipment'),
           color: 'text-green-600',
           bgColor: 'bg-green-50 dark:bg-green-950/30',
           showLoader: false,
@@ -325,8 +314,8 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       case 'error':
         return {
           icon: AlertCircle,
-          title: 'Erro no scanner',
-          subtitle: errorMessage || 'Ocorreu um erro inesperado',
+          title: t('qrScanner.scannerError'),
+          subtitle: errorMessage || t('qrScanner.unexpectedError'),
           color: 'text-destructive',
           bgColor: 'bg-destructive/10',
           showLoader: false,
@@ -334,8 +323,8 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       case 'permission-denied':
         return {
           icon: CameraOff,
-          title: 'Câmera bloqueada',
-          subtitle: 'Permissão de câmera negada',
+          title: t('qrScanner.cameraBlocked'),
+          subtitle: t('qrScanner.permissionDenied'),
           color: 'text-amber-600',
           bgColor: 'bg-amber-50 dark:bg-amber-950/30',
           showLoader: false,
@@ -360,12 +349,12 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                 scannerState === 'success' ? 'text-green-600' : 'text-primary'
               )} />
             </div>
-            Escanear QR Code
+            {t('qrScanner.dialogTitle')}
           </DialogTitle>
           <DialogDescription>
-            Aponte a câmera para o QR code do equipamento.
+            {t('qrScanner.dialogDescription')}
             <span className="block text-xs mt-1 text-muted-foreground/80">
-              💡 Se estiver lendo de uma tela, aumente o brilho ao máximo e evite reflexos.
+              💡 {t('qrScanner.screenTip')}
             </span>
           </DialogDescription>
         </DialogHeader>
@@ -404,7 +393,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="left">
-                    <p>Alternar para câmera {facingMode === 'environment' ? 'frontal' : 'traseira'}</p>
+                    <p>{t('qrScanner.switchToCamera')} {facingMode === 'environment' ? t('qrScanner.front') : t('qrScanner.back')}</p>
                   </TooltipContent>
                 </Tooltip>
               </div>
@@ -415,7 +404,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
               <div className="absolute top-3 left-3 z-20">
                 <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-background/80 backdrop-blur-sm text-xs font-medium border border-border/50">
                   <Camera className="h-3 w-3" />
-                  {facingMode === 'environment' ? 'Traseira' : 'Frontal'}
+                  {facingMode === 'environment' ? t('qrScanner.backCamera') : t('qrScanner.frontCamera')}
                 </div>
               </div>
             )}
@@ -460,7 +449,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
               <div className="absolute inset-0 flex flex-col items-center justify-center z-20 bg-background/80 backdrop-blur-sm">
                 <SwitchCamera className="h-12 w-12 text-primary animate-pulse" />
                 <p className="mt-3 text-sm font-medium text-muted-foreground">
-                  Alternando para câmera {facingMode === 'environment' ? 'traseira' : 'frontal'}...
+                  {t('qrScanner.switchingTo')} {facingMode === 'environment' ? t('qrScanner.back') : t('qrScanner.front')}...
                 </p>
                 <Loader2 className="h-5 w-5 animate-spin mt-2 text-primary" />
               </div>
@@ -473,7 +462,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                   <CheckCircle2 className="h-16 w-16 text-green-500 animate-in spin-in-180 duration-500" />
                 </div>
                 <p className="mt-4 text-lg font-semibold text-white drop-shadow-lg">
-                  QR Code detectado!
+                  {t('qrScanner.qrCodeDetected')}
                 </p>
               </div>
             )}
@@ -488,7 +477,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                   </div>
                 </div>
                 <p className="text-sm text-muted-foreground mt-4 font-medium">
-                  Inicializando câmera...
+                  {t('qrScanner.initializingCamera')}
                 </p>
                 <div className="mt-2 w-32 h-1 bg-muted-foreground/20 rounded-full overflow-hidden">
                   <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '60%' }} />
@@ -521,7 +510,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                   className="mt-4"
                 >
                   <Camera className="h-4 w-4 mr-2" />
-                  Tentar Novamente
+                  {t('qrScanner.retry')}
                 </Button>
               </div>
             )}

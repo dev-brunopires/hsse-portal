@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Download, Printer, QrCode, Copy, Check } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
 
 interface QRCodeDialogProps {
   open: boolean;
@@ -36,6 +37,7 @@ const SBM_LOGO_WHITE_SVG = `<svg width="120" height="40" viewBox="0 0 437 150" f
 const SBM_LOGO_WHITE_BASE64 = `data:image/svg+xml;base64,${btoa(SBM_LOGO_WHITE_SVG)}`;
 
 export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProps) {
+  const { t } = useTranslation();
   const qrRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
@@ -55,7 +57,6 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
     const width = 400;
     const height = 480;
     const padding = 20;
-    const borderRadius = 16;
     
     canvas.width = width;
     canvas.height = height;
@@ -142,7 +143,7 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
           ctx.fillRect(padding, height - padding - 40, width - padding * 2, 40);
           ctx.fillStyle = '#ffffff';
           ctx.font = 'bold 12px Arial';
-          ctx.fillText('📱 Escaneie para registrar inspeção', width / 2, height - padding - 15);
+          ctx.fillText(`📱 ${t('qrCode.scanToInspect')}`, width / 2, height - padding - 15);
 
           // Download
           const link = document.createElement('a');
@@ -151,8 +152,8 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
           link.click();
 
           toast({
-            title: 'Download iniciado',
-            description: `Etiqueta SBM do equipamento ${equipment.shortCode || equipment.internalCode} baixada.`,
+            title: t('qrCode.downloadStarted'),
+            description: t('qrCode.labelDownloaded', { code: equipment.shortCode || equipment.internalCode }),
           });
         };
         qrImg.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(qrData)));
@@ -164,8 +165,8 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
     await navigator.clipboard.writeText(inspectionUrl);
     setCopied(true);
     toast({
-      title: 'Link copiado',
-      description: 'Link de inspeção copiado para a área de transferência.',
+      title: t('qrCode.linkCopied'),
+      description: t('qrCode.linkCopiedDescription'),
     });
     setTimeout(() => setCopied(false), 2000);
   };
@@ -176,6 +177,8 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
 
     const svg = qrRef.current?.querySelector('svg');
     if (!svg) return;
+
+    const scanText = t('qrCode.scanToInspect').toUpperCase();
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -317,7 +320,7 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
                 ${equipment.location ? `<div class="location">📍 ${equipment.location}</div>` : ''}
               </div>
             </div>
-            <div class="footer">📱 ESCANEIE PARA INSPEÇÃO</div>
+            <div class="footer">📱 ${scanText}</div>
           </div>
           <script>
             window.onload = () => {
@@ -339,6 +342,8 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
 
     const svg = qrRef.current?.querySelector('svg');
     if (!svg) return;
+
+    const scanText = t('qrCode.scanToInspect').toUpperCase();
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -426,21 +431,6 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
               font-weight: bold;
               font-size: 14px;
             }
-            .search-note {
-              font-size: 11px;
-              color: #999;
-              margin-top: 12px;
-              padding-top: 12px;
-              border-top: 1px solid #eee;
-            }
-            .cut-line {
-              position: absolute;
-              width: 100%;
-              text-align: center;
-              font-size: 10px;
-              color: #ccc;
-              top: -20px;
-            }
           </style>
         </head>
         <body>
@@ -464,7 +454,7 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
                 ${equipment.shortCode ? `<div class="qr-center-code">${equipment.shortCode}</div>` : ''}
               </div>
             </div>
-            <div class="footer">📱 ESCANEIE PARA REGISTRAR INSPEÇÃO</div>
+            <div class="footer">📱 ${scanText}</div>
           </div>
           <script>
             window.onload = () => {
@@ -486,7 +476,7 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <QrCode className="h-5 w-5 text-primary" />
-            QR Code do Equipamento
+            {t('qrCode.dialogTitle')}
           </DialogTitle>
         </DialogHeader>
 
@@ -535,14 +525,14 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
 
             {/* Footer */}
             <div className="bg-primary py-1.5 text-center">
-              <p className="text-xs text-white font-semibold">📱 ESCANEIE PARA INSPEÇÃO</p>
+              <p className="text-xs text-white font-semibold">📱 {t('qrCode.scanToInspect').toUpperCase()}</p>
             </div>
           </div>
         </div>
 
         <div className="bg-muted/50 p-3 rounded-lg text-center">
           <p className="text-xs text-muted-foreground mb-2">
-            Ao escanear, abre o formulário de inspeção deste equipamento
+            {t('qrScanner.dialogDescription')}
           </p>
           <Button 
             variant="ghost" 
@@ -551,25 +541,25 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
             onClick={handleCopyUrl}
           >
             {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-            {copied ? 'Copiado!' : 'Copiar link'}
+            {copied ? t('qrCode.linkCopied') : t('qrCode.copyLink')}
           </Button>
         </div>
 
         <div className="space-y-2">
-          <p className="text-sm font-medium text-muted-foreground">Opções de impressão:</p>
+          <p className="text-sm font-medium text-muted-foreground">{t('reports.printOptions')}:</p>
           <div className="grid grid-cols-2 gap-2">
             <Button variant="outline" className="gap-2" onClick={handlePrintLabel}>
               <Printer className="h-4 w-4" />
-              Etiqueta (60x45mm)
+              {t('qrCode.printLabel')}
             </Button>
             <Button variant="outline" className="gap-2" onClick={handlePrintFull}>
               <Printer className="h-4 w-4" />
-              Página Completa
+              {t('qrCode.printFull')}
             </Button>
           </div>
           <Button variant="secondary" className="w-full gap-2" onClick={handleDownload}>
             <Download className="h-4 w-4" />
-            Baixar PNG (com logo SBM)
+            {t('qrCode.download')} PNG
           </Button>
         </div>
       </DialogContent>
