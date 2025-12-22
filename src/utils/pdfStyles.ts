@@ -1,8 +1,10 @@
 import jsPDF from 'jspdf';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import type { OrganizationBranding } from '@/hooks/useOrganizationBranding';
+import { loadImageAsBase64 } from '@/hooks/useOrganizationBranding';
 
-// SBM Brand Colors - Standardized
+// Default Brand Colors - Used when no organization branding is available
 export const SBM_BLUE: [number, number, number] = [22, 85, 154]; // #16559A
 export const DARK_GRAY: [number, number, number] = [51, 51, 51];
 export const LIGHT_GRAY: [number, number, number] = [245, 247, 250];
@@ -12,81 +14,78 @@ export const SUCCESS_GREEN: [number, number, number] = [16, 185, 129];
 export const WARNING_YELLOW: [number, number, number] = [245, 158, 11];
 export const DANGER_RED: [number, number, number] = [239, 68, 68];
 
-// Cache for the logo base64
-let logoBase64Cache: string | null = null;
+// Cache for logos by URL
+const logoCache: Map<string, string> = new Map();
 
 /**
- * Loads the SBM white logo and converts to base64
+ * Loads a logo from URL and converts to base64, with caching
  */
-async function loadLogoBase64(): Promise<string | null> {
-  if (logoBase64Cache) {
-    return logoBase64Cache;
+async function loadLogoToCache(url: string | null): Promise<string | null> {
+  if (!url) return null;
+  
+  if (logoCache.has(url)) {
+    return logoCache.get(url) || null;
   }
 
-  try {
-    // Import the logo dynamically
-    const logoModule = await import('@/assets/sbm-logo-white.png');
-    const logoUrl = logoModule.default;
-    
-    // Fetch and convert to base64
-    const response = await fetch(logoUrl);
-    const blob = await response.blob();
-    
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        logoBase64Cache = reader.result as string;
-        resolve(logoBase64Cache);
-      };
-      reader.onerror = () => {
-        console.error('Error reading logo file');
-        resolve(null);
-      };
-      reader.readAsDataURL(blob);
-    });
-  } catch (error) {
-    console.error('Error loading logo:', error);
-    return null;
+  const base64 = await loadImageAsBase64(url);
+  if (base64) {
+    logoCache.set(url, base64);
   }
+  return base64;
 }
 
 /**
- * Preloads the logo for PDF generation
+ * Preloads the organization logo for PDF generation
  */
-export async function preloadLogo(): Promise<void> {
-  await loadLogoBase64();
+export async function preloadLogo(branding?: OrganizationBranding): Promise<void> {
+  if (branding?.logoWhiteUrl) {
+    await loadLogoToCache(branding.logoWhiteUrl);
+  }
+}
+
+export interface PDFHeaderOptions {
+  branding?: OrganizationBranding;
 }
 
 /**
- * Adds standardized SBM header to PDF with logo
+ * Adds standardized header to PDF with organization logo
  */
 export async function addPDFHeader(
   doc: jsPDF, 
   title: string, 
   subtitle?: string,
-  rightText?: string[]
+  rightText?: string[],
+  options?: PDFHeaderOptions
 ): Promise<number> {
   const pageWidth = doc.internal.pageSize.getWidth();
+  const branding = options?.branding;
+  const primaryColor = branding?.primaryColor || SBM_BLUE;
   
-  // Blue header section (no orange bar at top)
-  doc.setFillColor(...SBM_BLUE);
+  // Header section with organization's primary color
+  doc.setFillColor(...primaryColor);
   doc.rect(0, 0, pageWidth, 32, 'F');
   
-  // Try to add the actual logo image
-  const logoBase64 = await loadLogoBase64();
+  // Try to add the organization logo
+  let logoAdded = false;
   
-  if (logoBase64) {
-    // Add the actual logo image with correct aspect ratio (not stretched)
-    try {
-      doc.addImage(logoBase64, 'PNG', 14, 6, 32, 20);
-    } catch (error) {
-      console.error('Error adding logo to PDF:', error);
-      // Fallback to text
-      addTextLogo(doc);
+  if (branding?.logoWhiteUrl) {
+    const logoBase64 = await loadLogoToCache(branding.logoWhiteUrl);
+    if (logoBase64) {
+      try {
+        // Detect image type from base64
+        const imageType = logoBase64.includes('image/png') ? 'PNG' : 
+                          logoBase64.includes('image/svg') ? 'SVG' : 'JPEG';
+        doc.addImage(logoBase64, imageType, 14, 6, 32, 20);
+        logoAdded = true;
+      } catch (error) {
+        console.error('Error adding organization logo to PDF:', error);
+      }
     }
-  } else {
-    // Fallback to text if logo fails to load
-    addTextLogo(doc);
+  }
+  
+  // Fallback to text logo with organization name
+  if (!logoAdded) {
+    addTextLogo(doc, branding?.name);
   }
   
   // Report title
@@ -115,42 +114,57 @@ export async function addPDFHeader(
 }
 
 /**
- * Fallback text logo when image fails
+ * Fallback text logo when image fails - uses organization name
  */
-function addTextLogo(doc: jsPDF) {
+function addTextLogo(doc: jsPDF, organizationName?: string) {
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(22);
+  doc.setFontSize(18);
   doc.setFont('helvetica', 'bold');
-  doc.text('SBM', 14, 16);
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
-  doc.text('OFFSHORE', 14, 23);
+  
+  // Use organization name or default
+  const name = organizationName || 'SafeShip';
+  // Truncate if too long
+  const displayName = name.length > 15 ? name.substring(0, 15) + '...' : name;
+  doc.text(displayName, 14, 20);
 }
 
 /**
  * Synchronous version for backwards compatibility - uses cached logo
+ * Note: For organization-specific logos, use the async addPDFHeader instead
  */
 export function addPDFHeaderSync(
   doc: jsPDF, 
   title: string, 
   subtitle?: string,
-  rightText?: string[]
+  rightText?: string[],
+  options?: PDFHeaderOptions
 ): number {
   const pageWidth = doc.internal.pageSize.getWidth();
+  const branding = options?.branding;
+  const primaryColor = branding?.primaryColor || SBM_BLUE;
   
-  // Blue header section
-  doc.setFillColor(...SBM_BLUE);
+  // Header section with organization's primary color
+  doc.setFillColor(...primaryColor);
   doc.rect(0, 0, pageWidth, 32, 'F');
   
-  // Use cached logo if available
-  if (logoBase64Cache) {
-    try {
-      doc.addImage(logoBase64Cache, 'PNG', 14, 6, 32, 20);
-    } catch (error) {
-      addTextLogo(doc);
+  // Try to use cached logo
+  let logoAdded = false;
+  if (branding?.logoWhiteUrl && logoCache.has(branding.logoWhiteUrl)) {
+    const cachedLogo = logoCache.get(branding.logoWhiteUrl);
+    if (cachedLogo) {
+      try {
+        const imageType = cachedLogo.includes('image/png') ? 'PNG' : 
+                          cachedLogo.includes('image/svg') ? 'SVG' : 'JPEG';
+        doc.addImage(cachedLogo, imageType, 14, 6, 32, 20);
+        logoAdded = true;
+      } catch (error) {
+        // Fallback to text
+      }
     }
-  } else {
-    addTextLogo(doc);
+  }
+  
+  if (!logoAdded) {
+    addTextLogo(doc, branding?.name);
   }
   
   // Report title

@@ -7,9 +7,10 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Download, Printer, QrCode, Copy, Check } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
 interface QRCodeDialogProps {
   open: boolean;
@@ -24,23 +25,34 @@ interface QRCodeDialogProps {
   } | null;
 }
 
-// SBM Logo SVG as base64 data URL (white version for orange header)
-const SBM_LOGO_WHITE_SVG = `<svg width="120" height="40" viewBox="0 0 437 150" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M30.4461 0.0790735C10.4387 0.0790735 0 17.1605 0 34.0047C0 50.8489 10.4387 67.9303 30.4461 67.9303H123.129V0L30.4461 0.0790735Z" fill="white"/>
-<path d="M238.349 0.079071H145.667V68.0094H238.349C258.357 68.0094 268.795 50.928 268.795 34.0838C268.795 17.1605 258.357 0.079071 238.349 0.079071Z" fill="white"/>
-<path d="M238.349 82.9557H145.667V150.886H238.349C258.357 150.886 268.795 133.805 268.795 116.96C268.795 100.037 258.357 82.9557 238.349 82.9557Z" fill="white"/>
-<path d="M320.198 0.079071C303.354 0.079071 286.272 10.5177 286.272 30.5251V150.886H354.203V30.5251C354.123 10.5177 337.042 0.079071 320.198 0.079071Z" fill="white"/>
-<path d="M402.995 0.079071C386.151 0.079071 369.07 10.5177 369.07 30.5251V150.886H437V30.5251C437 10.5177 419.919 0.079071 402.995 0.079071Z" fill="white"/>
-<path d="M97.7437 82.9557H5.0611V150.886H97.7437C117.751 150.886 128.19 133.805 128.19 116.96C128.19 100.037 117.751 82.9557 97.7437 82.9557Z" fill="white"/>
-</svg>`;
-
-const SBM_LOGO_WHITE_BASE64 = `data:image/svg+xml;base64,${btoa(SBM_LOGO_WHITE_SVG)}`;
+// Primary brand color - can be customized per organization in the future
+const BRAND_COLOR = '#F36F27';
 
 export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProps) {
   const { t } = useTranslation();
   const qrRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
+  const { organization, logoWhiteUrl } = useOrganization();
+  const [logoBase64, setLogoBase64] = useState<string | null>(null);
+
+  // Load organization logo as base64 for canvas operations
+  useEffect(() => {
+    if (logoWhiteUrl) {
+      fetch(logoWhiteUrl)
+        .then(res => res.blob())
+        .then(blob => {
+          const reader = new FileReader();
+          reader.onloadend = () => setLogoBase64(reader.result as string);
+          reader.readAsDataURL(blob);
+        })
+        .catch(() => setLogoBase64(null));
+    } else {
+      setLogoBase64(null);
+    }
+  }, [logoWhiteUrl]);
+
+  const organizationName = organization?.name || 'SafeShip';
 
   if (!equipment) return null;
 
@@ -66,32 +78,43 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
     ctx.fillRect(0, 0, width, height);
 
     // Dashed border for cutting
-    ctx.strokeStyle = '#F36F27';
+    ctx.strokeStyle = BRAND_COLOR;
     ctx.lineWidth = 3;
     ctx.setLineDash([8, 4]);
     ctx.strokeRect(padding/2, padding/2, width - padding, height - padding);
 
-    // SBM Logo header bar
-    ctx.fillStyle = '#F36F27';
+    // Logo header bar
+    ctx.fillStyle = BRAND_COLOR;
     ctx.fillRect(padding, padding, width - padding * 2, 50);
 
-    // Load and draw logo
-    const logoImg = new Image();
-    logoImg.onload = () => {
-      ctx.drawImage(logoImg, width / 2 - 50, padding + 8, 100, 34);
-      
-      // Continue drawing after logo loads
-      drawContent();
+    // Load and draw logo (organization logo or fallback to text)
+    const drawLogoAndContent = () => {
+      if (logoBase64) {
+        const logoImg = new Image();
+        logoImg.onload = () => {
+          ctx.drawImage(logoImg, width / 2 - 50, padding + 8, 100, 34);
+          drawContent();
+        };
+        logoImg.onerror = () => {
+          drawFallbackLogo();
+          drawContent();
+        };
+        logoImg.src = logoBase64;
+      } else {
+        drawFallbackLogo();
+        drawContent();
+      }
     };
-    logoImg.onerror = () => {
-      // Draw without logo if it fails
+
+    const drawFallbackLogo = () => {
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 20px Arial';
+      ctx.font = 'bold 16px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText('SBM', width / 2, padding + 32);
-      drawContent();
+      const displayName = organizationName.length > 20 ? organizationName.substring(0, 17) + '...' : organizationName;
+      ctx.fillText(displayName, width / 2, padding + 32);
     };
-    logoImg.src = SBM_LOGO_WHITE_BASE64;
+
+    drawLogoAndContent();
 
     const drawContent = () => {
       // Internal code
@@ -139,15 +162,16 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
           }
 
           // Footer instruction
-          ctx.fillStyle = '#F36F27';
+          ctx.fillStyle = BRAND_COLOR;
           ctx.fillRect(padding, height - padding - 40, width - padding * 2, 40);
           ctx.fillStyle = '#ffffff';
           ctx.font = 'bold 12px Arial';
           ctx.fillText(`📱 ${t('qrCode.scanToInspect')}`, width / 2, height - padding - 15);
 
-          // Download
+          // Download with organization name in filename
+          const orgSlug = organizationName.toLowerCase().replace(/\s+/g, '_');
           const link = document.createElement('a');
-          link.download = `qrcode_sbm_${equipment.shortCode || equipment.internalCode}.png`;
+          link.download = `qrcode_${orgSlug}_${equipment.shortCode || equipment.internalCode}.png`;
           link.href = canvas.toDataURL('image/png');
           link.click();
 
@@ -179,12 +203,17 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
     if (!svg) return;
 
     const scanText = t('qrCode.scanToInspect').toUpperCase();
+    
+    // Generate logo HTML based on organization
+    const logoHtml = logoBase64 
+      ? `<img src="${logoBase64}" style="height: 12px; width: auto;" alt="${organizationName}" />`
+      : `<span style="color: white; font-weight: bold; font-size: 10px;">${organizationName}</span>`;
 
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Etiqueta SBM - ${equipment.shortCode || equipment.internalCode}</title>
+          <title>Etiqueta ${organizationName} - ${equipment.shortCode || equipment.internalCode}</title>
           <style>
             @page {
               size: 60mm 45mm;
@@ -210,19 +239,19 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
               flex-direction: column;
               width: 100%;
               height: 100%;
-              border: 2px dashed #F36F27;
+              border: 2px dashed ${BRAND_COLOR};
               border-radius: 4px;
               overflow: hidden;
             }
             .header {
-              background: #F36F27;
+              background: ${BRAND_COLOR};
               padding: 3px 8px;
               display: flex;
               align-items: center;
               justify-content: center;
               min-height: 18px;
             }
-            .header svg {
+            .header img {
               height: 12px;
               width: auto;
             }
@@ -292,7 +321,7 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
               padding: 2px;
               text-align: center;
               font-size: 5pt;
-              color: #F36F27;
+              color: ${BRAND_COLOR};
               font-weight: bold;
             }
           </style>
@@ -300,14 +329,7 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
         <body>
           <div class="label">
             <div class="header">
-              <svg viewBox="0 0 437 150" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M30.4461 0.0790735C10.4387 0.0790735 0 17.1605 0 34.0047C0 50.8489 10.4387 67.9303 30.4461 67.9303H123.129V0L30.4461 0.0790735Z" fill="white"/>
-                <path d="M238.349 0.079071H145.667V68.0094H238.349C258.357 68.0094 268.795 50.928 268.795 34.0838C268.795 17.1605 258.357 0.079071 238.349 0.079071Z" fill="white"/>
-                <path d="M238.349 82.9557H145.667V150.886H238.349C258.357 150.886 268.795 133.805 268.795 116.96C268.795 100.037 258.357 82.9557 238.349 82.9557Z" fill="white"/>
-                <path d="M320.198 0.079071C303.354 0.079071 286.272 10.5177 286.272 30.5251V150.886H354.203V30.5251C354.123 10.5177 337.042 0.079071 320.198 0.079071Z" fill="white"/>
-                <path d="M402.995 0.079071C386.151 0.079071 369.07 10.5177 369.07 30.5251V150.886H437V30.5251C437 10.5177 419.919 0.079071 402.995 0.079071Z" fill="white"/>
-                <path d="M97.7437 82.9557H5.0611V150.886H97.7437C117.751 150.886 128.19 133.805 128.19 116.96C128.19 100.037 117.751 82.9557 97.7437 82.9557Z" fill="white"/>
-              </svg>
+              ${logoHtml}
             </div>
             <div class="content">
               <div class="qr-container">
@@ -344,12 +366,17 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
     if (!svg) return;
 
     const scanText = t('qrCode.scanToInspect').toUpperCase();
+    
+    // Generate logo HTML based on organization
+    const logoHtml = logoBase64 
+      ? `<img src="${logoBase64}" style="height: 40px; width: auto;" alt="${organizationName}" />`
+      : `<span style="color: white; font-weight: bold; font-size: 18px;">${organizationName}</span>`;
 
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
         <head>
-          <title>QR Code SBM - ${equipment.shortCode || equipment.internalCode}</title>
+          <title>QR Code ${organizationName} - ${equipment.shortCode || equipment.internalCode}</title>
           <style>
             body { 
               display: flex; 
@@ -365,16 +392,16 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
             .container { 
               text-align: center;
               padding: 0;
-              border: 3px dashed #F36F27;
+              border: 3px dashed ${BRAND_COLOR};
               border-radius: 16px;
               overflow: hidden;
               width: 320px;
             }
             .header {
-              background: #F36F27;
+              background: ${BRAND_COLOR};
               padding: 16px;
             }
-            .header svg {
+            .header img {
               height: 40px;
               width: auto;
             }
@@ -425,7 +452,7 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
               border: 1px solid #eee;
             }
             .footer {
-              background: #F36F27;
+              background: ${BRAND_COLOR};
               padding: 12px;
               color: white;
               font-weight: bold;
@@ -436,14 +463,7 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
         <body>
           <div class="container">
             <div class="header">
-              <svg viewBox="0 0 437 150" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M30.4461 0.0790735C10.4387 0.0790735 0 17.1605 0 34.0047C0 50.8489 10.4387 67.9303 30.4461 67.9303H123.129V0L30.4461 0.0790735Z" fill="white"/>
-                <path d="M238.349 0.079071H145.667V68.0094H238.349C258.357 68.0094 268.795 50.928 268.795 34.0838C268.795 17.1605 258.357 0.079071 238.349 0.079071Z" fill="white"/>
-                <path d="M238.349 82.9557H145.667V150.886H238.349C258.357 150.886 268.795 133.805 268.795 116.96C268.795 100.037 258.357 82.9557 238.349 82.9557Z" fill="white"/>
-                <path d="M320.198 0.079071C303.354 0.079071 286.272 10.5177 286.272 30.5251V150.886H354.203V30.5251C354.123 10.5177 337.042 0.079071 320.198 0.079071Z" fill="white"/>
-                <path d="M402.995 0.079071C386.151 0.079071 369.07 10.5177 369.07 30.5251V150.886H437V30.5251C437 10.5177 419.919 0.079071 402.995 0.079071Z" fill="white"/>
-                <path d="M97.7437 82.9557H5.0611V150.886H97.7437C117.751 150.886 128.19 133.805 128.19 116.96C128.19 100.037 117.751 82.9557 97.7437 82.9557Z" fill="white"/>
-              </svg>
+              ${logoHtml}
             </div>
             <div class="body">
               <div class="internal-code">${equipment.internalCode}</div>
