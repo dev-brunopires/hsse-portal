@@ -1,11 +1,17 @@
 import { supabase } from '@/integrations/supabase/client';
+import { getCurrentOrganizationId, generateEquipmentDocumentPath, generateInspectionPhotoPath } from '@/utils/storageHelpers';
 
 export async function uploadEquipmentDocument(
   equipmentId: string,
   file: File,
   uploadedBy: string
 ) {
-  const fileName = `${equipmentId}/${Date.now()}-${file.name}`;
+  const organizationId = await getCurrentOrganizationId();
+  if (!organizationId) {
+    throw new Error('Organization not found');
+  }
+
+  const fileName = generateEquipmentDocumentPath(organizationId, equipmentId, file.name);
   
   const { error: uploadError } = await supabase.storage
     .from('equipment-documents')
@@ -33,7 +39,12 @@ export async function uploadInspectionPhoto(
   inspectionId: string,
   file: File
 ) {
-  const fileName = `${inspectionId}/${Date.now()}-${file.name}`;
+  const organizationId = await getCurrentOrganizationId();
+  if (!organizationId) {
+    throw new Error('Organization not found');
+  }
+
+  const fileName = generateInspectionPhotoPath(organizationId, inspectionId, file.name);
   
   const { error: uploadError } = await supabase.storage
     .from('inspection-photos')

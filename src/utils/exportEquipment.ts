@@ -15,6 +15,7 @@ import {
   preloadLogo,
 } from './pdfStyles';
 import i18n from '@/i18n';
+import type { OrganizationBranding } from '@/hooks/useOrganizationBranding';
 
 const getDateLocale = () => i18n.language === 'en' ? enUS : ptBR;
 
@@ -68,23 +69,28 @@ export function exportToExcel(equipment: EquipmentWithCategory[], filename = 'eq
   XLSX.writeFile(wb, `${filename}_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
 }
 
-export async function exportToPDF(equipment: EquipmentWithCategory[], filename = 'equipamentos') {
+export async function exportToPDF(
+  equipment: EquipmentWithCategory[], 
+  filename = 'equipamentos',
+  branding?: OrganizationBranding
+) {
   const statusLabels = getStatusLabels();
   const t = i18n.t;
   const dateLocale = getDateLocale();
-  // Preload logo
-  await preloadLogo();
+  // Preload logo with branding
+  await preloadLogo(branding);
   
   const doc = new jsPDF('landscape');
   const pageWidth = doc.internal.pageSize.getWidth();
   const generatedDate = format(new Date(), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: dateLocale });
   
-  // Add standardized header with logo
+  // Add standardized header with logo and branding
   let yPos = await addPDFHeader(
     doc,
     t('exportEquipment.reportTitle'),
     `${t('exportEquipment.generatedAt')}: ${generatedDate}`,
-    [`${t('exportEquipment.total')}: ${equipment.length} ${t('exportEquipment.equipmentPlural')}`]
+    [`${t('exportEquipment.total')}: ${equipment.length} ${t('exportEquipment.equipmentPlural')}`],
+    { branding }
   );
 
   const tableData = equipment.map(item => [
@@ -118,10 +124,10 @@ export async function exportToPDF(equipment: EquipmentWithCategory[], filename =
     alternateRowStyles: { fillColor: [248, 250, 252] },
   });
 
-  // Add standardized footer
+  // Add standardized footer with organization name
   addPDFFooter(
     doc,
-    t('exportEquipment.footerCompany'),
+    branding?.name || t('exportEquipment.footerCompany'),
     `${t('exportEquipment.reportTitle')} - ${format(new Date(), 'dd/MM/yyyy HH:mm')}`
   );
 

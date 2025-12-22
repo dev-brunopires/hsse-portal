@@ -2,10 +2,11 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
-import { addPDFHeader, addPDFFooter, SBM_BLUE } from './pdfStyles';
+import { addPDFHeader, addPDFFooter, SBM_BLUE, preloadLogo } from './pdfStyles';
 import type { EquipmentWithCategory } from '@/hooks/useEquipment';
 import type { Category } from '@/hooks/useCategories';
 import i18n from '@/i18n';
+import type { OrganizationBranding } from '@/hooks/useOrganizationBranding';
 
 interface CategoryInspectionResult {
   equipment: EquipmentWithCategory;
@@ -26,6 +27,7 @@ interface CategoryInspectionPDFData {
   };
   signatureData?: string;
   inspectionDate: string;
+  branding?: OrganizationBranding;
 }
 
 const getDateLocale = () => i18n.language === 'en' ? enUS : ptBR;
@@ -49,16 +51,21 @@ export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFDat
   const statusLabels = getStatusLabels();
   const expiryStatusLabels = getExpiryStatusLabels();
   
+  // Preload logo with branding
+  await preloadLogo(data.branding);
+  
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 14;
   
-  // Add header
+  // Add header with branding
   let yPosition = await addPDFHeader(
     doc,
     t('exportCategoryInspection.reportTitle'),
-    format(new Date(data.inspectionDate), "dd 'de' MMMM 'de' yyyy", { locale: dateLocale })
+    format(new Date(data.inspectionDate), "dd 'de' MMMM 'de' yyyy", { locale: dateLocale }),
+    undefined,
+    { branding: data.branding }
   );
   
   yPosition += 12;

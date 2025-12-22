@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
+import { getCurrentOrganizationId, generateEquipmentDocumentPath } from '@/utils/storageHelpers';
 
 export type EquipmentDocument = Tables<'equipment_documents'>;
 export type EquipmentDocumentInsert = TablesInsert<'equipment_documents'>;
@@ -38,7 +39,13 @@ export function useUploadDocument() {
       equipmentId: string; 
       file: File;
     }) => {
-      const fileName = `${equipmentId}/${Date.now()}-${file.name}`;
+      // Get organization ID for path prefix
+      const organizationId = await getCurrentOrganizationId();
+      if (!organizationId) {
+        throw new Error('Organization not found');
+      }
+
+      const fileName = generateEquipmentDocumentPath(organizationId, equipmentId, file.name);
       
       // Upload file to storage
       const { error: uploadError } = await supabase.storage

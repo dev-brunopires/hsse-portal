@@ -16,12 +16,14 @@ import {
   addSectionHeader,
   preloadLogo,
 } from './pdfStyles';
+import type { OrganizationBranding } from '@/hooks/useOrganizationBranding';
 
 interface ExportFilters {
   shipName?: string;
   categoryName?: string;
   startDate?: Date;
   endDate?: Date;
+  branding?: OrganizationBranding;
 }
 
 const statusLabels: Record<string, string> = {
@@ -33,8 +35,8 @@ const statusLabels: Record<string, string> = {
 };
 
 export async function exportDashboardPDF(stats: DashboardStats, filters: ExportFilters) {
-  // Preload logo before generating PDF
-  await preloadLogo();
+  // Preload logo before generating PDF with branding
+  await preloadLogo(filters.branding);
   
   const doc = new jsPDF({ orientation: 'landscape' });
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -54,12 +56,13 @@ export async function exportDashboardPDF(stats: DashboardStats, filters: ExportF
   
   const generatedDate = format(new Date(), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR });
   
-  // Add standardized header
+  // Add standardized header with branding
   let yPos = await addPDFHeader(
     doc,
     'RELATÓRIO GERENCIAL DE EQUIPAMENTOS',
     `Gerado em: ${generatedDate}`,
-    filtersApplied.length > 0 ? [filtersApplied.join(' | ')] : undefined
+    filtersApplied.length > 0 ? [filtersApplied.join(' | ')] : undefined,
+    { branding: filters.branding }
   );
   
   // === KPI SECTION ===
