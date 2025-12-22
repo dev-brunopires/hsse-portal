@@ -18,6 +18,7 @@ interface OrganizationContextType {
   subdomain: string | null;
   logoUrl: string | null;
   logoWhiteUrl: string | null;
+  isPlatformOwnerWithoutOrg: boolean;
 }
 
 const OrganizationContext = createContext<OrganizationContextType | undefined>(undefined);
@@ -53,10 +54,36 @@ function getSubdomainFromHostname(): string | null {
 
 export function OrganizationProvider({ children }: { children: React.ReactNode }) {
   const [subdomain, setSubdomain] = useState<string | null>(null);
+  const [isPlatformOwner, setIsPlatformOwner] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
   
   useEffect(() => {
     const detected = getSubdomainFromHostname();
     setSubdomain(detected);
+  }, []);
+
+  // Check if user is a platform owner
+  useEffect(() => {
+    const checkPlatformOwner = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from('platform_owners')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        setIsPlatformOwner(!!data);
+      }
+      setAuthReady(true);
+    };
+    
+    checkPlatformOwner();
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      checkPlatformOwner();
+    });
+    
+    return () => subscription.unsubscribe();
   }, []);
 
   // Get org from subdomain (for login page)
@@ -79,7 +106,7 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
   });
 
   // Get org from user's membership
-  const { data: userOrg, isLoading: isLoadingUserOrg } = useQuery({
+  const { data: userOrg, isLoading: isLoadingUserOrg, isFetched: isUserOrgFetched } = useQuery({
     queryKey: ['user-organization'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -105,6 +132,7 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
       if (error) throw error;
       return data?.organizations as Organization | null;
     },
+    enabled: authReady,
   });
 
   // Prefer user's organization if available, otherwise use subdomain
@@ -112,7 +140,21 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
     return userOrg || orgFromSubdomain || null;
   }, [userOrg, orgFromSubdomain]);
 
-  const isLoading = subdomain ? isLoadingSubdomain : isLoadingUserOrg;
+  // Platform owner without org is only when we've checked everything and found nothing
+  const isPlatformOwnerWithoutOrg = useMemo(() => {
+    return isPlatformOwner && isUserOrgFetched && !organization;
+  }, [isPlatformOwner, isUserOrgFetched, organization]);
+
+  // Loading is done when:
+  // - If subdomain exists, subdomain query must finish
+  // - User org query must finish (if authReady)
+  // - For platform owners without org, we should NOT be loading forever
+  const isLoading = useMemo(() => {
+    if (subdomain && isLoadingSubdomain) return true;
+    if (!authReady) return true;
+    if (isLoadingUserOrg) return true;
+    return false;
+  }, [subdomain, isLoadingSubdomain, authReady, isLoadingUserOrg]);
 
   const value = useMemo(() => ({
     organization,
@@ -120,7 +162,8 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
     subdomain,
     logoUrl: organization?.logo_url || null,
     logoWhiteUrl: organization?.logo_white_url || null,
-  }), [organization, isLoading, subdomain]);
+    isPlatformOwnerWithoutOrg,
+  }), [organization, isLoading, subdomain, isPlatformOwnerWithoutOrg]);
 
   return (
     <OrganizationContext.Provider value={value}>

@@ -31,10 +31,10 @@ export interface NotificationInsert {
 
 export function useNotifications() {
   const { user } = useAuth();
-  const { organization } = useOrganization();
+  const { organization, isPlatformOwnerWithoutOrg, isLoading: isOrgLoading } = useOrganization();
 
   return useQuery({
-    queryKey: ['notifications', user?.id, organization?.id],
+    queryKey: ['notifications', user?.id, organization?.id, isPlatformOwnerWithoutOrg],
     queryFn: async () => {
       if (!user?.id) return [];
 
@@ -51,9 +51,11 @@ export function useNotifications() {
         .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
         .order('created_at', { ascending: false });
       
-      // Filter by organization if available
+      // Filter by organization if available (platform owners without org see all)
       if (organization?.id) {
         query = query.eq('organization_id', organization.id);
+      } else if (!isPlatformOwnerWithoutOrg) {
+        return [];
       }
 
       const { data: notifications, error: notifError } = await query;
@@ -76,7 +78,7 @@ export function useNotifications() {
         is_read: readIds.has(n.id),
       })) as Notification[];
     },
-    enabled: !!user?.id && !!organization?.id,
+    enabled: !!user?.id && !isOrgLoading && (!!organization?.id || isPlatformOwnerWithoutOrg),
     refetchInterval: 30000, // Refetch every 30 seconds
   });
 }

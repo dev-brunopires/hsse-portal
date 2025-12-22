@@ -27,27 +27,38 @@ export interface UpdateShipData {
 }
 
 export function useShips() {
-  const { organization } = useOrganization();
+  const { organization, isPlatformOwnerWithoutOrg, isLoading: isOrgLoading } = useOrganization();
   
   return useQuery({
-    queryKey: ['ships', organization?.id],
+    queryKey: ['ships', organization?.id, isPlatformOwnerWithoutOrg],
     queryFn: async () => {
-      let query = supabase
-        .from('ships')
-        .select('*')
-        .order('name');
-      
-      // Filter by organization if available
-      if (organization?.id) {
-        query = query.eq('organization_id', organization.id);
+      // Platform owner without org can see all ships
+      if (isPlatformOwnerWithoutOrg) {
+        const { data, error } = await supabase
+          .from('ships')
+          .select('*')
+          .order('name');
+        
+        if (error) throw error;
+        return data as Ship[];
       }
       
-      const { data, error } = await query;
+      // Regular user - filter by organization
+      if (!organization?.id) {
+        return [];
+      }
+      
+      const { data, error } = await supabase
+        .from('ships')
+        .select('*')
+        .eq('organization_id', organization.id)
+        .order('name');
       
       if (error) throw error;
       return data as Ship[];
     },
-    enabled: !!organization?.id,
+    // Enable when org is ready OR platform owner without org
+    enabled: !isOrgLoading && (!!organization?.id || isPlatformOwnerWithoutOrg),
   });
 }
 
