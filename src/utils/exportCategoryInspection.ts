@@ -1,10 +1,11 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS } from 'date-fns/locale';
 import { addPDFHeader, addPDFFooter, SBM_BLUE } from './pdfStyles';
 import type { EquipmentWithCategory } from '@/hooks/useEquipment';
 import type { Category } from '@/hooks/useCategories';
+import i18n from '@/i18n';
 
 interface CategoryInspectionResult {
   equipment: EquipmentWithCategory;
@@ -27,20 +28,27 @@ interface CategoryInspectionPDFData {
   inspectionDate: string;
 }
 
-const statusLabels: Record<string, string> = {
-  'compliant': 'Conforme',
-  'attention': 'Atenção',
-  'non-compliant': 'Não Conforme',
-};
+const getDateLocale = () => i18n.language === 'en' ? enUS : ptBR;
 
-const expiryStatusLabels: Record<string, string> = {
+const getStatusLabels = (): Record<string, string> => ({
+  'compliant': i18n.t('exportCategoryInspection.statusCompliant'),
+  'attention': i18n.t('exportCategoryInspection.statusAttention'),
+  'non-compliant': i18n.t('exportCategoryInspection.statusNonCompliant'),
+});
+
+const getExpiryStatusLabels = (): Record<string, string> => ({
   'ok': '—',
-  'expiry_expired': 'Val. vencida',
-  'certificate_expired': 'Cert. vencido',
-  'both_expired': 'Ambos vencidos',
-};
+  'expiry_expired': i18n.t('exportCategoryInspection.expiryExpired'),
+  'certificate_expired': i18n.t('exportCategoryInspection.certExpired'),
+  'both_expired': i18n.t('exportCategoryInspection.bothExpired'),
+});
 
 export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFData): Promise<void> {
+  const t = i18n.t;
+  const dateLocale = getDateLocale();
+  const statusLabels = getStatusLabels();
+  const expiryStatusLabels = getExpiryStatusLabels();
+  
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -49,8 +57,8 @@ export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFDat
   // Add header
   let yPosition = await addPDFHeader(
     doc,
-    'RELATÓRIO DE INSPEÇÃO EM LOTE',
-    format(new Date(data.inspectionDate), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
+    t('exportCategoryInspection.reportTitle'),
+    format(new Date(data.inspectionDate), "dd 'de' MMMM 'de' yyyy", { locale: dateLocale })
   );
   
   yPosition += 12;
@@ -68,35 +76,35 @@ export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFDat
   
   yPosition += 8;
   doc.setFont('helvetica', 'bold');
-  doc.text('Categoria:', col1X, yPosition);
+  doc.text(`${t('exportCategoryInspection.category')}:`, col1X, yPosition);
   doc.setFont('helvetica', 'normal');
   doc.text(data.category.name, col1X + 25, yPosition);
   
   doc.setFont('helvetica', 'bold');
-  doc.text('Data:', col2X, yPosition);
+  doc.text(`${t('exportCategoryInspection.date')}:`, col2X, yPosition);
   doc.setFont('helvetica', 'normal');
-  doc.text(format(new Date(data.inspectionDate), "dd 'de' MMMM 'de' yyyy", { locale: ptBR }), col2X + 15, yPosition);
+  doc.text(format(new Date(data.inspectionDate), "dd 'de' MMMM 'de' yyyy", { locale: dateLocale }), col2X + 15, yPosition);
   
   yPosition += 8;
   doc.setFont('helvetica', 'bold');
-  doc.text('Unidade:', col1X, yPosition);
+  doc.text(`${t('exportCategoryInspection.unit')}:`, col1X, yPosition);
   doc.setFont('helvetica', 'normal');
   doc.text(data.ship?.name || 'N/A', col1X + 25, yPosition);
   
   doc.setFont('helvetica', 'bold');
-  doc.text('Inspetor:', col2X, yPosition);
+  doc.text(`${t('exportCategoryInspection.inspector')}:`, col2X, yPosition);
   doc.setFont('helvetica', 'normal');
   doc.text(data.inspector.name, col2X + 25, yPosition);
   
   yPosition += 8;
   doc.setFont('helvetica', 'bold');
-  doc.text('Total:', col1X, yPosition);
+  doc.text(`${t('exportCategoryInspection.total')}:`, col1X, yPosition);
   doc.setFont('helvetica', 'normal');
-  doc.text(`${data.results.length} equipamento(s)`, col1X + 20, yPosition);
+  doc.text(`${data.results.length} ${t('exportCategoryInspection.equipmentPlural')}`, col1X + 20, yPosition);
   
   if (data.inspector.position) {
     doc.setFont('helvetica', 'bold');
-    doc.text('Cargo:', col2X, yPosition);
+    doc.text(`${t('exportCategoryInspection.position')}:`, col2X, yPosition);
     doc.setFont('helvetica', 'normal');
     doc.text(data.inspector.position, col2X + 20, yPosition);
   }
@@ -110,7 +118,7 @@ export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFDat
 
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  doc.text('Resumo:', margin, yPosition);
+  doc.text(`${t('exportCategoryInspection.summary')}:`, margin, yPosition);
   
   yPosition += 8;
   
@@ -123,7 +131,7 @@ export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFDat
   doc.setTextColor(40, 167, 69);
   doc.text(String(compliantCount), margin + summaryBoxWidth / 2, yPosition + 8, { align: 'center' });
   doc.setFontSize(8);
-  doc.text('Conforme', margin + summaryBoxWidth / 2, yPosition + 14, { align: 'center' });
+  doc.text(t('exportCategoryInspection.statusCompliant'), margin + summaryBoxWidth / 2, yPosition + 14, { align: 'center' });
   
   // Attention box
   doc.setFillColor(255, 243, 205);
@@ -132,7 +140,7 @@ export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFDat
   doc.setTextColor(255, 193, 7);
   doc.text(String(attentionCount), margin + summaryBoxWidth + 5 + summaryBoxWidth / 2, yPosition + 8, { align: 'center' });
   doc.setFontSize(8);
-  doc.text('Atenção', margin + summaryBoxWidth + 5 + summaryBoxWidth / 2, yPosition + 14, { align: 'center' });
+  doc.text(t('exportCategoryInspection.statusAttention'), margin + summaryBoxWidth + 5 + summaryBoxWidth / 2, yPosition + 14, { align: 'center' });
   
   // Non-compliant box
   doc.setFillColor(248, 215, 218);
@@ -141,7 +149,7 @@ export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFDat
   doc.setTextColor(220, 53, 69);
   doc.text(String(nonCompliantCount), margin + (summaryBoxWidth + 5) * 2 + summaryBoxWidth / 2, yPosition + 8, { align: 'center' });
   doc.setFontSize(8);
-  doc.text('Não Conforme', margin + (summaryBoxWidth + 5) * 2 + summaryBoxWidth / 2, yPosition + 14, { align: 'center' });
+  doc.text(t('exportCategoryInspection.statusNonCompliant'), margin + (summaryBoxWidth + 5) * 2 + summaryBoxWidth / 2, yPosition + 14, { align: 'center' });
   
   yPosition += 28;
 
@@ -149,7 +157,7 @@ export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFDat
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(33, 37, 41);
-  doc.text('Equipamentos Inspecionados:', margin, yPosition);
+  doc.text(`${t('exportCategoryInspection.inspectedEquipment')}:`, margin, yPosition);
   
   yPosition += 5;
 
@@ -157,7 +165,7 @@ export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFDat
     String(index + 1),
     result.equipment.internal_code,
     result.equipment.name,
-    result.lastInspectionDate ? format(new Date(result.lastInspectionDate), 'dd/MM/yy', { locale: ptBR }) : '—',
+    result.lastInspectionDate ? format(new Date(result.lastInspectionDate), 'dd/MM/yy', { locale: dateLocale }) : '—',
     result.lastInspectorName || '—',
     statusLabels[result.status] || result.status,
     expiryStatusLabels[result.expiryStatus || 'ok'],
@@ -165,7 +173,15 @@ export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFDat
 
   autoTable(doc, {
     startY: yPosition,
-    head: [['#', 'Código', 'Equipamento', 'Últ. Inspeção', 'Inspetor', 'Status', 'Vencimento']],
+    head: [[
+      '#', 
+      t('exportCategoryInspection.code'), 
+      t('exportCategoryInspection.equipment'), 
+      t('exportCategoryInspection.lastInspection'), 
+      t('exportCategoryInspection.inspector'), 
+      t('exportCategoryInspection.status'), 
+      t('exportCategoryInspection.expiry')
+    ]],
     body: tableData,
     margin: { left: margin, right: margin },
     headStyles: {
@@ -237,7 +253,7 @@ export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFDat
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(33, 37, 41);
-  doc.text('APROVAÇÃO E ASSINATURA', margin, yPosition);
+  doc.text(t('exportCategoryInspection.approvalSignature'), margin, yPosition);
   
   yPosition += 10;
 
@@ -263,7 +279,7 @@ export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFDat
   
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.text('Inspetor Responsável:', infoX, yPosition + 8);
+  doc.text(`${t('exportCategoryInspection.responsibleInspector')}:`, infoX, yPosition + 8);
   
   doc.setFont('helvetica', 'normal');
   doc.text(data.inspector.name, infoX, yPosition + 16);
@@ -272,7 +288,7 @@ export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFDat
     doc.text(data.inspector.position, infoX, yPosition + 24);
   }
   
-  doc.text(`Data: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, infoX, yPosition + 32);
+  doc.text(`${t('exportCategoryInspection.date')}: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: dateLocale })}`, infoX, yPosition + 32);
 
   yPosition += signatureBoxHeight + 10;
 
@@ -283,13 +299,13 @@ export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFDat
   
   doc.setFontSize(8);
   doc.setTextColor(108, 117, 125);
-  doc.text('Assinatura Digital', signatureBoxX + signatureBoxWidth / 2, yPosition + 5, { align: 'center' });
+  doc.text(t('exportCategoryInspection.digitalSignature'), signatureBoxX + signatureBoxWidth / 2, yPosition + 5, { align: 'center' });
 
   // Footer
   addPDFFooter(
     doc, 
     `SafeShip © ${new Date().getFullYear()}`,
-    `Inspeção por Categoria - ${data.category.name}`
+    `${t('exportCategoryInspection.categoryInspection')} - ${data.category.name}`
   );
 
   // Save
