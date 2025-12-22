@@ -3,21 +3,32 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Tables, Enums } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
 export type UserRole = Tables<'user_roles'>;
 export type AppRole = Enums<'app_role'>;
 
 export function useUserRoles() {
+  const { organization } = useOrganization();
+  
   return useQuery({
-    queryKey: ['user_roles'],
+    queryKey: ['user_roles', organization?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('user_roles')
         .select('*');
+      
+      // Filter by organization if available
+      if (organization?.id) {
+        query = query.eq('organization_id', organization.id);
+      }
+      
+      const { data, error } = await query;
       
       if (error) throw error;
       return data as UserRole[];
     },
+    enabled: !!organization?.id,
   });
 }
 
@@ -25,29 +36,40 @@ export function useUpdateUserRole() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { organization } = useOrganization();
 
   return useMutation({
     mutationFn: async ({ userId, newRole }: { userId: string; newRole: AppRole }) => {
-      // First check if user already has a role
+      if (!organization?.id) {
+        throw new Error('Organização não encontrada');
+      }
+
+      // First check if user already has a role in this organization
       const { data: existing } = await supabase
         .from('user_roles')
         .select('id')
         .eq('user_id', userId)
-        .single();
+        .eq('organization_id', organization.id)
+        .maybeSingle();
       
       if (existing) {
         // Update existing role
         const { error } = await supabase
           .from('user_roles')
           .update({ role: newRole })
-          .eq('user_id', userId);
+          .eq('user_id', userId)
+          .eq('organization_id', organization.id);
         
         if (error) throw error;
       } else {
-        // Insert new role
+        // Insert new role with organization_id
         const { error } = await supabase
           .from('user_roles')
-          .insert({ user_id: userId, role: newRole });
+          .insert({ 
+            user_id: userId, 
+            role: newRole,
+            organization_id: organization.id,
+          });
         
         if (error) throw error;
       }

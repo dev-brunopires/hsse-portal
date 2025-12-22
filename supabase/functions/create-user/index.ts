@@ -53,10 +53,19 @@ Deno.serve(async (req) => {
       )
     }
 
+    // Get current user's organization
+    const { data: currentUserOrg } = await userClient
+      .from('user_organizations')
+      .select('organization_id')
+      .eq('user_id', currentUser.id)
+      .single()
+
+    const organizationId = currentUserOrg?.organization_id
+
     // Parse request body
     const { email, password, fullName, role, shipIds, language } = await req.json()
 
-    console.log('Creating user with data:', { email, fullName, role, shipIds, language })
+    console.log('Creating user with data:', { email, fullName, role, shipIds, language, organizationId })
 
     if (!email || !password || !fullName) {
       return new Response(
@@ -103,18 +112,39 @@ Deno.serve(async (req) => {
 
     console.log('User created with ID:', newUser.user.id)
 
-    // Update profile with language
+    // Update profile with language and organization_id
+    const profileUpdates: Record<string, unknown> = {}
     if (userLanguage !== 'pt-BR') {
-      console.log('Updating user language to:', userLanguage)
-      const { error: langError } = await adminClient
+      profileUpdates.language = userLanguage
+    }
+    if (organizationId) {
+      profileUpdates.organization_id = organizationId
+    }
+
+    if (Object.keys(profileUpdates).length > 0) {
+      console.log('Updating profile with:', profileUpdates)
+      const { error: profileError } = await adminClient
         .from('profiles')
-        .update({ language: userLanguage })
+        .update(profileUpdates)
         .eq('user_id', newUser.user.id)
       
-      if (langError) {
-        console.error('Error updating language:', langError)
+      if (profileError) {
+        console.error('Error updating profile:', profileError)
       } else {
-        console.log('Language updated successfully')
+        console.log('Profile updated successfully')
+      }
+    }
+
+    // Update role with organization_id
+    if (organizationId) {
+      console.log('Updating user role with organization_id:', organizationId)
+      const { error: roleOrgError } = await adminClient
+        .from('user_roles')
+        .update({ organization_id: organizationId })
+        .eq('user_id', newUser.user.id)
+      
+      if (roleOrgError) {
+        console.error('Error updating role organization:', roleOrgError)
       }
     }
 
@@ -130,6 +160,23 @@ Deno.serve(async (req) => {
         console.error('Error updating role:', roleError)
       } else {
         console.log('Role updated successfully')
+      }
+    }
+
+    // Add user to organization
+    if (organizationId) {
+      console.log('Adding user to organization:', organizationId)
+      const { error: orgError } = await adminClient
+        .from('user_organizations')
+        .insert({
+          user_id: newUser.user.id,
+          organization_id: organizationId,
+        })
+      
+      if (orgError) {
+        console.error('Error adding user to organization:', orgError)
+      } else {
+        console.log('User added to organization successfully')
       }
     }
 

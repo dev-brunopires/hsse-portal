@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
 export interface Notification {
   id: string;
@@ -9,6 +10,7 @@ export interface Notification {
   message: string;
   type: 'info' | 'warning' | 'alert' | 'reminder';
   ship_id: string | null;
+  organization_id: string | null;
   created_by: string | null;
   created_at: string;
   expires_at: string | null;
@@ -29,14 +31,15 @@ export interface NotificationInsert {
 
 export function useNotifications() {
   const { user } = useAuth();
+  const { organization } = useOrganization();
 
   return useQuery({
-    queryKey: ['notifications', user?.id],
+    queryKey: ['notifications', user?.id, organization?.id],
     queryFn: async () => {
       if (!user?.id) return [];
 
       // Get notifications
-      const { data: notifications, error: notifError } = await supabase
+      let query = supabase
         .from('notifications')
         .select(`
           *,
@@ -47,6 +50,13 @@ export function useNotifications() {
         `)
         .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
         .order('created_at', { ascending: false });
+      
+      // Filter by organization if available
+      if (organization?.id) {
+        query = query.eq('organization_id', organization.id);
+      }
+
+      const { data: notifications, error: notifError } = await query;
 
       if (notifError) throw notifError;
 
@@ -66,7 +76,7 @@ export function useNotifications() {
         is_read: readIds.has(n.id),
       })) as Notification[];
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && !!organization?.id,
     refetchInterval: 30000, // Refetch every 30 seconds
   });
 }
@@ -103,14 +113,14 @@ export function useMarkNotificationAsRead() {
       const uid = user?.id;
       if (!uid) return;
 
-      await queryClient.cancelQueries({ queryKey: ['notifications', uid] });
+      await queryClient.cancelQueries({ queryKey: ['notifications'] });
 
       const previous = queryClient.getQueryData<Notification[]>([
         'notifications',
         uid,
       ]);
 
-      queryClient.setQueryData<Notification[]>(['notifications', uid], (old) =>
+      queryClient.setQueryData<Notification[]>(['notifications'], (old) =>
         (old ?? []).map((n) =>
           n.id === notificationId ? { ...n, is_read: true } : n
         )
@@ -161,14 +171,14 @@ export function useMarkAllNotificationsAsRead() {
       const uid = user?.id;
       if (!uid) return;
 
-      await queryClient.cancelQueries({ queryKey: ['notifications', uid] });
+      await queryClient.cancelQueries({ queryKey: ['notifications'] });
 
       const previous = queryClient.getQueryData<Notification[]>([
         'notifications',
         uid,
       ]);
 
-      queryClient.setQueryData<Notification[]>(['notifications', uid], (old) =>
+      queryClient.setQueryData<Notification[]>(['notifications'], (old) =>
         (old ?? []).map((n) => ({ ...n, is_read: true }))
       );
 
@@ -189,14 +199,20 @@ export function useCreateNotification() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
+  const { organization } = useOrganization();
 
   return useMutation({
     mutationFn: async (notification: NotificationInsert) => {
+      if (!organization?.id) {
+        throw new Error('Organização não encontrada');
+      }
+
       const { data, error } = await supabase
         .from('notifications')
         .insert({
           ...notification,
           created_by: user?.id,
+          organization_id: organization.id,
         })
         .select()
         .single();
