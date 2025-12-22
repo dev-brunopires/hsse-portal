@@ -23,7 +23,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useIsPlatformOwner } from '@/hooks/useOrganizations';
-import sbmLogoWhite from '@/assets/sbm-logo-white.svg';
+import { SystemLogo } from '@/components/ui/SystemLogo';
 
 interface NavItemProps {
   to: string;
@@ -67,9 +67,9 @@ export function AppSidebar() {
   const { organization, logoWhiteUrl } = useOrganization();
   const { data: isPlatformOwner } = useIsPlatformOwner();
   
-  // Use organization white logo or fallback to default
-  const displayLogo = logoWhiteUrl || sbmLogoWhite;
-  const organizationName = organization?.name || 'SBM Offshore';
+  // Use organization white logo or system default
+  const hasOrgLogo = organization && logoWhiteUrl;
+  const organizationName = organization?.name || 'SafeShip';
 
   return (
     <aside
@@ -83,12 +83,16 @@ export function AppSidebar() {
         'h-16 flex items-center border-b border-sidebar-border px-4',
         collapsed && 'justify-center px-2'
       )}>
-        {collapsed ? (
-          <div className="w-10 h-10 flex items-center justify-center">
-            <img src={displayLogo} alt={organizationName} className="h-6 w-auto object-contain" />
-          </div>
+        {hasOrgLogo ? (
+          collapsed ? (
+            <div className="w-10 h-10 flex items-center justify-center">
+              <img src={logoWhiteUrl} alt={organizationName} className="h-6 w-auto object-contain" />
+            </div>
+          ) : (
+            <img src={logoWhiteUrl} alt={organizationName} className="h-6 w-auto" />
+          )
         ) : (
-          <img src={displayLogo} alt={organizationName} className="h-6 w-auto" />
+          <SystemLogo variant="white" showText={!collapsed} />
         )}
       </div>
 

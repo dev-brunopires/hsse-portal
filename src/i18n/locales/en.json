@@ -798,7 +798,17 @@
     "integrateWithSap": "Integrate with SAP system",
     "systemTour": "System Tour",
     "restartTourDesc": "Restart the system introduction tour",
-    "restartOnboardingTour": "Restart Onboarding Tour"
+    "restartOnboardingTour": "Restart Onboarding Tour",
+    "organization": "Organization",
+    "organizationDesc": "Manage your organization settings and branding",
+    "coloredLogo": "Colored Logo",
+    "coloredLogoDesc": "Logo displayed on login page (colored version)",
+    "whiteLogo": "White Logo",
+    "whiteLogoDesc": "Logo displayed in the sidebar (white/light version)",
+    "uploadLogo": "Upload Logo",
+    "logoUpdated": "Logo Updated",
+    "logoUpdatedDesc": "Organization logo has been updated successfully",
+    "logoUpdateError": "Error updating logo"
   },
   "ships": {
     "title": "Ships",
@@ -2320,5 +2330,19 @@
     "adminEmail": "Admin Email",
     "generateAccessLink": "Generate Access Link",
     "accessLink": "Access Link"
+  },
+  "organizations": {
+    "created": "Organization Created",
+    "createdDesc": "The organization was created successfully",
+    "createError": "Error Creating Organization",
+    "updated": "Organization Updated",
+    "updatedDesc": "The organization was updated successfully",
+    "updateError": "Error Updating Organization",
+    "deleted": "Organization Deleted",
+    "deletedDesc": "The organization was deleted successfully",
+    "deleteError": "Error Deleting Organization",
+    "userAssigned": "User Assigned",
+    "userAssignedDesc": "User was assigned to the organization successfully",
+    "assignError": "Error Assigning User"
   }
 }
