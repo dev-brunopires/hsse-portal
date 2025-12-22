@@ -65,6 +65,7 @@ interface PendingItem {
   isEquipmentExpired: boolean;
   isAutoRejected: boolean;
   autoRejectedReasons: string[];
+  autoRejectedReasonKeys: string[];
   daysOverdue: number;
 }
 
@@ -100,6 +101,7 @@ export default function PendingRecommendations() {
       const effectiveResult = getEffectiveEquipmentStatus(eq);
       const isAutoRejected = effectiveResult.isAutoRejected;
       const autoRejectedReasons = effectiveResult.reasons;
+      const autoRejectedReasonKeys = effectiveResult.reasonKeys;
 
       // Check for issues
       const isCertificateExpired = !!(eq.certificate_expiry && eq.certificate_expiry < today);
@@ -133,6 +135,7 @@ export default function PendingRecommendations() {
           isEquipmentExpired,
           isAutoRejected,
           autoRejectedReasons,
+          autoRejectedReasonKeys,
           daysOverdue,
         });
       }
@@ -564,9 +567,9 @@ export default function PendingRecommendations() {
                               {t('common.rejected').toUpperCase()}
                             </Badge>
                           )}
-                          {item.isAutoRejected && item.autoRejectedReasons.map((reason, idx) => (
+                          {item.isAutoRejected && item.autoRejectedReasonKeys.map((reasonKey, idx) => (
                             <Badge key={idx} variant="destructive" className="text-xs">
-                              {reason}
+                              {t(reasonKey)}
                             </Badge>
                           ))}
                           {!item.isAutoRejected && item.isCertificateExpired && (
@@ -685,8 +688,8 @@ export default function PendingRecommendations() {
                         {t('pendingRecommendations.autoRejected')}
                       </p>
                       <ul className="text-sm mt-1 list-disc list-inside">
-                        {selectedItem.autoRejectedReasons.map((reason, idx) => (
-                          <li key={idx}>{reason}</li>
+                        {selectedItem.autoRejectedReasonKeys.map((reasonKey, idx) => (
+                          <li key={idx}>{t(reasonKey)}</li>
                         ))}
                       </ul>
                     </div>

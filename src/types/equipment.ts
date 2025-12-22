@@ -104,6 +104,9 @@ export interface Alert {
   id: string;
   type: 'expired' | 'expiring' | 'inspection_due' | 'non_compliant' | 'maintenance_overdue' | 'maintenance_pending';
   message: string;
+  messageKey?: string; // i18n translation key
+  messageParams?: Record<string, string>; // Parameters for i18n interpolation
+  reasonKeys?: string[]; // Additional reason keys for translation
   equipmentId: string;
   equipmentName: string;
   date: string;

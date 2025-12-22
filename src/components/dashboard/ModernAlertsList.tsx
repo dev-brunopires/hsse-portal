@@ -110,7 +110,15 @@ export function ModernAlertsList({ alerts }: ModernAlertsListProps) {
                       {alert.equipmentName}
                     </p>
                     <p className="text-xs text-muted-foreground truncate">
-                      {alert.message}
+                      {alert.messageKey 
+                        ? (alert.reasonKeys && alert.reasonKeys.length > 0
+                            ? `${t(alert.messageKey)}: ${alert.reasonKeys.map(key => t(key)).join(', ')}`
+                            : alert.messageParams?.title
+                              ? `${t(alert.messageKey)}: ${alert.messageParams.title}`
+                              : t(alert.messageKey)
+                          )
+                        : alert.message
+                      }
                     </p>
                   </div>
                   <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />

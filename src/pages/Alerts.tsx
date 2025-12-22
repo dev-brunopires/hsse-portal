@@ -132,7 +132,15 @@ function AlertCard({ alert, onViewDetails }: AlertCardProps) {
                 {alert.equipmentName}
               </h4>
               <p className="text-sm text-muted-foreground line-clamp-2 mt-0.5">
-                {alert.message}
+                {alert.messageKey 
+                  ? (alert.reasonKeys && alert.reasonKeys.length > 0
+                      ? `${t(alert.messageKey)}: ${alert.reasonKeys.map(key => t(key)).join(', ')}`
+                      : alert.messageParams?.title
+                        ? `${t(alert.messageKey)}: ${alert.messageParams.title}`
+                        : t(alert.messageKey)
+                    )
+                  : alert.message
+                }
               </p>
             </div>
             

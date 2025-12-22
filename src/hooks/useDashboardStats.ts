@@ -165,7 +165,9 @@ export function useDashboardStats() {
           alerts.push({
             id: `alert-auto-rejected-${eq.id}`,
             type: 'non_compliant',
-            message: `Reprovado: ${eq.effectiveResult.reasons.join(', ')}`,
+            message: `Reprovado: ${eq.effectiveResult.reasons.join(', ')}`, // Fallback
+            messageKey: 'alerts.msgRejectedAuto',
+            reasonKeys: eq.effectiveResult.reasonKeys,
             equipmentId: eq.id,
             equipmentName: `${eq.name} ${eq.internal_code}`,
             date: today.toISOString().split('T')[0],
@@ -179,7 +181,8 @@ export function useDashboardStats() {
               alerts.push({
                 id: `alert-expiring-${eq.id}`,
                 type: 'expiring',
-                message: 'Certificado expira em breve',
+                message: 'Certificado expira em breve', // Fallback
+                messageKey: 'alerts.msgCertificateExpiring',
                 equipmentId: eq.id,
                 equipmentName: `${eq.name} ${eq.internal_code}`,
                 date: eq.certificate_expiry,
@@ -194,7 +197,8 @@ export function useDashboardStats() {
           alerts.push({
             id: `alert-rejected-${eq.id}`,
             type: 'non_compliant',
-            message: 'Equipamento reprovado em inspeção',
+            message: 'Equipamento reprovado em inspeção', // Fallback
+            messageKey: 'alerts.msgEquipmentRejected',
             equipmentId: eq.id,
             equipmentName: `${eq.name} ${eq.internal_code}`,
             date: today.toISOString().split('T')[0],
@@ -209,7 +213,8 @@ export function useDashboardStats() {
             alerts.push({
               id: `alert-inspection-${eq.id}`,
               type: 'inspection_due',
-              message: 'Inspeção programada para esta semana',
+              message: 'Inspeção programada para esta semana', // Fallback
+              messageKey: 'alerts.msgInspectionScheduled',
               equipmentId: eq.id,
               equipmentName: `${eq.name} ${eq.internal_code}`,
               date: eq.next_inspection,
@@ -228,10 +233,15 @@ export function useDashboardStats() {
 
         // Overdue maintenance
         if (m.due_date && m.due_date < todayStr) {
+          const messageKey = m.type === 'corrective' 
+            ? 'alerts.msgMaintenanceCorrectiveOverdue' 
+            : 'alerts.msgMaintenancePreventiveOverdue';
           alerts.push({
             id: `alert-maint-overdue-${m.id}`,
             type: 'maintenance_overdue',
-            message: `Manutenção ${m.type === 'corrective' ? 'corretiva' : 'preventiva'} atrasada: ${m.title}`,
+            message: `Manutenção ${m.type === 'corrective' ? 'corretiva' : 'preventiva'} atrasada: ${m.title}`, // Fallback
+            messageKey,
+            messageParams: { title: m.title },
             equipmentId: m.equipment_id,
             equipmentName,
             date: m.due_date,
@@ -241,10 +251,15 @@ export function useDashboardStats() {
         }
         // Pending critical/high priority maintenance
         else if ((m.priority === 'critical' || m.priority === 'high') && m.status === 'pending') {
+          const messageKey = m.priority === 'critical' 
+            ? 'alerts.msgMaintenanceCriticalPending' 
+            : 'alerts.msgMaintenanceHighPending';
           alerts.push({
             id: `alert-maint-pending-${m.id}`,
             type: 'maintenance_pending',
-            message: `Manutenção ${m.priority === 'critical' ? 'crítica' : 'alta prioridade'} pendente: ${m.title}`,
+            message: `Manutenção ${m.priority === 'critical' ? 'crítica' : 'alta prioridade'} pendente: ${m.title}`, // Fallback
+            messageKey,
+            messageParams: { title: m.title },
             equipmentId: m.equipment_id,
             equipmentName,
             date: m.due_date || todayStr,
