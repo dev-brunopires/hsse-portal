@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import i18n from '@/i18n';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
 export interface ChecklistTemplate {
   id: string;
@@ -9,6 +10,7 @@ export interface ChecklistTemplate {
   name: string;
   is_default: boolean;
   created_by: string | null;
+  organization_id: string | null;
   created_at: string;
   updated_at: string;
   categories?: { name: string };
@@ -25,8 +27,10 @@ export interface ChecklistTemplateItem {
 }
 
 export function useChecklistTemplates(categoryId?: string) {
+  const { organization } = useOrganization();
+  
   return useQuery({
-    queryKey: ['checklist-templates', categoryId],
+    queryKey: ['checklist-templates', categoryId, organization?.id],
     queryFn: async (): Promise<ChecklistTemplate[]> => {
       let query = supabase
         .from('checklist_templates')
@@ -40,6 +44,11 @@ export function useChecklistTemplates(categoryId?: string) {
       if (categoryId) {
         query = query.eq('category_id', categoryId);
       }
+      
+      // Filter by organization
+      if (organization?.id) {
+        query = query.eq('organization_id', organization.id);
+      }
 
       const { data, error } = await query;
       if (error) throw error;
@@ -49,24 +58,33 @@ export function useChecklistTemplates(categoryId?: string) {
         items: t.checklist_template_items?.sort((a: any, b: any) => a.order_index - b.order_index) || [],
       })) as unknown as ChecklistTemplate[];
     },
+    enabled: !!organization?.id,
   });
 }
 
 export function useDefaultChecklistTemplate(categoryId?: string) {
+  const { organization } = useOrganization();
+  
   return useQuery({
-    queryKey: ['default-checklist-template', categoryId],
+    queryKey: ['default-checklist-template', categoryId, organization?.id],
     queryFn: async (): Promise<ChecklistTemplate | null> => {
       if (!categoryId) return null;
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('checklist_templates')
         .select(`
           *,
           checklist_template_items (*)
         `)
         .eq('category_id', categoryId)
-        .eq('is_default', true)
-        .maybeSingle();
+        .eq('is_default', true);
+      
+      // Filter by organization
+      if (organization?.id) {
+        query = query.eq('organization_id', organization.id);
+      }
+      
+      const { data, error } = await query.maybeSingle();
 
       if (error) throw error;
       
@@ -77,12 +95,13 @@ export function useDefaultChecklistTemplate(categoryId?: string) {
         items: data.checklist_template_items?.sort((a: any, b: any) => a.order_index - b.order_index) || [],
       } as unknown as ChecklistTemplate;
     },
-    enabled: !!categoryId,
+    enabled: !!categoryId && !!organization?.id,
   });
 }
 
 export function useCreateChecklistTemplate() {
   const queryClient = useQueryClient();
+  const { organization } = useOrganization();
 
   return useMutation({
     mutationFn: async ({
@@ -92,6 +111,10 @@ export function useCreateChecklistTemplate() {
       template: { category_id: string; name: string; is_default?: boolean };
       items: { description: string; is_required?: boolean }[];
     }) => {
+      if (!organization?.id) {
+        throw new Error('Organização não encontrada');
+      }
+
       const { data: user } = await supabase.auth.getUser();
 
       // If setting as default, unset other defaults first
@@ -99,7 +122,8 @@ export function useCreateChecklistTemplate() {
         await supabase
           .from('checklist_templates')
           .update({ is_default: false })
-          .eq('category_id', template.category_id);
+          .eq('category_id', template.category_id)
+          .eq('organization_id', organization.id);
       }
 
       const { data: newTemplate, error: templateError } = await supabase
@@ -107,6 +131,7 @@ export function useCreateChecklistTemplate() {
         .insert({
           ...template,
           created_by: user?.user?.id,
+          organization_id: organization.id,
         })
         .select()
         .single();
@@ -144,6 +169,7 @@ export function useCreateChecklistTemplate() {
 
 export function useUpdateChecklistTemplate() {
   const queryClient = useQueryClient();
+  const { organization } = useOrganization();
 
   return useMutation({
     mutationFn: async ({
@@ -156,11 +182,12 @@ export function useUpdateChecklistTemplate() {
       items?: { id?: string; description: string; is_required?: boolean }[];
     }) => {
       // If setting as default, unset other defaults first
-      if (template.is_default && template.category_id) {
+      if (template.is_default && template.category_id && organization?.id) {
         await supabase
           .from('checklist_templates')
           .update({ is_default: false })
           .eq('category_id', template.category_id)
+          .eq('organization_id', organization.id)
           .neq('id', id);
       }
 

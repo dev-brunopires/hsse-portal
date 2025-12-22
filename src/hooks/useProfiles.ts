@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
 export type Profile = Tables<'profiles'>;
 
@@ -9,22 +10,39 @@ export interface ProfileWithRole extends Profile {
 }
 
 export function useProfiles() {
+  const { organization } = useOrganization();
+  
   return useQuery({
-    queryKey: ['profiles'],
+    queryKey: ['profiles', organization?.id],
     queryFn: async () => {
-      const { data: profiles, error } = await supabase
+      let query = supabase
         .from('profiles')
         .select('*')
         .order('full_name');
+      
+      // Filter by organization if available
+      if (organization?.id) {
+        query = query.eq('organization_id', organization.id);
+      }
+      
+      const { data: profiles, error } = await query;
       
       if (error) throw error;
       
       // Fetch roles separately
       const userIds = profiles.map(p => p.user_id);
-      const { data: roles } = await supabase
+      
+      let rolesQuery = supabase
         .from('user_roles')
         .select('user_id, role')
         .in('user_id', userIds);
+      
+      // Filter roles by organization
+      if (organization?.id) {
+        rolesQuery = rolesQuery.eq('organization_id', organization.id);
+      }
+      
+      const { data: roles } = await rolesQuery;
       
       const rolesMap = new Map<string, { role: 'admin' | 'technician' | 'viewer' }[]>();
       roles?.forEach(r => {
@@ -38,27 +56,44 @@ export function useProfiles() {
         user_roles: rolesMap.get(profile.user_id) || [],
       })) as ProfileWithRole[];
     },
+    enabled: !!organization?.id,
   });
 }
 
 export function useTechniciansAndAdmins() {
+  const { organization } = useOrganization();
+  
   return useQuery({
-    queryKey: ['profiles', 'inspectors'],
+    queryKey: ['profiles', 'inspectors', organization?.id],
     queryFn: async () => {
-      // Fetch all profiles - all users can be inspectors
-      const { data, error } = await supabase
+      let query = supabase
         .from('profiles')
         .select('*')
         .order('full_name');
+      
+      // Filter by organization if available
+      if (organization?.id) {
+        query = query.eq('organization_id', organization.id);
+      }
+      
+      const { data, error } = await query;
       
       if (error) throw error;
       
       // Fetch roles for all users
       const userIds = data.map(p => p.user_id);
-      const { data: roleData } = await supabase
+      
+      let rolesQuery = supabase
         .from('user_roles')
         .select('user_id, role')
         .in('user_id', userIds);
+      
+      // Filter roles by organization
+      if (organization?.id) {
+        rolesQuery = rolesQuery.eq('organization_id', organization.id);
+      }
+      
+      const { data: roleData } = await rolesQuery;
       
       // Combine with role info
       return (data as Profile[]).map(profile => ({
@@ -66,5 +101,6 @@ export function useTechniciansAndAdmins() {
         role: roleData?.find(r => r.user_id === profile.user_id)?.role,
       }));
     },
+    enabled: !!organization?.id,
   });
 }
