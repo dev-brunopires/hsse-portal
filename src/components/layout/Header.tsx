@@ -19,7 +19,8 @@ import {
   Check,
   Menu,
   Moon,
-  Sun
+  Sun,
+  Languages
 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { Button } from '@/components/ui/button';
@@ -36,6 +37,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/contexts/AuthContext';
 import { useShipFilter } from '@/contexts/ShipFilterContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import { useShips } from '@/hooks/useShips';
 import { useUserShips } from '@/hooks/useUserShips';
@@ -63,6 +65,7 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
   const { t, i18n } = useTranslation();
   const { user, profile, role, signOut } = useAuth();
   const { selectedShipId, setSelectedShipId, isFilterEnabled } = useShipFilter();
+  const { language, setLanguage } = useLanguage();
   const { resolvedTheme, setTheme } = useTheme();
   const navigate = useNavigate();
   const { data: ships = [] } = useShips();
@@ -403,6 +406,38 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
               onClick={() => navigate('/alerts')}
             >
               {t('header.viewAllAlerts')}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Language Selector */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground hover:text-foreground"
+              title={t('header.language')}
+            >
+              <Languages className="h-5 w-5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40 bg-popover border border-border shadow-lg z-50">
+            <DropdownMenuLabel>{t('header.language')}</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => setLanguage('pt-BR')}
+              className="gap-2"
+            >
+              {language === 'pt-BR' && <Check className="h-4 w-4 text-primary" />}
+              <span className={language === 'pt-BR' ? 'font-medium' : ''}>Português</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => setLanguage('en')}
+              className="gap-2"
+            >
+              {language === 'en' && <Check className="h-4 w-4 text-primary" />}
+              <span className={language === 'en' ? 'font-medium' : ''}>English</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
