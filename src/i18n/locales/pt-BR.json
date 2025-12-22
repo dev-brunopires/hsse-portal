@@ -855,7 +855,17 @@
     "descInspectionDue": "Inspeção agendada ou atrasada",
     "descNonCompliant": "Equipamento não conforme",
     "descMaintenanceOverdue": "Manutenção passou do prazo de conclusão",
-    "descMaintenancePending": "Manutenção aguardando execução"
+    "descMaintenancePending": "Manutenção aguardando execução",
+    "msgCertificateExpired": "Certificado vencido",
+    "msgHydrostaticExpired": "Teste hidrostático/validade vencida",
+    "msgRejectedAuto": "Reprovado",
+    "msgCertificateExpiring": "Certificado expira em breve",
+    "msgEquipmentRejected": "Equipamento reprovado em inspeção",
+    "msgInspectionScheduled": "Inspeção programada para esta semana",
+    "msgMaintenanceCorrectiveOverdue": "Manutenção corretiva atrasada",
+    "msgMaintenancePreventiveOverdue": "Manutenção preventiva atrasada",
+    "msgMaintenanceCriticalPending": "Manutenção crítica pendente",
+    "msgMaintenanceHighPending": "Manutenção alta prioridade pendente"
   },
   "auditLog": {
     "title": "Log de Auditoria",
@@ -1664,6 +1674,9 @@
     "grantPermission": "Conceder Permissão",
     "permissionInstructions": "Clique no ícone de cadeado na barra de endereços e permita o acesso à câmera."
   },
+  "statusBadge": {
+    "autoRejected": "Reprovado automaticamente"
+  },
   "signaturePad": {
     "title": "Assinatura do Inspetor",
     "hint": "Desenhe sua assinatura no campo acima",
@@ -1677,6 +1690,7 @@
     "processing": "Processando..."
   },
   "criticalEquipment": {
+    "title": "Equipamentos Críticos",
     "title": "Equipamentos Críticos",
     "top10Title": "Top 10 Equipamentos Críticos",
     "requiresAttention": "Requerem atenção imediata",

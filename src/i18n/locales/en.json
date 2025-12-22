@@ -855,7 +855,17 @@
     "descInspectionDue": "Scheduled or overdue inspection",
     "descNonCompliant": "Non-compliant equipment",
     "descMaintenanceOverdue": "Maintenance past completion deadline",
-    "descMaintenancePending": "Maintenance awaiting execution"
+    "descMaintenancePending": "Maintenance awaiting execution",
+    "msgCertificateExpired": "Certificate expired",
+    "msgHydrostaticExpired": "Hydrostatic test/validity expired",
+    "msgRejectedAuto": "Rejected",
+    "msgCertificateExpiring": "Certificate expiring soon",
+    "msgEquipmentRejected": "Equipment rejected in inspection",
+    "msgInspectionScheduled": "Inspection scheduled for this week",
+    "msgMaintenanceCorrectiveOverdue": "Corrective maintenance overdue",
+    "msgMaintenancePreventiveOverdue": "Preventive maintenance overdue",
+    "msgMaintenanceCriticalPending": "Critical maintenance pending",
+    "msgMaintenanceHighPending": "High priority maintenance pending"
   },
   "auditLog": {
     "title": "Audit Log",
@@ -1663,6 +1673,9 @@
     "retry": "Try Again",
     "grantPermission": "Grant Permission",
     "permissionInstructions": "Click the lock icon in the address bar and allow camera access."
+  },
+  "statusBadge": {
+    "autoRejected": "Automatically rejected"
   },
   "signaturePad": {
     "title": "Inspector Signature",

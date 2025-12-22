@@ -17,24 +17,28 @@ export interface EffectiveStatusResult {
   effectiveStatus: 'active' | 'maintenance' | 'rejected' | 'expired' | 'inactive';
   isAutoRejected: boolean;
   reasons: string[];
+  reasonKeys: string[]; // i18n keys for translation
 }
 
 export function getEffectiveEquipmentStatus(equipment: EquipmentWithDates): EffectiveStatusResult {
   const today = new Date().toISOString().split('T')[0];
   const reasons: string[] = [];
+  const reasonKeys: string[] = [];
   let isAutoRejected = false;
   
   // Check certificate expiry
   const isCertificateExpired = !!(equipment.certificate_expiry && equipment.certificate_expiry < today);
   if (isCertificateExpired) {
-    reasons.push('Certificado vencido');
+    reasons.push('Certificado vencido'); // Fallback for non-i18n contexts
+    reasonKeys.push('alerts.msgCertificateExpired');
     isAutoRejected = true;
   }
   
   // Check equipment expiry (hydrostatic test, etc.)
   const isEquipmentExpired = !!(equipment.expiry_date && equipment.expiry_date < today);
   if (isEquipmentExpired) {
-    reasons.push('Teste hidrostático/validade vencida');
+    reasons.push('Teste hidrostático/validade vencida'); // Fallback for non-i18n contexts
+    reasonKeys.push('alerts.msgHydrostaticExpired');
     isAutoRejected = true;
   }
   
@@ -43,7 +47,8 @@ export function getEffectiveEquipmentStatus(equipment: EquipmentWithDates): Effe
     return {
       effectiveStatus: 'rejected',
       isAutoRejected: true,
-      reasons
+      reasons,
+      reasonKeys
     };
   }
   
@@ -51,7 +56,8 @@ export function getEffectiveEquipmentStatus(equipment: EquipmentWithDates): Effe
   return {
     effectiveStatus: equipment.status as EffectiveStatusResult['effectiveStatus'],
     isAutoRejected: false,
-    reasons: []
+    reasons: [],
+    reasonKeys: []
   };
 }
 
