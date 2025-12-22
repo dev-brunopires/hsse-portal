@@ -63,7 +63,7 @@ interface HeaderProps {
 
 export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
   const { t, i18n } = useTranslation();
-  const { user, profile, role, signOut } = useAuth();
+  const { user, profile, role, signOut, isPlatformOwner } = useAuth();
   const { selectedShipId, setSelectedShipId, isFilterEnabled } = useShipFilter();
   const { language, setLanguage } = useLanguage();
   const { resolvedTheme, setTheme } = useTheme();
@@ -486,13 +486,14 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
                 </p>
                 <div className="flex items-center gap-1.5">
                   <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                    isPlatformOwner ? 'bg-primary/15 text-primary' :
                     role === 'admin_master' ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400' :
                     role === 'admin' ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400' :
                     role === 'supervisor' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' :
                     role === 'technician' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' :
                     'bg-muted text-muted-foreground'
                   }`}>
-                    {role ? roleLabels[role] : t('common.loading')}
+                    {isPlatformOwner ? t('navigation.platformAdmin') : role ? roleLabels[role] : t('common.loading')}
                   </span>
                 </div>
               </div>
@@ -521,13 +522,14 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
                   <p className="font-semibold text-sm truncate">{profile?.full_name || user?.email}</p>
                   <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                   <span className={`inline-flex items-center mt-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                    isPlatformOwner ? 'bg-primary/15 text-primary' :
                     role === 'admin_master' ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400' :
                     role === 'admin' ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400' :
                     role === 'supervisor' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' :
                     role === 'technician' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' :
                     'bg-muted text-muted-foreground'
                   }`}>
-                    {role ? roleLabels[role] : t('common.loading')}
+                    {isPlatformOwner ? t('navigation.platformAdmin') : role ? roleLabels[role] : t('common.loading')}
                   </span>
                 </div>
               </div>
