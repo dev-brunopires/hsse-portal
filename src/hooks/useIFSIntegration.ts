@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -22,6 +23,7 @@ export interface IFSSyncResult {
 const IFS_CONFIG_KEY = 'safeship-ifs-config';
 
 export function useIFSIntegration() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [syncResult, setSyncResult] = useState<IFSSyncResult | null>(null);
@@ -38,10 +40,10 @@ export function useIFSIntegration() {
   const saveConfig = useCallback((config: IFSConfig) => {
     localStorage.setItem(IFS_CONFIG_KEY, JSON.stringify(config));
     toast({
-      title: 'Configuração salva',
-      description: 'A configuração do IFS foi salva com sucesso.',
+      title: t('hooks.ifsIntegration.configSaved'),
+      description: t('hooks.ifsIntegration.configSavedDescription'),
     });
-  }, [toast]);
+  }, [toast, t]);
 
   const testConnection = useCallback(async (config: Partial<IFSConfig>): Promise<boolean> => {
     setIsLoading(true);
@@ -61,7 +63,7 @@ export function useIFSIntegration() {
       if (error) throw error;
 
       toast({
-        title: data.success ? 'Conexão bem-sucedida' : 'Falha na conexão',
+        title: data.success ? t('hooks.ifsIntegration.connectionSuccess') : t('hooks.ifsIntegration.connectionFailed'),
         description: data.message,
         variant: data.success ? 'default' : 'destructive',
       });
@@ -70,15 +72,15 @@ export function useIFSIntegration() {
     } catch (error) {
       console.error('IFS connection test failed:', error);
       toast({
-        title: 'Erro ao testar conexão',
-        description: 'Não foi possível conectar ao IFS. Verifique as configurações.',
+        title: t('hooks.ifsIntegration.connectionTestError'),
+        description: t('hooks.ifsIntegration.connectionTestErrorDescription'),
         variant: 'destructive',
       });
       return false;
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, [toast, t]);
 
   const syncEquipment = useCallback(async (direction: 'import' | 'export'): Promise<IFSSyncResult> => {
     setIsLoading(true);
@@ -86,15 +88,15 @@ export function useIFSIntegration() {
 
     if (!config?.enabled) {
       toast({
-        title: 'Integração desabilitada',
-        description: 'Habilite a integração IFS antes de sincronizar.',
+        title: t('hooks.ifsIntegration.integrationDisabled'),
+        description: t('hooks.ifsIntegration.enableBeforeSync'),
         variant: 'destructive',
       });
       return {
         success: false,
         equipmentSynced: 0,
         inspectionsSynced: 0,
-        errors: ['Integração IFS não está habilitada'],
+        errors: [t('hooks.ifsIntegration.ifsNotEnabled')],
         timestamp: new Date().toISOString(),
       };
     }
@@ -124,8 +126,8 @@ export function useIFSIntegration() {
       localStorage.setItem(IFS_CONFIG_KEY, JSON.stringify(updatedConfig));
 
       toast({
-        title: result.success ? 'Sincronização concluída' : 'Sincronização com erros',
-        description: `${result.equipmentSynced} equipamentos, ${result.inspectionsSynced} inspeções sincronizados.`,
+        title: result.success ? t('hooks.ifsIntegration.syncCompleted') : t('hooks.ifsIntegration.syncWithErrors'),
+        description: t('hooks.ifsIntegration.syncStats', { equipment: result.equipmentSynced, inspections: result.inspectionsSynced }),
         variant: result.success ? 'default' : 'destructive',
       });
 
@@ -142,8 +144,8 @@ export function useIFSIntegration() {
       setSyncResult(result);
       
       toast({
-        title: 'Erro na sincronização',
-        description: 'Não foi possível sincronizar com o IFS.',
+        title: t('hooks.ifsIntegration.syncError'),
+        description: t('hooks.ifsIntegration.syncErrorDescription'),
         variant: 'destructive',
       });
 
@@ -151,7 +153,7 @@ export function useIFSIntegration() {
     } finally {
       setIsLoading(false);
     }
-  }, [getConfig, toast]);
+  }, [getConfig, toast, t]);
 
   const exportToIFSFormat = useCallback((equipment: any[]): object => {
     // Transform SafeShip equipment data to IFS format
