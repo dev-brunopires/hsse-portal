@@ -18,8 +18,8 @@ import {
 } from '@/components/ui/form';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { SystemLogo } from '@/components/ui/SystemLogo';
 import loginBg from '@/assets/login-bg.jpg';
-import sbmLogo from '@/assets/sbm-logo.svg';
 
 const REMEMBER_EMAIL_KEY = 'sbm_remembered_email';
 
@@ -30,11 +30,11 @@ export default function Auth() {
   const [rememberMe, setRememberMe] = useState(false);
   const { signIn, user } = useAuth();
   const navigate = useNavigate();
-  const { organization, logoUrl, isLoading: orgLoading } = useOrganization();
+  const { organization, logoUrl } = useOrganization();
   
-  // Use organization logo or fallback to default SBM logo
-  const displayLogo = logoUrl || sbmLogo;
-  const organizationName = organization?.name || 'SBM Offshore';
+  // Use organization logo or system default logo
+  const hasOrgLogo = organization && logoUrl;
+  const organizationName = organization?.name || 'SafeShip';
 
   const loginSchema = z.object({
     email: z.string().email(t('errors.invalidEmail')).min(1, t('validation.required')),
@@ -91,12 +91,24 @@ export default function Auth() {
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-8">
-            <img src={displayLogo} alt={organizationName} className="h-12 mx-auto mb-3" />
+            {hasOrgLogo ? (
+              <img src={logoUrl} alt={organizationName} className="h-12 mx-auto mb-3" />
+            ) : (
+              <div className="flex justify-center mb-3">
+                <SystemLogo />
+              </div>
+            )}
           </div>
 
           {/* Form Header */}
           <div className="mb-8">
-            <img src={displayLogo} alt={organizationName} className="h-10 mb-4 hidden lg:block" />
+            {hasOrgLogo ? (
+              <img src={logoUrl} alt={organizationName} className="h-10 mb-4 hidden lg:block" />
+            ) : (
+              <div className="mb-4 hidden lg:block">
+                <SystemLogo />
+              </div>
+            )}
             <h2 className="text-lg font-semibold text-primary mb-2">
               {t('authPage.equipmentManagement')}
             </h2>

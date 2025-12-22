@@ -798,7 +798,17 @@
     "integrateWithSap": "Integrar com sistema SAP",
     "systemTour": "Tour do Sistema",
     "restartTourDesc": "Reinicie o tour de introdução ao sistema",
-    "restartOnboardingTour": "Reiniciar Tour de Onboarding"
+    "restartOnboardingTour": "Reiniciar Tour de Onboarding",
+    "organization": "Organização",
+    "organizationDesc": "Gerencie as configurações e marca da sua organização",
+    "coloredLogo": "Logo Colorida",
+    "coloredLogoDesc": "Logo exibida na página de login (versão colorida)",
+    "whiteLogo": "Logo Branca",
+    "whiteLogoDesc": "Logo exibida na sidebar (versão branca/clara)",
+    "uploadLogo": "Enviar Logo",
+    "logoUpdated": "Logo Atualizada",
+    "logoUpdatedDesc": "A logo da organização foi atualizada com sucesso",
+    "logoUpdateError": "Erro ao atualizar logo"
   },
   "ships": {
     "title": "Embarcações",
@@ -2321,5 +2331,19 @@
     "adminEmail": "Email do Admin",
     "generateAccessLink": "Gerar Link de Acesso",
     "accessLink": "Link de Acesso"
+  },
+  "organizations": {
+    "created": "Organização Criada",
+    "createdDesc": "A organização foi criada com sucesso",
+    "createError": "Erro ao Criar Organização",
+    "updated": "Organização Atualizada",
+    "updatedDesc": "A organização foi atualizada com sucesso",
+    "updateError": "Erro ao Atualizar Organização",
+    "deleted": "Organização Excluída",
+    "deletedDesc": "A organização foi excluída com sucesso",
+    "deleteError": "Erro ao Excluir Organização",
+    "userAssigned": "Usuário Atribuído",
+    "userAssignedDesc": "O usuário foi atribuído à organização com sucesso",
+    "assignError": "Erro ao Atribuir Usuário"
   }
 }

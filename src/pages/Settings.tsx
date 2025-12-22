@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Bell, Shield, Database, Mail, Plug, Rocket } from 'lucide-react';
+import { Bell, Shield, Database, Mail, Plug, Rocket, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -7,11 +7,14 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { NotificationSettingsCard } from '@/components/dashboard/NotificationSettingsCard';
 import { IFSIntegrationCard } from '@/components/settings/IFSIntegrationCard';
+import { OrganizationSettingsCard } from '@/components/settings/OrganizationSettingsCard';
 import { useOnboarding } from '@/hooks/useOnboarding';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
 export default function Settings() {
   const { t } = useTranslation();
   const { resetTour, startTour } = useOnboarding();
+  const { organization } = useOrganization();
 
   const handleRestartTour = () => {
     resetTour();
@@ -28,11 +31,17 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="notifications" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-flex">
+        <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-flex">
           <TabsTrigger value="notifications" className="gap-2">
             <Bell className="h-4 w-4" />
             <span className="hidden sm:inline">{t('settings.notifications')}</span>
           </TabsTrigger>
+          {organization && (
+            <TabsTrigger value="organization" className="gap-2">
+              <Building2 className="h-4 w-4" />
+              <span className="hidden sm:inline">{t('settings.organization')}</span>
+            </TabsTrigger>
+          )}
           <TabsTrigger value="security" className="gap-2">
             <Shield className="h-4 w-4" />
             <span className="hidden sm:inline">{t('settings.security')}</span>
@@ -79,6 +88,12 @@ export default function Settings() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {organization && (
+          <TabsContent value="organization" className="mt-6">
+            <OrganizationSettingsCard />
+          </TabsContent>
+        )}
 
         <TabsContent value="security" className="mt-6">
           <Card>
