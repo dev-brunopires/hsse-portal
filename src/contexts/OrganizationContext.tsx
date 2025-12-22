@@ -106,12 +106,13 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
   });
 
   // Get org from user's membership
-  const { data: userOrg, isLoading: isLoadingUserOrg, isFetched: isUserOrgFetched } = useQuery({
+  const { data: userOrg, isLoading: isLoadingUserOrg, isFetched: isUserOrgFetched, error: userOrgError } = useQuery({
     queryKey: ['user-organization'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
+      // Try to get user's organization membership
       const { data, error } = await supabase
         .from('user_organizations')
         .select(`
@@ -129,10 +130,16 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
         .eq('user_id', user.id)
         .maybeSingle();
       
-      if (error) throw error;
+      // Handle RLS errors gracefully - user might be platform owner without org membership
+      if (error) {
+        console.warn('Error fetching user organization:', error.message);
+        return null;
+      }
+      
       return data?.organizations as Organization | null;
     },
     enabled: authReady,
+    retry: false, // Don't retry on RLS errors
   });
 
   // Prefer user's organization if available, otherwise use subdomain
