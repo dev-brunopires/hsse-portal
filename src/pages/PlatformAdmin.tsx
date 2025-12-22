@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useIsPlatformOwner, useOrganizations, useCreateOrganization, useUpdateOrganization, useDeleteOrganization, Organization } from '@/hooks/useOrganizations';
 import { supabase } from '@/integrations/supabase/client';
+import { AppLayout } from '@/components/layout/AppLayout';
 
 export default function PlatformAdmin() {
   const { t } = useTranslation();
@@ -152,7 +153,8 @@ export default function PlatformAdmin() {
   };
 
   return (
-    <div className="container mx-auto p-6 max-w-6xl">
+    <AppLayout>
+      <div className="container mx-auto p-6 max-w-6xl">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold">{t('platformAdmin.title')}</h1>
@@ -379,6 +381,7 @@ export default function PlatformAdmin() {
           )}
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </AppLayout>
   );
 }
