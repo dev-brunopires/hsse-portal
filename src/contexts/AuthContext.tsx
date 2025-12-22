@@ -29,6 +29,7 @@ interface AuthContextType {
   isAdminMaster: boolean;
   isTechnician: boolean;
   canEdit: boolean;
+  isPlatformOwner: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,15 +39,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
+  const [isPlatformOwner, setIsPlatformOwner] = useState(false);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   const fetchUserData = async (userId: string) => {
     try {
-      // Fetch profile and role in parallel
-      const [profileResult, roleResult] = await Promise.all([
+      // Fetch profile, role, and platform owner status in parallel
+      const [profileResult, roleResult, platformOwnerResult] = await Promise.all([
         supabase.from('profiles').select('*').eq('user_id', userId).single(),
-        supabase.from('user_roles').select('role').eq('user_id', userId).single(),
+        supabase.from('user_roles').select('role').eq('user_id', userId).maybeSingle(),
+        supabase.from('platform_owners').select('id').eq('user_id', userId).maybeSingle(),
       ]);
 
       if (profileResult.data) {
@@ -56,11 +59,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (roleResult.data?.role) {
         setRole(roleResult.data.role as AppRole);
       } else {
-        setRole('viewer');
+        setRole(null);
       }
+
+      setIsPlatformOwner(!!platformOwnerResult.data);
     } catch (error) {
       console.error('Error fetching user data:', error);
-      setRole('viewer');
+      setRole(null);
+      setIsPlatformOwner(false);
     }
   };
 
@@ -186,6 +192,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
     setProfile(null);
     setRole(null);
+    setIsPlatformOwner(false);
     
     toast({
       title: 'Logout realizado',
@@ -203,7 +210,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAdmin = role === 'admin' || role === 'admin_master';
   const isTechnician = role === 'technician';
   const isSupervisor = role === 'supervisor';
-  const canEdit = isAdmin || isTechnician || isSupervisor;
+  const canEdit = isAdmin || isTechnician || isSupervisor || isPlatformOwner;
 
   return (
     <AuthContext.Provider
@@ -221,6 +228,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAdminMaster,
         isTechnician,
         canEdit,
+        isPlatformOwner,
       }}
     >
       {children}

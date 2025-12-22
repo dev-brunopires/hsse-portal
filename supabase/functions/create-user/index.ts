@@ -39,33 +39,39 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Check if user is admin or admin_master
-    const { data: roleData } = await userClient
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', currentUser.id)
-      .single()
+    // Check if user is admin, admin_master, or platform_owner
+    const [roleResult, platformOwnerResult] = await Promise.all([
+      userClient.from('user_roles').select('role').eq('user_id', currentUser.id).maybeSingle(),
+      userClient.from('platform_owners').select('id').eq('user_id', currentUser.id).maybeSingle(),
+    ])
 
-    if (!roleData || !['admin', 'admin_master'].includes(roleData.role)) {
+    const isPlatformOwner = !!platformOwnerResult.data
+    const isAdmin = roleResult.data && ['admin', 'admin_master'].includes(roleResult.data.role)
+
+    if (!isPlatformOwner && !isAdmin) {
       return new Response(
-        JSON.stringify({ error: 'Only admins can create users' }),
+        JSON.stringify({ error: 'Only admins or platform owners can create users' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Get current user's organization
-    const { data: currentUserOrg } = await userClient
-      .from('user_organizations')
-      .select('organization_id')
-      .eq('user_id', currentUser.id)
-      .single()
-
-    const organizationId = currentUserOrg?.organization_id
-
     // Parse request body
-    const { email, password, fullName, role, shipIds, language } = await req.json()
+    const { email, password, fullName, role, shipIds, language, organizationId: providedOrgId } = await req.json()
 
-    console.log('Creating user with data:', { email, fullName, role, shipIds, language, organizationId })
+    // Determine organization ID
+    let organizationId = providedOrgId
+
+    // If not a platform owner providing an org ID, use the admin's organization
+    if (!organizationId && !isPlatformOwner) {
+      const { data: currentUserOrg } = await userClient
+        .from('user_organizations')
+        .select('organization_id')
+        .eq('user_id', currentUser.id)
+        .single()
+      organizationId = currentUserOrg?.organization_id
+    }
+
+    console.log('Creating user with data:', { email, fullName, role, shipIds, language, organizationId, isPlatformOwner })
 
     if (!email || !password || !fullName) {
       return new Response(
