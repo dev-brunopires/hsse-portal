@@ -1,12 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
 export interface Ship {
   id: string;
   name: string;
   code: string | null;
   description: string | null;
+  organization_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -25,32 +27,48 @@ export interface UpdateShipData {
 }
 
 export function useShips() {
+  const { organization } = useOrganization();
+  
   return useQuery({
-    queryKey: ['ships'],
+    queryKey: ['ships', organization?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('ships')
         .select('*')
         .order('name');
       
+      // Filter by organization if available
+      if (organization?.id) {
+        query = query.eq('organization_id', organization.id);
+      }
+      
+      const { data, error } = await query;
+      
       if (error) throw error;
       return data as Ship[];
     },
+    enabled: !!organization?.id,
   });
 }
 
 export function useCreateShip() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { organization } = useOrganization();
 
   return useMutation({
     mutationFn: async (data: CreateShipData) => {
+      if (!organization?.id) {
+        throw new Error('Organização não encontrada');
+      }
+
       const { data: ship, error } = await supabase
         .from('ships')
         .insert({
           name: data.name,
           code: data.code || null,
           description: data.description || null,
+          organization_id: organization.id,
         })
         .select()
         .single();

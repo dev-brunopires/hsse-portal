@@ -3,22 +3,33 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
 export type Category = Tables<'categories'>;
 export type CategoryInsert = TablesInsert<'categories'>;
 
 export function useCategories() {
+  const { organization } = useOrganization();
+  
   return useQuery({
-    queryKey: ['categories'],
+    queryKey: ['categories', organization?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('categories')
         .select('*')
         .order('name');
       
+      // Filter by organization if available
+      if (organization?.id) {
+        query = query.eq('organization_id', organization.id);
+      }
+      
+      const { data, error } = await query;
+      
       if (error) throw error;
       return data as Category[];
     },
+    enabled: !!organization?.id,
   });
 }
 
@@ -26,12 +37,20 @@ export function useCreateCategory() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { t } = useTranslation();
+  const { organization } = useOrganization();
 
   return useMutation({
-    mutationFn: async (category: CategoryInsert) => {
+    mutationFn: async (category: Omit<CategoryInsert, 'organization_id'>) => {
+      if (!organization?.id) {
+        throw new Error('Organização não encontrada');
+      }
+
       const { data, error } = await supabase
         .from('categories')
-        .insert(category)
+        .insert({
+          ...category,
+          organization_id: organization.id,
+        })
         .select()
         .single();
       
@@ -61,7 +80,7 @@ export function useUpdateCategory() {
   const { t } = useTranslation();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string } & Partial<CategoryInsert>) => {
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<Omit<CategoryInsert, 'organization_id'>>) => {
       const { data, error } = await supabase
         .from('categories')
         .update(updates)
