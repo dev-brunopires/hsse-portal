@@ -1824,5 +1824,15 @@
       "deleted": "Checklist template deleted!",
       "deleteError": "Error deleting checklist template"
     }
+  },
+  "validation": {
+    "required": "Required field",
+    "nameMinLength": "Name must have at least 2 characters",
+    "selectIcon": "Select an icon",
+    "selectFrequency": "Select frequency",
+    "selectStatus": "Select a status",
+    "selectDate": "Select a date",
+    "invalidEmail": "Invalid email",
+    "passwordMinLength": "Password must have at least 6 characters"
   }
 }
