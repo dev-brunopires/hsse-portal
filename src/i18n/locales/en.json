@@ -902,6 +902,10 @@
     "expired": "Expired"
   },
   "dialogs": {
+    "newUser": "New User",
+    "user": "User",
+    "email": "Email",
+    "role": "Role",
     "removeUser": "Remove User",
     "removeUserConfirm": "Are you sure you want to remove <strong>{{name}}</strong> from the system?",
     "removeUserWarning": "This action cannot be undone. The user will lose all access to the system.",

@@ -902,6 +902,10 @@
     "expired": "Vencido"
   },
   "dialogs": {
+    "newUser": "Novo Usuário",
+    "user": "Usuário",
+    "email": "E-mail",
+    "role": "Perfil",
     "removeUser": "Remover Usuário",
     "removeUserConfirm": "Tem certeza que deseja remover <strong>{{name}}</strong> do sistema?",
     "removeUserWarning": "Esta ação não pode ser desfeita. O usuário perderá todo o acesso ao sistema.",
