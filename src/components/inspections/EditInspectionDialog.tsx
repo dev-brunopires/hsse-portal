@@ -38,16 +38,14 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useUpdateInspection, type InspectionWithDetails } from '@/hooks/useInspections';
 
-const editInspectionSchema = z.object({
-  status: z.enum(['compliant', 'attention', 'non-compliant']),
-  inspection_date: z.string().min(1, 'Required'),
-  next_inspection_date: z.string().optional(),
-  observations: z.string().optional(),
-  recommendations: z.string().optional(),
-  actions_taken: z.string().optional(),
-});
-
-type EditInspectionFormData = z.infer<typeof editInspectionSchema>;
+type EditInspectionFormData = {
+  status: 'compliant' | 'attention' | 'non-compliant';
+  inspection_date: string;
+  next_inspection_date?: string;
+  observations?: string;
+  recommendations?: string;
+  actions_taken?: string;
+};
 
 interface EditInspectionDialogProps {
   open: boolean;
@@ -65,6 +63,15 @@ export function EditInspectionDialog({
   const { t } = useTranslation();
   const { toast } = useToast();
   const updateInspection = useUpdateInspection();
+
+  const editInspectionSchema = z.object({
+    status: z.enum(['compliant', 'attention', 'non-compliant']),
+    inspection_date: z.string().min(1, t('validation.required')),
+    next_inspection_date: z.string().optional(),
+    observations: z.string().optional(),
+    recommendations: z.string().optional(),
+    actions_taken: z.string().optional(),
+  });
 
   const statusOptions = [
     { value: 'compliant', label: t('editInspection.statusCompliant') },

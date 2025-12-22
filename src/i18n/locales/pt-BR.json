@@ -1824,5 +1824,15 @@
       "deleted": "Template de checklist excluído!",
       "deleteError": "Erro ao excluir template de checklist"
     }
+  },
+  "validation": {
+    "required": "Campo obrigatório",
+    "nameMinLength": "Nome deve ter pelo menos 2 caracteres",
+    "selectIcon": "Selecione um ícone",
+    "selectFrequency": "Selecione a frequência",
+    "selectStatus": "Selecione um status",
+    "selectDate": "Selecione uma data",
+    "invalidEmail": "E-mail inválido",
+    "passwordMinLength": "Senha deve ter pelo menos 6 caracteres"
   }
 }

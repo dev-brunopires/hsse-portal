@@ -33,14 +33,12 @@ import { Loader2, FolderOpen } from 'lucide-react';
 import { useCreateCategory, useUpdateCategory, type Category } from '@/hooks/useCategories';
 import { categoryIconOptions, getCategoryIcon } from '@/utils/categoryIcons';
 
-const categorySchema = z.object({
-  name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
-  description: z.string().optional(),
-  icon: z.string().min(1, 'Selecione um ícone'),
-  inspection_frequency: z.string().min(1, 'Selecione a frequência'),
-});
-
-type CategoryFormData = z.infer<typeof categorySchema>;
+type CategoryFormData = {
+  name: string;
+  description?: string;
+  icon: string;
+  inspection_frequency: string;
+};
 
 interface CategoryFormDialogProps {
   open: boolean;
@@ -53,6 +51,13 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
   const { t } = useTranslation();
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
+
+  const categorySchema = z.object({
+    name: z.string().min(2, t('validation.nameMinLength')),
+    description: z.string().optional(),
+    icon: z.string().min(1, t('validation.selectIcon')),
+    inspection_frequency: z.string().min(1, t('validation.selectFrequency')),
+  });
 
   const frequencyOptions = [
     { value: 'monthly', label: t('categoryForm.monthly') },
