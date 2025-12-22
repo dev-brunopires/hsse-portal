@@ -17,16 +17,16 @@ function getSubdomainFromHostname(): string | null {
   
   const hostname = window.location.hostname;
   
-  // For localhost development, use query parameter or default
+  // For localhost development, use query parameter
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
     const params = new URLSearchParams(window.location.search);
-    return params.get('org') || 'sbmoffshore'; // Default to SBM for dev
+    return params.get('org') || null;
   }
   
   // For preview/staging domains (e.g., xxx.lovable.app)
   if (hostname.endsWith('.lovable.app') || hostname.endsWith('.vercel.app')) {
     const params = new URLSearchParams(window.location.search);
-    return params.get('org') || 'sbmoffshore';
+    return params.get('org') || null;
   }
   
   // For production domains like sbmoffshore.safeship.app
