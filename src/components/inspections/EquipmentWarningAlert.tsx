@@ -1,7 +1,8 @@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle, Info, Calendar, MessageSquare, Clock, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 import type { Inspection } from '@/hooks/useInspections';
 import type { EquipmentWithCategory } from '@/hooks/useEquipment';
 
@@ -11,6 +12,8 @@ interface EquipmentWarningAlertProps {
 }
 
 export function EquipmentWarningAlert({ equipment, lastInspection }: EquipmentWarningAlertProps) {
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
   const today = new Date().toISOString().split('T')[0];
   
   // Check if certificate is expired
@@ -37,25 +40,33 @@ export function EquipmentWarningAlert({ equipment, lastInspection }: EquipmentWa
 
   if (!hasAnyWarning) return null;
 
+  const formatDateLong = (dateStr: string) => {
+    return format(new Date(dateStr + 'T00:00:00'), "dd 'de' MMMM 'de' yyyy", { locale: dateLocale });
+  };
+
+  const formatDateShort = (dateStr: string) => {
+    return format(new Date(dateStr + 'T00:00:00'), "dd/MM/yyyy", { locale: dateLocale });
+  };
+
   return (
     <div className="space-y-3 animate-in fade-in-50 slide-in-from-top-2 duration-300">
       {/* Certificate Expired Alert */}
       {isCertificateExpired && (
         <Alert variant="destructive" className="border-destructive/50 bg-destructive/10">
           <AlertTriangle className="h-4 w-4" />
-          <AlertTitle className="font-semibold">Certificado Vencido</AlertTitle>
+          <AlertTitle className="font-semibold">{t('equipmentWarning.certificateExpired')}</AlertTitle>
           <AlertDescription className="mt-1">
             <div className="flex items-center gap-2">
               <Calendar className="h-3.5 w-3.5" />
               <span>
-                O certificado deste equipamento venceu em{' '}
+                {t('equipmentWarning.certificateExpiredOn')}{' '}
                 <strong>
-                  {format(new Date(equipment.certificate_expiry + 'T00:00:00'), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                  {formatDateLong(equipment.certificate_expiry!)}
                 </strong>
               </span>
             </div>
             <p className="mt-1 text-sm opacity-90">
-              Verifique se o certificado foi renovado antes de prosseguir com a inspeção.
+              {t('equipmentWarning.verifyCertificate')}
             </p>
           </AlertDescription>
         </Alert>
@@ -65,19 +76,19 @@ export function EquipmentWarningAlert({ equipment, lastInspection }: EquipmentWa
       {isInspectionOverdue && (
         <Alert variant="destructive" className="border-destructive/50 bg-destructive/10">
           <Clock className="h-4 w-4" />
-          <AlertTitle className="font-semibold">Inspeção Atrasada</AlertTitle>
+          <AlertTitle className="font-semibold">{t('equipmentWarning.inspectionOverdue')}</AlertTitle>
           <AlertDescription className="mt-1">
             <div className="flex items-center gap-2">
               <Calendar className="h-3.5 w-3.5" />
               <span>
-                A inspeção estava prevista para{' '}
+                {t('equipmentWarning.inspectionScheduledFor')}{' '}
                 <strong>
-                  {format(new Date(equipment.next_inspection + 'T00:00:00'), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                  {formatDateLong(equipment.next_inspection!)}
                 </strong>
               </span>
             </div>
             <p className="mt-1 text-sm opacity-90">
-              Este equipamento está com a inspeção periódica atrasada.
+              {t('equipmentWarning.inspectionOverdueMessage')}
             </p>
           </AlertDescription>
         </Alert>
@@ -87,14 +98,14 @@ export function EquipmentWarningAlert({ equipment, lastInspection }: EquipmentWa
       {isEquipmentExpired && (
         <Alert variant="destructive" className="border-destructive/50 bg-destructive/10">
           <AlertTriangle className="h-4 w-4" />
-          <AlertTitle className="font-semibold">Equipamento com Validade Expirada</AlertTitle>
+          <AlertTitle className="font-semibold">{t('equipmentWarning.equipmentExpired')}</AlertTitle>
           <AlertDescription className="mt-1">
             <div className="flex items-center gap-2">
               <Calendar className="h-3.5 w-3.5" />
               <span>
-                A validade deste equipamento expirou em{' '}
+                {t('equipmentWarning.equipmentExpiredOn')}{' '}
                 <strong>
-                  {format(new Date(equipment.expiry_date + 'T00:00:00'), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                  {formatDateLong(equipment.expiry_date!)}
                 </strong>
               </span>
             </div>
@@ -107,11 +118,11 @@ export function EquipmentWarningAlert({ equipment, lastInspection }: EquipmentWa
         <Alert variant="destructive" className="border-destructive/50 bg-destructive/10">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle className="font-semibold">
-            Equipamento {equipment.status === 'rejected' ? 'Reprovado' : 'Vencido'}
+            {equipment.status === 'rejected' ? t('equipmentWarning.equipmentRejected') : t('equipmentWarning.equipmentExpiredStatus')}
           </AlertTitle>
           <AlertDescription>
-            Este equipamento está marcado como {equipment.status === 'rejected' ? 'reprovado' : 'vencido'}. 
-            Verifique se as pendências foram resolvidas.
+            {t('equipmentWarning.markedAs')} {equipment.status === 'rejected' ? t('common.rejected').toLowerCase() : t('equipment.status.expired').toLowerCase()}. 
+            {t('equipmentWarning.verifyPendingIssues')}
           </AlertDescription>
         </Alert>
       )}
@@ -121,20 +132,18 @@ export function EquipmentWarningAlert({ equipment, lastInspection }: EquipmentWa
         <Alert className="border-warning/50 bg-warning/10">
           <Info className="h-4 w-4 text-warning" />
           <AlertTitle className="font-semibold text-warning">
-            Última Inspeção: {lastInspection?.status === 'non-compliant' ? 'Não Conforme' : 'Atenção'}
+            {t('equipmentWarning.lastInspection')}: {lastInspection?.status === 'non-compliant' ? t('equipmentWarning.nonCompliant') : t('equipmentWarning.attention')}
           </AlertTitle>
           <AlertDescription className="text-warning-foreground">
             <div className="flex items-center gap-2 text-sm opacity-90">
               <Calendar className="h-3.5 w-3.5" />
               <span>
-                Realizada em{' '}
-                {lastInspection?.inspection_date && 
-                  format(new Date(lastInspection.inspection_date + 'T00:00:00'), "dd/MM/yyyy", { locale: ptBR })
-                }
+                {t('equipmentWarning.performedOn')}{' '}
+                {lastInspection?.inspection_date && formatDateShort(lastInspection.inspection_date)}
               </span>
             </div>
             <p className="mt-1 text-sm">
-              A última inspeção apresentou problemas. Verifique se foram corrigidos.
+              {t('equipmentWarning.lastInspectionIssues')}
             </p>
           </AlertDescription>
         </Alert>
@@ -144,7 +153,7 @@ export function EquipmentWarningAlert({ equipment, lastInspection }: EquipmentWa
       {hasRecommendations && (
         <Alert className="border-primary/30 bg-primary/5">
           <MessageSquare className="h-4 w-4 text-primary" />
-          <AlertTitle className="font-semibold text-primary">Recomendações da Última Inspeção</AlertTitle>
+          <AlertTitle className="font-semibold text-primary">{t('equipmentWarning.recommendationsFromLastInspection')}</AlertTitle>
           <AlertDescription>
             <div className="mt-2 p-3 bg-background/80 rounded-md border border-border/50">
               <p className="text-sm whitespace-pre-wrap">{lastInspection?.recommendations}</p>
@@ -153,14 +162,14 @@ export function EquipmentWarningAlert({ equipment, lastInspection }: EquipmentWa
               <div className="mt-3 p-3 bg-status-success/10 rounded-md border border-status-success/30">
                 <div className="flex items-center gap-2 text-status-success font-medium text-sm mb-1">
                   <CheckCircle2 className="h-3.5 w-3.5" />
-                  Ações Tomadas na Última Inspeção:
+                  {t('equipmentWarning.actionsTakenLastInspection')}:
                 </div>
                 <p className="text-sm whitespace-pre-wrap">{lastInspection?.actions_taken}</p>
               </div>
             )}
             {lastInspection?.inspection_date && (
               <p className="text-xs text-muted-foreground mt-2">
-                Registrado em {format(new Date(lastInspection.inspection_date + 'T00:00:00'), "dd/MM/yyyy", { locale: ptBR })}
+                {t('equipmentWarning.registeredOn')} {formatDateShort(lastInspection.inspection_date)}
               </p>
             )}
           </AlertDescription>
@@ -171,14 +180,14 @@ export function EquipmentWarningAlert({ equipment, lastInspection }: EquipmentWa
       {hasObservations && !hasRecommendations && (
         <Alert className="border-muted-foreground/30 bg-muted/30">
           <Info className="h-4 w-4 text-muted-foreground" />
-          <AlertTitle className="font-semibold">Observações da Última Inspeção</AlertTitle>
+          <AlertTitle className="font-semibold">{t('equipmentWarning.observationsFromLastInspection')}</AlertTitle>
           <AlertDescription>
             <div className="mt-2 p-3 bg-background/80 rounded-md border border-border/50">
               <p className="text-sm whitespace-pre-wrap">{lastInspection?.observations}</p>
             </div>
             {lastInspection?.inspection_date && (
               <p className="text-xs text-muted-foreground mt-2">
-                Registrado em {format(new Date(lastInspection.inspection_date + 'T00:00:00'), "dd/MM/yyyy", { locale: ptBR })}
+                {t('equipmentWarning.registeredOn')} {formatDateShort(lastInspection.inspection_date)}
               </p>
             )}
           </AlertDescription>

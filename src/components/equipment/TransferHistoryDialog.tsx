@@ -1,6 +1,5 @@
-import { useState } from 'react';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS } from 'date-fns/locale';
 import { ArrowRightLeft, Ship, Calendar, User } from 'lucide-react';
 import {
   Dialog,
@@ -12,6 +11,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { useEquipmentTransfers } from '@/hooks/useEquipmentTransfers';
+import { useTranslation } from 'react-i18next';
 
 interface TransferHistoryDialogProps {
   open: boolean;
@@ -26,13 +26,15 @@ export function TransferHistoryDialog({
   equipmentId,
   equipmentName,
 }: TransferHistoryDialogProps) {
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
   const { data: transfers = [], isLoading } = useEquipmentTransfers(equipmentId);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Histórico de Transferências</DialogTitle>
+          <DialogTitle>{t('transferHistory.title')}</DialogTitle>
           <DialogDescription>{equipmentName}</DialogDescription>
         </DialogHeader>
 
@@ -45,7 +47,7 @@ export function TransferHistoryDialog({
         ) : transfers.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <ArrowRightLeft className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">Nenhuma transferência registrada</p>
+            <p className="text-sm">{t('transferHistory.noTransfers')}</p>
           </div>
         ) : (
           <ScrollArea className="h-[400px] pr-4">
@@ -54,7 +56,7 @@ export function TransferHistoryDialog({
               <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border" />
 
               <div className="space-y-4">
-                {transfers.map((transfer, index) => (
+                {transfers.map((transfer) => (
                   <div key={transfer.id} className="relative pl-10">
                     {/* Timeline dot */}
                     <div className="absolute left-2.5 top-2 w-3 h-3 rounded-full bg-primary border-2 border-background" />
@@ -64,7 +66,7 @@ export function TransferHistoryDialog({
                         <Calendar className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm font-medium">
                           {format(new Date(transfer.transfer_date), "dd 'de' MMMM 'de' yyyy", {
-                            locale: ptBR,
+                            locale: dateLocale,
                           })}
                         </span>
                       </div>
@@ -73,7 +75,7 @@ export function TransferHistoryDialog({
                         <div className="flex items-center gap-2 text-sm">
                           <Ship className="h-4 w-4 text-muted-foreground" />
                           <span className="text-muted-foreground">
-                            {transfer.from_ship?.name || 'Sem navio'}
+                            {transfer.from_ship?.name || t('transferHistory.noShip')}
                           </span>
                         </div>
                         <ArrowRightLeft className="h-4 w-4 text-primary" />
@@ -98,7 +100,7 @@ export function TransferHistoryDialog({
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <User className="h-3 w-3" />
                         <span>
-                          Por {transfer.transferred_by_profile?.full_name || 'Desconhecido'}
+                          {t('transferHistory.byUser')} {transfer.transferred_by_profile?.full_name || t('transferHistory.unknown')}
                         </span>
                       </div>
                     </div>
