@@ -1,5 +1,16 @@
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
-import { useUserOrganization, useOrganizationBySubdomain, Organization } from '@/hooks/useOrganizations';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  subdomain: string;
+  logo_url: string | null;
+  logo_white_url: string | null;
+  is_active: boolean;
+}
 
 interface OrganizationContextType {
   organization: Organization | null;
@@ -48,18 +59,60 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
     setSubdomain(detected);
   }, []);
 
-  // First try to get org from subdomain (for login page)
-  const { data: orgFromSubdomain, isLoading: isLoadingSubdomain } = useOrganizationBySubdomain(subdomain);
-  
-  // Then try to get from user's organization (for authenticated users)
-  const { data: userOrg, isLoading: isLoadingUserOrg } = useUserOrganization();
+  // Get org from subdomain (for login page)
+  const { data: orgFromSubdomain, isLoading: isLoadingSubdomain } = useQuery({
+    queryKey: ['organization', 'subdomain', subdomain],
+    queryFn: async () => {
+      if (!subdomain) return null;
+      
+      const { data, error } = await supabase
+        .from('organizations')
+        .select('*')
+        .eq('subdomain', subdomain)
+        .eq('is_active', true)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data as Organization | null;
+    },
+    enabled: !!subdomain,
+  });
+
+  // Get org from user's membership
+  const { data: userOrg, isLoading: isLoadingUserOrg } = useQuery({
+    queryKey: ['user-organization'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data, error } = await supabase
+        .from('user_organizations')
+        .select(`
+          organization_id,
+          organizations:organization_id (
+            id,
+            name,
+            slug,
+            subdomain,
+            logo_url,
+            logo_white_url,
+            is_active
+          )
+        `)
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data?.organizations as Organization | null;
+    },
+  });
 
   // Prefer user's organization if available, otherwise use subdomain
   const organization = useMemo(() => {
     return userOrg || orgFromSubdomain || null;
   }, [userOrg, orgFromSubdomain]);
 
-  const isLoading = isLoadingSubdomain || isLoadingUserOrg;
+  const isLoading = subdomain ? isLoadingSubdomain : isLoadingUserOrg;
 
   const value = useMemo(() => ({
     organization,
