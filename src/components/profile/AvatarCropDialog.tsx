@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Loader2, Check, X, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
+import { useTranslation } from 'react-i18next';
 
 interface AvatarCropDialogProps {
   open: boolean;
@@ -45,6 +46,7 @@ export function AvatarCropDialog({
   imageSrc,
   onCropComplete,
 }: AvatarCropDialogProps) {
+  const { t } = useTranslation();
   const [crop, setCrop] = useState<Crop>();
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
   const [scale, setScale] = useState(1);
@@ -151,7 +153,7 @@ export function AvatarCropDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Recortar Foto de Perfil</DialogTitle>
+          <DialogTitle>{t('avatarCrop.title')}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -167,7 +169,7 @@ export function AvatarCropDialog({
               <img
                 ref={imgRef}
                 src={imageSrc}
-                alt="Imagem para recortar"
+                alt={t('avatarCrop.imageAlt')}
                 style={{
                   transform: `scale(${scale}) rotate(${rotate}deg)`,
                   maxHeight: '300px',
@@ -212,7 +214,7 @@ export function AvatarCropDialog({
                 <RotateCcw className="h-4 w-4 ml-1 scale-x-[-1]" />
               </Button>
               <Button variant="ghost" size="sm" onClick={handleReset}>
-                Resetar
+                {t('avatarCrop.reset')}
               </Button>
             </div>
           </div>
@@ -221,18 +223,18 @@ export function AvatarCropDialog({
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             <X className="h-4 w-4 mr-1" />
-            Cancelar
+            {t('common.cancel')}
           </Button>
           <Button onClick={handleConfirm} disabled={isProcessing || !completedCrop}>
             {isProcessing ? (
               <>
                 <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                Processando...
+                {t('avatarCrop.processing')}
               </>
             ) : (
               <>
                 <Check className="h-4 w-4 mr-1" />
-                Confirmar
+                {t('common.confirm')}
               </>
             )}
           </Button>

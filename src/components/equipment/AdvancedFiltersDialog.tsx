@@ -7,7 +7,6 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import {
@@ -19,6 +18,7 @@ import {
 } from '@/components/ui/select';
 import { Filter, X } from 'lucide-react';
 import { useCategories } from '@/hooks/useCategories';
+import { useTranslation } from 'react-i18next';
 
 export interface AdvancedFilters {
   manufacturer: string;
@@ -61,6 +61,7 @@ export function AdvancedFiltersDialog({
   manufacturers,
   units,
 }: AdvancedFiltersDialogProps) {
+  const { t } = useTranslation();
   const [localFilters, setLocalFilters] = useState<AdvancedFilters>(filters);
   const { data: categories } = useCategories();
 
@@ -83,10 +84,10 @@ export function AdvancedFiltersDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Filter className="h-5 w-5 text-primary" />
-            Filtros Avançados
+            {t('advancedFilters.title')}
             {activeFiltersCount > 0 && (
               <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
-                {activeFiltersCount} ativo(s)
+                {t('advancedFilters.activeCount', { count: activeFiltersCount })}
               </span>
             )}
           </DialogTitle>
@@ -95,16 +96,16 @@ export function AdvancedFiltersDialog({
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Fabricante</Label>
+              <Label>{t('advancedFilters.manufacturer')}</Label>
               <Select 
                 value={localFilters.manufacturer || "all"} 
                 onValueChange={(v) => setLocalFilters(f => ({ ...f, manufacturer: v === "all" ? "" : v }))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Todos" />
+                  <SelectValue placeholder={t('advancedFilters.allManufacturers')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="all">{t('advancedFilters.allManufacturers')}</SelectItem>
                   {manufacturers.map(m => (
                     <SelectItem key={m} value={m}>{m}</SelectItem>
                   ))}
@@ -113,16 +114,16 @@ export function AdvancedFiltersDialog({
             </div>
 
             <div className="space-y-2">
-              <Label>Categoria</Label>
+              <Label>{t('advancedFilters.category')}</Label>
               <Select 
                 value={localFilters.category || "all"} 
                 onValueChange={(v) => setLocalFilters(f => ({ ...f, category: v === "all" ? "" : v }))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Todas" />
+                  <SelectValue placeholder={t('advancedFilters.allCategories')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todas</SelectItem>
+                  <SelectItem value="all">{t('advancedFilters.allCategories')}</SelectItem>
                   {categories?.map(c => (
                     <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                   ))}
@@ -132,16 +133,16 @@ export function AdvancedFiltersDialog({
           </div>
 
           <div className="space-y-2">
-            <Label>Unidade</Label>
+            <Label>{t('advancedFilters.unit')}</Label>
             <Select 
               value={localFilters.unit || "all"} 
               onValueChange={(v) => setLocalFilters(f => ({ ...f, unit: v === "all" ? "" : v }))}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Todas" />
+                <SelectValue placeholder={t('advancedFilters.allUnits')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
+                <SelectItem value="all">{t('advancedFilters.allUnits')}</SelectItem>
                 {units.filter(u => u).map(u => (
                   <SelectItem key={u} value={u}>{u}</SelectItem>
                 ))}
@@ -150,19 +151,19 @@ export function AdvancedFiltersDialog({
           </div>
 
           <div className="space-y-2">
-            <Label>Data de Aquisição</Label>
+            <Label>{t('advancedFilters.acquisitionDate')}</Label>
             <div className="grid grid-cols-2 gap-2">
               <DatePicker
                 value={localFilters.acquisitionDateFrom}
                 onChange={(v) => setLocalFilters(f => ({ ...f, acquisitionDateFrom: v }))}
-                placeholder="De"
+                placeholder={t('advancedFilters.from')}
                 fromYear={1990}
                 toYear={new Date().getFullYear() + 1}
               />
               <DatePicker
                 value={localFilters.acquisitionDateTo}
                 onChange={(v) => setLocalFilters(f => ({ ...f, acquisitionDateTo: v }))}
-                placeholder="Até"
+                placeholder={t('advancedFilters.to')}
                 fromYear={1990}
                 toYear={new Date().getFullYear() + 1}
               />
@@ -170,19 +171,19 @@ export function AdvancedFiltersDialog({
           </div>
 
           <div className="space-y-2">
-            <Label>Validade do Equipamento</Label>
+            <Label>{t('advancedFilters.equipmentExpiry')}</Label>
             <div className="grid grid-cols-2 gap-2">
               <DatePicker
                 value={localFilters.expiryDateFrom}
                 onChange={(v) => setLocalFilters(f => ({ ...f, expiryDateFrom: v }))}
-                placeholder="De"
+                placeholder={t('advancedFilters.from')}
                 fromYear={new Date().getFullYear() - 5}
                 toYear={new Date().getFullYear() + 30}
               />
               <DatePicker
                 value={localFilters.expiryDateTo}
                 onChange={(v) => setLocalFilters(f => ({ ...f, expiryDateTo: v }))}
-                placeholder="Até"
+                placeholder={t('advancedFilters.to')}
                 fromYear={new Date().getFullYear() - 5}
                 toYear={new Date().getFullYear() + 30}
               />
@@ -190,19 +191,19 @@ export function AdvancedFiltersDialog({
           </div>
 
           <div className="space-y-2">
-            <Label>Validade do Certificado</Label>
+            <Label>{t('advancedFilters.certificateExpiry')}</Label>
             <div className="grid grid-cols-2 gap-2">
               <DatePicker
                 value={localFilters.certificateExpiryFrom}
                 onChange={(v) => setLocalFilters(f => ({ ...f, certificateExpiryFrom: v }))}
-                placeholder="De"
+                placeholder={t('advancedFilters.from')}
                 fromYear={new Date().getFullYear() - 5}
                 toYear={new Date().getFullYear() + 30}
               />
               <DatePicker
                 value={localFilters.certificateExpiryTo}
                 onChange={(v) => setLocalFilters(f => ({ ...f, certificateExpiryTo: v }))}
-                placeholder="Até"
+                placeholder={t('advancedFilters.to')}
                 fromYear={new Date().getFullYear() - 5}
                 toYear={new Date().getFullYear() + 30}
               />
@@ -213,9 +214,9 @@ export function AdvancedFiltersDialog({
         <DialogFooter className="gap-2">
           <Button variant="ghost" onClick={handleClear} className="gap-2">
             <X className="h-4 w-4" />
-            Limpar Filtros
+            {t('advancedFilters.clearFilters')}
           </Button>
-          <Button onClick={handleApply}>Aplicar Filtros</Button>
+          <Button onClick={handleApply}>{t('advancedFilters.applyFilters')}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

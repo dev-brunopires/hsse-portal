@@ -1658,5 +1658,112 @@
     "retry": "Tentar Novamente",
     "grantPermission": "Conceder Permissão",
     "permissionInstructions": "Clique no ícone de cadeado na barra de endereços e permita o acesso à câmera."
+  },
+  "signaturePad": {
+    "title": "Assinatura do Inspetor",
+    "hint": "Desenhe sua assinatura no campo acima",
+    "clear": "Limpar",
+    "confirm": "Confirmar Assinatura"
+  },
+  "avatarCrop": {
+    "title": "Recortar Foto de Perfil",
+    "imageAlt": "Imagem para recortar",
+    "reset": "Resetar",
+    "processing": "Processando..."
+  },
+  "criticalEquipment": {
+    "title": "Equipamentos Críticos",
+    "top10Title": "Top 10 Equipamentos Críticos",
+    "requiresAttention": "Requerem atenção imediata",
+    "noCritical": "Nenhum equipamento crítico",
+    "allInOrder": "Tudo está em ordem! 🎉",
+    "certificateExpired": "Certificado vencido",
+    "hydrostaticExpired": "Teste hidrostático vencido",
+    "rejected": "Reprovado",
+    "overdueInspection": "Inspeção atrasada",
+    "inMaintenance": "Em manutenção"
+  },
+  "inspectionHeatmap": {
+    "title": "Inspeções por Semana",
+    "subtitle": "Últimas 8 semanas",
+    "total": "Total",
+    "compliant": "Conformes",
+    "attention": "Atenção",
+    "nonCompliant": "Não Conformes"
+  },
+  "statusByCategory": {
+    "title": "Status por Categoria",
+    "subtitle": "Distribuição de equipamentos",
+    "active": "Ativos",
+    "maintenance": "Em Manutenção",
+    "expired": "Vencidos/Reprovados"
+  },
+  "complianceChart": {
+    "title": "Conformidade por Equipamento",
+    "subtitle": "Top 10 equipamentos inspecionados",
+    "searchPlaceholder": "Buscar equipamento...",
+    "allCategories": "Todas categorias",
+    "noCategory": "Sem categoria",
+    "compliant": "Conformes",
+    "attention": "Atenção",
+    "nonCompliant": "Não Conformes",
+    "noEquipmentFound": "Nenhum equipamento encontrado",
+    "adjustFilters": "Ajuste os filtros ou realize inspeções",
+    "totalInspections": "Total Inspeções",
+    "complianceRate": "Taxa de Conformidade",
+    "compliance": "Conformidade"
+  },
+  "advancedFilters": {
+    "title": "Filtros Avançados",
+    "activeCount": "{{count}} ativo(s)",
+    "manufacturer": "Fabricante",
+    "category": "Categoria",
+    "unit": "Unidade",
+    "acquisitionDate": "Data de Aquisição",
+    "equipmentExpiry": "Validade do Equipamento",
+    "certificateExpiry": "Validade do Certificado",
+    "allManufacturers": "Todos",
+    "allCategories": "Todas",
+    "allUnits": "Todas",
+    "from": "De",
+    "to": "Até",
+    "clearFilters": "Limpar Filtros",
+    "applyFilters": "Aplicar Filtros"
+  },
+  "hooks": {
+    "equipment": {
+      "created": "Equipamento Cadastrado",
+      "createdDesc": "O equipamento foi cadastrado com sucesso.",
+      "createError": "Erro ao Cadastrar",
+      "updated": "Equipamento Atualizado",
+      "updatedDesc": "O equipamento foi atualizado com sucesso.",
+      "updateError": "Erro ao Atualizar",
+      "deleted": "Equipamento Excluído",
+      "deletedDesc": "O equipamento foi excluído com sucesso.",
+      "deleteError": "Erro ao Excluir"
+    },
+    "inspection": {
+      "created": "Inspeção Registrada",
+      "createdDesc": "A inspeção foi registrada com sucesso e a próxima data foi calculada automaticamente.",
+      "createError": "Erro ao Registrar Inspeção",
+      "updated": "Inspeção Atualizada",
+      "updatedDesc": "A inspeção foi atualizada com sucesso.",
+      "updateError": "Erro ao Atualizar Inspeção",
+      "deleted": "Inspeção Excluída",
+      "deletedDesc": "A inspeção foi excluída com sucesso.",
+      "deleteError": "Erro ao Excluir Inspeção"
+    },
+    "category": {
+      "created": "Categoria Criada",
+      "createdDesc": "A categoria foi criada com sucesso.",
+      "createError": "Erro ao Criar Categoria",
+      "updated": "Categoria Atualizada",
+      "updatedDesc": "A categoria foi atualizada com sucesso.",
+      "updateError": "Erro ao Atualizar Categoria",
+      "updatePermissionError": "Não foi possível atualizar a categoria. Verifique suas permissões.",
+      "deleted": "Categoria Excluída",
+      "deletedDesc": "A categoria foi excluída com sucesso.",
+      "deleteError": "Erro ao Excluir Categoria"
+    }
   }
 }
