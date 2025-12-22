@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import i18n from '@/i18n';
 
 export interface EquipmentTransfer {
   id: string;
@@ -61,7 +62,7 @@ export function useEquipmentTransfers(equipmentId?: string) {
 
       return transfers.map(t => ({
         ...t,
-        transferred_by_profile: t.transferred_by ? { full_name: profiles[t.transferred_by] || 'Desconhecido' } : null,
+        transferred_by_profile: t.transferred_by ? { full_name: profiles[t.transferred_by] || i18n.t('hooks.transfer.unknown') } : null,
       })) as EquipmentTransfer[];
     },
   });
@@ -111,10 +112,10 @@ export function useCreateEquipmentTransfer() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['equipment-transfers'] });
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
-      toast.success('Equipamento transferido com sucesso!');
+      toast.success(i18n.t('hooks.transfer.success'));
     },
     onError: (error) => {
-      toast.error('Erro ao transferir equipamento');
+      toast.error(i18n.t('hooks.transfer.error'));
       console.error('Error transferring equipment:', error);
     },
   });

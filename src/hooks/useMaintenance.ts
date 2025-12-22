@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import i18n from '@/i18n';
 
 export interface MaintenancePlan {
   id: string;
@@ -122,10 +123,10 @@ export function useCreateMaintenancePlan() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-plans'] });
       queryClient.invalidateQueries({ queryKey: ['upcoming-maintenance'] });
-      toast.success('Plano de manutenção criado com sucesso!');
+      toast.success(i18n.t('hooks.maintenance.planCreated'));
     },
     onError: (error) => {
-      toast.error('Erro ao criar plano de manutenção');
+      toast.error(i18n.t('hooks.maintenance.planCreateError'));
       console.error('Error creating maintenance plan:', error);
     },
   });
@@ -149,10 +150,10 @@ export function useUpdateMaintenancePlan() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-plans'] });
       queryClient.invalidateQueries({ queryKey: ['upcoming-maintenance'] });
-      toast.success('Plano de manutenção atualizado!');
+      toast.success(i18n.t('hooks.maintenance.planUpdated'));
     },
     onError: (error) => {
-      toast.error('Erro ao atualizar plano de manutenção');
+      toast.error(i18n.t('hooks.maintenance.planUpdateError'));
       console.error('Error updating maintenance plan:', error);
     },
   });
@@ -173,10 +174,10 @@ export function useDeleteMaintenancePlan() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-plans'] });
       queryClient.invalidateQueries({ queryKey: ['upcoming-maintenance'] });
-      toast.success('Plano de manutenção excluído!');
+      toast.success(i18n.t('hooks.maintenance.planDeleted'));
     },
     onError: (error) => {
-      toast.error('Erro ao excluir plano de manutenção');
+      toast.error(i18n.t('hooks.maintenance.planDeleteError'));
       console.error('Error deleting maintenance plan:', error);
     },
   });
@@ -234,10 +235,10 @@ export function useCompleteMaintenance() {
       queryClient.invalidateQueries({ queryKey: ['maintenance-plans'] });
       queryClient.invalidateQueries({ queryKey: ['upcoming-maintenance'] });
       queryClient.invalidateQueries({ queryKey: ['maintenance-logs'] });
-      toast.success('Manutenção registrada com sucesso!');
+      toast.success(i18n.t('hooks.maintenance.completed'));
     },
     onError: (error) => {
-      toast.error('Erro ao registrar manutenção');
+      toast.error(i18n.t('hooks.maintenance.completeError'));
       console.error('Error completing maintenance:', error);
     },
   });

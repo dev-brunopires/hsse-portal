@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import i18n from '@/i18n';
 
 export interface UserFavorite {
   id: string;
@@ -51,7 +52,7 @@ export function useToggleFavorite() {
       entityId: string;
     }) => {
       const { data: user } = await supabase.auth.getUser();
-      if (!user?.user?.id) throw new Error('Usuário não autenticado');
+      if (!user?.user?.id) throw new Error(i18n.t('hooks.favorite.notAuthenticated'));
 
       // Check if already favorited
       const { data: existing } = await supabase
@@ -87,10 +88,10 @@ export function useToggleFavorite() {
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['user-favorites'] });
-      toast.success(result.action === 'added' ? 'Adicionado aos favoritos!' : 'Removido dos favoritos!');
+      toast.success(result.action === 'added' ? i18n.t('hooks.favorite.added') : i18n.t('hooks.favorite.removed'));
     },
     onError: (error) => {
-      toast.error('Erro ao atualizar favoritos');
+      toast.error(i18n.t('hooks.favorite.error'));
       console.error('Error toggling favorite:', error);
     },
   });

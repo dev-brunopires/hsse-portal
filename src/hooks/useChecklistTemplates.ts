@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import i18n from '@/i18n';
 
 export interface ChecklistTemplate {
   id: string;
@@ -132,10 +133,10 @@ export function useCreateChecklistTemplate() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['checklist-templates'] });
       queryClient.invalidateQueries({ queryKey: ['default-checklist-template'] });
-      toast.success('Template de checklist criado com sucesso!');
+      toast.success(i18n.t('hooks.checklistTemplate.created'));
     },
     onError: (error) => {
-      toast.error('Erro ao criar template de checklist');
+      toast.error(i18n.t('hooks.checklistTemplate.createError'));
       console.error('Error creating checklist template:', error);
     },
   });
@@ -197,10 +198,10 @@ export function useUpdateChecklistTemplate() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['checklist-templates'] });
       queryClient.invalidateQueries({ queryKey: ['default-checklist-template'] });
-      toast.success('Template de checklist atualizado!');
+      toast.success(i18n.t('hooks.checklistTemplate.updated'));
     },
     onError: (error) => {
-      toast.error('Erro ao atualizar template de checklist');
+      toast.error(i18n.t('hooks.checklistTemplate.updateError'));
       console.error('Error updating checklist template:', error);
     },
   });
@@ -221,10 +222,10 @@ export function useDeleteChecklistTemplate() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['checklist-templates'] });
       queryClient.invalidateQueries({ queryKey: ['default-checklist-template'] });
-      toast.success('Template de checklist excluído!');
+      toast.success(i18n.t('hooks.checklistTemplate.deleted'));
     },
     onError: (error) => {
-      toast.error('Erro ao excluir template de checklist');
+      toast.error(i18n.t('hooks.checklistTemplate.deleteError'));
       console.error('Error deleting checklist template:', error);
     },
   });

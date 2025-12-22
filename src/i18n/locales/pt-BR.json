@@ -1764,6 +1764,64 @@
       "deleted": "Categoria Excluída",
       "deletedDesc": "A categoria foi excluída com sucesso.",
       "deleteError": "Erro ao Excluir Categoria"
+    },
+    "maintenance": {
+      "planCreated": "Plano de manutenção criado com sucesso!",
+      "planCreateError": "Erro ao criar plano de manutenção",
+      "planUpdated": "Plano de manutenção atualizado!",
+      "planUpdateError": "Erro ao atualizar plano de manutenção",
+      "planDeleted": "Plano de manutenção excluído!",
+      "planDeleteError": "Erro ao excluir plano de manutenção",
+      "completed": "Manutenção registrada com sucesso!",
+      "completeError": "Erro ao registrar manutenção"
+    },
+    "maintenanceRequest": {
+      "created": "Solicitação Criada",
+      "createdDesc": "A solicitação de manutenção foi criada com sucesso.",
+      "createError": "Erro ao Criar",
+      "updated": "Solicitação Atualizada",
+      "updatedDesc": "A solicitação de manutenção foi atualizada com sucesso.",
+      "updateError": "Erro ao Atualizar",
+      "deleted": "Solicitação Excluída",
+      "deletedDesc": "A solicitação de manutenção foi excluída com sucesso.",
+      "deleteError": "Erro ao Excluir",
+      "statusUpdated": "Status Atualizado",
+      "statusUpdatedDesc": "Manutenção marcada como {{status}}.",
+      "statusUpdateError": "Erro ao Atualizar Status",
+      "status": {
+        "pending": "Pendente",
+        "approved": "Aprovada",
+        "in_progress": "Em Andamento",
+        "completed": "Concluída",
+        "rejected": "Rejeitada"
+      }
+    },
+    "document": {
+      "uploaded": "Documento Enviado",
+      "uploadedDesc": "O documento foi enviado com sucesso.",
+      "uploadError": "Erro ao Enviar",
+      "deleted": "Documento Excluído",
+      "deletedDesc": "O documento foi excluído com sucesso.",
+      "deleteError": "Erro ao Excluir"
+    },
+    "transfer": {
+      "success": "Equipamento transferido com sucesso!",
+      "error": "Erro ao transferir equipamento",
+      "unknown": "Desconhecido"
+    },
+    "favorite": {
+      "added": "Adicionado aos favoritos!",
+      "removed": "Removido dos favoritos!",
+      "error": "Erro ao atualizar favoritos",
+      "notAuthenticated": "Usuário não autenticado"
+    },
+    "checklistTemplate": {
+      "created": "Template de checklist criado com sucesso!",
+      "createError": "Erro ao criar template de checklist",
+      "updated": "Template de checklist atualizado!",
+      "updateError": "Erro ao atualizar template de checklist",
+      "deleted": "Template de checklist excluído!",
+      "deleteError": "Erro ao excluir template de checklist"
     }
   }
 }

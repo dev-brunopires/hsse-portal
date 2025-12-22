@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useShipFilter } from '@/contexts/ShipFilterContext';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n';
 
 export type MaintenanceType = 'preventive' | 'corrective';
 export type MaintenanceStatus = 'pending' | 'approved' | 'in_progress' | 'completed' | 'rejected';
@@ -227,13 +229,13 @@ export function useCreateMaintenanceRequest() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-requests'] });
       toast({
-        title: 'Solicitação Criada',
-        description: 'A solicitação de manutenção foi registrada com sucesso.',
+        title: i18n.t('hooks.maintenanceRequest.created'),
+        description: i18n.t('hooks.maintenanceRequest.createdDesc'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Erro ao Criar Solicitação',
+        title: i18n.t('hooks.maintenanceRequest.createError'),
         description: error.message,
         variant: 'destructive',
       });
@@ -292,22 +294,16 @@ export function useUpdateMaintenanceStatus() {
       queryClient.invalidateQueries({ queryKey: ['maintenance-requests'] });
       queryClient.invalidateQueries({ queryKey: ['maintenance-request', variables.id] });
       
-      const statusLabels: Record<MaintenanceStatus, string> = {
-        pending: 'Pendente',
-        approved: 'Aprovada',
-        in_progress: 'Em Execução',
-        completed: 'Concluída',
-        rejected: 'Rejeitada',
-      };
+      const statusLabel = i18n.t(`hooks.maintenanceRequest.status.${variables.status}`);
 
       toast({
-        title: 'Status Atualizado',
-        description: `Manutenção marcada como ${statusLabels[variables.status]}.`,
+        title: i18n.t('hooks.maintenanceRequest.statusUpdated'),
+        description: i18n.t('hooks.maintenanceRequest.statusUpdatedDesc', { status: statusLabel }),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Erro ao Atualizar Status',
+        title: i18n.t('hooks.maintenanceRequest.statusUpdateError'),
         description: error.message,
         variant: 'destructive',
       });
@@ -331,13 +327,13 @@ export function useDeleteMaintenanceRequest() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-requests'] });
       toast({
-        title: 'Solicitação Excluída',
-        description: 'A solicitação de manutenção foi excluída com sucesso.',
+        title: i18n.t('hooks.maintenanceRequest.deleted'),
+        description: i18n.t('hooks.maintenanceRequest.deletedDesc'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Erro ao Excluir',
+        title: i18n.t('hooks.maintenanceRequest.deleteError'),
         description: error.message,
         variant: 'destructive',
       });
