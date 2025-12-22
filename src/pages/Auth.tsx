@@ -17,6 +17,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import loginBg from '@/assets/login-bg.jpg';
 import sbmLogo from '@/assets/sbm-logo.svg';
 
@@ -29,6 +30,11 @@ export default function Auth() {
   const [rememberMe, setRememberMe] = useState(false);
   const { signIn, user } = useAuth();
   const navigate = useNavigate();
+  const { organization, logoUrl, isLoading: orgLoading } = useOrganization();
+  
+  // Use organization logo or fallback to default SBM logo
+  const displayLogo = logoUrl || sbmLogo;
+  const organizationName = organization?.name || 'SBM Offshore';
 
   const loginSchema = z.object({
     email: z.string().email(t('errors.invalidEmail')).min(1, t('validation.required')),
@@ -85,12 +91,12 @@ export default function Auth() {
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-8">
-            <img src={sbmLogo} alt="SBM Offshore" className="h-12 mx-auto mb-3" />
+            <img src={displayLogo} alt={organizationName} className="h-12 mx-auto mb-3" />
           </div>
 
           {/* Form Header */}
           <div className="mb-8">
-            <img src={sbmLogo} alt="SBM Offshore" className="h-10 mb-4 hidden lg:block" />
+            <img src={displayLogo} alt={organizationName} className="h-10 mb-4 hidden lg:block" />
             <h2 className="text-lg font-semibold text-primary mb-2">
               {t('authPage.equipmentManagement')}
             </h2>
@@ -216,7 +222,7 @@ export default function Auth() {
         {/* Overlay Content */}
         <div className="absolute bottom-0 right-0 p-8 lg:p-12">
           <p className="text-white/80 text-sm drop-shadow-md text-right">
-            © {new Date().getFullYear()} SBM Offshore. {t('authPage.allRightsReserved')}
+            © {new Date().getFullYear()} {organizationName}. {t('authPage.allRightsReserved')}
           </p>
         </div>
       </div>
