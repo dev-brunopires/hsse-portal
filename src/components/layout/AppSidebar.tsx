@@ -16,10 +16,13 @@ import {
   AlertCircle,
   History,
   Wrench,
+  Building2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOrganization } from '@/contexts/OrganizationContext';
+import { useIsPlatformOwner } from '@/hooks/useOrganizations';
 import sbmLogoWhite from '@/assets/sbm-logo-white.svg';
 
 interface NavItemProps {
@@ -61,6 +64,12 @@ export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const { isAdmin } = useAuth();
   const { t } = useTranslation();
+  const { organization, logoWhiteUrl } = useOrganization();
+  const { data: isPlatformOwner } = useIsPlatformOwner();
+  
+  // Use organization white logo or fallback to default
+  const displayLogo = logoWhiteUrl || sbmLogoWhite;
+  const organizationName = organization?.name || 'SBM Offshore';
 
   return (
     <aside
@@ -76,10 +85,10 @@ export function AppSidebar() {
       )}>
         {collapsed ? (
           <div className="w-10 h-10 flex items-center justify-center">
-            <img src={sbmLogoWhite} alt="SBM" className="h-6 w-auto object-contain" />
+            <img src={displayLogo} alt={organizationName} className="h-6 w-auto object-contain" />
           </div>
         ) : (
-          <img src={sbmLogoWhite} alt="SBM Offshore" className="h-6 w-auto" />
+          <img src={displayLogo} alt={organizationName} className="h-6 w-auto" />
         )}
       </div>
 
@@ -118,6 +127,9 @@ export function AppSidebar() {
             <NavItem to="/audit-log" icon={<History size={20} />} label={t('navigation.auditLog')} collapsed={collapsed} />
             <NavItem to="/settings" icon={<Settings size={20} />} label={t('navigation.settings')} collapsed={collapsed} />
           </>
+        )}
+        {isPlatformOwner && (
+          <NavItem to="/platform-admin" icon={<Building2 size={20} />} label={t('navigation.platformAdmin')} collapsed={collapsed} />
         )}
       </div>
 
