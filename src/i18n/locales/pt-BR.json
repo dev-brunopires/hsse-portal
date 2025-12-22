@@ -2202,7 +2202,17 @@
     "next": "Próximo",
     "previous": "Anterior",
     "done": "Concluir",
-    "progress": "{{current}} de {{total}}"
+    "progress": "{{current}} de {{total}}",
+    "welcomeTitle": "Bem-vindo ao SafeShip!",
+    "welcomeDescription": "Sistema de Gestão de Inspeções de Equipamentos de Segurança Marítima.",
+    "tourQuestion": "Gostaria de fazer um tour rápido pelo sistema? Você vai aprender sobre:",
+    "tourItem1": "Navegação e principais funcionalidades",
+    "tourItem2": "Cadastro e inspeção de equipamentos",
+    "tourItem3": "Relatórios e alertas do sistema",
+    "tourItem4": "Como configurar sua assinatura digital",
+    "tourItem5": "Atalhos de teclado",
+    "skip": "Pular",
+    "startTour": "Iniciar Tour"
   },
   "pushNotifications": {
     "upcomingInspections": "Inspeções Próximas",

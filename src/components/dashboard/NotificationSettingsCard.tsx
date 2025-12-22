@@ -4,8 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 export function NotificationSettingsCard() {
+  const { t } = useTranslation();
   const { 
     isSupported, 
     permission, 
@@ -17,19 +19,19 @@ export function NotificationSettingsCard() {
   const handleEnableNotifications = async () => {
     const granted = await requestPermission();
     if (granted) {
-      toast.success('Notificações ativadas com sucesso!');
+      toast.success(t('notificationSettings.enabledSuccess'));
       // Check for alerts immediately
       await checkUpcomingInspections();
       await checkExpiredCertificates();
     } else {
-      toast.error('Permissão para notificações negada');
+      toast.error(t('notificationSettings.permissionDenied'));
     }
   };
 
   const handleTestNotification = async () => {
     await checkUpcomingInspections();
     await checkExpiredCertificates();
-    toast.success('Verificação de alertas concluída');
+    toast.success(t('notificationSettings.alertCheckCompleted'));
   };
 
   if (!isSupported) {
@@ -38,10 +40,10 @@ export function NotificationSettingsCard() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <BellOff className="h-4 w-4" />
-            Notificações Push
+            {t('notificationSettings.pushNotifications')}
           </CardTitle>
           <CardDescription>
-            Seu navegador não suporta notificações push
+            {t('notificationSettings.browserNotSupported')}
           </CardDescription>
         </CardHeader>
       </Card>
@@ -57,9 +59,9 @@ export function NotificationSettingsCard() {
               <Bell className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-base">Notificações Push</CardTitle>
+              <CardTitle className="text-base">{t('notificationSettings.pushNotifications')}</CardTitle>
               <CardDescription className="text-xs">
-                Receba alertas sobre inspeções e vencimentos
+                {t('notificationSettings.receiveAlerts')}
               </CardDescription>
             </div>
           </div>
@@ -70,7 +72,7 @@ export function NotificationSettingsCard() {
               : 'bg-yellow-500/20 text-yellow-600 border-yellow-500/30'
             }
           >
-            {permission === 'granted' ? 'Ativado' : 'Desativado'}
+            {permission === 'granted' ? t('notificationSettings.enabled') : t('notificationSettings.disabled')}
           </Badge>
         </div>
       </CardHeader>
@@ -79,20 +81,20 @@ export function NotificationSettingsCard() {
           <>
             <div className="flex items-center gap-2 text-sm text-green-600">
               <CheckCircle className="h-4 w-4" />
-              <span>Você receberá notificações automáticas</span>
+              <span>{t('notificationSettings.autoReceiveNotifications')}</span>
             </div>
             <div className="space-y-2 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-primary" />
-                <span>Inspeções próximas do vencimento</span>
+                <span>{t('notificationSettings.upcomingInspections')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-red-500" />
-                <span>Certificados expirados</span>
+                <span>{t('notificationSettings.expiredCertificates')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                <span>Equipamentos com status crítico</span>
+                <span>{t('notificationSettings.criticalEquipment')}</span>
               </div>
             </div>
             <Button 
@@ -101,24 +103,24 @@ export function NotificationSettingsCard() {
               className="w-full"
               onClick={handleTestNotification}
             >
-              Verificar Alertas Agora
+              {t('notificationSettings.checkAlertsNow')}
             </Button>
           </>
         ) : (
           <>
             <div className="flex items-center gap-2 text-sm text-yellow-600">
               <AlertTriangle className="h-4 w-4" />
-              <span>Notificações desativadas</span>
+              <span>{t('notificationSettings.notificationsDisabled')}</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              Ative as notificações para receber alertas sobre inspeções próximas do vencimento e certificados expirados.
+              {t('notificationSettings.enableNotificationsDesc')}
             </p>
             <Button 
               className="w-full" 
               onClick={handleEnableNotifications}
             >
               <Bell className="h-4 w-4 mr-2" />
-              Ativar Notificações
+              {t('notificationSettings.enableNotifications')}
             </Button>
           </>
         )}

@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { addDays, isBefore } from 'date-fns';
+import { addDays } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 
 interface PushNotificationOptions {
   title: string;
@@ -12,6 +13,7 @@ interface PushNotificationOptions {
 }
 
 export function usePushNotifications() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [permission, setPermission] = useState<NotificationPermission>('default');
   const [isSupported, setIsSupported] = useState(false);
@@ -83,8 +85,8 @@ export function usePushNotifications() {
       if (equipment && equipment.length > 0) {
         // Show grouped notification
         await showNotification({
-          title: 'Inspeções Próximas',
-          body: `${equipment.length} equipamento(s) com inspeção nos próximos 7 dias`,
+          title: t('pushNotifications.upcomingInspections'),
+          body: t('pushNotifications.upcomingInspectionsBody', { count: equipment.length }),
           tag: 'upcoming-inspections',
           data: { type: 'upcoming-inspections', count: equipment.length },
         });
@@ -92,7 +94,7 @@ export function usePushNotifications() {
     } catch (error) {
       console.error('Error checking upcoming inspections:', error);
     }
-  }, [user?.id, permission, showNotification]);
+  }, [user?.id, permission, showNotification, t]);
 
   const checkExpiredCertificates = useCallback(async () => {
     if (!user?.id || permission !== 'granted') return;
@@ -108,8 +110,8 @@ export function usePushNotifications() {
 
       if (equipment && equipment.length > 0) {
         await showNotification({
-          title: 'Certificados Vencidos',
-          body: `${equipment.length} equipamento(s) com certificado vencido`,
+          title: t('pushNotifications.expiredCertificates'),
+          body: t('pushNotifications.expiredCertificatesBody', { count: equipment.length }),
           tag: 'expired-certificates',
           data: { type: 'expired-certificates', count: equipment.length },
         });
@@ -117,7 +119,7 @@ export function usePushNotifications() {
     } catch (error) {
       console.error('Error checking expired certificates:', error);
     }
-  }, [user?.id, permission, showNotification]);
+  }, [user?.id, permission, showNotification, t]);
 
   return {
     isSupported,

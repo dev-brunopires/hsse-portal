@@ -3,8 +3,10 @@ import { driver, DriveStep } from 'driver.js';
 import 'driver.js/dist/driver.css';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 export function useOnboarding() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [hasCompleted, setHasCompleted] = useState(true);
   const [isRunning, setIsRunning] = useState(false);
@@ -42,12 +44,12 @@ export function useOnboarding() {
     fetchOnboardingStatus();
   }, [user?.id]);
 
-  const steps: DriveStep[] = [
+  const getSteps = useCallback((): DriveStep[] => [
     {
       element: '[data-tour="sidebar"]',
       popover: {
-        title: 'Menu Principal',
-        description: 'Navegue entre as seções do sistema usando o menu lateral. Aqui você encontra acesso rápido a todos os módulos.',
+        title: t('onboarding.mainMenu'),
+        description: t('onboarding.mainMenuDesc'),
         side: 'right',
         align: 'start',
       },
@@ -55,8 +57,8 @@ export function useOnboarding() {
     {
       element: '[data-tour="dashboard"]',
       popover: {
-        title: 'Dashboard',
-        description: 'Visualize métricas, alertas e o status geral dos equipamentos em tempo real.',
+        title: t('onboarding.dashboard'),
+        description: t('onboarding.dashboardDesc'),
         side: 'bottom',
         align: 'center',
       },
@@ -64,8 +66,8 @@ export function useOnboarding() {
     {
       element: '[data-tour="equipment"]',
       popover: {
-        title: 'Equipamentos',
-        description: 'Cadastre e gerencie todos os equipamentos de segurança. Acompanhe datas de validade e histórico de inspeções.',
+        title: t('onboarding.equipment'),
+        description: t('onboarding.equipmentDesc'),
         side: 'right',
         align: 'start',
       },
@@ -73,8 +75,8 @@ export function useOnboarding() {
     {
       element: '[data-tour="inspections"]',
       popover: {
-        title: 'Inspeções',
-        description: 'Registre inspeções, adicione fotos e assinatura digital. Acompanhe o calendário de inspeções pendentes.',
+        title: t('onboarding.inspections'),
+        description: t('onboarding.inspectionsDesc'),
         side: 'right',
         align: 'start',
       },
@@ -82,8 +84,8 @@ export function useOnboarding() {
     {
       element: '[data-tour="alerts"]',
       popover: {
-        title: 'Alertas',
-        description: 'Receba notificações sobre equipamentos com inspeções vencidas, certificados expirando e manutenções pendentes.',
+        title: t('onboarding.alerts'),
+        description: t('onboarding.alertsDesc'),
         side: 'right',
         align: 'start',
       },
@@ -91,8 +93,8 @@ export function useOnboarding() {
     {
       element: '[data-tour="reports"]',
       popover: {
-        title: 'Relatórios',
-        description: 'Gere relatórios detalhados em PDF e Excel. Filtre por período, embarcação e status.',
+        title: t('onboarding.reports'),
+        description: t('onboarding.reportsDesc'),
         side: 'right',
         align: 'start',
       },
@@ -100,40 +102,30 @@ export function useOnboarding() {
     {
       element: '[data-tour="profile"]',
       popover: {
-        title: 'Seu Perfil',
-        description: 'Acesse seu perfil para configurar suas informações pessoais e preferências do sistema.',
+        title: t('onboarding.profile'),
+        description: t('onboarding.profileDesc'),
         side: 'left',
         align: 'start',
       },
     },
     {
       popover: {
-        title: '✍️ Assinatura Digital',
-        description: `
-          <div class="text-sm space-y-2">
-            <p><strong>Importante:</strong> Configure sua assinatura digital para agilizar suas inspeções!</p>
-            <p>Acesse <strong>Meu Perfil → Assinatura</strong> para:</p>
-            <ul class="list-disc pl-4 space-y-1">
-              <li>Desenhar sua assinatura padrão</li>
-              <li>Ativar "Assinar automaticamente" para usar sua assinatura em todas as inspeções</li>
-            </ul>
-            <p class="text-muted-foreground mt-2">Isso economiza tempo e garante a padronização dos seus relatórios.</p>
-          </div>
-        `,
+        title: `✍️ ${t('onboarding.digitalSignature')}`,
+        description: t('onboarding.digitalSignatureDesc'),
         side: 'over',
         align: 'center',
       },
     },
     {
       popover: {
-        title: 'Atalhos de Teclado',
+        title: t('onboarding.keyboardShortcuts'),
         description: `
           <div class="text-sm space-y-1">
             <p><kbd class="px-1 bg-muted rounded">Alt+D</kbd> Dashboard</p>
-            <p><kbd class="px-1 bg-muted rounded">Alt+E</kbd> Equipamentos</p>
-            <p><kbd class="px-1 bg-muted rounded">Alt+I</kbd> Inspeções</p>
-            <p><kbd class="px-1 bg-muted rounded">Alt+R</kbd> Relatórios</p>
-            <p><kbd class="px-1 bg-muted rounded">Alt+A</kbd> Alertas</p>
+            <p><kbd class="px-1 bg-muted rounded">Alt+E</kbd> ${t('navigation.equipment')}</p>
+            <p><kbd class="px-1 bg-muted rounded">Alt+I</kbd> ${t('navigation.inspections')}</p>
+            <p><kbd class="px-1 bg-muted rounded">Alt+R</kbd> ${t('navigation.reports')}</p>
+            <p><kbd class="px-1 bg-muted rounded">Alt+A</kbd> ${t('navigation.alerts')}</p>
           </div>
         `,
         side: 'over',
@@ -142,13 +134,13 @@ export function useOnboarding() {
     },
     {
       popover: {
-        title: 'Pronto para começar!',
-        description: 'Você pode reiniciar este tour a qualquer momento nas Configurações. Não se esqueça de configurar sua assinatura digital no seu perfil! 🚢',
+        title: t('onboarding.readyToStart'),
+        description: t('onboarding.readyToStartDesc'),
         side: 'over',
         align: 'center',
       },
     },
-  ];
+  ], [t]);
 
   const markOnboardingComplete = async () => {
     if (!user?.id) return;
@@ -171,11 +163,11 @@ export function useOnboarding() {
       animate: true,
       overlayColor: 'rgba(0, 0, 0, 0.75)',
       popoverClass: 'onboarding-popover',
-      nextBtnText: 'Próximo',
-      prevBtnText: 'Anterior',
-      doneBtnText: 'Concluir',
-      progressText: '{{current}} de {{total}}',
-      steps,
+      nextBtnText: t('onboarding.next'),
+      prevBtnText: t('onboarding.previous'),
+      doneBtnText: t('onboarding.done'),
+      progressText: t('onboarding.progress'),
+      steps: getSteps(),
       onDestroyStarted: () => {
         setIsRunning(false);
         setHasCompleted(true);
@@ -185,7 +177,7 @@ export function useOnboarding() {
     });
 
     driverObj.drive();
-  }, [user?.id]);
+  }, [user?.id, t, getSteps]);
 
   const resetTour = useCallback(async () => {
     if (!user?.id) return;

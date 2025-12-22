@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 
 export interface PendingInspection {
   id: string;
@@ -33,6 +34,7 @@ const PENDING_ACTIONS_KEY = 'safeship_pending_actions';
 const OFFLINE_DATA_KEY = 'safeship_offline_data';
 
 export function useOfflineSync() {
+  const { t } = useTranslation();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [pendingActions, setPendingActions] = useState<PendingAction[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -125,30 +127,30 @@ export function useOfflineSync() {
 
     if (syncedCount > 0) {
       toast({
-        title: 'Sincronização Concluída',
-        description: `${syncedCount} inspeção(ões) sincronizada(s) com sucesso.`,
+        title: t('offline.syncCompleted'),
+        description: t('offline.syncCompletedDesc', { count: syncedCount }),
       });
       // Refresh data
       queryClient.invalidateQueries({ queryKey: ['inspections'] });
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
     }
-  }, [isOnline, pendingActions, toast, queryClient]);
+  }, [isOnline, pendingActions, toast, queryClient, t]);
 
   // Online/offline event listeners
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
       toast({
-        title: 'Conexão Restaurada',
-        description: 'Sincronizando dados pendentes...',
+        title: t('offline.connectionRestored'),
+        description: t('offline.connectionRestoredDesc'),
       });
     };
 
     const handleOffline = () => {
       setIsOnline(false);
       toast({
-        title: 'Modo Offline',
-        description: 'Suas alterações serão salvas localmente.',
+        title: t('offline.offlineMode'),
+        description: t('offline.offlineModeDesc'),
         variant: 'destructive',
       });
     };
@@ -160,7 +162,7 @@ export function useOfflineSync() {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [toast]);
+  }, [toast, t]);
 
   // Auto-sync when coming online
   useEffect(() => {
@@ -181,12 +183,12 @@ export function useOfflineSync() {
     setPendingActions(prev => [...prev, action]);
     
     toast({
-      title: 'Salvo Localmente',
-      description: 'Será sincronizado quando a conexão for restaurada.',
+      title: t('offline.savedLocally'),
+      description: t('offline.savedLocallyDesc'),
     });
     
     return action.id;
-  }, [toast]);
+  }, [toast, t]);
 
   // Add pending inspection (convenience method)
   const addPendingInspection = useCallback((inspection: Omit<PendingInspection, 'id' | 'timestamp'>) => {
