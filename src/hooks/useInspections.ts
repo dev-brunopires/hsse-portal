@@ -4,6 +4,7 @@ import type { Tables, TablesInsert } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 import { useShipFilter } from '@/contexts/ShipFilterContext';
 import { useTranslation } from 'react-i18next';
+import { getCurrentOrganizationId, generateInspectionPhotoPath } from '@/utils/storageHelpers';
 
 export type Inspection = Tables<'inspections'>;
 export type InspectionInsert = TablesInsert<'inspections'>;
@@ -225,10 +226,15 @@ export function useCreateInspection() {
         if (checklistError) throw checklistError;
       }
 
-      // Upload photos
+      // Upload photos with organization prefix
       if (photos.length > 0) {
+        const organizationId = await getCurrentOrganizationId();
+        if (!organizationId) {
+          throw new Error('Organization not found');
+        }
+
         for (const photo of photos) {
-          const fileName = `${inspectionData.id}/${Date.now()}-${photo.name}`;
+          const fileName = generateInspectionPhotoPath(organizationId, inspectionData.id, photo.name);
           const { error: uploadError } = await supabase.storage
             .from('inspection-photos')
             .upload(fileName, photo);

@@ -4,7 +4,8 @@ import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AuditLog } from '@/hooks/useAuditLogs';
-import { addPDFHeader, addPDFFooter, SBM_BLUE, DARK_GRAY, MEDIUM_GRAY } from './pdfStyles';
+import { addPDFHeader, addPDFFooter, SBM_BLUE, DARK_GRAY, MEDIUM_GRAY, preloadLogo } from './pdfStyles';
+import type { OrganizationBranding } from '@/hooks/useOrganizationBranding';
 
 const actionLabels: Record<string, string> = {
   INSERT: 'Criação',
@@ -20,7 +21,14 @@ const tableLabels: Record<string, string> = {
   profiles: 'Perfil',
 };
 
-export async function exportAuditLogsPDF(logs: AuditLog[], filters?: { ship?: string; table?: string; action?: string }) {
+export async function exportAuditLogsPDF(
+  logs: AuditLog[], 
+  filters?: { ship?: string; table?: string; action?: string },
+  branding?: OrganizationBranding
+) {
+  // Preload logo with branding
+  await preloadLogo(branding);
+  
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 14;
@@ -33,12 +41,13 @@ export async function exportAuditLogsPDF(logs: AuditLog[], filters?: { ship?: st
 
   const rightText = filterParts.length > 0 ? filterParts : ['Todos os registros'];
 
-  // Add header
+  // Add header with branding
   const startY = await addPDFHeader(
     doc,
     'Histórico de Alterações',
     format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }),
-    rightText
+    rightText,
+    { branding }
   );
 
   // Stats

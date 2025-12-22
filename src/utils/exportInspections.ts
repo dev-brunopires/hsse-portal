@@ -19,6 +19,7 @@ import {
   preloadLogo,
 } from './pdfStyles';
 import i18n from '@/i18n';
+import type { OrganizationBranding } from '@/hooks/useOrganizationBranding';
 
 const getDateLocale = () => i18n.language === 'en' ? enUS : ptBR;
 
@@ -86,23 +87,28 @@ export function exportInspectionsToExcel(inspections: InspectionWithDetails[], f
   XLSX.writeFile(wb, `${filename}_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
 }
 
-export async function exportInspectionsToPDF(inspections: InspectionWithDetails[], filename = 'relatorio_inspecoes') {
+export async function exportInspectionsToPDF(
+  inspections: InspectionWithDetails[], 
+  filename = 'relatorio_inspecoes',
+  branding?: OrganizationBranding
+) {
   const statusLabels = getStatusLabels();
   const t = i18n.t;
   const dateLocale = getDateLocale();
   
-  // Preload logo
-  await preloadLogo();
+  // Preload logo with branding
+  await preloadLogo(branding);
   
   const doc = new jsPDF('landscape');
   const generatedDate = format(new Date(), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: dateLocale });
   
-  // Add standardized header with logo
+  // Add standardized header with logo and branding
   let yPos = await addPDFHeader(
     doc,
     t('exportInspections.reportTitle'),
     `${t('exportInspections.generatedAt')}: ${generatedDate}`,
-    [`${t('exportInspections.total')}: ${inspections.length} ${t('exportInspections.inspectionsPlural')}`]
+    [`${t('exportInspections.total')}: ${inspections.length} ${t('exportInspections.inspectionsPlural')}`],
+    { branding }
   );
 
   // Summary

@@ -2,10 +2,11 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
-import { addPDFHeader, addPDFFooter, addSectionHeader, SBM_BLUE, DARK_GRAY, DANGER_RED, MEDIUM_GRAY } from './pdfStyles';
+import { addPDFHeader, addPDFFooter, addSectionHeader, SBM_BLUE, DARK_GRAY, DANGER_RED, MEDIUM_GRAY, preloadLogo } from './pdfStyles';
 import type { MaintenanceRequestWithDetails, MaintenancePhoto } from '@/hooks/useMaintenanceRequests';
 import { supabase } from '@/integrations/supabase/client';
 import i18n from '@/i18n';
+import type { OrganizationBranding } from '@/hooks/useOrganizationBranding';
 
 interface MaintenanceHistory {
   id: string;
@@ -18,6 +19,7 @@ interface MaintenanceHistory {
 
 interface MaintenanceDetailData extends MaintenanceRequestWithDetails {
   history?: MaintenanceHistory[];
+  branding?: OrganizationBranding;
 }
 
 function getDateLocale() {
@@ -86,13 +88,16 @@ async function loadPhotoAsBase64(filePath: string): Promise<string | null> {
 }
 
 export async function generateMaintenancePDF(data: MaintenanceDetailData): Promise<void> {
+  // Preload logo with branding
+  await preloadLogo(data.branding);
+  
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.width;
   const t = i18n.t.bind(i18n);
   const labels = getLabels();
   
-  // Add header
-  await addPDFHeader(doc, t('generateMaintenancePDF.reportTitle'), formatDateBR(data.requested_at));
+  // Add header with branding
+  await addPDFHeader(doc, t('generateMaintenancePDF.reportTitle'), formatDateBR(data.requested_at), undefined, { branding: data.branding });
   
   let yPos = 50;
   

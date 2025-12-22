@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useShipFilter } from '@/contexts/ShipFilterContext';
 import { useTranslation } from 'react-i18next';
 import i18n from '@/i18n';
+import { getCurrentOrganizationId, generateMaintenancePhotoPath } from '@/utils/storageHelpers';
 
 export type MaintenanceType = 'preventive' | 'corrective';
 export type MaintenanceStatus = 'pending' | 'approved' | 'in_progress' | 'completed' | 'rejected';
@@ -202,10 +203,15 @@ export function useCreateMaintenanceRequest() {
 
       if (error) throw error;
 
-      // Upload photos
+      // Upload photos with organization prefix
       if (photos.length > 0) {
+        const organizationId = await getCurrentOrganizationId();
+        if (!organizationId) {
+          throw new Error('Organization not found');
+        }
+
         for (const photo of photos) {
-          const fileName = `${data.id}/${Date.now()}-${photo.name}`;
+          const fileName = generateMaintenancePhotoPath(organizationId, data.id, photo.name);
           const { error: uploadError } = await supabase.storage
             .from('maintenance-photos')
             .upload(fileName, photo);
