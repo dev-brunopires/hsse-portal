@@ -572,7 +572,7 @@ export default function Reports() {
 
     const selectedCategory = categoryFilter !== 'all' 
       ? categories.find(c => c.id === categoryFilter)
-      : { id: 'all', name: t('reports.allCategories'), description: '', icon: '', inspection_frequency: 'monthly', created_at: '', updated_at: '' };
+      : { id: 'all', name: t('reports.allCategories'), description: '', icon: '', inspection_frequency: 'monthly', created_at: '', updated_at: '', organization_id: null };
     
     const selectedShip = shipFilter !== 'all'
       ? ships.find(s => s.id === shipFilter)
