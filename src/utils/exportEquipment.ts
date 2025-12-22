@@ -3,7 +3,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { EquipmentWithCategory } from '@/hooks/useEquipment';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS } from 'date-fns/locale';
 import {
   SBM_BLUE,
   DARK_GRAY,
@@ -14,44 +14,50 @@ import {
   addSectionHeader,
   preloadLogo,
 } from './pdfStyles';
+import i18n from '@/i18n';
 
-const statusLabels: Record<string, string> = {
-  active: 'Ativo',
-  maintenance: 'Em Manutenção',
-  expired: 'Vencido',
-  rejected: 'Reprovado',
-  inactive: 'Inativo',
-};
+const getDateLocale = () => i18n.language === 'en' ? enUS : ptBR;
+
+const getStatusLabels = (): Record<string, string> => ({
+  active: i18n.t('exportEquipment.statusActive'),
+  maintenance: i18n.t('exportEquipment.statusMaintenance'),
+  expired: i18n.t('exportEquipment.statusExpired'),
+  rejected: i18n.t('exportEquipment.statusRejected'),
+  inactive: i18n.t('exportEquipment.statusInactive'),
+});
 
 const formatDate = (dateString: string | null) => {
   if (!dateString) return '—';
-  return format(new Date(dateString), 'dd/MM/yyyy', { locale: ptBR });
+  return format(new Date(dateString), 'dd/MM/yyyy', { locale: getDateLocale() });
 };
 
 export function exportToExcel(equipment: EquipmentWithCategory[], filename = 'equipamentos') {
+  const statusLabels = getStatusLabels();
+  const t = i18n.t;
+  
   const data = equipment.map(item => ({
-    'Código Interno': item.internal_code,
-    'Nome': item.name,
-    'Categoria': item.categories?.name || '—',
-    'Tipo': item.type,
-    'Fabricante': item.manufacturer,
-    'Modelo': item.model,
-    'Nº Série': item.serial_number,
-    'Capacidade': item.capacity || '—',
-    'Unidade': item.unit,
-    'Localização': item.location,
-    'Status': statusLabels[item.status] || item.status,
-    'Data Fabricação': formatDate(item.manufacturing_date),
-    'Data Aquisição': formatDate(item.acquisition_date),
-    'Validade': formatDate(item.expiry_date),
-    'Validade Certificado': formatDate(item.certificate_expiry),
-    'Última Inspeção': formatDate(item.last_inspection),
-    'Próxima Inspeção': formatDate(item.next_inspection),
+    [t('exportEquipment.internalCode')]: item.internal_code,
+    [t('exportEquipment.name')]: item.name,
+    [t('exportEquipment.category')]: item.categories?.name || '—',
+    [t('exportEquipment.type')]: item.type,
+    [t('exportEquipment.manufacturer')]: item.manufacturer,
+    [t('exportEquipment.model')]: item.model,
+    [t('exportEquipment.serialNumber')]: item.serial_number,
+    [t('exportEquipment.capacity')]: item.capacity || '—',
+    [t('exportEquipment.unit')]: item.unit,
+    [t('exportEquipment.location')]: item.location,
+    [t('exportEquipment.status')]: statusLabels[item.status] || item.status,
+    [t('exportEquipment.manufacturingDate')]: formatDate(item.manufacturing_date),
+    [t('exportEquipment.acquisitionDate')]: formatDate(item.acquisition_date),
+    [t('exportEquipment.expiryDate')]: formatDate(item.expiry_date),
+    [t('exportEquipment.certificateExpiry')]: formatDate(item.certificate_expiry),
+    [t('exportEquipment.lastInspection')]: formatDate(item.last_inspection),
+    [t('exportEquipment.nextInspection')]: formatDate(item.next_inspection),
   }));
 
   const ws = XLSX.utils.json_to_sheet(data);
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Equipamentos');
+  XLSX.utils.book_append_sheet(wb, ws, t('exportEquipment.sheetName'));
   
   // Auto-size columns
   const maxWidths = Object.keys(data[0] || {}).map(key => ({
@@ -63,19 +69,22 @@ export function exportToExcel(equipment: EquipmentWithCategory[], filename = 'eq
 }
 
 export async function exportToPDF(equipment: EquipmentWithCategory[], filename = 'equipamentos') {
+  const statusLabels = getStatusLabels();
+  const t = i18n.t;
+  const dateLocale = getDateLocale();
   // Preload logo
   await preloadLogo();
   
   const doc = new jsPDF('landscape');
   const pageWidth = doc.internal.pageSize.getWidth();
-  const generatedDate = format(new Date(), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR });
+  const generatedDate = format(new Date(), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: dateLocale });
   
   // Add standardized header with logo
   let yPos = await addPDFHeader(
     doc,
-    'RELATÓRIO DE EQUIPAMENTOS',
-    `Gerado em: ${generatedDate}`,
-    [`Total: ${equipment.length} equipamentos`]
+    t('exportEquipment.reportTitle'),
+    `${t('exportEquipment.generatedAt')}: ${generatedDate}`,
+    [`${t('exportEquipment.total')}: ${equipment.length} ${t('exportEquipment.equipmentPlural')}`]
   );
 
   const tableData = equipment.map(item => [
@@ -93,15 +102,15 @@ export async function exportToPDF(equipment: EquipmentWithCategory[], filename =
   autoTable(doc, {
     startY: yPos,
     head: [[
-      'Código',
-      'Nome',
-      'Categoria',
-      'Capacidade',
-      'Localização',
-      'Status',
-      'Última Insp.',
-      'Próx. Insp.',
-      'Val. Cert.'
+      t('exportEquipment.code'),
+      t('exportEquipment.name'),
+      t('exportEquipment.category'),
+      t('exportEquipment.capacity'),
+      t('exportEquipment.location'),
+      t('exportEquipment.status'),
+      t('exportEquipment.lastInsp'),
+      t('exportEquipment.nextInsp'),
+      t('exportEquipment.certExpiry')
     ]],
     body: tableData,
     styles: { fontSize: 8 },
@@ -112,8 +121,8 @@ export async function exportToPDF(equipment: EquipmentWithCategory[], filename =
   // Add standardized footer
   addPDFFooter(
     doc,
-    'SBM Offshore - Sistema de Gestão de Equipamentos de Segurança',
-    `Relatório de Equipamentos - ${format(new Date(), 'dd/MM/yyyy HH:mm')}`
+    t('exportEquipment.footerCompany'),
+    `${t('exportEquipment.reportTitle')} - ${format(new Date(), 'dd/MM/yyyy HH:mm')}`
   );
 
   doc.save(`${filename}_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
