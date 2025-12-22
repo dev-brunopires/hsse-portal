@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 import { useShipFilter } from '@/contexts/ShipFilterContext';
+import { useTranslation } from 'react-i18next';
 
 export type Inspection = Tables<'inspections'>;
 export type InspectionInsert = TablesInsert<'inspections'>;
@@ -172,6 +173,7 @@ function mapInspectionToEquipmentStatus(inspectionStatus: string): string {
 export function useCreateInspection() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ inspection, checklistItems, photos }: CreateInspectionData) => {
@@ -263,13 +265,13 @@ export function useCreateInspection() {
       queryClient.invalidateQueries({ queryKey: ['inspections'] });
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
       toast({
-        title: 'Inspeção Registrada',
-        description: 'A inspeção foi registrada com sucesso e a próxima data foi calculada automaticamente.',
+        title: t('hooks.inspection.created'),
+        description: t('hooks.inspection.createdDesc'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Erro ao Registrar Inspeção',
+        title: t('hooks.inspection.createError'),
         description: error.message,
         variant: 'destructive',
       });
@@ -285,6 +287,7 @@ interface UpdateInspectionData {
 export function useUpdateInspection() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ id, inspection }: UpdateInspectionData) => {
@@ -317,13 +320,13 @@ export function useUpdateInspection() {
       queryClient.invalidateQueries({ queryKey: ['inspections'] });
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
       toast({
-        title: 'Inspeção Atualizada',
-        description: 'A inspeção foi atualizada com sucesso.',
+        title: t('hooks.inspection.updated'),
+        description: t('hooks.inspection.updatedDesc'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Erro ao Atualizar Inspeção',
+        title: t('hooks.inspection.updateError'),
         description: error.message,
         variant: 'destructive',
       });
@@ -334,6 +337,7 @@ export function useUpdateInspection() {
 export function useDeleteInspection() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -392,13 +396,13 @@ export function useDeleteInspection() {
       queryClient.invalidateQueries({ queryKey: ['inspections'] });
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
       toast({
-        title: 'Inspeção Excluída',
-        description: 'A inspeção foi excluída com sucesso.',
+        title: t('hooks.inspection.deleted'),
+        description: t('hooks.inspection.deletedDesc'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Erro ao Excluir Inspeção',
+        title: t('hooks.inspection.deleteError'),
         description: error.message,
         variant: 'destructive',
       });

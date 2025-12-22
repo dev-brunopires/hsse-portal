@@ -4,6 +4,7 @@ import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase
 import { useToast } from '@/hooks/use-toast';
 import { useShipFilter } from '@/contexts/ShipFilterContext';
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export type Equipment = Tables<'equipment'>;
 export type EquipmentInsert = TablesInsert<'equipment'>;
@@ -158,6 +159,7 @@ export function useEquipmentById(id: string | undefined) {
 export function useCreateEquipment() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async (equipment: EquipmentInsert) => {
@@ -173,13 +175,13 @@ export function useCreateEquipment() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
       toast({
-        title: 'Equipamento Cadastrado',
-        description: 'O equipamento foi cadastrado com sucesso.',
+        title: t('hooks.equipment.created'),
+        description: t('hooks.equipment.createdDesc'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Erro ao Cadastrar',
+        title: t('hooks.equipment.createError'),
         description: error.message,
         variant: 'destructive',
       });
@@ -190,6 +192,7 @@ export function useCreateEquipment() {
 export function useUpdateEquipment() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ id, ...equipment }: EquipmentUpdate & { id: string }) => {
@@ -206,13 +209,13 @@ export function useUpdateEquipment() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
       toast({
-        title: 'Equipamento Atualizado',
-        description: 'O equipamento foi atualizado com sucesso.',
+        title: t('hooks.equipment.updated'),
+        description: t('hooks.equipment.updatedDesc'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Erro ao Atualizar',
+        title: t('hooks.equipment.updateError'),
         description: error.message,
         variant: 'destructive',
       });
@@ -223,6 +226,7 @@ export function useUpdateEquipment() {
 export function useDeleteEquipment() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -236,13 +240,13 @@ export function useDeleteEquipment() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
       toast({
-        title: 'Equipamento Excluído',
-        description: 'O equipamento foi excluído com sucesso.',
+        title: t('hooks.equipment.deleted'),
+        description: t('hooks.equipment.deletedDesc'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Erro ao Excluir',
+        title: t('hooks.equipment.deleteError'),
         description: error.message,
         variant: 'destructive',
       });

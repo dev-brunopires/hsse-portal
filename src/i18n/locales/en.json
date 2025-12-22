@@ -1764,6 +1764,64 @@
       "deleted": "Category Deleted",
       "deletedDesc": "The category was deleted successfully.",
       "deleteError": "Error Deleting Category"
+    },
+    "maintenance": {
+      "planCreated": "Maintenance plan created successfully!",
+      "planCreateError": "Error creating maintenance plan",
+      "planUpdated": "Maintenance plan updated!",
+      "planUpdateError": "Error updating maintenance plan",
+      "planDeleted": "Maintenance plan deleted!",
+      "planDeleteError": "Error deleting maintenance plan",
+      "completed": "Maintenance registered successfully!",
+      "completeError": "Error registering maintenance"
+    },
+    "maintenanceRequest": {
+      "created": "Request Created",
+      "createdDesc": "The maintenance request was created successfully.",
+      "createError": "Error Creating",
+      "updated": "Request Updated",
+      "updatedDesc": "The maintenance request was updated successfully.",
+      "updateError": "Error Updating",
+      "deleted": "Request Deleted",
+      "deletedDesc": "The maintenance request was deleted successfully.",
+      "deleteError": "Error Deleting",
+      "statusUpdated": "Status Updated",
+      "statusUpdatedDesc": "Maintenance marked as {{status}}.",
+      "statusUpdateError": "Error Updating Status",
+      "status": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "in_progress": "In Progress",
+        "completed": "Completed",
+        "rejected": "Rejected"
+      }
+    },
+    "document": {
+      "uploaded": "Document Uploaded",
+      "uploadedDesc": "The document was uploaded successfully.",
+      "uploadError": "Error Uploading",
+      "deleted": "Document Deleted",
+      "deletedDesc": "The document was deleted successfully.",
+      "deleteError": "Error Deleting"
+    },
+    "transfer": {
+      "success": "Equipment transferred successfully!",
+      "error": "Error transferring equipment",
+      "unknown": "Unknown"
+    },
+    "favorite": {
+      "added": "Added to favorites!",
+      "removed": "Removed from favorites!",
+      "error": "Error updating favorites",
+      "notAuthenticated": "User not authenticated"
+    },
+    "checklistTemplate": {
+      "created": "Checklist template created successfully!",
+      "createError": "Error creating checklist template",
+      "updated": "Checklist template updated!",
+      "updateError": "Error updating checklist template",
+      "deleted": "Checklist template deleted!",
+      "deleteError": "Error deleting checklist template"
     }
   }
 }

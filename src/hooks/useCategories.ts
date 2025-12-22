@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
 
 export type Category = Tables<'categories'>;
 export type CategoryInsert = TablesInsert<'categories'>;
@@ -24,6 +25,7 @@ export function useCategories() {
 export function useCreateCategory() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async (category: CategoryInsert) => {
@@ -39,13 +41,13 @@ export function useCreateCategory() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
       toast({
-        title: 'Categoria Criada',
-        description: 'A categoria foi criada com sucesso.',
+        title: t('hooks.category.created'),
+        description: t('hooks.category.createdDesc'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Erro ao Criar Categoria',
+        title: t('hooks.category.createError'),
         description: error.message,
         variant: 'destructive',
       });
@@ -56,6 +58,7 @@ export function useCreateCategory() {
 export function useUpdateCategory() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string } & Partial<CategoryInsert>) => {
@@ -67,20 +70,20 @@ export function useUpdateCategory() {
       
       if (error) throw error;
       if (!data || data.length === 0) {
-        throw new Error('Não foi possível atualizar a categoria. Verifique suas permissões.');
+        throw new Error(t('hooks.category.updatePermissionError'));
       }
       return data[0];
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
       toast({
-        title: 'Categoria Atualizada',
-        description: 'A categoria foi atualizada com sucesso.',
+        title: t('hooks.category.updated'),
+        description: t('hooks.category.updatedDesc'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Erro ao Atualizar Categoria',
+        title: t('hooks.category.updateError'),
         description: error.message,
         variant: 'destructive',
       });
@@ -91,6 +94,7 @@ export function useUpdateCategory() {
 export function useDeleteCategory() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -104,13 +108,13 @@ export function useDeleteCategory() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
       toast({
-        title: 'Categoria Excluída',
-        description: 'A categoria foi excluída com sucesso.',
+        title: t('hooks.category.deleted'),
+        description: t('hooks.category.deletedDesc'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Erro ao Excluir Categoria',
+        title: t('hooks.category.deleteError'),
         description: error.message,
         variant: 'destructive',
       });

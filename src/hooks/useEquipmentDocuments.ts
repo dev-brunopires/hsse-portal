@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
 
 export type EquipmentDocument = Tables<'equipment_documents'>;
 export type EquipmentDocumentInsert = TablesInsert<'equipment_documents'>;
@@ -27,6 +28,7 @@ export function useEquipmentDocuments(equipmentId: string | undefined) {
 export function useUploadDocument() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ 
@@ -68,13 +70,13 @@ export function useUploadDocument() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['equipment-documents', variables.equipmentId] });
       toast({
-        title: 'Documento Enviado',
-        description: 'O documento foi enviado com sucesso.',
+        title: t('hooks.document.uploaded'),
+        description: t('hooks.document.uploadedDesc'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Erro ao Enviar',
+        title: t('hooks.document.uploadError'),
         description: error.message,
         variant: 'destructive',
       });
@@ -85,6 +87,7 @@ export function useUploadDocument() {
 export function useDeleteDocument() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ 
@@ -114,13 +117,13 @@ export function useDeleteDocument() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['equipment-documents', variables.equipmentId] });
       toast({
-        title: 'Documento Excluído',
-        description: 'O documento foi excluído com sucesso.',
+        title: t('hooks.document.deleted'),
+        description: t('hooks.document.deletedDesc'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Erro ao Excluir',
+        title: t('hooks.document.deleteError'),
         description: error.message,
         variant: 'destructive',
       });
