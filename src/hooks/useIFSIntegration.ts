@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
 export interface IFSConfig {
   baseUrl: string;
@@ -25,6 +26,7 @@ const IFS_CONFIG_KEY = 'safeship-ifs-config';
 export function useIFSIntegration() {
   const { t } = useTranslation();
   const { toast } = useToast();
+  const { organization } = useOrganization();
   const [isLoading, setIsLoading] = useState(false);
   const [syncResult, setSyncResult] = useState<IFSSyncResult | null>(null);
 
@@ -101,11 +103,27 @@ export function useIFSIntegration() {
       };
     }
 
+    if (!organization?.id) {
+      toast({
+        title: t('hooks.ifsIntegration.organizationRequired'),
+        description: t('hooks.ifsIntegration.organizationRequiredDescription'),
+        variant: 'destructive',
+      });
+      return {
+        success: false,
+        equipmentSynced: 0,
+        inspectionsSynced: 0,
+        errors: ['Organização não encontrada'],
+        timestamp: new Date().toISOString(),
+      };
+    }
+
     try {
       const { data, error } = await supabase.functions.invoke('ifs-integration', {
         body: {
           action: direction === 'import' ? 'import-equipment' : 'export-equipment',
           config,
+          organizationId: organization.id,
         },
       });
 
@@ -153,7 +171,7 @@ export function useIFSIntegration() {
     } finally {
       setIsLoading(false);
     }
-  }, [getConfig, toast, t]);
+  }, [getConfig, toast, t, organization]);
 
   const exportToIFSFormat = useCallback((equipment: any[]): object => {
     // Transform SafeShip equipment data to IFS format
