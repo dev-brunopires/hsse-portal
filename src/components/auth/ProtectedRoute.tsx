@@ -10,11 +10,11 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
   const { t } = useTranslation();
-  const { user, role, loading } = useAuth();
+  const { user, role, loading, isPlatformOwner } = useAuth();
   const location = useLocation();
 
-  // Wait for both auth and role to load
-  if (loading || (user && role === null)) {
+  // Wait for auth to load - platform owners may not have a role
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
@@ -27,6 +27,11 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
 
   if (!user) {
     return <Navigate to="/auth" state={{ from: location }} replace />;
+  }
+
+  // Platform owners have full access
+  if (isPlatformOwner) {
+    return <>{children}</>;
   }
 
   // Check role if required
