@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ArrowRightLeft } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -31,14 +32,6 @@ import { Button } from '@/components/ui/button';
 import { useShips } from '@/hooks/useShips';
 import { useCreateEquipmentTransfer } from '@/hooks/useEquipmentTransfers';
 
-const formSchema = z.object({
-  to_ship_id: z.string().min(1, 'Selecione o navio de destino'),
-  reason: z.string().optional(),
-  notes: z.string().optional(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
 interface TransferEquipmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -55,8 +48,17 @@ export function TransferEquipmentDialog({
   onOpenChange,
   equipment,
 }: TransferEquipmentDialogProps) {
+  const { t } = useTranslation();
   const { data: ships = [] } = useShips();
   const createTransfer = useCreateEquipmentTransfer();
+
+  const formSchema = z.object({
+    to_ship_id: z.string().min(1, t('transferEquipment.selectDestination')),
+    reason: z.string().optional(),
+    notes: z.string().optional(),
+  });
+
+  type FormValues = z.infer<typeof formSchema>;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -88,7 +90,7 @@ export function TransferEquipmentDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ArrowRightLeft className="h-5 w-5" />
-            Transferir Equipamento
+            {t('transferEquipment.title')}
           </DialogTitle>
           <DialogDescription>
             {equipment.name} - {equipment.internal_code}
@@ -102,11 +104,11 @@ export function TransferEquipmentDialog({
               name="to_ship_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Navio de Destino</FormLabel>
+                  <FormLabel>{t('transferEquipment.destinationShip')}</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione o navio" />
+                        <SelectValue placeholder={t('transferEquipment.selectShip')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -127,9 +129,9 @@ export function TransferEquipmentDialog({
               name="reason"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Motivo</FormLabel>
+                  <FormLabel>{t('transferEquipment.reason')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ex: Realocação, Manutenção..." {...field} />
+                    <Input placeholder={t('transferEquipment.reasonPlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -141,10 +143,10 @@ export function TransferEquipmentDialog({
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Observações</FormLabel>
+                  <FormLabel>{t('transferEquipment.notes')}</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Detalhes adicionais..."
+                      placeholder={t('transferEquipment.notesPlaceholder')}
                       className="resize-none"
                       rows={3}
                       {...field}
@@ -157,10 +159,10 @@ export function TransferEquipmentDialog({
 
             <div className="flex justify-end gap-2 pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancelar
+                {t('transferEquipment.cancel')}
               </Button>
               <Button type="submit" disabled={createTransfer.isPending}>
-                {createTransfer.isPending ? 'Transferindo...' : 'Confirmar Transferência'}
+                {createTransfer.isPending ? t('transferEquipment.transferring') : t('transferEquipment.confirmTransfer')}
               </Button>
             </div>
           </form>
