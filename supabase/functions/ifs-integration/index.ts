@@ -40,7 +40,15 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { action, config } = await req.json();
+    const { action, config, organizationId } = await req.json();
+    
+    // Validate organization_id for data operations
+    if (!organizationId && (action === 'import-equipment' || action === 'export-equipment')) {
+      return new Response(
+        JSON.stringify({ success: false, message: 'Organização não especificada' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     switch (action) {
       case 'test-connection': {
@@ -111,7 +119,33 @@ serve(async (req) => {
           // Simulated IFS data for demonstration
           const ifsData: IFSEquipment[] = [];
 
-          // Transform and upsert to SafeShip
+          // First, get a default category and ship for the organization
+          const { data: defaultCategory } = await supabase
+            .from('categories')
+            .select('id')
+            .eq('organization_id', organizationId)
+            .limit(1)
+            .single();
+
+          const { data: defaultShip } = await supabase
+            .from('ships')
+            .select('id')
+            .eq('organization_id', organizationId)
+            .limit(1)
+            .single();
+
+          if (!defaultCategory || !defaultShip) {
+            return new Response(
+              JSON.stringify({ 
+                success: false, 
+                message: 'Configuração incompleta: cadastre ao menos uma categoria e embarcação antes de importar.',
+                errors: ['Categoria ou embarcação não encontrada para a organização']
+              }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+
+          // Transform and upsert to SafeShip with organization context
           const transformedData = ifsData.map(item => ({
             internal_code: item.OBJECT_ID,
             name: item.OBJECT_DESC,
@@ -124,6 +158,9 @@ serve(async (req) => {
             status: mapIFSStatus(item.STATUS),
             next_inspection: item.NEXT_INSPECTION_DATE || null,
             certificate_expiry: item.CERTIFICATE_EXPIRY || null,
+            category_id: defaultCategory.id,
+            ship_id: defaultShip.id,
+            unit: 'Importado IFS',
           }));
 
           let equipmentCount = 0;
@@ -179,10 +216,18 @@ serve(async (req) => {
         }
 
         try {
-          // Fetch SafeShip equipment
+          // Fetch SafeShip equipment filtered by organization (through ships)
+          const { data: orgShips } = await supabase
+            .from('ships')
+            .select('id')
+            .eq('organization_id', organizationId);
+          
+          const shipIds = orgShips?.map(s => s.id) || [];
+          
           const { data: equipment, error } = await supabase
             .from('equipment')
-            .select('*');
+            .select('*')
+            .in('ship_id', shipIds);
 
           if (error) throw error;
 
