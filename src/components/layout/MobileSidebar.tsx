@@ -13,7 +13,9 @@ import {
   AlertCircle,
   Moon,
   Sun,
-  X,
+  Building2,
+  History,
+  Wrench,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -58,7 +60,7 @@ interface MobileSidebarProps {
 
 export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
   const { t } = useTranslation();
-  const { isAdmin } = useAuth();
+  const { isAdmin, isPlatformOwner } = useAuth();
   const { resolvedTheme, setTheme } = useTheme();
 
   const toggleTheme = () => {
@@ -86,6 +88,7 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
           <MobileNavItem to="/" icon={<LayoutDashboard size={20} />} label={t('navigation.dashboard')} onClick={handleNavClick} />
           <MobileNavItem to="/equipment" icon={<Package size={20} />} label={t('navigation.equipment')} onClick={handleNavClick} />
           <MobileNavItem to="/inspections" icon={<ClipboardCheck size={20} />} label={t('navigation.inspections')} onClick={handleNavClick} />
+          <MobileNavItem to="/maintenance" icon={<Wrench size={20} />} label={t('navigation.maintenance')} onClick={handleNavClick} />
           <MobileNavItem to="/pending" icon={<AlertCircle size={20} />} label={t('navigation.pendingRecommendations')} onClick={handleNavClick} />
           <MobileNavItem to="/reports" icon={<FileText size={20} />} label={t('navigation.reports')} onClick={handleNavClick} />
           <MobileNavItem to="/alerts" icon={<Bell size={20} />} label={t('navigation.alerts')} onClick={handleNavClick} />
@@ -111,8 +114,12 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
           {isAdmin && (
             <>
               <MobileNavItem to="/users" icon={<Users size={20} />} label={t('navigation.users')} onClick={handleNavClick} />
+              <MobileNavItem to="/audit-log" icon={<History size={20} />} label={t('navigation.auditLog')} onClick={handleNavClick} />
               <MobileNavItem to="/settings" icon={<Settings size={20} />} label={t('navigation.settings')} onClick={handleNavClick} />
             </>
+          )}
+          {isPlatformOwner && (
+            <MobileNavItem to="/platform-admin" icon={<Building2 size={20} />} label={t('navigation.platformAdmin')} onClick={handleNavClick} />
           )}
         </div>
       </SheetContent>

@@ -35,7 +35,10 @@ export function UserRoleDialog({ open, onOpenChange, user }: UserRoleDialogProps
   const { t } = useTranslation();
   const [selectedRole, setSelectedRole] = useState<AppRole>('viewer');
   const updateRole = useUpdateUserRole();
-  const { isAdminMaster } = useAuth();
+  const { isAdminMaster, isPlatformOwner } = useAuth();
+  
+  // Platform owners and admin_masters can manage all roles
+  const canManageAllRoles = isAdminMaster || isPlatformOwner;
 
   const roleOptions: { value: AppRole; label: string; description: string; icon: React.ElementType }[] = [
     { 
@@ -76,8 +79,8 @@ export function UserRoleDialog({ open, onOpenChange, user }: UserRoleDialogProps
 
   // Filter role options based on current user's permissions
   const availableRoleOptions = roleOptions.filter(role => {
-    // Only admin_master can assign/edit admin_master role
-    if (role.value === 'admin_master' && !isAdminMaster) {
+    // Only admin_master or platform_owner can assign/edit admin_master role
+    if (role.value === 'admin_master' && !canManageAllRoles) {
       return false;
     }
     return true;
@@ -94,8 +97,8 @@ export function UserRoleDialog({ open, onOpenChange, user }: UserRoleDialogProps
   const handleSubmit = async () => {
     if (!user) return;
     
-    // Prevent admin from editing admin_master
-    if (isEditingAdminMaster && !isAdminMaster) {
+    // Prevent non-admin_master/platform_owner from editing admin_master
+    if (isEditingAdminMaster && !canManageAllRoles) {
       return;
     }
     
@@ -109,8 +112,8 @@ export function UserRoleDialog({ open, onOpenChange, user }: UserRoleDialogProps
 
   if (!user) return null;
 
-  // Check if current user (not admin_master) is trying to edit an admin_master
-  const cannotEditUser = isEditingAdminMaster && !isAdminMaster;
+  // Check if current user cannot edit an admin_master
+  const cannotEditUser = isEditingAdminMaster && !canManageAllRoles;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

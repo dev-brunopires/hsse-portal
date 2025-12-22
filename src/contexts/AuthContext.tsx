@@ -206,11 +206,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const isAdminMaster = role === 'admin_master';
-  const isAdmin = role === 'admin' || role === 'admin_master';
+  const isAdminMaster = role === 'admin_master' || isPlatformOwner;
+  const isAdmin = role === 'admin' || role === 'admin_master' || isPlatformOwner;
   const isTechnician = role === 'technician';
   const isSupervisor = role === 'supervisor';
-  const canEdit = isAdmin || isTechnician || isSupervisor || isPlatformOwner;
+  const canEdit = isAdmin || isTechnician || isSupervisor;
 
   return (
     <AuthContext.Provider

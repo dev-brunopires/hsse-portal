@@ -22,7 +22,6 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
-import { useIsPlatformOwner } from '@/hooks/useOrganizations';
 import { SystemLogo } from '@/components/ui/SystemLogo';
 
 interface NavItemProps {
@@ -62,10 +61,9 @@ const NavItem = ({ to, icon, label, collapsed }: NavItemProps) => {
 
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
-  const { isAdmin } = useAuth();
+  const { isAdmin, isPlatformOwner } = useAuth();
   const { t } = useTranslation();
   const { organization, logoWhiteUrl } = useOrganization();
-  const { data: isPlatformOwner } = useIsPlatformOwner();
   
   // Use organization white logo or system default
   const hasOrgLogo = organization && logoWhiteUrl;

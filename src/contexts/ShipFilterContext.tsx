@@ -10,11 +10,11 @@ interface ShipFilterContextType {
 const ShipFilterContext = createContext<ShipFilterContextType | undefined>(undefined);
 
 export function ShipFilterProvider({ children }: { children: ReactNode }) {
-  const { role } = useAuth();
+  const { role, isPlatformOwner } = useAuth();
   const [selectedShipId, setSelectedShipId] = useState<string | null>(null);
 
-  // Only admin and admin_master can use global ship filter
-  const isFilterEnabled = role === 'admin' || role === 'admin_master';
+  // Admin, admin_master, and platform owners can use global ship filter
+  const isFilterEnabled = role === 'admin' || role === 'admin_master' || isPlatformOwner;
 
   // Reset filter when role changes or user logs out
   useEffect(() => {
