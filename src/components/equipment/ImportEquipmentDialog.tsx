@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -36,6 +37,7 @@ interface ImportEquipmentDialogProps {
 }
 
 export function ImportEquipmentDialog({ open, onOpenChange }: ImportEquipmentDialogProps) {
+  const { t } = useTranslation();
   const [step, setStep] = useState<'upload' | 'preview' | 'importing' | 'done'>('upload');
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -57,8 +59,8 @@ export function ImportEquipmentDialog({ open, onOpenChange }: ImportEquipmentDia
       setStep('preview');
     } else {
       toast({
-        title: 'Erro ao processar arquivo',
-        description: result.errors?.[0] || 'Arquivo inválido',
+        title: t('importEquipment.errorProcessing'),
+        description: result.errors?.[0] || t('importEquipment.invalidFile'),
         variant: 'destructive',
       });
     }
@@ -118,10 +120,10 @@ export function ImportEquipmentDialog({ open, onOpenChange }: ImportEquipmentDia
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileSpreadsheet className="h-5 w-5 text-primary" />
-            Importar Equipamentos
+            {t('importEquipment.title')}
           </DialogTitle>
           <DialogDescription>
-            Importe equipamentos em massa a partir de um arquivo Excel ou CSV
+            {t('importEquipment.description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -132,9 +134,9 @@ export function ImportEquipmentDialog({ open, onOpenChange }: ImportEquipmentDia
               onClick={() => fileInputRef.current?.click()}
             >
               <Upload className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
-              <p className="font-medium">Clique para selecionar um arquivo</p>
+              <p className="font-medium">{t('importEquipment.clickToSelect')}</p>
               <p className="text-sm text-muted-foreground mt-1">
-                Formatos aceitos: .xlsx, .xls, .csv
+                {t('importEquipment.acceptedFormats')}
               </p>
               <input
                 ref={fileInputRef}
@@ -147,14 +149,14 @@ export function ImportEquipmentDialog({ open, onOpenChange }: ImportEquipmentDia
 
             <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
               <div>
-                <p className="font-medium">Baixar modelo de importação</p>
+                <p className="font-medium">{t('importEquipment.downloadTemplate')}</p>
                 <p className="text-sm text-muted-foreground">
-                  Use este template para preencher seus dados
+                  {t('importEquipment.useTemplateDesc')}
                 </p>
               </div>
               <Button variant="outline" onClick={generateTemplate} className="gap-2">
                 <Download className="h-4 w-4" />
-                Baixar Template
+                {t('importEquipment.downloadBtn')}
               </Button>
             </div>
           </div>
@@ -165,9 +167,9 @@ export function ImportEquipmentDialog({ open, onOpenChange }: ImportEquipmentDia
             <div className="flex items-center gap-4 p-4 bg-status-success/10 border border-status-success/30 rounded-lg">
               <CheckCircle2 className="h-5 w-5 text-status-success" />
               <div>
-                <p className="font-medium">{importResult.data.length} equipamentos encontrados</p>
+                <p className="font-medium">{importResult.data.length} {t('importEquipment.equipmentFound')}</p>
                 <p className="text-sm text-muted-foreground">
-                  Prontos para importação
+                  {t('importEquipment.readyToImport')}
                 </p>
               </div>
             </div>
@@ -176,7 +178,7 @@ export function ImportEquipmentDialog({ open, onOpenChange }: ImportEquipmentDia
               <div className="p-4 bg-status-warning/10 border border-status-warning/30 rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <AlertCircle className="h-5 w-5 text-status-warning" />
-                  <p className="font-medium text-status-warning">Avisos</p>
+                  <p className="font-medium text-status-warning">{t('importEquipment.warnings')}</p>
                 </div>
                 <ScrollArea className="max-h-32">
                   {importResult.errors.map((err, i) => (
@@ -187,10 +189,10 @@ export function ImportEquipmentDialog({ open, onOpenChange }: ImportEquipmentDia
             )}
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Categoria para todos os equipamentos *</label>
+              <label className="text-sm font-medium">{t('importEquipment.categoryForAll')}</label>
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma categoria" />
+                  <SelectValue placeholder={t('importEquipment.selectCategory')} />
                 </SelectTrigger>
                 <SelectContent>
                   {categories?.map(cat => (
@@ -204,10 +206,10 @@ export function ImportEquipmentDialog({ open, onOpenChange }: ImportEquipmentDia
               <table className="w-full text-sm">
                 <thead className="bg-muted/50 sticky top-0">
                   <tr>
-                    <th className="p-2 text-left">Código</th>
-                    <th className="p-2 text-left">Nome</th>
-                    <th className="p-2 text-left">Fabricante</th>
-                    <th className="p-2 text-left">Localização</th>
+                    <th className="p-2 text-left">{t('importEquipment.code')}</th>
+                    <th className="p-2 text-left">{t('importEquipment.name')}</th>
+                    <th className="p-2 text-left">{t('importEquipment.manufacturer')}</th>
+                    <th className="p-2 text-left">{t('importEquipment.location')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -223,15 +225,15 @@ export function ImportEquipmentDialog({ open, onOpenChange }: ImportEquipmentDia
               </table>
               {importResult.data.length > 10 && (
                 <p className="p-2 text-sm text-muted-foreground text-center">
-                  ... e mais {importResult.data.length - 10} equipamentos
+                  {t('importEquipment.andMore', { count: importResult.data.length - 10 })}
                 </p>
               )}
             </ScrollArea>
 
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={handleClose}>Cancelar</Button>
+              <Button variant="outline" onClick={handleClose}>{t('importEquipment.cancel')}</Button>
               <Button onClick={handleImport} disabled={!selectedCategory}>
-                Importar {importResult.data.length} Equipamentos
+                {t('importEquipment.importEquipments', { count: importResult.data.length })}
               </Button>
             </div>
           </div>
@@ -241,9 +243,9 @@ export function ImportEquipmentDialog({ open, onOpenChange }: ImportEquipmentDia
           <div className="space-y-4 py-8">
             <div className="flex flex-col items-center">
               <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
-              <p className="font-medium">Importando equipamentos...</p>
+              <p className="font-medium">{t('importEquipment.importing')}</p>
               <p className="text-sm text-muted-foreground">
-                {importProgress.current} de {importProgress.total}
+                {importProgress.current} {t('importEquipment.ofTotal')} {importProgress.total}
               </p>
             </div>
             <div className="w-full bg-muted rounded-full h-2">
@@ -259,16 +261,16 @@ export function ImportEquipmentDialog({ open, onOpenChange }: ImportEquipmentDia
           <div className="space-y-4 py-8">
             <div className="flex flex-col items-center">
               <CheckCircle2 className="h-12 w-12 text-status-success mb-4" />
-              <p className="font-medium text-lg">Importação concluída!</p>
+              <p className="font-medium text-lg">{t('importEquipment.importComplete')}</p>
               <p className="text-muted-foreground">
-                {importProgress.current - importProgress.errors.length} equipamentos importados com sucesso
+                {importProgress.current - importProgress.errors.length} {t('importEquipment.importedSuccessfully')}
               </p>
             </div>
 
             {importProgress.errors.length > 0 && (
               <div className="p-4 bg-status-danger/10 border border-status-danger/30 rounded-lg">
                 <p className="font-medium text-status-danger mb-2">
-                  {importProgress.errors.length} erros durante importação:
+                  {importProgress.errors.length} {t('importEquipment.errorsOnImport')}
                 </p>
                 <ScrollArea className="max-h-32">
                   {importProgress.errors.map((err, i) => (
@@ -279,7 +281,7 @@ export function ImportEquipmentDialog({ open, onOpenChange }: ImportEquipmentDia
             )}
 
             <div className="flex justify-center">
-              <Button onClick={handleClose}>Fechar</Button>
+              <Button onClick={handleClose}>{t('importEquipment.close')}</Button>
             </div>
           </div>
         )}

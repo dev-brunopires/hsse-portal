@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FileText, Download, Calendar, Filter, AlertTriangle, Loader2, BarChart3, Wrench, ClipboardCheck, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,49 +22,51 @@ import { addPDFHeader, addPDFFooter, addSignatureSection, preloadLogo } from '@/
 import { ReportPreviewDialog } from '@/components/reports/ReportPreviewDialog';
 import { toast } from 'sonner';
 import { format, isAfter, isBefore, addDays, startOfDay } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS } from 'date-fns/locale';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
-const statusLabels: Record<string, string> = {
-  active: 'Ativo',
-  maintenance: 'Em Manutenção',
-  expired: 'Vencido',
-  rejected: 'Reprovado',
-  inactive: 'Inativo',
-};
-
-const maintenanceStatusLabels: Record<string, string> = {
-  pending: 'Pendente',
-  approved: 'Aprovada',
-  in_progress: 'Em Execução',
-  completed: 'Concluída',
-  rejected: 'Rejeitada',
-};
-
-const maintenancePriorityLabels: Record<string, string> = {
-  low: 'Baixa',
-  medium: 'Média',
-  high: 'Alta',
-  critical: 'Crítica',
-};
-
-const maintenanceTypeLabels: Record<string, string> = {
-  corrective: 'Corretiva',
-  preventive: 'Preventiva',
-};
-
-const inspectionStatusLabels: Record<string, string> = {
-  compliant: 'Conforme',
-  attention: 'Atenção',
-  'non-compliant': 'Não Conforme',
-  rejected: 'Reprovado',
-};
-
 type ReportType = 'inspections' | 'maintenance' | 'category' | 'expiry' | 'non-conformities' | 'category-inspection' | null;
 
 export default function Reports() {
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.language === 'en' ? enUS : ptBR;
+
+  const statusLabels: Record<string, string> = {
+    active: t('reports.statusActive'),
+    maintenance: t('reports.statusMaintenance'),
+    expired: t('reports.statusExpired'),
+    rejected: t('reports.statusRejected'),
+    inactive: t('reports.statusInactive'),
+  };
+
+  const maintenanceStatusLabels: Record<string, string> = {
+    pending: t('maintenance.statusPending'),
+    approved: t('maintenance.statusApproved'),
+    in_progress: t('maintenance.statusInProgress'),
+    completed: t('maintenance.statusCompleted'),
+    rejected: t('maintenance.statusRejected'),
+  };
+
+  const maintenancePriorityLabels: Record<string, string> = {
+    low: t('maintenance.priorityLow'),
+    medium: t('maintenance.priorityMedium'),
+    high: t('maintenance.priorityHigh'),
+    critical: t('maintenance.priorityCritical'),
+  };
+
+  const maintenanceTypeLabels: Record<string, string> = {
+    corrective: t('maintenance.typeCorrective'),
+    preventive: t('maintenance.typePreventive'),
+  };
+
+  const inspectionStatusLabels: Record<string, string> = {
+    compliant: t('inspections.statusCompliant'),
+    attention: t('inspections.statusAttention'),
+    'non-compliant': t('inspections.statusNonCompliant'),
+    rejected: t('inspections.statusRejected'),
+  };
   const { user } = useAuth();
   const { data: profiles = [] } = useProfiles();
   const { data: equipment = [], isLoading: equipmentLoading } = useEquipment();
@@ -135,11 +138,11 @@ export default function Reports() {
   // Report 1: Inspection Report
   const handleInspectionReportPDF = () => {
     if (filteredInspections.length === 0) {
-      toast.error('Nenhuma inspeção encontrada para exportar');
+      toast.error(t('reports.noInspectionFound'));
       return;
     }
     exportInspectionsToPDF(filteredInspections, 'relatorio_inspecoes');
-    toast.success('Relatório de inspeções exportado em PDF');
+    toast.success(t('reports.inspectionsExportedPDF'));
   };
 
   const handleInspectionReportExcel = () => {
@@ -875,14 +878,14 @@ export default function Reports() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Relatórios</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t('reports.title')}</h1>
           <p className="text-muted-foreground">
-            Geração de relatórios profissionais para auditoria
+            {t('reports.subtitle')}
           </p>
         </div>
         {hasFilters && (
           <Button variant="outline" size="sm" onClick={clearFilters}>
-            Limpar Filtros
+            {t('reports.clearFilters')}
           </Button>
         )}
       </div>
