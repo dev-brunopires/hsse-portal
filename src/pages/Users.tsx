@@ -212,7 +212,7 @@ export default function Users() {
           <div className="flex justify-end">
             <Button className="gap-2" onClick={() => setCreateDialogOpen(true)}>
               <Plus className="h-4 w-4" />
-              {t('dialogs.newUser')}
+              {t('users.newUser')}
             </Button>
           </div>
 
@@ -309,9 +309,9 @@ export default function Users() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>{t('dialogs.user')}</TableHead>
-                    <TableHead>{t('dialogs.email')}</TableHead>
-                    <TableHead>{t('dialogs.role')}</TableHead>
+                    <TableHead>{t('users.userName')}</TableHead>
+                    <TableHead>{t('users.userEmail')}</TableHead>
+                    <TableHead>{t('users.role')}</TableHead>
                     <TableHead>{t('usersPage.shipsTab')}</TableHead>
                     <TableHead>{t('usersPage.registration')}</TableHead>
                     <TableHead className="w-24 text-right">{t('common.actions')}</TableHead>
