@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS } from 'date-fns/locale';
 import { Filter, X, CalendarDays, Ship, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 import type { Ship as ShipType } from '@/hooks/useShips';
 
 export interface DashboardFiltersState {
@@ -40,6 +41,8 @@ export function DashboardFilters({
   ships, 
   categories 
 }: DashboardFiltersProps) {
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
   const [isExpanded, setIsExpanded] = useState(false);
 
   const hasActiveFilters = 
@@ -73,7 +76,7 @@ export function DashboardFilters({
           className="gap-2"
         >
           <Filter className="h-4 w-4" />
-          Filtros
+          {t('dashboardFilters.filters')}
           {activeFilterCount > 0 && (
             <Badge variant="default" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-[10px]">
               {activeFilterCount}
@@ -89,7 +92,7 @@ export function DashboardFilters({
             className="gap-1 text-muted-foreground hover:text-foreground"
           >
             <X className="h-3 w-3" />
-            Limpar
+            {t('dashboardFilters.clear')}
           </Button>
         )}
       </div>
@@ -104,10 +107,10 @@ export function DashboardFilters({
               onValueChange={(value) => onFiltersChange({ ...filters, shipId: value })}
             >
               <SelectTrigger className="w-[180px] h-9">
-                <SelectValue placeholder="Todos os navios" />
+                <SelectValue placeholder={t('dashboardFilters.allShips')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos os navios</SelectItem>
+                <SelectItem value="all">{t('dashboardFilters.allShips')}</SelectItem>
                 {ships.map((ship) => (
                   <SelectItem key={ship.id} value={ship.id}>
                     {ship.name}
@@ -125,10 +128,10 @@ export function DashboardFilters({
               onValueChange={(value) => onFiltersChange({ ...filters, categoryId: value })}
             >
               <SelectTrigger className="w-[180px] h-9">
-                <SelectValue placeholder="Todas categorias" />
+                <SelectValue placeholder={t('dashboardFilters.allCategories')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todas categorias</SelectItem>
+                <SelectItem value="all">{t('dashboardFilters.allCategories')}</SelectItem>
                 {categories.map((cat) => (
                   <SelectItem key={cat.id} value={cat.id}>
                     {cat.name}
@@ -156,7 +159,7 @@ export function DashboardFilters({
                       {format(filters.startDate, 'dd/MM/yy')} - {format(filters.endDate, 'dd/MM/yy')}
                     </>
                   ) : (
-                    "Selecionar período"
+                    t('dashboardFilters.selectPeriod')
                   )}
                 </Button>
               </PopoverTrigger>
@@ -177,7 +180,7 @@ export function DashboardFilters({
                     });
                   }}
                   numberOfMonths={2}
-                  locale={ptBR}
+                  locale={dateLocale}
                   className="pointer-events-auto"
                 />
               </PopoverContent>

@@ -3,7 +3,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp } from 'lucide-react';
 import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 
 interface MonthlyComparisonChartProps {
   inspections: Array<{
@@ -13,6 +14,9 @@ interface MonthlyComparisonChartProps {
 }
 
 export function MonthlyComparisonChart({ inspections }: MonthlyComparisonChartProps) {
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
+
   const chartData = useMemo(() => {
     const today = new Date();
     const months = [];
@@ -28,8 +32,8 @@ export function MonthlyComparisonChart({ inspections }: MonthlyComparisonChartPr
       });
       
       months.push({
-        month: format(monthDate, 'MMM', { locale: ptBR }),
-        fullMonth: format(monthDate, 'MMMM yyyy', { locale: ptBR }),
+        month: format(monthDate, 'MMM', { locale: dateLocale }),
+        fullMonth: format(monthDate, 'MMMM yyyy', { locale: dateLocale }),
         total: monthInspections.length,
         approved: monthInspections.filter(i => i.status === 'approved' || i.status === 'active').length,
         attention: monthInspections.filter(i => i.status === 'attention').length,
@@ -38,13 +42,19 @@ export function MonthlyComparisonChart({ inspections }: MonthlyComparisonChartPr
     }
     
     return months;
-  }, [inspections]);
+  }, [inspections, dateLocale]);
 
   const totalThisMonth = chartData[chartData.length - 1]?.total || 0;
   const totalLastMonth = chartData[chartData.length - 2]?.total || 0;
   const growth = totalLastMonth > 0 
     ? (((totalThisMonth - totalLastMonth) / totalLastMonth) * 100).toFixed(0)
     : '0';
+
+  const statusLabels: Record<string, string> = {
+    approved: t('dashboardCharts.approved'),
+    attention: t('dashboardCharts.attention'),
+    rejected: t('dashboardCharts.rejected'),
+  };
 
   return (
     <Card>
@@ -53,14 +63,14 @@ export function MonthlyComparisonChart({ inspections }: MonthlyComparisonChartPr
           <div>
             <CardTitle className="text-base flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-primary" />
-              Inspeções por Mês
+              {t('dashboardCharts.inspectionsByMonth')}
             </CardTitle>
-            <CardDescription>Comparativo dos últimos 6 meses</CardDescription>
+            <CardDescription>{t('dashboardCharts.last6MonthsComparison')}</CardDescription>
           </div>
           <div className="text-right">
             <div className="text-2xl font-bold">{totalThisMonth}</div>
             <div className="text-xs text-muted-foreground">
-              {Number(growth) >= 0 ? '+' : ''}{growth}% vs mês anterior
+              {Number(growth) >= 0 ? '+' : ''}{growth}% {t('dashboardCharts.vsPreviousMonth')}
             </div>
           </div>
         </div>
@@ -90,19 +100,19 @@ export function MonthlyComparisonChart({ inspections }: MonthlyComparisonChartPr
                         <p className="font-medium capitalize mb-2">{data.fullMonth}</p>
                         <div className="space-y-1 text-sm">
                           <div className="flex justify-between gap-4">
-                            <span className="text-muted-foreground">Total:</span>
+                            <span className="text-muted-foreground">{t('common.total')}:</span>
                             <span className="font-medium">{data.total}</span>
                           </div>
                           <div className="flex justify-between gap-4">
-                            <span className="text-green-500">Aprovadas:</span>
+                            <span className="text-green-500">{statusLabels.approved}:</span>
                             <span className="font-medium">{data.approved}</span>
                           </div>
                           <div className="flex justify-between gap-4">
-                            <span className="text-yellow-500">Atenção:</span>
+                            <span className="text-yellow-500">{statusLabels.attention}:</span>
                             <span className="font-medium">{data.attention}</span>
                           </div>
                           <div className="flex justify-between gap-4">
-                            <span className="text-red-500">Reprovadas:</span>
+                            <span className="text-red-500">{statusLabels.rejected}:</span>
                             <span className="font-medium">{data.rejected}</span>
                           </div>
                         </div>
@@ -115,12 +125,7 @@ export function MonthlyComparisonChart({ inspections }: MonthlyComparisonChartPr
               <Legend 
                 wrapperStyle={{ paddingTop: 20 }}
                 formatter={(value) => {
-                  const labels: Record<string, string> = {
-                    approved: 'Aprovadas',
-                    attention: 'Atenção',
-                    rejected: 'Reprovadas',
-                  };
-                  return <span className="text-sm">{labels[value] || value}</span>;
+                  return <span className="text-sm">{statusLabels[value] || value}</span>;
                 }}
               />
               <Bar dataKey="approved" stackId="a" fill="hsl(var(--chart-2))" radius={[0, 0, 0, 0]} />
