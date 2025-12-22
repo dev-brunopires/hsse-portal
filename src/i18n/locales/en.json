@@ -2201,7 +2201,17 @@
     "next": "Next",
     "previous": "Previous",
     "done": "Done",
-    "progress": "{{current}} of {{total}}"
+    "progress": "{{current}} of {{total}}",
+    "welcomeTitle": "Welcome to SafeShip!",
+    "welcomeDescription": "Maritime Safety Equipment Inspection Management System.",
+    "tourQuestion": "Would you like to take a quick tour of the system? You will learn about:",
+    "tourItem1": "Navigation and main features",
+    "tourItem2": "Equipment registration and inspection",
+    "tourItem3": "Reports and system alerts",
+    "tourItem4": "How to set up your digital signature",
+    "tourItem5": "Keyboard shortcuts",
+    "skip": "Skip",
+    "startTour": "Start Tour"
   },
   "pushNotifications": {
     "upcomingInspections": "Upcoming Inspections",

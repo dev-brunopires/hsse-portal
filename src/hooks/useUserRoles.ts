@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables, Enums } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
 
 export type UserRole = Tables<'user_roles'>;
 export type AppRole = Enums<'app_role'>;
@@ -21,6 +22,7 @@ export function useUserRoles() {
 }
 
 export function useUpdateUserRole() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -54,13 +56,13 @@ export function useUpdateUserRole() {
       queryClient.invalidateQueries({ queryKey: ['profiles'] });
       queryClient.invalidateQueries({ queryKey: ['user_roles'] });
       toast({
-        title: 'Perfil Atualizado',
-        description: 'O perfil do usuário foi atualizado com sucesso.',
+        title: t('userRoles.profileUpdated'),
+        description: t('userRoles.profileUpdatedDesc'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Erro ao Atualizar Perfil',
+        title: t('userRoles.errorUpdating'),
         description: error.message,
         variant: 'destructive',
       });
@@ -69,6 +71,7 @@ export function useUpdateUserRole() {
 }
 
 export function useDeleteUser() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -77,7 +80,7 @@ export function useDeleteUser() {
       // Get the current session for authorization
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        throw new Error('Não autenticado');
+        throw new Error(t('auth.notAuthenticated', 'Not authenticated'));
       }
 
       // Call the edge function to delete the user completely
@@ -96,7 +99,7 @@ export function useDeleteUser() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Erro ao remover usuário');
+        throw new Error(data.error || t('userRoles.errorRemoving'));
       }
 
       return data;
@@ -106,13 +109,13 @@ export function useDeleteUser() {
       queryClient.invalidateQueries({ queryKey: ['user_roles'] });
       queryClient.invalidateQueries({ queryKey: ['user_ships'] });
       toast({
-        title: 'Usuário Removido',
-        description: 'O usuário foi removido completamente do sistema.',
+        title: t('userRoles.userRemoved'),
+        description: t('userRoles.userRemovedDesc'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Erro ao Remover Usuário',
+        title: t('userRoles.errorRemoving'),
         description: error.message,
         variant: 'destructive',
       });
@@ -121,6 +124,7 @@ export function useDeleteUser() {
 }
 
 export function useUpdateProfile() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -140,13 +144,13 @@ export function useUpdateProfile() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['profiles'] });
       toast({
-        title: 'Perfil Atualizado',
-        description: 'Os dados do usuário foram atualizados.',
+        title: t('userRoles.profileUpdated'),
+        description: t('userRoles.dataUpdated'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Erro ao Atualizar',
+        title: t('userRoles.errorUpdatingData'),
         description: error.message,
         variant: 'destructive',
       });

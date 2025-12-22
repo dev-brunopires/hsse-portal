@@ -10,9 +10,10 @@ import {
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 
 export function OfflineIndicator() {
+  const { t } = useTranslation();
   const { isOnline, pendingCount, isSyncing, getPendingInspections, syncPendingInspections } = useOfflineSync();
   const [expanded, setExpanded] = useState(false);
   const pendingInspections = getPendingInspections();
@@ -46,15 +47,15 @@ export function OfflineIndicator() {
                   <p className="font-semibold text-sm">
                     {isOnline 
                       ? isSyncing 
-                        ? 'Sincronizando...' 
-                        : `${pendingCount} inspeção(ões) pendente(s)`
-                      : 'Modo Offline'
+                        ? t('offline.syncing')
+                        : t('offline.pendingInspections', { count: pendingCount })
+                      : t('offline.offlineMode')
                     }
                   </p>
                   <p className="text-xs opacity-80">
                     {isOnline 
-                      ? 'Aguardando sincronização'
-                      : 'Alterações serão salvas localmente'
+                      ? t('offline.awaitingSync')
+                      : t('offline.changesSavedLocally')
                     }
                   </p>
                 </div>
@@ -72,7 +73,7 @@ export function OfflineIndicator() {
             {pendingCount > 0 && (
               <CollapsibleContent>
                 <div className="px-4 pb-4 space-y-3 border-t border-white/20 pt-3">
-                  <p className="text-xs font-medium opacity-80">Inspeções aguardando sincronização:</p>
+                  <p className="text-xs font-medium opacity-80">{t('offline.inspectionsAwaitingSync')}</p>
                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {pendingInspections.map((inspection) => (
                       <div 
@@ -85,11 +86,11 @@ export function OfflineIndicator() {
                             {inspection.equipment_name}
                           </p>
                           <p className="text-xs opacity-70">
-                            Código: {inspection.equipment_code}
+                            {t('offline.code')}: {inspection.equipment_code}
                           </p>
                         </div>
                         <span className="text-xs opacity-70 flex-shrink-0">
-                          {format(new Date(inspection.timestamp), 'HH:mm', { locale: ptBR })}
+                          {format(new Date(inspection.timestamp), 'HH:mm')}
                         </span>
                       </div>
                     ))}
@@ -105,12 +106,12 @@ export function OfflineIndicator() {
                       {isSyncing ? (
                         <>
                           <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                          Sincronizando...
+                          {t('offline.syncing')}
                         </>
                       ) : (
                         <>
                           <RefreshCw className="h-4 w-4 mr-2" />
-                          Sincronizar Agora
+                          {t('offline.syncNow')}
                         </>
                       )}
                     </Button>
