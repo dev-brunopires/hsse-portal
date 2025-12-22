@@ -1,11 +1,13 @@
 import { useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
-import { Layers, TrendingUp } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { Layers } from 'lucide-react';
 import { useEquipment } from '@/hooks/useEquipment';
 import { useCategories } from '@/hooks/useCategories';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useTranslation } from 'react-i18next';
 
 export function EquipmentStatusByCategoryChart() {
+  const { t } = useTranslation();
   const { data: equipment = [], isLoading: loadingEquipment } = useEquipment();
   const { data: categories = [], isLoading: loadingCategories } = useCategories();
 
@@ -25,25 +27,33 @@ export function EquipmentStatusByCategoryChart() {
       return {
         category: category.name.length > 15 ? category.name.slice(0, 15) + '...' : category.name,
         fullName: category.name,
-        Ativos: active,
-        'Em Manutenção': maintenance,
-        'Vencidos/Reprovados': expired,
+        [t('statusByCategory.active')]: active,
+        [t('statusByCategory.maintenance')]: maintenance,
+        [t('statusByCategory.expired')]: expired,
         total,
       };
     }).filter(c => c.total > 0).sort((a, b) => b.total - a.total).slice(0, 8);
-  }, [equipment, categories]);
+  }, [equipment, categories, t]);
 
   const totals = useMemo(() => {
+    const activeKey = t('statusByCategory.active');
+    const maintenanceKey = t('statusByCategory.maintenance');
+    const expiredKey = t('statusByCategory.expired');
+    
     return chartData.reduce((acc, item) => ({
-      active: acc.active + item.Ativos,
-      maintenance: acc.maintenance + item['Em Manutenção'],
-      expired: acc.expired + item['Vencidos/Reprovados'],
+      active: acc.active + (item[activeKey] as number || 0),
+      maintenance: acc.maintenance + (item[maintenanceKey] as number || 0),
+      expired: acc.expired + (item[expiredKey] as number || 0),
     }), { active: 0, maintenance: 0, expired: 0 });
-  }, [chartData]);
+  }, [chartData, t]);
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0]?.payload;
+      const activeKey = t('statusByCategory.active');
+      const maintenanceKey = t('statusByCategory.maintenance');
+      const expiredKey = t('statusByCategory.expired');
+      
       return (
         <div className="bg-card border rounded-lg shadow-lg p-2.5 min-w-[160px]">
           <p className="font-semibold text-foreground text-sm mb-1.5">{data?.fullName}</p>
@@ -51,26 +61,26 @@ export function EquipmentStatusByCategoryChart() {
             <div className="flex justify-between items-center gap-4">
               <div className="flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span className="text-muted-foreground">Ativos:</span>
+                <span className="text-muted-foreground">{activeKey}:</span>
               </div>
-              <span className="font-medium">{data?.Ativos}</span>
+              <span className="font-medium">{data?.[activeKey]}</span>
             </div>
             <div className="flex justify-between items-center gap-4">
               <div className="flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-full bg-amber-500" />
-                <span className="text-muted-foreground">Manutenção:</span>
+                <span className="text-muted-foreground">{maintenanceKey}:</span>
               </div>
-              <span className="font-medium">{data?.['Em Manutenção']}</span>
+              <span className="font-medium">{data?.[maintenanceKey]}</span>
             </div>
             <div className="flex justify-between items-center gap-4">
               <div className="flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-full bg-red-500" />
-                <span className="text-muted-foreground">Vencidos:</span>
+                <span className="text-muted-foreground">{expiredKey}:</span>
               </div>
-              <span className="font-medium">{data?.['Vencidos/Reprovados']}</span>
+              <span className="font-medium">{data?.[expiredKey]}</span>
             </div>
             <div className="pt-1 border-t mt-1 flex justify-between">
-              <span className="text-muted-foreground font-medium">Total:</span>
+              <span className="text-muted-foreground font-medium">{t('common.total')}:</span>
               <span className="font-bold">{data?.total}</span>
             </div>
           </div>
@@ -89,6 +99,10 @@ export function EquipmentStatusByCategoryChart() {
     );
   }
 
+  const activeKey = t('statusByCategory.active');
+  const maintenanceKey = t('statusByCategory.maintenance');
+  const expiredKey = t('statusByCategory.expired');
+
   return (
     <div className="bg-card rounded-2xl border shadow-sm overflow-hidden h-[380px] flex flex-col">
       <div className="p-5 border-b bg-gradient-to-r from-muted/50 to-transparent">
@@ -98,8 +112,8 @@ export function EquipmentStatusByCategoryChart() {
               <Layers className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h3 className="font-semibold text-foreground">Status por Categoria</h3>
-              <p className="text-sm text-muted-foreground">Distribuição de equipamentos</p>
+              <h3 className="font-semibold text-foreground">{t('statusByCategory.title')}</h3>
+              <p className="text-sm text-muted-foreground">{t('statusByCategory.subtitle')}</p>
             </div>
           </div>
           
@@ -145,19 +159,19 @@ export function EquipmentStatusByCategoryChart() {
               />
               <Tooltip content={<CustomTooltip />} />
               <Bar 
-                dataKey="Ativos" 
+                dataKey={activeKey} 
                 stackId="a"
                 fill="#10b981" 
                 radius={[0, 0, 0, 0]}
               />
               <Bar 
-                dataKey="Em Manutenção" 
+                dataKey={maintenanceKey} 
                 stackId="a"
                 fill="#f59e0b" 
                 radius={[0, 0, 0, 0]}
               />
               <Bar 
-                dataKey="Vencidos/Reprovados" 
+                dataKey={expiredKey} 
                 stackId="a"
                 fill="#ef4444" 
                 radius={[4, 4, 0, 0]}
@@ -170,15 +184,15 @@ export function EquipmentStatusByCategoryChart() {
         <div className="flex items-center justify-center gap-6 mt-4 pt-4 border-t">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded bg-emerald-500" />
-            <span className="text-xs text-muted-foreground">Ativos</span>
+            <span className="text-xs text-muted-foreground">{activeKey}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded bg-amber-500" />
-            <span className="text-xs text-muted-foreground">Em Manutenção</span>
+            <span className="text-xs text-muted-foreground">{maintenanceKey}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded bg-red-500" />
-            <span className="text-xs text-muted-foreground">Vencidos</span>
+            <span className="text-xs text-muted-foreground">{expiredKey}</span>
           </div>
         </div>
       </div>

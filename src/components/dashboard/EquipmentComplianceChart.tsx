@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 import { CheckCircle2, XCircle, AlertTriangle, Filter, Search } from 'lucide-react';
 import { useInspections } from '@/hooks/useInspections';
 import { useEquipment } from '@/hooks/useEquipment';
@@ -14,8 +14,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { useTranslation } from 'react-i18next';
 
 export function EquipmentComplianceChart() {
+  const { t } = useTranslation();
   const { data: inspections = [], isLoading: inspectionsLoading } = useInspections();
   const { data: equipment = [], isLoading: equipmentLoading } = useEquipment();
   const { data: categories = [] } = useCategories();
@@ -43,7 +45,7 @@ export function EquipmentComplianceChart() {
         id: eq.id,
         name: eq.name,
         code: eq.internal_code,
-        category: eq.categories?.name || 'Sem categoria',
+        category: eq.categories?.name || t('complianceChart.noCategory'),
         categoryId: eq.category_id,
         compliant: 0,
         attention: 0,
@@ -90,7 +92,7 @@ export function EquipmentComplianceChart() {
 
     // Limit to top 10 for readability
     return result.slice(0, 10);
-  }, [inspections, equipment, selectedCategory, searchQuery]);
+  }, [inspections, equipment, selectedCategory, searchQuery, t]);
 
   const totals = useMemo(() => {
     const totalCompliant = chartData.reduce((sum, eq) => sum + eq.compliant, 0);
@@ -107,7 +109,7 @@ export function EquipmentComplianceChart() {
     };
   }, [chartData]);
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       const complianceRate = data.total > 0 ? (data.compliant / data.total) * 100 : 0;
@@ -118,24 +120,24 @@ export function EquipmentComplianceChart() {
           <p className="text-xs text-muted-foreground mb-2">{data.code}</p>
           <div className="space-y-1 text-sm">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Total:</span>
+              <span className="text-muted-foreground">{t('common.total')}:</span>
               <span className="font-medium">{data.total}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-emerald-500">Conformes:</span>
+              <span className="text-emerald-500">{t('complianceChart.compliant')}:</span>
               <span className="font-medium">{data.compliant}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-yellow-500">Atenção:</span>
+              <span className="text-yellow-500">{t('complianceChart.attention')}:</span>
               <span className="font-medium">{data.attention}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-red-500">Não conformes:</span>
+              <span className="text-red-500">{t('complianceChart.nonCompliant')}:</span>
               <span className="font-medium">{data.nonCompliant}</span>
             </div>
             <div className="pt-1 border-t mt-1">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Conformidade:</span>
+                <span className="text-muted-foreground">{t('complianceChart.compliance')}:</span>
                 <span className={`font-medium ${
                   complianceRate >= 80 ? 'text-emerald-500' : 
                   complianceRate >= 50 ? 'text-yellow-500' : 'text-red-500'
@@ -169,23 +171,23 @@ export function EquipmentComplianceChart() {
               <CheckCircle2 className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h3 className="font-semibold text-foreground">Conformidade por Equipamento</h3>
-              <p className="text-sm text-muted-foreground">Top 10 equipamentos inspecionados</p>
+              <h3 className="font-semibold text-foreground">{t('complianceChart.title')}</h3>
+              <p className="text-sm text-muted-foreground">{t('complianceChart.subtitle')}</p>
             </div>
           </div>
           
           <div className="flex flex-wrap items-center gap-3">
             <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 border-emerald-500/30">
               <CheckCircle2 className="h-3 w-3 mr-1" />
-              {totals.compliant} Conformes
+              {totals.compliant} {t('complianceChart.compliant')}
             </Badge>
             <Badge variant="outline" className="bg-yellow-500/10 text-yellow-700 border-yellow-500/30">
               <AlertTriangle className="h-3 w-3 mr-1" />
-              {totals.attention} Atenção
+              {totals.attention} {t('complianceChart.attention')}
             </Badge>
             <Badge variant="outline" className="bg-red-500/10 text-red-700 border-red-500/30">
               <XCircle className="h-3 w-3 mr-1" />
-              {totals.nonCompliant} Não Conformes
+              {totals.nonCompliant} {t('complianceChart.nonCompliant')}
             </Badge>
           </div>
         </div>
@@ -195,7 +197,7 @@ export function EquipmentComplianceChart() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar equipamento..."
+              placeholder={t('complianceChart.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 h-9"
@@ -204,10 +206,10 @@ export function EquipmentComplianceChart() {
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
             <SelectTrigger className="w-full sm:w-[200px] h-9">
               <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Todas categorias" />
+              <SelectValue placeholder={t('complianceChart.allCategories')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todas categorias</SelectItem>
+              <SelectItem value="all">{t('complianceChart.allCategories')}</SelectItem>
               {categories.map(cat => (
                 <SelectItem key={cat.id} value={cat.id}>
                   {cat.name}
@@ -222,8 +224,8 @@ export function EquipmentComplianceChart() {
         {chartData.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
             <CheckCircle2 className="h-12 w-12 mb-4 opacity-30" />
-            <p className="font-medium">Nenhum equipamento encontrado</p>
-            <p className="text-sm">Ajuste os filtros ou realize inspeções</p>
+            <p className="font-medium">{t('complianceChart.noEquipmentFound')}</p>
+            <p className="text-sm">{t('complianceChart.adjustFilters')}</p>
           </div>
         ) : (
           <div className="h-80">
@@ -252,9 +254,9 @@ export function EquipmentComplianceChart() {
                 <Legend 
                   wrapperStyle={{ paddingTop: 20 }}
                   formatter={(value) => {
-                    if (value === 'compliant') return 'Conformes';
-                    if (value === 'attention') return 'Atenção';
-                    if (value === 'nonCompliant') return 'Não Conformes';
+                    if (value === 'compliant') return t('complianceChart.compliant');
+                    if (value === 'attention') return t('complianceChart.attention');
+                    if (value === 'nonCompliant') return t('complianceChart.nonCompliant');
                     return value;
                   }}
                 />
@@ -289,7 +291,7 @@ export function EquipmentComplianceChart() {
           <div className="flex items-center justify-center gap-6 mt-4 pt-4 border-t">
             <div className="text-center">
               <p className="text-2xl font-bold text-foreground">{totals.total}</p>
-              <p className="text-xs text-muted-foreground">Total Inspeções</p>
+              <p className="text-xs text-muted-foreground">{t('complianceChart.totalInspections')}</p>
             </div>
             <div className="h-8 w-px bg-border" />
             <div className="text-center">
@@ -297,7 +299,7 @@ export function EquipmentComplianceChart() {
                 totals.complianceRate >= 80 ? 'text-emerald-500' : 
                 totals.complianceRate >= 50 ? 'text-yellow-500' : 'text-red-500'
               }`}>{totals.complianceRate.toFixed(0)}%</p>
-              <p className="text-xs text-muted-foreground">Taxa de Conformidade</p>
+              <p className="text-xs text-muted-foreground">{t('complianceChart.complianceRate')}</p>
             </div>
           </div>
         )}

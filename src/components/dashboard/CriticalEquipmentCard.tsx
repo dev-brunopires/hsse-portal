@@ -1,16 +1,15 @@
 import { useMemo } from 'react';
 import { AlertOctagon, ChevronRight } from 'lucide-react';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useEquipment } from '@/hooks/useEquipment';
 import { getEffectiveEquipmentStatus } from '@/utils/equipmentStatus';
+import { useTranslation } from 'react-i18next';
 
 export function CriticalEquipmentCard() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: equipment = [], isLoading } = useEquipment();
 
@@ -26,31 +25,32 @@ export function CriticalEquipmentCard() {
         // Expired certificate
         if (eq.certificate_expiry && eq.certificate_expiry < today) {
           score += 40;
-          issues.push('Certificado vencido');
+          issues.push(t('criticalEquipment.certificateExpired'));
         }
 
         // Expired hydrostatic test
         if (eq.expiry_date && eq.expiry_date < today) {
           score += 40;
-          issues.push('Teste hidrostático vencido');
+          issues.push(t('criticalEquipment.hydrostaticExpired'));
         }
 
         // Rejected status
         if (effectiveResult.effectiveStatus === 'rejected') {
           score += 30;
-          if (!issues.includes('Reprovado')) issues.push('Reprovado');
+          const rejectedLabel = t('criticalEquipment.rejected');
+          if (!issues.includes(rejectedLabel)) issues.push(rejectedLabel);
         }
 
         // Overdue inspection
         if (eq.next_inspection && eq.next_inspection < today) {
           score += 20;
-          issues.push('Inspeção atrasada');
+          issues.push(t('criticalEquipment.overdueInspection'));
         }
 
         // Attention status
         if (eq.status === 'maintenance') {
           score += 10;
-          issues.push('Em manutenção');
+          issues.push(t('criticalEquipment.inMaintenance'));
         }
 
         return {
@@ -63,7 +63,7 @@ export function CriticalEquipmentCard() {
       .filter((eq) => eq.criticalScore > 0)
       .sort((a, b) => b.criticalScore - a.criticalScore)
       .slice(0, 10);
-  }, [equipment]);
+  }, [equipment, t]);
 
   if (isLoading) {
     return (
@@ -71,7 +71,7 @@ export function CriticalEquipmentCard() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <AlertOctagon className="h-5 w-5" />
-            Equipamentos Críticos
+            {t('criticalEquipment.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -94,8 +94,8 @@ export function CriticalEquipmentCard() {
               <AlertOctagon className="h-4 w-4 text-red-500" />
             </div>
             <div>
-              <CardTitle className="text-base">Top 10 Equipamentos Críticos</CardTitle>
-              <CardDescription>Requerem atenção imediata</CardDescription>
+              <CardTitle className="text-base">{t('criticalEquipment.top10Title')}</CardTitle>
+              <CardDescription>{t('criticalEquipment.requiresAttention')}</CardDescription>
             </div>
           </div>
           {criticalEquipment.length > 0 && (
@@ -107,8 +107,8 @@ export function CriticalEquipmentCard() {
         {criticalEquipment.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <AlertOctagon className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">Nenhum equipamento crítico</p>
-            <p className="text-xs">Tudo está em ordem! 🎉</p>
+            <p className="text-sm">{t('criticalEquipment.noCritical')}</p>
+            <p className="text-xs">{t('criticalEquipment.allInOrder')}</p>
           </div>
         ) : (
           <ScrollArea className="h-[280px]">

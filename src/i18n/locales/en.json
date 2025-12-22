@@ -1658,5 +1658,112 @@
     "retry": "Try Again",
     "grantPermission": "Grant Permission",
     "permissionInstructions": "Click the lock icon in the address bar and allow camera access."
+  },
+  "signaturePad": {
+    "title": "Inspector Signature",
+    "hint": "Draw your signature in the field above",
+    "clear": "Clear",
+    "confirm": "Confirm Signature"
+  },
+  "avatarCrop": {
+    "title": "Crop Profile Photo",
+    "imageAlt": "Image to crop",
+    "reset": "Reset",
+    "processing": "Processing..."
+  },
+  "criticalEquipment": {
+    "title": "Critical Equipment",
+    "top10Title": "Top 10 Critical Equipment",
+    "requiresAttention": "Requires immediate attention",
+    "noCritical": "No critical equipment",
+    "allInOrder": "Everything is in order! 🎉",
+    "certificateExpired": "Certificate expired",
+    "hydrostaticExpired": "Hydrostatic test expired",
+    "rejected": "Rejected",
+    "overdueInspection": "Overdue inspection",
+    "inMaintenance": "In maintenance"
+  },
+  "inspectionHeatmap": {
+    "title": "Inspections per Week",
+    "subtitle": "Last 8 weeks",
+    "total": "Total",
+    "compliant": "Compliant",
+    "attention": "Attention",
+    "nonCompliant": "Non-Compliant"
+  },
+  "statusByCategory": {
+    "title": "Status by Category",
+    "subtitle": "Equipment distribution",
+    "active": "Active",
+    "maintenance": "In Maintenance",
+    "expired": "Expired/Rejected"
+  },
+  "complianceChart": {
+    "title": "Compliance by Equipment",
+    "subtitle": "Top 10 inspected equipment",
+    "searchPlaceholder": "Search equipment...",
+    "allCategories": "All categories",
+    "noCategory": "No category",
+    "compliant": "Compliant",
+    "attention": "Attention",
+    "nonCompliant": "Non-Compliant",
+    "noEquipmentFound": "No equipment found",
+    "adjustFilters": "Adjust filters or perform inspections",
+    "totalInspections": "Total Inspections",
+    "complianceRate": "Compliance Rate",
+    "compliance": "Compliance"
+  },
+  "advancedFilters": {
+    "title": "Advanced Filters",
+    "activeCount": "{{count}} active",
+    "manufacturer": "Manufacturer",
+    "category": "Category",
+    "unit": "Unit",
+    "acquisitionDate": "Acquisition Date",
+    "equipmentExpiry": "Equipment Expiry",
+    "certificateExpiry": "Certificate Expiry",
+    "allManufacturers": "All",
+    "allCategories": "All",
+    "allUnits": "All",
+    "from": "From",
+    "to": "To",
+    "clearFilters": "Clear Filters",
+    "applyFilters": "Apply Filters"
+  },
+  "hooks": {
+    "equipment": {
+      "created": "Equipment Created",
+      "createdDesc": "The equipment was created successfully.",
+      "createError": "Error Creating",
+      "updated": "Equipment Updated",
+      "updatedDesc": "The equipment was updated successfully.",
+      "updateError": "Error Updating",
+      "deleted": "Equipment Deleted",
+      "deletedDesc": "The equipment was deleted successfully.",
+      "deleteError": "Error Deleting"
+    },
+    "inspection": {
+      "created": "Inspection Registered",
+      "createdDesc": "The inspection was registered successfully and the next date was calculated automatically.",
+      "createError": "Error Registering Inspection",
+      "updated": "Inspection Updated",
+      "updatedDesc": "The inspection was updated successfully.",
+      "updateError": "Error Updating Inspection",
+      "deleted": "Inspection Deleted",
+      "deletedDesc": "The inspection was deleted successfully.",
+      "deleteError": "Error Deleting Inspection"
+    },
+    "category": {
+      "created": "Category Created",
+      "createdDesc": "The category was created successfully.",
+      "createError": "Error Creating Category",
+      "updated": "Category Updated",
+      "updatedDesc": "The category was updated successfully.",
+      "updateError": "Error Updating Category",
+      "updatePermissionError": "Could not update the category. Check your permissions.",
+      "deleted": "Category Deleted",
+      "deletedDesc": "The category was deleted successfully.",
+      "deleteError": "Error Deleting Category"
+    }
   }
 }

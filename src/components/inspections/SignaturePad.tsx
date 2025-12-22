@@ -3,6 +3,7 @@ import SignaturePadLib from 'signature_pad';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Eraser, Check, PenTool } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface SignaturePadProps {
   onSave: (signatureData: string) => void;
@@ -11,6 +12,7 @@ interface SignaturePadProps {
 }
 
 export function SignaturePad({ onSave, onCancel, initialSignature }: SignaturePadProps) {
+  const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const signaturePadRef = useRef<SignaturePadLib | null>(null);
   const [isEmpty, setIsEmpty] = useState(true);
@@ -63,7 +65,7 @@ export function SignaturePad({ onSave, onCancel, initialSignature }: SignaturePa
       <CardHeader className="pb-2">
         <CardTitle className="text-base flex items-center gap-2">
           <PenTool className="h-4 w-4" />
-          Assinatura do Inspetor
+          {t('signaturePad.title')}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -75,7 +77,7 @@ export function SignaturePad({ onSave, onCancel, initialSignature }: SignaturePa
           />
         </div>
         <p className="text-xs text-muted-foreground text-center">
-          Desenhe sua assinatura no campo acima
+          {t('signaturePad.hint')}
         </p>
         <div className="flex gap-2">
           <Button
@@ -86,7 +88,7 @@ export function SignaturePad({ onSave, onCancel, initialSignature }: SignaturePa
             className="flex-1"
           >
             <Eraser className="h-4 w-4 mr-2" />
-            Limpar
+            {t('signaturePad.clear')}
           </Button>
           <Button
             type="button"
@@ -96,7 +98,7 @@ export function SignaturePad({ onSave, onCancel, initialSignature }: SignaturePa
             className="flex-1"
           >
             <Check className="h-4 w-4 mr-2" />
-            Confirmar Assinatura
+            {t('signaturePad.confirm')}
           </Button>
         </div>
       </CardContent>

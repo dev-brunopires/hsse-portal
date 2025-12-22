@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { format, subWeeks, startOfWeek, endOfWeek, eachWeekOfInterval } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS } from 'date-fns/locale';
 import { CalendarDays, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useQuery } from '@tanstack/react-query';
@@ -17,9 +17,12 @@ import {
 } from 'recharts';
 import { cn } from '@/lib/utils';
 import { useShipFilter } from '@/contexts/ShipFilterContext';
+import { useTranslation } from 'react-i18next';
 
 export function InspectionHeatmapCard() {
+  const { t, i18n } = useTranslation();
   const { selectedShipId, isFilterEnabled } = useShipFilter();
+  const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
   
   const { data: inspections = [], isLoading } = useQuery({
     queryKey: ['inspections-weekly-chart', selectedShipId],
@@ -62,14 +65,14 @@ export function InspectionHeatmapCard() {
       const nonCompliant = weekInspections.filter(i => i.status === 'non-compliant' || i.status === 'rejected').length;
 
       return {
-        week: format(weekStart, 'dd/MM', { locale: ptBR }),
+        week: format(weekStart, 'dd/MM', { locale: dateLocale }),
         total: weekInspections.length,
         compliant,
         attention,
         nonCompliant,
       };
     });
-  }, [inspections]);
+  }, [inspections, dateLocale]);
 
   const totalInspections = inspections.length;
   
@@ -98,8 +101,8 @@ export function InspectionHeatmapCard() {
               <CalendarDays className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-base">Inspeções por Semana</CardTitle>
-              <CardDescription>Últimas 8 semanas</CardDescription>
+              <CardTitle className="text-base">{t('inspectionHeatmap.title')}</CardTitle>
+              <CardDescription>{t('inspectionHeatmap.subtitle')}</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -119,8 +122,8 @@ export function InspectionHeatmapCard() {
               <CalendarDays className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-base">Inspeções por Semana</CardTitle>
-              <CardDescription>Últimas 8 semanas</CardDescription>
+              <CardTitle className="text-base">{t('inspectionHeatmap.title')}</CardTitle>
+              <CardDescription>{t('inspectionHeatmap.subtitle')}</CardDescription>
             </div>
           </div>
           <div className="text-right">
@@ -161,10 +164,10 @@ export function InspectionHeatmapCard() {
                 labelStyle={{ color: 'hsl(var(--foreground))', fontWeight: 'bold' }}
                 formatter={(value: number, name: string) => {
                   const labels: Record<string, string> = {
-                    total: 'Total',
-                    compliant: 'Conformes',
-                    attention: 'Atenção',
-                    nonCompliant: 'Não Conformes',
+                    total: t('inspectionHeatmap.total'),
+                    compliant: t('inspectionHeatmap.compliant'),
+                    attention: t('inspectionHeatmap.attention'),
+                    nonCompliant: t('inspectionHeatmap.nonCompliant'),
                   };
                   return [value, labels[name] || name];
                 }}
@@ -191,15 +194,15 @@ export function InspectionHeatmapCard() {
         <div className="flex items-center justify-center gap-4 mt-2 text-xs text-muted-foreground">
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-sm bg-primary/80" />
-            <span>Conformes</span>
+            <span>{t('inspectionHeatmap.compliant')}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-sm bg-status-warning/80" />
-            <span>Atenção</span>
+            <span>{t('inspectionHeatmap.attention')}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-sm bg-status-danger/80" />
-            <span>Não Conformes</span>
+            <span>{t('inspectionHeatmap.nonCompliant')}</span>
           </div>
         </div>
       </CardContent>
