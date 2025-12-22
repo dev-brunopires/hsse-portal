@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,9 +21,10 @@ import {
   Loader2
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS } from 'date-fns/locale';
 
 export function IFSIntegrationCard() {
+  const { t, i18n } = useTranslation();
   const { 
     isLoading, 
     syncResult, 
@@ -42,6 +44,8 @@ export function IFSIntegrationCard() {
   });
   const [showConfig, setShowConfig] = useState(false);
   const [password, setPassword] = useState('');
+
+  const dateLocale = i18n.language === 'en' ? enUS : ptBR;
 
   useEffect(() => {
     const savedConfig = getConfig();
@@ -70,14 +74,14 @@ export function IFSIntegrationCard() {
           <div>
             <CardTitle className="flex items-center gap-2">
               <Server className="h-5 w-5 text-primary" />
-              Integração IFS
+              {t('ifsIntegration.title')}
             </CardTitle>
             <CardDescription>
-              Sincronize equipamentos e inspeções com o sistema IFS ERP
+              {t('ifsIntegration.description')}
             </CardDescription>
           </div>
           <Badge variant={config.enabled ? 'default' : 'secondary'}>
-            {config.enabled ? 'Ativo' : 'Inativo'}
+            {config.enabled ? t('ifsIntegration.active') : t('ifsIntegration.inactive')}
           </Badge>
         </div>
       </CardHeader>
@@ -92,12 +96,12 @@ export function IFSIntegrationCard() {
             )}
             <div>
               <p className="font-medium text-sm">
-                {config.enabled ? 'Conexão configurada' : 'Não configurado'}
+                {config.enabled ? t('ifsIntegration.configured') : t('ifsIntegration.notConfigured')}
               </p>
               {config.lastSync && (
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
                   <Clock className="h-3 w-3" />
-                  Última sincronização: {format(new Date(config.lastSync), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                  {t('ifsIntegration.lastSync')}: {format(new Date(config.lastSync), "dd/MM/yyyy 'às' HH:mm", { locale: dateLocale })}
                 </p>
               )}
             </div>
@@ -108,7 +112,7 @@ export function IFSIntegrationCard() {
             onClick={() => setShowConfig(!showConfig)}
           >
             <Settings className="h-4 w-4 mr-2" />
-            Configurar
+            {t('ifsIntegration.configure')}
           </Button>
         </div>
 
@@ -119,7 +123,7 @@ export function IFSIntegrationCard() {
             <div className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="ifs-url">URL do Servidor IFS</Label>
+                  <Label htmlFor="ifs-url">{t('ifsIntegration.serverUrl')}</Label>
                   <Input
                     id="ifs-url"
                     placeholder="https://ifs.empresa.com/api"
@@ -128,7 +132,7 @@ export function IFSIntegrationCard() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="ifs-company">ID da Empresa</Label>
+                  <Label htmlFor="ifs-company">{t('ifsIntegration.companyId')}</Label>
                   <Input
                     id="ifs-company"
                     placeholder="EMPRESA01"
@@ -140,7 +144,7 @@ export function IFSIntegrationCard() {
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="ifs-username">Usuário</Label>
+                  <Label htmlFor="ifs-username">{t('ifsIntegration.username')}</Label>
                   <Input
                     id="ifs-username"
                     placeholder="usuario.ifs"
@@ -149,7 +153,7 @@ export function IFSIntegrationCard() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="ifs-password">Senha</Label>
+                  <Label htmlFor="ifs-password">{t('ifsIntegration.password')}</Label>
                   <Input
                     id="ifs-password"
                     type="password"
@@ -158,14 +162,14 @@ export function IFSIntegrationCard() {
                     onChange={(e) => setPassword(e.target.value)}
                   />
                   <p className="text-xs text-muted-foreground">
-                    A senha é armazenada de forma segura no backend
+                    {t('ifsIntegration.passwordNote')}
                   </p>
                 </div>
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="sync-interval">Intervalo de Sincronização</Label>
+                  <Label htmlFor="sync-interval">{t('ifsIntegration.syncInterval')}</Label>
                   <Select
                     value={config.syncInterval}
                     onValueChange={(value: 'manual' | 'hourly' | 'daily') => 
@@ -176,21 +180,21 @@ export function IFSIntegrationCard() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="manual">Manual</SelectItem>
-                      <SelectItem value="hourly">A cada hora</SelectItem>
-                      <SelectItem value="daily">Diariamente</SelectItem>
+                      <SelectItem value="manual">{t('ifsIntegration.manual')}</SelectItem>
+                      <SelectItem value="hourly">{t('ifsIntegration.hourly')}</SelectItem>
+                      <SelectItem value="daily">{t('ifsIntegration.daily')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Habilitar Integração</Label>
+                  <Label>{t('ifsIntegration.enableIntegration')}</Label>
                   <div className="flex items-center gap-2 pt-2">
                     <Switch
                       checked={config.enabled}
                       onCheckedChange={(enabled) => setConfig({ ...config, enabled })}
                     />
                     <span className="text-sm text-muted-foreground">
-                      {config.enabled ? 'Integração ativa' : 'Integração desativada'}
+                      {config.enabled ? t('ifsIntegration.integrationActive') : t('ifsIntegration.integrationInactive')}
                     </span>
                   </div>
                 </div>
@@ -198,7 +202,7 @@ export function IFSIntegrationCard() {
 
               <div className="flex gap-2 pt-2">
                 <Button onClick={handleSave} disabled={isLoading}>
-                  Salvar Configuração
+                  {t('ifsIntegration.saveConfig')}
                 </Button>
                 <Button 
                   variant="outline" 
@@ -210,7 +214,7 @@ export function IFSIntegrationCard() {
                   ) : (
                     <RefreshCw className="h-4 w-4 mr-2" />
                   )}
-                  Testar Conexão
+                  {t('ifsIntegration.testConnection')}
                 </Button>
               </div>
             </div>
@@ -222,7 +226,7 @@ export function IFSIntegrationCard() {
           <>
             <Separator />
             <div className="space-y-4">
-              <h4 className="font-medium text-sm">Ações de Sincronização</h4>
+              <h4 className="font-medium text-sm">{t('ifsIntegration.syncActions')}</h4>
               <div className="grid gap-3 md:grid-cols-2">
                 <Button 
                   variant="outline" 
@@ -235,7 +239,7 @@ export function IFSIntegrationCard() {
                   ) : (
                     <Download className="h-4 w-4 mr-2" />
                   )}
-                  Importar do IFS
+                  {t('ifsIntegration.importFromIFS')}
                 </Button>
                 <Button 
                   variant="outline" 
@@ -248,7 +252,7 @@ export function IFSIntegrationCard() {
                   ) : (
                     <Upload className="h-4 w-4 mr-2" />
                   )}
-                  Exportar para IFS
+                  {t('ifsIntegration.exportToIFS')}
                 </Button>
               </div>
 
@@ -257,10 +261,10 @@ export function IFSIntegrationCard() {
                   syncResult.success ? 'bg-green-500/10 text-green-700' : 'bg-destructive/10 text-destructive'
                 }`}>
                   <p className="font-medium">
-                    {syncResult.success ? 'Sincronização concluída' : 'Erro na sincronização'}
+                    {syncResult.success ? t('ifsIntegration.syncCompleted') : t('ifsIntegration.syncError')}
                   </p>
                   <p className="text-xs mt-1">
-                    {syncResult.equipmentSynced} equipamentos, {syncResult.inspectionsSynced} inspeções
+                    {t('ifsIntegration.syncStats', { equipment: syncResult.equipmentSynced, inspections: syncResult.inspectionsSynced })}
                   </p>
                   {syncResult.errors.length > 0 && (
                     <ul className="text-xs mt-2 list-disc list-inside">
@@ -278,10 +282,10 @@ export function IFSIntegrationCard() {
         {/* Mapping Info */}
         <Separator />
         <div className="text-xs text-muted-foreground space-y-1">
-          <p className="font-medium">Mapeamento de campos:</p>
-          <p>• Código Interno → OBJECT_ID</p>
-          <p>• Nome → OBJECT_DESC</p>
-          <p>• Número de Série → SERIAL_NO</p>
+          <p className="font-medium">{t('ifsIntegration.fieldMapping')}:</p>
+          <p>• {t('ifsIntegration.internalCode')} → OBJECT_ID</p>
+          <p>• {t('ifsIntegration.nameField')} → OBJECT_DESC</p>
+          <p>• {t('ifsIntegration.serialNumber')} → SERIAL_NO</p>
           <p>• Status → STATUS (ACTIVE/WARNING/EXPIRED/MAINTENANCE)</p>
         </div>
       </CardContent>
