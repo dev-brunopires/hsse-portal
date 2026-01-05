@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useIsPlatformOwner, useOrganizations, useCreateOrganization, useUpdateOrganization, useDeleteOrganization, Organization } from '@/hooks/useOrganizations';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { getOrganizationUrl, getOrganizationUrlSuffix } from '@/utils/organizationUrl';
 
 export default function PlatformAdmin() {
   const { t } = useTranslation();
@@ -203,8 +204,7 @@ export default function PlatformAdmin() {
   };
 
   const getOrgUrl = (subdomain: string) => {
-    // Generate real subdomain URL
-    return `https://${subdomain}.safeship.app`;
+    return getOrganizationUrl(subdomain);
   };
 
   return (
@@ -270,7 +270,7 @@ export default function PlatformAdmin() {
                     onChange={(e) => setFormData(prev => ({ ...prev, subdomain: e.target.value.toLowerCase() }))}
                     placeholder="modec"
                   />
-                  <span className="text-muted-foreground whitespace-nowrap">.safeship.app</span>
+                  <span className="text-muted-foreground whitespace-nowrap">{getOrganizationUrlSuffix()}</span>
                 </div>
               </div>
 
