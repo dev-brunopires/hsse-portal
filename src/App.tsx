@@ -11,27 +11,33 @@ import { ThemeProvider } from "@/hooks/useTheme";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AppLayout } from "./components/layout/AppLayout";
 import { OnboardingProvider } from "./components/onboarding/OnboardingProvider";
-import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import EquipmentList from "./pages/EquipmentList";
-import Inspections from "./pages/Inspections";
-import Reports from "./pages/Reports";
-import Alerts from "./pages/Alerts";
-import Categories from "./pages/Categories";
-import Users from "./pages/Users";
-import Settings from "./pages/Settings";
-import Profile from "./pages/Profile";
-import PendingRecommendations from "./pages/PendingRecommendations";
-import AuditLog from "./pages/AuditLog";
-import Maintenance from "./pages/Maintenance";
-import PlatformAdmin from "./pages/PlatformAdmin";
-import NotFound from "./pages/NotFound";
+import { PageLoadingFallback } from "@/components/ui/PageLoadingFallback";
+import { Suspense, lazy } from "react";
+
+// Lazy load pages for better performance (code splitting)
+const Index = lazy(() => import("./pages/Index"));
+const Auth = lazy(() => import("./pages/Auth"));
+const EquipmentList = lazy(() => import("./pages/EquipmentList"));
+const Inspections = lazy(() => import("./pages/Inspections"));
+const Reports = lazy(() => import("./pages/Reports"));
+const Alerts = lazy(() => import("./pages/Alerts"));
+const Categories = lazy(() => import("./pages/Categories"));
+const Users = lazy(() => import("./pages/Users"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Profile = lazy(() => import("./pages/Profile"));
+const PendingRecommendations = lazy(() => import("./pages/PendingRecommendations"));
+const AuditLog = lazy(() => import("./pages/AuditLog"));
+const Maintenance = lazy(() => import("./pages/Maintenance"));
+const PlatformAdmin = lazy(() => import("./pages/PlatformAdmin"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 30, // 30 minutes (formerly cacheTime)
     },
   },
 });
@@ -49,6 +55,7 @@ function App() {
                 <OrganizationProvider>
                 <ShipFilterProvider>
                   <OnboardingProvider />
+                  <Suspense fallback={<PageLoadingFallback />}>
               <Routes>
                 {/* Public Route */}
                 <Route path="/auth" element={<Auth />} />
@@ -181,6 +188,7 @@ function App() {
                 />
                 <Route path="*" element={<NotFound />} />
               </Routes>
+                  </Suspense>
               </ShipFilterProvider>
                 </OrganizationProvider>
               </LanguageProvider>

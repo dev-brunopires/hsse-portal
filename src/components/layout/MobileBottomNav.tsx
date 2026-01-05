@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { User, ClipboardList, Package, QrCode, Bell } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { QRCodeScannerDialog } from '@/components/equipment/QRCodeScannerDialog';
+import { hapticButton, hapticSuccess } from '@/utils/hapticFeedback';
 
 interface NavItem {
   icon: React.ElementType;
@@ -27,10 +28,20 @@ export function MobileBottomNav() {
   const navigate = useNavigate();
   const [scannerOpen, setScannerOpen] = useState(false);
 
+  const handleNavigation = (path: string) => {
+    hapticButton();
+    navigate(path);
+  };
+
   const handleScan = (equipmentId: string) => {
     setScannerOpen(false);
-    // Navigate to inspections page with scan parameter to open inspection form
+    hapticSuccess();
     navigate(`/inspections?scan=${equipmentId}`);
+  };
+
+  const handleOpenScanner = () => {
+    hapticButton();
+    setScannerOpen(true);
   };
 
   const isActive = (path: string) => location.pathname === path;
@@ -42,24 +53,24 @@ export function MobileBottomNav() {
         <div className="relative">
           {/* Main bar background */}
           <div className="bg-card border-t border-border shadow-lg">
-            <div className="flex items-center justify-around h-16 px-2">
+            <div className="flex items-center justify-around h-16 px-2 pb-safe">
               {/* Left items */}
               {leftNavItems.map((item) => (
                 <button
                   key={item.path}
-                  onClick={() => navigate(item.path)}
+                  onClick={() => handleNavigation(item.path)}
                   className={cn(
-                    "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[60px]",
+                    "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[64px] min-h-[48px] touch-manipulation active:scale-95",
                     isActive(item.path) 
                       ? "text-primary" 
-                      : "text-muted-foreground hover:text-foreground"
+                      : "text-muted-foreground hover:text-foreground active:text-foreground"
                   )}
                 >
                   <item.icon className={cn(
                     "h-5 w-5",
                     isActive(item.path) && "stroke-[2.5]"
                   )} />
-                  <span className="text-[10px] font-medium">{t(item.labelKey)}</span>
+                  <span className="text-[10px] font-medium leading-tight">{t(item.labelKey)}</span>
                 </button>
               ))}
 
@@ -70,19 +81,19 @@ export function MobileBottomNav() {
               {rightNavItems.map((item) => (
                 <button
                   key={item.path}
-                  onClick={() => navigate(item.path)}
+                  onClick={() => handleNavigation(item.path)}
                   className={cn(
-                    "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[60px]",
+                    "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[64px] min-h-[48px] touch-manipulation active:scale-95",
                     isActive(item.path) 
                       ? "text-primary" 
-                      : "text-muted-foreground hover:text-foreground"
+                      : "text-muted-foreground hover:text-foreground active:text-foreground"
                   )}
                 >
                   <item.icon className={cn(
                     "h-5 w-5",
                     isActive(item.path) && "stroke-[2.5]"
                   )} />
-                  <span className="text-[10px] font-medium">{t(item.labelKey)}</span>
+                  <span className="text-[10px] font-medium leading-tight">{t(item.labelKey)}</span>
                 </button>
               ))}
             </div>
@@ -90,15 +101,16 @@ export function MobileBottomNav() {
 
           {/* Floating Action Button for QR Scanner */}
           <button
-            onClick={() => setScannerOpen(true)}
-            className="absolute left-1/2 -translate-x-1/2 -top-6 w-14 h-14 bg-primary rounded-full flex items-center justify-center shadow-lg shadow-primary/30 hover:bg-primary/90 transition-all hover:scale-105 active:scale-95 border-4 border-background"
+            onClick={handleOpenScanner}
+            className="absolute left-1/2 -translate-x-1/2 -top-6 w-14 h-14 bg-primary rounded-full flex items-center justify-center shadow-lg shadow-primary/30 hover:bg-primary/90 transition-all hover:scale-105 active:scale-95 border-4 border-background touch-manipulation"
+            aria-label={t('equipment.scanQRCode')}
           >
             <QrCode className="h-6 w-6 text-primary-foreground" />
           </button>
         </div>
 
         {/* Safe area padding for devices with home indicator */}
-        <div className="bg-card h-safe-area-inset-bottom" />
+        <div className="bg-card h-safe" />
       </nav>
 
       <QRCodeScannerDialog

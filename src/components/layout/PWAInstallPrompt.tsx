@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Download, X, Smartphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
+import { hapticSuccess } from '@/utils/hapticFeedback';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -9,6 +11,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function PWAInstallPrompt() {
+  const { t } = useTranslation();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
@@ -41,6 +44,7 @@ export function PWAInstallPrompt() {
       setIsInstalled(true);
       setShowPrompt(false);
       setDeferredPrompt(null);
+      hapticSuccess();
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstall);
@@ -60,6 +64,7 @@ export function PWAInstallPrompt() {
 
     if (outcome === 'accepted') {
       setIsInstalled(true);
+      hapticSuccess();
     }
 
     setDeferredPrompt(null);
@@ -77,25 +82,26 @@ export function PWAInstallPrompt() {
 
   return (
     <div className={cn(
-      "fixed bottom-4 right-4 z-50 max-w-sm",
-      "bg-card border border-border rounded-lg shadow-lg",
-      "animate-in slide-in-from-bottom-5 fade-in duration-300"
+      "fixed bottom-24 lg:bottom-4 right-4 left-4 lg:left-auto z-50 lg:max-w-sm",
+      "bg-card border border-border rounded-xl shadow-lg",
+      "animate-in slide-in-from-bottom-5 fade-in duration-300",
+      "safe-area-inset-bottom"
     )}>
       <div className="p-4">
         <div className="flex items-start gap-3">
-          <div className="p-2 bg-primary/10 rounded-lg">
+          <div className="p-2 bg-primary/10 rounded-lg flex-shrink-0">
             <Smartphone className="h-6 w-6 text-primary" />
           </div>
-          <div className="flex-1">
-            <h3 className="font-semibold text-foreground">Instalar SafeShip</h3>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-foreground">{t('pwa.installTitle')}</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              Instale o app para acesso rápido e uso offline
+              {t('pwa.installDescription')}
             </p>
           </div>
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 -mt-1 -mr-1"
+            className="h-8 w-8 -mt-1 -mr-1 flex-shrink-0 touch-manipulation"
             onClick={handleDismiss}
           >
             <X className="h-4 w-4" />
@@ -105,18 +111,18 @@ export function PWAInstallPrompt() {
           <Button
             variant="outline"
             size="sm"
-            className="flex-1"
+            className="flex-1 min-h-[44px] touch-manipulation"
             onClick={handleDismiss}
           >
-            Agora não
+            {t('pwa.notNow')}
           </Button>
           <Button
             size="sm"
-            className="flex-1"
+            className="flex-1 min-h-[44px] touch-manipulation"
             onClick={handleInstall}
           >
             <Download className="h-4 w-4 mr-2" />
-            Instalar
+            {t('pwa.install')}
           </Button>
         </div>
       </div>

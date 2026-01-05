@@ -3,6 +3,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { hapticSuccess, hapticWarning } from '@/utils/hapticFeedback';
 
 export interface PendingInspection {
   id: string;
@@ -28,16 +29,21 @@ interface PendingAction {
   type: 'create_inspection' | 'update_inspection' | 'create_equipment';
   data: PendingInspection | any;
   timestamp: number;
+  retryCount?: number;
 }
 
 const PENDING_ACTIONS_KEY = 'safeship_pending_actions';
 const OFFLINE_DATA_KEY = 'safeship_offline_data';
+const CACHE_TIMESTAMP_KEY = 'safeship_cache_timestamp';
+const MAX_RETRY_COUNT = 3;
+const CACHE_MAX_AGE = 1000 * 60 * 60 * 24; // 24 hours
 
 export function useOfflineSync() {
   const { t } = useTranslation();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [pendingActions, setPendingActions] = useState<PendingAction[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -58,6 +64,69 @@ export function useOfflineSync() {
     localStorage.setItem(PENDING_ACTIONS_KEY, JSON.stringify(pendingActions));
   }, [pendingActions]);
 
+  // Pre-cache critical data for offline use
+  const preCacheData = useCallback(async () => {
+    if (!isOnline) return;
+
+    try {
+      // Cache equipment data
+      const { data: equipment } = await supabase
+        .from('equipment')
+        .select('id, name, internal_code, status, category_id, ship_id, location, serial_number')
+        .limit(500);
+
+      // Cache categories
+      const { data: categories } = await supabase
+        .from('categories')
+        .select('id, name, description, inspection_frequency');
+
+      // Cache ships
+      const { data: ships } = await supabase
+        .from('ships')
+        .select('id, name, code');
+
+      // Cache checklist templates
+      const { data: templates } = await supabase
+        .from('checklist_templates')
+        .select(`
+          id,
+          name,
+          category_id,
+          checklist_template_items (
+            id,
+            description,
+            is_required,
+            order_index
+          )
+        `);
+
+      const offlineData = {
+        equipment: equipment || [],
+        categories: categories || [],
+        ships: ships || [],
+        templates: templates || [],
+        timestamp: Date.now(),
+      };
+
+      localStorage.setItem(OFFLINE_DATA_KEY, JSON.stringify(offlineData));
+      localStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString());
+      
+      console.log('Offline data cached successfully');
+    } catch (error) {
+      console.error('Error pre-caching data:', error);
+    }
+  }, [isOnline]);
+
+  // Check if cache is stale and refresh
+  const checkAndRefreshCache = useCallback(async () => {
+    const lastCache = localStorage.getItem(CACHE_TIMESTAMP_KEY);
+    const lastCacheTime = lastCache ? parseInt(lastCache, 10) : 0;
+    
+    if (Date.now() - lastCacheTime > CACHE_MAX_AGE) {
+      await preCacheData();
+    }
+  }, [preCacheData]);
+
   // Sync pending inspections when online
   const syncPendingInspections = useCallback(async () => {
     if (!isOnline || pendingActions.length === 0) return;
@@ -65,6 +134,7 @@ export function useOfflineSync() {
     setIsSyncing(true);
     const inspectionActions = pendingActions.filter(a => a.type === 'create_inspection');
     let syncedCount = 0;
+    const failedActions: string[] = [];
 
     for (const action of inspectionActions) {
       try {
@@ -120,12 +190,24 @@ export function useOfflineSync() {
         syncedCount++;
       } catch (error) {
         console.error('Error syncing inspection:', error);
+        
+        // Increment retry count
+        const retryCount = (action.retryCount || 0) + 1;
+        if (retryCount >= MAX_RETRY_COUNT) {
+          failedActions.push(action.id);
+        } else {
+          setPendingActions(prev => 
+            prev.map(a => a.id === action.id ? { ...a, retryCount } : a)
+          );
+        }
       }
     }
 
     setIsSyncing(false);
+    setLastSyncTime(Date.now());
 
     if (syncedCount > 0) {
+      hapticSuccess();
       toast({
         title: t('offline.syncCompleted'),
         description: t('offline.syncCompletedDesc', { count: syncedCount }),
@@ -134,12 +216,22 @@ export function useOfflineSync() {
       queryClient.invalidateQueries({ queryKey: ['inspections'] });
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
     }
+
+    if (failedActions.length > 0) {
+      hapticWarning();
+      toast({
+        title: t('offline.syncFailed'),
+        description: t('offline.syncFailedDesc', { count: failedActions.length }),
+        variant: 'destructive',
+      });
+    }
   }, [isOnline, pendingActions, toast, queryClient, t]);
 
   // Online/offline event listeners
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
+      hapticSuccess();
       toast({
         title: t('offline.connectionRestored'),
         description: t('offline.connectionRestoredDesc'),
@@ -148,6 +240,7 @@ export function useOfflineSync() {
 
     const handleOffline = () => {
       setIsOnline(false);
+      hapticWarning();
       toast({
         title: t('offline.offlineMode'),
         description: t('offline.offlineModeDesc'),
@@ -164,12 +257,22 @@ export function useOfflineSync() {
     };
   }, [toast, t]);
 
-  // Auto-sync when coming online
+  // Auto-sync when coming online and refresh cache
   useEffect(() => {
-    if (isOnline && pendingActions.length > 0) {
-      syncPendingInspections();
+    if (isOnline) {
+      if (pendingActions.length > 0) {
+        syncPendingInspections();
+      }
+      checkAndRefreshCache();
     }
-  }, [isOnline, syncPendingInspections]);
+  }, [isOnline, syncPendingInspections, checkAndRefreshCache, pendingActions.length]);
+
+  // Initial cache on mount
+  useEffect(() => {
+    if (isOnline) {
+      checkAndRefreshCache();
+    }
+  }, []);
 
   // Add a pending action
   const addPendingAction = useCallback((type: PendingAction['type'], data: any) => {
@@ -178,6 +281,7 @@ export function useOfflineSync() {
       type,
       data,
       timestamp: Date.now(),
+      retryCount: 0,
     };
     
     setPendingActions(prev => [...prev, action]);
@@ -227,10 +331,13 @@ export function useOfflineSync() {
   }, []);
 
   // Get cached offline data
-  const getOfflineData = useCallback((key: string) => {
+  const getOfflineData = useCallback(<T = any>(key?: string): T | null => {
     try {
       const offlineData = JSON.parse(localStorage.getItem(OFFLINE_DATA_KEY) || '{}');
-      return offlineData[key]?.data || null;
+      if (key) {
+        return offlineData[key]?.data || null;
+      }
+      return offlineData as T;
     } catch (e) {
       console.error('Error getting offline data:', e);
       return null;
@@ -244,11 +351,21 @@ export function useOfflineSync() {
       .map(a => a.data as PendingInspection);
   }, [pendingActions]);
 
+  // Check if cache is available and valid
+  const isCacheAvailable = useCallback((): boolean => {
+    const lastCache = localStorage.getItem(CACHE_TIMESTAMP_KEY);
+    if (!lastCache) return false;
+    
+    const lastCacheTime = parseInt(lastCache, 10);
+    return Date.now() - lastCacheTime < CACHE_MAX_AGE;
+  }, []);
+
   return {
     isOnline,
     pendingActions,
     pendingCount: pendingActions.length,
     isSyncing,
+    lastSyncTime,
     addPendingAction,
     addPendingInspection,
     removePendingAction,
@@ -257,5 +374,7 @@ export function useOfflineSync() {
     getOfflineData,
     getPendingInspections,
     syncPendingInspections,
+    preCacheData,
+    isCacheAvailable,
   };
 }
