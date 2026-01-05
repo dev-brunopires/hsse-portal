@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -44,7 +44,6 @@ export function useOfflineSync() {
   const [pendingActions, setPendingActions] = useState<PendingAction[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   // Load pending actions from localStorage
@@ -208,8 +207,7 @@ export function useOfflineSync() {
 
     if (syncedCount > 0) {
       hapticSuccess();
-      toast({
-        title: t('offline.syncCompleted'),
+      toast.success(t('offline.syncCompleted'), {
         description: t('offline.syncCompletedDesc', { count: syncedCount }),
       });
       // Refresh data
@@ -219,21 +217,18 @@ export function useOfflineSync() {
 
     if (failedActions.length > 0) {
       hapticWarning();
-      toast({
-        title: t('offline.syncFailed'),
+      toast.error(t('offline.syncFailed'), {
         description: t('offline.syncFailedDesc', { count: failedActions.length }),
-        variant: 'destructive',
       });
     }
-  }, [isOnline, pendingActions, toast, queryClient, t]);
+  }, [isOnline, pendingActions, queryClient, t]);
 
   // Online/offline event listeners
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
       hapticSuccess();
-      toast({
-        title: t('offline.connectionRestored'),
+      toast.success(t('offline.connectionRestored'), {
         description: t('offline.connectionRestoredDesc'),
       });
     };
@@ -241,10 +236,8 @@ export function useOfflineSync() {
     const handleOffline = () => {
       setIsOnline(false);
       hapticWarning();
-      toast({
-        title: t('offline.offlineMode'),
+      toast.error(t('offline.offlineMode'), {
         description: t('offline.offlineModeDesc'),
-        variant: 'destructive',
       });
     };
 
@@ -255,7 +248,7 @@ export function useOfflineSync() {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [toast, t]);
+  }, [t]);
 
   // Auto-sync when coming online and refresh cache
   useEffect(() => {
@@ -286,13 +279,12 @@ export function useOfflineSync() {
     
     setPendingActions(prev => [...prev, action]);
     
-    toast({
-      title: t('offline.savedLocally'),
+    toast.info(t('offline.savedLocally'), {
       description: t('offline.savedLocallyDesc'),
     });
     
     return action.id;
-  }, [toast, t]);
+  }, [t]);
 
   // Add pending inspection (convenience method)
   const addPendingInspection = useCallback((inspection: Omit<PendingInspection, 'id' | 'timestamp'>) => {
