@@ -10,18 +10,19 @@ export interface ProfileWithRole extends Profile {
 }
 
 export function useProfiles() {
-  const { organization } = useOrganization();
+  const { organization, isPlatformOwnerWithoutOrg, isLoading: isOrgLoading } = useOrganization();
   
   return useQuery({
-    queryKey: ['profiles', organization?.id],
+    queryKey: ['profiles', organization?.id, isPlatformOwnerWithoutOrg],
     queryFn: async () => {
       let query = supabase
         .from('profiles')
         .select('*')
         .order('full_name');
       
-      // Filter by organization if available
-      if (organization?.id) {
+      // Platform owner without org can see all profiles
+      // Regular users see only their organization's profiles
+      if (!isPlatformOwnerWithoutOrg && organization?.id) {
         query = query.eq('organization_id', organization.id);
       }
       
@@ -32,13 +33,17 @@ export function useProfiles() {
       // Fetch roles separately
       const userIds = profiles.map(p => p.user_id);
       
+      if (userIds.length === 0) {
+        return [] as ProfileWithRole[];
+      }
+      
       let rolesQuery = supabase
         .from('user_roles')
         .select('user_id, role')
         .in('user_id', userIds);
       
-      // Filter roles by organization
-      if (organization?.id) {
+      // Filter roles by organization for regular users
+      if (!isPlatformOwnerWithoutOrg && organization?.id) {
         rolesQuery = rolesQuery.eq('organization_id', organization.id);
       }
       
@@ -56,23 +61,24 @@ export function useProfiles() {
         user_roles: rolesMap.get(profile.user_id) || [],
       })) as ProfileWithRole[];
     },
-    enabled: !!organization?.id,
+    // Enable when org is ready OR platform owner without org
+    enabled: !isOrgLoading && (!!organization?.id || isPlatformOwnerWithoutOrg),
   });
 }
 
 export function useTechniciansAndAdmins() {
-  const { organization } = useOrganization();
+  const { organization, isPlatformOwnerWithoutOrg, isLoading: isOrgLoading } = useOrganization();
   
   return useQuery({
-    queryKey: ['profiles', 'inspectors', organization?.id],
+    queryKey: ['profiles', 'inspectors', organization?.id, isPlatformOwnerWithoutOrg],
     queryFn: async () => {
       let query = supabase
         .from('profiles')
         .select('*')
         .order('full_name');
       
-      // Filter by organization if available
-      if (organization?.id) {
+      // Filter by organization for regular users
+      if (!isPlatformOwnerWithoutOrg && organization?.id) {
         query = query.eq('organization_id', organization.id);
       }
       
@@ -83,13 +89,17 @@ export function useTechniciansAndAdmins() {
       // Fetch roles for all users
       const userIds = data.map(p => p.user_id);
       
+      if (userIds.length === 0) {
+        return [] as (Profile & { role?: string })[];
+      }
+      
       let rolesQuery = supabase
         .from('user_roles')
         .select('user_id, role')
         .in('user_id', userIds);
       
-      // Filter roles by organization
-      if (organization?.id) {
+      // Filter roles by organization for regular users
+      if (!isPlatformOwnerWithoutOrg && organization?.id) {
         rolesQuery = rolesQuery.eq('organization_id', organization.id);
       }
       
@@ -101,6 +111,7 @@ export function useTechniciansAndAdmins() {
         role: roleData?.find(r => r.user_id === profile.user_id)?.role,
       }));
     },
-    enabled: !!organization?.id,
+    // Enable when org is ready OR platform owner without org
+    enabled: !isOrgLoading && (!!organization?.id || isPlatformOwnerWithoutOrg),
   });
 }
