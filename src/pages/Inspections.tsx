@@ -26,6 +26,7 @@ import {
   Trash2,
   Layers,
 } from 'lucide-react';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -235,42 +236,41 @@ export default function Inspections() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">{t('inspections.title')}</h1>
-          <p className="text-muted-foreground">
-            {t('inspections.subtitle')}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <Download className="h-4 w-4" />
-                {t('common.export')}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-popover border border-border shadow-lg">
-              <DropdownMenuItem onClick={handleExportExcel} className="gap-2 cursor-pointer">
-                <FileSpreadsheet className="h-4 w-4" />
-                {t('inspections.exportExcel')}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleExportPDF} className="gap-2 cursor-pointer">
-                <FileText className="h-4 w-4" />
-                {t('inspections.exportPDF')}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button variant="outline" className="gap-2" onClick={() => setShowQRScanner(true)}>
-            <QrCode className="h-4 w-4" />
-            {t('equipment.scanQRCode')}
-          </Button>
-          <Button className="gap-2" onClick={() => setShowNewInspectionForm(true)}>
-            <Plus className="h-4 w-4" />
-            {t('inspections.newInspection')}
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        icon={ClipboardCheck}
+        title={t('inspections.title')}
+        subtitle={t('inspections.subtitle')}
+        actions={
+          <>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <Download className="h-4 w-4" />
+                  {t('common.export')}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-popover border border-border shadow-lg">
+                <DropdownMenuItem onClick={handleExportExcel} className="gap-2 cursor-pointer">
+                  <FileSpreadsheet className="h-4 w-4" />
+                  {t('inspections.exportExcel')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportPDF} className="gap-2 cursor-pointer">
+                  <FileText className="h-4 w-4" />
+                  {t('inspections.exportPDF')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button variant="outline" className="gap-2" onClick={() => setShowQRScanner(true)}>
+              <QrCode className="h-4 w-4" />
+              {t('equipment.scanQRCode')}
+            </Button>
+            <Button className="gap-2" onClick={() => setShowNewInspectionForm(true)}>
+              <Plus className="h-4 w-4" />
+              {t('inspections.newInspection')}
+            </Button>
+          </>
+        }
+      />
 
       {/* QR Code Scanner Dialog */}
       <QRCodeScannerDialog

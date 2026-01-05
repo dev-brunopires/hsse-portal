@@ -15,6 +15,7 @@ import {
   Ship,
   Anchor,
 } from 'lucide-react';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -186,14 +187,11 @@ export default function Users() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">{t('usersPage.title')}</h1>
-          <p className="text-muted-foreground">
-            {t('usersPage.subtitle')}
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        icon={UsersIcon}
+        title={t('usersPage.title')}
+        subtitle={t('usersPage.subtitle')}
+      />
 
       <Tabs defaultValue="users" className="space-y-6">
         <TabsList>

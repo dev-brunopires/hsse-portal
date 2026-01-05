@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { Bell, Shield, Database, Mail, Plug, Rocket, Building2 } from 'lucide-react';
+import { Bell, Shield, Database, Mail, Plug, Rocket, Building2, Settings as SettingsIcon } from 'lucide-react';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -23,12 +24,11 @@ export default function Settings() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">{t('settings.title')}</h1>
-        <p className="text-muted-foreground">
-          {t('settings.subtitle')}
-        </p>
-      </div>
+      <PageHeader
+        icon={SettingsIcon}
+        title={t('settings.title')}
+        subtitle={t('settings.subtitle')}
+      />
 
       <Tabs defaultValue="notifications" className="w-full">
         <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-flex">

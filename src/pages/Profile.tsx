@@ -24,6 +24,7 @@ import {
   Monitor,
   Globe,
 } from 'lucide-react';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -280,14 +281,11 @@ export default function Profile() {
 
   return (
     <div className="space-y-6 animate-fade-in max-w-4xl mx-auto">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">{t('profilePage.myProfile')}</h1>
-          <p className="text-muted-foreground">
-            {t('profilePage.manageInfo')}
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        icon={User}
+        title={t('profilePage.myProfile')}
+        subtitle={t('profilePage.manageInfo')}
+      />
 
       <Tabs defaultValue="personal" className="space-y-6">
         <TabsList className="grid w-full grid-cols-5">

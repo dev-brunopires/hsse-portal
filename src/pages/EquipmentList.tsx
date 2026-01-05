@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Package, FolderOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getCategoryIcon } from '@/utils/categoryIcons';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 export default function EquipmentList() {
   const { t } = useTranslation();
@@ -44,13 +45,12 @@ export default function EquipmentList() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">{t('equipment.title')}</h1>
-        <p className="text-muted-foreground">
-          {t('equipment.subtitle')}
-        </p>
-      </div>
+    <div className="space-y-6 animate-fade-in">
+      <PageHeader
+        icon={Package}
+        title={t('equipment.title')}
+        subtitle={t('equipment.subtitle')}
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <ScrollArea className="w-full whitespace-nowrap">

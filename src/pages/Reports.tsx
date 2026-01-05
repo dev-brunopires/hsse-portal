@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FileText, Download, Calendar, Filter, AlertTriangle, Loader2, BarChart3, Wrench, ClipboardCheck, Eye } from 'lucide-react';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -887,19 +888,18 @@ export default function Reports() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">{t('reports.title')}</h1>
-          <p className="text-muted-foreground">
-            {t('reports.subtitle')}
-          </p>
-        </div>
-        {hasFilters && (
-          <Button variant="outline" size="sm" onClick={clearFilters}>
-            {t('reports.clearFilters')}
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        icon={FileText}
+        title={t('reports.title')}
+        subtitle={t('reports.subtitle')}
+        actions={
+          hasFilters && (
+            <Button variant="outline" size="sm" onClick={clearFilters}>
+              {t('reports.clearFilters')}
+            </Button>
+          )
+        }
+      />
 
       {/* Filters Section */}
       <Card>
