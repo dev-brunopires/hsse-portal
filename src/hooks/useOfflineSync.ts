@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { QueryClient, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { hapticSuccess, hapticWarning } from '@/utils/hapticFeedback';
 
@@ -62,14 +62,7 @@ export function useOfflineSync() {
   const [pendingActions, setPendingActions] = useState<PendingAction[]>(getInitialPendingActions);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
-  const queryClientRef = useRef<QueryClient | null>(null);
-  
-  // Safely get query client
-  try {
-    queryClientRef.current = useQueryClient();
-  } catch {
-    // QueryClient not available yet
-  }
+  const queryClient = useQueryClient();
 
   // Save pending actions to localStorage when they change
   useEffect(() => {
@@ -224,10 +217,8 @@ export function useOfflineSync() {
         description: t('offline.syncCompletedDesc', { count: syncedCount }),
       });
       // Refresh data
-      if (queryClientRef.current) {
-        queryClientRef.current.invalidateQueries({ queryKey: ['inspections'] });
-        queryClientRef.current.invalidateQueries({ queryKey: ['equipment'] });
-      }
+      queryClient.invalidateQueries({ queryKey: ['inspections'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment'] });
     }
 
     if (failedActions.length > 0) {
@@ -236,7 +227,7 @@ export function useOfflineSync() {
         description: t('offline.syncFailedDesc', { count: failedActions.length }),
       });
     }
-  }, [isOnline, pendingActions, t]);
+  }, [isOnline, pendingActions, queryClient, t]);
 
   // Online/offline event listeners
   useEffect(() => {
