@@ -64,26 +64,51 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
 
   // Check if user is a platform owner
   useEffect(() => {
+    let mounted = true;
+    
     const checkPlatformOwner = async () => {
       const { data: { user } } = await supabase.auth.getUser();
+      if (!mounted) return;
+      
       if (user) {
         const { data } = await supabase
           .from('platform_owners')
           .select('id')
           .eq('user_id', user.id)
           .maybeSingle();
-        setIsPlatformOwner(!!data);
+        if (mounted) {
+          setIsPlatformOwner(!!data);
+        }
+      } else {
+        setIsPlatformOwner(false);
       }
-      setAuthReady(true);
+      if (mounted) {
+        setAuthReady(true);
+      }
     };
     
     checkPlatformOwner();
     
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      checkPlatformOwner();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
+      
+      // Only update state synchronously, defer async calls
+      if (session?.user) {
+        setTimeout(() => {
+          if (mounted) {
+            checkPlatformOwner();
+          }
+        }, 0);
+      } else {
+        setIsPlatformOwner(false);
+        setAuthReady(true);
+      }
     });
     
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Get org from subdomain (for login page)
