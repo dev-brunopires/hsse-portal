@@ -2192,7 +2192,15 @@
     "changesSavedLocally": "Alterações serão salvas localmente",
     "inspectionsAwaitingSync": "Inspeções aguardando sincronização:",
     "code": "Código",
-    "syncNow": "Sincronizar Agora"
+    "syncNow": "Sincronizar Agora",
+    "syncFailed": "Falha na Sincronização",
+    "syncFailedDesc": "{{count}} inspeção(ões) não puderam ser sincronizadas."
+  },
+  "pwa": {
+    "installTitle": "Instalar SafeShip",
+    "installDescription": "Instale o app para acesso rápido e uso offline",
+    "notNow": "Agora não",
+    "install": "Instalar"
   },
   "onboarding": {
     "mainMenu": "Menu Principal",
