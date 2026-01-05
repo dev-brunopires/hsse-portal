@@ -27,6 +27,7 @@ import {
   Package,
   TrendingUp,
 } from 'lucide-react';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { cn } from '@/lib/utils';
 import { formatDate } from '@/utils/dateFormat';
 import { 
@@ -137,25 +138,21 @@ export default function Maintenance() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              <Wrench className="h-6 w-6 text-primary" />
-              {t('maintenance.title')}
-            </h1>
-            <p className="text-muted-foreground">
-              {t('maintenance.subtitle')}
-            </p>
-          </div>
-          {canCreate && (
-            <Button onClick={() => setCreateDialogOpen(true)} className="gap-2">
-              <Plus className="h-4 w-4" />
-              {t('maintenance.newRequest')}
-            </Button>
-          )}
-        </div>
+        <PageHeader
+          icon={Wrench}
+          title={t('maintenance.title')}
+          subtitle={t('maintenance.subtitle')}
+          actions={
+            canCreate && (
+              <Button onClick={() => setCreateDialogOpen(true)} className="gap-2">
+                <Plus className="h-4 w-4" />
+                {t('maintenance.newRequest')}
+              </Button>
+            )
+          }
+        />
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

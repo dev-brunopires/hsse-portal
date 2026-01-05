@@ -8,6 +8,7 @@ import {
   Loader2,
   Search,
 } from 'lucide-react';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -124,28 +125,20 @@ export default function Categories() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
+      <PageHeader
+        icon={FolderOpen}
+        title={t('categoriesPage.equipmentCategories')}
+        subtitle={t('categoriesPage.manageFrequencies')}
+        actions={
+          <Button onClick={handleCreate} className="gap-2">
+            <Plus className="h-4 w-4" />
+            {t('categories.newCategory')}
+          </Button>
+        }
+      />
       <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <FolderOpen className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <CardTitle>{t('categoriesPage.equipmentCategories')}</CardTitle>
-                <CardDescription>
-                  {t('categoriesPage.manageFrequencies')}
-                </CardDescription>
-              </div>
-            </div>
-            <Button onClick={handleCreate} className="gap-2">
-              <Plus className="h-4 w-4" />
-              {t('categories.newCategory')}
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           {/* Search */}
           <div className="mb-6">
             <div className="relative max-w-md">

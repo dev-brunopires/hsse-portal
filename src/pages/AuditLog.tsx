@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { History, Search, Filter, ChevronDown, ChevronUp, Package, ClipboardCheck, User, Calendar, ArrowRight, Ship, Settings, UserCircle, Download, FileSpreadsheet, FileText } from 'lucide-react';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { format } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
 import i18n from '@/i18n';
@@ -328,37 +329,31 @@ export default function AuditLogPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <div className="flex items-start gap-4">
-          <div className="p-3 bg-primary/10 rounded-2xl hidden sm:block">
-            <History className="h-8 w-8 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{t('auditLogPage.changeHistory')}</h1>
-            <p className="text-muted-foreground mt-1">{t('auditLogPage.fullAudit')}</p>
-          </div>
-        </div>
-        
-        {/* Export buttons */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" disabled={isExporting || filteredLogs.length === 0}>
-              <Download className="h-4 w-4 mr-2" />
-              {t('common.export')}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={handleExportPDF}>
-              <FileText className="h-4 w-4 mr-2" />
-              {t('auditLogPage.exportPDF')}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleExportExcel}>
-              <FileSpreadsheet className="h-4 w-4 mr-2" />
-              {t('auditLogPage.exportExcel')}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+      <PageHeader
+        icon={History}
+        title={t('auditLogPage.changeHistory')}
+        subtitle={t('auditLogPage.fullAudit')}
+        actions={
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" disabled={isExporting || filteredLogs.length === 0}>
+                <Download className="h-4 w-4 mr-2" />
+                {t('common.export')}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleExportPDF}>
+                <FileText className="h-4 w-4 mr-2" />
+                {t('auditLogPage.exportPDF')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExportExcel}>
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                {t('auditLogPage.exportExcel')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        }
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

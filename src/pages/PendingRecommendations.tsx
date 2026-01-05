@@ -16,6 +16,7 @@ import {
   X,
   ShieldAlert,
 } from 'lucide-react';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -292,18 +293,17 @@ export default function PendingRecommendations() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">{t('pendingRecommendations.title')}</h1>
-          <p className="text-muted-foreground">
-            {t('pendingRecommendations.subtitle')}
-          </p>
-        </div>
-        <Button className="gap-2" onClick={exportToPDF}>
-          <Download className="h-4 w-4" />
-          {t('pendingRecommendations.exportPDF')}
-        </Button>
-      </div>
+      <PageHeader
+        icon={ShieldAlert}
+        title={t('pendingRecommendations.title')}
+        subtitle={t('pendingRecommendations.subtitle')}
+        actions={
+          <Button className="gap-2" onClick={exportToPDF}>
+            <Download className="h-4 w-4" />
+            {t('pendingRecommendations.exportPDF')}
+          </Button>
+        }
+      />
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">

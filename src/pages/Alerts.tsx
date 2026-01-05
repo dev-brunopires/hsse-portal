@@ -5,6 +5,7 @@ import {
   Filter, Search, Ship, Calendar, ChevronRight,
   TrendingUp, ShieldAlert, Package
 } from 'lucide-react';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -306,25 +307,22 @@ export default function Alerts() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            {t('alerts.title')}
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            {t('alerts.subtitle')}
-          </p>
-        </div>
-        <Button 
-          variant="outline" 
-          className="gap-2 shrink-0" 
-          onClick={handleMarkAllAsRead}
-          disabled={alerts.length === 0}
-        >
-          <CheckCircle className="h-4 w-4" />
-          {t('alerts.markAllAsRead')}
-        </Button>
-      </div>
+      <PageHeader
+        icon={Bell}
+        title={t('alerts.title')}
+        subtitle={t('alerts.subtitle')}
+        actions={
+          <Button 
+            variant="outline" 
+            className="gap-2 shrink-0" 
+            onClick={handleMarkAllAsRead}
+            disabled={alerts.length === 0}
+          >
+            <CheckCircle className="h-4 w-4" />
+            {t('alerts.markAllAsRead')}
+          </Button>
+        }
+      />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
