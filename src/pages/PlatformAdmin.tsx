@@ -203,9 +203,8 @@ export default function PlatformAdmin() {
   };
 
   const getOrgUrl = (subdomain: string) => {
-    // In production, this would be subdomain.yourdomain.com
-    // For now, show the query parameter format
-    return `${window.location.origin}?org=${subdomain}`;
+    // Generate real subdomain URL
+    return `https://${subdomain}.safeship.app`;
   };
 
   return (
@@ -271,7 +270,7 @@ export default function PlatformAdmin() {
                     onChange={(e) => setFormData(prev => ({ ...prev, subdomain: e.target.value.toLowerCase() }))}
                     placeholder="modec"
                   />
-                  <span className="text-muted-foreground whitespace-nowrap">.yourdomain.com</span>
+                  <span className="text-muted-foreground whitespace-nowrap">.safeship.app</span>
                 </div>
               </div>
 
