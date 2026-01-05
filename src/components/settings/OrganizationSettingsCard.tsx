@@ -82,7 +82,7 @@ export function OrganizationSettingsCard() {
         <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
           <div className="flex-1">
             <p className="font-medium">{organization.name}</p>
-            <p className="text-sm text-muted-foreground">{organization.subdomain}.safeship.app</p>
+            <p className="text-sm text-muted-foreground">https://{organization.subdomain}.safeship.app</p>
           </div>
         </div>
 
