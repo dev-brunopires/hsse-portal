@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { useQueryClient } from '@tanstack/react-query';
+import { QueryClient, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { hapticSuccess, hapticWarning } from '@/utils/hapticFeedback';
 
@@ -38,27 +38,40 @@ const CACHE_TIMESTAMP_KEY = 'safeship_cache_timestamp';
 const MAX_RETRY_COUNT = 3;
 const CACHE_MAX_AGE = 1000 * 60 * 60 * 24; // 24 hours
 
+// Safe initialization of state
+const getInitialOnlineState = () => {
+  try {
+    return typeof navigator !== 'undefined' ? navigator.onLine : true;
+  } catch {
+    return true;
+  }
+};
+
+const getInitialPendingActions = (): PendingAction[] => {
+  try {
+    const stored = localStorage.getItem(PENDING_ACTIONS_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+};
+
 export function useOfflineSync() {
   const { t } = useTranslation();
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [pendingActions, setPendingActions] = useState<PendingAction[]>([]);
+  const [isOnline, setIsOnline] = useState(getInitialOnlineState);
+  const [pendingActions, setPendingActions] = useState<PendingAction[]>(getInitialPendingActions);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
-  const queryClient = useQueryClient();
+  const queryClientRef = useRef<QueryClient | null>(null);
+  
+  // Safely get query client
+  try {
+    queryClientRef.current = useQueryClient();
+  } catch {
+    // QueryClient not available yet
+  }
 
-  // Load pending actions from localStorage
-  useEffect(() => {
-    const stored = localStorage.getItem(PENDING_ACTIONS_KEY);
-    if (stored) {
-      try {
-        setPendingActions(JSON.parse(stored));
-      } catch (e) {
-        console.error('Error loading pending actions:', e);
-      }
-    }
-  }, []);
-
-  // Save pending actions to localStorage
+  // Save pending actions to localStorage when they change
   useEffect(() => {
     localStorage.setItem(PENDING_ACTIONS_KEY, JSON.stringify(pendingActions));
   }, [pendingActions]);
@@ -211,8 +224,10 @@ export function useOfflineSync() {
         description: t('offline.syncCompletedDesc', { count: syncedCount }),
       });
       // Refresh data
-      queryClient.invalidateQueries({ queryKey: ['inspections'] });
-      queryClient.invalidateQueries({ queryKey: ['equipment'] });
+      if (queryClientRef.current) {
+        queryClientRef.current.invalidateQueries({ queryKey: ['inspections'] });
+        queryClientRef.current.invalidateQueries({ queryKey: ['equipment'] });
+      }
     }
 
     if (failedActions.length > 0) {
@@ -221,7 +236,7 @@ export function useOfflineSync() {
         description: t('offline.syncFailedDesc', { count: failedActions.length }),
       });
     }
-  }, [isOnline, pendingActions, queryClient, t]);
+  }, [isOnline, pendingActions, t]);
 
   // Online/offline event listeners
   useEffect(() => {
