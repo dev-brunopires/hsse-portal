@@ -121,7 +121,7 @@ export function EquipmentWarningAlert({ equipment, lastInspection }: EquipmentWa
             {equipment.status === 'rejected' ? t('equipmentWarning.equipmentRejected') : t('equipmentWarning.equipmentExpiredStatus')}
           </AlertTitle>
           <AlertDescription>
-            {t('equipmentWarning.markedAs')} {equipment.status === 'rejected' ? t('common.rejected').toLowerCase() : t('equipment.status.expired').toLowerCase()}. 
+            {t('equipmentWarning.markedAs')} {equipment.status === 'rejected' ? t('common.rejected').toLowerCase() : t('equipment.statusExpired').toLowerCase()}. 
             {t('equipmentWarning.verifyPendingIssues')}
           </AlertDescription>
         </Alert>

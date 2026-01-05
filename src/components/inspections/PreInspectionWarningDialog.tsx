@@ -174,7 +174,7 @@ export function PreInspectionWarningDialog({
                       {equipment.status === 'rejected' ? t('equipmentWarning.equipmentRejected') : t('equipmentWarning.equipmentExpiredStatus')}
                     </AlertTitle>
                     <AlertDescription>
-                      {t('equipmentWarning.markedAs')} {equipment.status === 'rejected' ? t('common.rejected').toUpperCase() : t('equipment.status.expired').toUpperCase()}.
+                      {t('equipmentWarning.markedAs')} {equipment.status === 'rejected' ? t('common.rejected').toUpperCase() : t('equipment.statusExpired').toUpperCase()}.
                     </AlertDescription>
                   </Alert>
                 )}

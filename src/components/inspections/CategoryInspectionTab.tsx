@@ -479,9 +479,9 @@ export function CategoryInspectionTab() {
                       <TableHead>{t('categoryInspection.code')}</TableHead>
                       <TableHead>{t('common.name')}</TableHead>
                       <TableHead>{t('categoryInspection.locationColumn')}</TableHead>
-                      <TableHead>{t('equipment.status.label')}</TableHead>
+                      <TableHead>{t('equipmentTable.status')}</TableHead>
                       <TableHead>{t('categoryInspection.statusColumn')}</TableHead>
-                      <TableHead>{t('equipment.detail.lastInspection')}</TableHead>
+                      <TableHead>{t('equipmentDetail.lastInspection')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -505,9 +505,9 @@ export function CategoryInspectionTab() {
                             eq.status === 'maintenance' ? 'secondary' :
                             'destructive'
                           }>
-                            {eq.status === 'active' ? t('equipment.status.active') :
-                             eq.status === 'maintenance' ? t('equipment.status.maintenance') :
-                             eq.status === 'rejected' ? t('equipment.status.rejected') : eq.status}
+                          {eq.status === 'active' ? t('equipment.statusActive') :
+                             eq.status === 'maintenance' ? t('equipment.statusMaintenance') :
+                             eq.status === 'rejected' ? t('equipment.statusRejected') : eq.status}
                           </Badge>
                         </TableCell>
                         <TableCell onClick={(e) => e.stopPropagation()}>
