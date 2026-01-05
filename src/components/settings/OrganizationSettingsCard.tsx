@@ -8,6 +8,7 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { useUpdateOrganization } from '@/hooks/useOrganizations';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { getOrganizationUrl } from '@/utils/organizationUrl';
 
 export function OrganizationSettingsCard() {
   const { t } = useTranslation();
@@ -82,7 +83,7 @@ export function OrganizationSettingsCard() {
         <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
           <div className="flex-1">
             <p className="font-medium">{organization.name}</p>
-            <p className="text-sm text-muted-foreground">https://{organization.subdomain}.safeship.app</p>
+            <p className="text-sm text-muted-foreground">{getOrganizationUrl(organization.subdomain)}</p>
           </div>
         </div>
 
