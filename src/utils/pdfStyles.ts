@@ -1,8 +1,11 @@
 import jsPDF from 'jspdf';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS } from 'date-fns/locale';
 import type { OrganizationBranding } from '@/hooks/useOrganizationBranding';
 import { loadImageAsBase64 } from '@/hooks/useOrganizationBranding';
+import i18n from '@/i18n';
+
+const getDateLocale = () => i18n.language === 'en' ? enUS : ptBR;
 
 // Default Brand Colors - Used when no organization branding is available
 export const SBM_BLUE: [number, number, number] = [22, 85, 154]; // #16559A
@@ -204,6 +207,8 @@ export function addPDFFooter(
   const pageHeight = doc.internal.pageSize.getHeight();
   const pageCount = doc.getNumberOfPages();
   
+  const t = i18n.t;
+  
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
     
@@ -217,7 +222,7 @@ export function addPDFFooter(
     doc.setTextColor(...MEDIUM_GRAY);
     doc.text(leftText, 14, pageHeight - 4);
     doc.text(centerText, pageWidth / 2, pageHeight - 4, { align: 'center' });
-    doc.text(`Página ${i} de ${pageCount}`, pageWidth - 14, pageHeight - 4, { align: 'right' });
+    doc.text(`${t('pdfStyles.page')} ${i} ${t('pdfStyles.of')} ${pageCount}`, pageWidth - 14, pageHeight - 4, { align: 'right' });
   }
 }
 
@@ -270,6 +275,9 @@ export function addSignatureSection(
   const signatureBoxWidth = 180;
   const signatureBoxX = (pageWidth - signatureBoxWidth) / 2;
   
+  const t = i18n.t;
+  const dateLocale = getDateLocale();
+  
   // Section header
   yPos += 10;
   doc.setFillColor(...LIGHT_GRAY);
@@ -280,7 +288,7 @@ export function addSignatureSection(
   doc.setTextColor(...DARK_GRAY);
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.text('Assinatura do Responsável', margin + 10, yPos + 5.5);
+  doc.text(t('pdfStyles.responsibleSignature'), margin + 10, yPos + 5.5);
   
   yPos += 15;
   
@@ -299,14 +307,14 @@ export function addSignatureSection(
       doc.setTextColor(...MEDIUM_GRAY);
       doc.setFontSize(9);
       doc.setFont('helvetica', 'italic');
-      doc.text('Assinatura digital não disponível', signatureBoxX + signatureBoxWidth / 2, yPos + 18, { align: 'center' });
+      doc.text(t('pdfStyles.digitalSignatureNotAvailable'), signatureBoxX + signatureBoxWidth / 2, yPos + 18, { align: 'center' });
     }
   } else {
     // Placeholder for signature
     doc.setTextColor(...MEDIUM_GRAY);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'italic');
-    doc.text('Assinatura digital', signatureBoxX + signatureBoxWidth / 2, yPos + 18, { align: 'center' });
+    doc.text(t('pdfStyles.digitalSignature'), signatureBoxX + signatureBoxWidth / 2, yPos + 18, { align: 'center' });
   }
   
   yPos += 38;
@@ -340,7 +348,7 @@ export function addSignatureSection(
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...MEDIUM_GRAY);
-  const dateStr = `Documento gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm:ss", { locale: ptBR })}`;
+  const dateStr = `${t('pdfStyles.documentGeneratedAt')}: ${format(new Date(), "dd/MM/yyyy HH:mm:ss", { locale: dateLocale })}`;
   doc.text(dateStr, signatureBoxX + signatureBoxWidth / 2, yPos, { align: 'center' });
   
   return yPos + 10;

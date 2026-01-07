@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS } from 'date-fns/locale';
 import {
   SBM_BLUE,
   DARK_GRAY,
@@ -15,6 +15,10 @@ import {
   addSectionHeader,
   preloadLogo,
 } from './pdfStyles';
+import i18n from '@/i18n';
+import type { OrganizationBranding } from '@/hooks/useOrganizationBranding';
+
+const getDateLocale = () => i18n.language === 'en' ? enUS : ptBR;
 
 interface InspectionPDFData {
   inspection: {
@@ -61,25 +65,26 @@ interface InspectionPDFData {
     status: string;
     notes?: string | null;
   }>;
+  branding?: OrganizationBranding;
 }
 
-const statusLabels: Record<string, string> = {
-  compliant: 'CONFORME',
-  attention: 'ATENÇÃO',
-  'non-compliant': 'NÃO CONFORME',
-  ok: 'Conforme',
-  fail: 'Não Conforme',
-  pending: 'Pendente',
-  active: 'Ativo',
-  inactive: 'Inativo',
-  maintenance: 'Manutenção',
-  expired: 'Vencido',
-};
+const getStatusLabels = (): Record<string, string> => ({
+  compliant: i18n.t('generateInspectionPDF.statusCompliant'),
+  attention: i18n.t('generateInspectionPDF.statusAttention'),
+  'non-compliant': i18n.t('generateInspectionPDF.statusNonCompliant'),
+  ok: i18n.t('generateInspectionPDF.checklistOk'),
+  fail: i18n.t('generateInspectionPDF.checklistFail'),
+  pending: i18n.t('generateInspectionPDF.checklistPending'),
+  active: i18n.t('generateInspectionPDF.equipmentActive'),
+  inactive: i18n.t('generateInspectionPDF.equipmentInactive'),
+  maintenance: i18n.t('generateInspectionPDF.equipmentMaintenance'),
+  expired: i18n.t('generateInspectionPDF.equipmentExpired'),
+});
 
 const formatDate = (date: string | null | undefined): string => {
   if (!date) return '-';
   try {
-    return format(new Date(date), 'dd/MM/yyyy', { locale: ptBR });
+    return format(new Date(date), 'dd/MM/yyyy', { locale: getDateLocale() });
   } catch {
     return '-';
   }
@@ -111,8 +116,12 @@ async function loadLogoBase64(): Promise<string | null> {
 }
 
 export async function generateInspectionPDF(data: InspectionPDFData) {
+  const t = i18n.t;
+  const dateLocale = getDateLocale();
+  const statusLabels = getStatusLabels();
+  
   // Preload logos
-  await preloadLogo();
+  await preloadLogo(data.branding);
   const logoBase64 = await loadLogoBase64();
   
   const doc = new jsPDF();
@@ -121,7 +130,7 @@ export async function generateInspectionPDF(data: InspectionPDFData) {
   const margin = 15;
   let yPos = 0;
 
-  // === HEADER WITH SBM BRANDING (Blue only, no orange) ===
+  // === HEADER WITH BRANDING (Blue only, no orange) ===
   doc.setFillColor(...SBM_BLUE);
   doc.rect(0, 0, pageWidth, 32, 'F');
   
@@ -135,31 +144,25 @@ export async function generateInspectionPDF(data: InspectionPDFData) {
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(24);
       doc.setFont('helvetica', 'bold');
-      doc.text('SBM', margin, 18);
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      doc.text('OFFSHORE', margin, 26);
+      doc.text(data.branding?.name || 'SafeShip', margin, 18);
     }
   } else {
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(24);
+    doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
-    doc.text('SBM', margin, 18);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text('OFFSHORE', margin, 26);
+    doc.text(data.branding?.name || 'SafeShip', margin, 18);
   }
   
   // Report title
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text('RELATÓRIO DE INSPEÇÃO', pageWidth - margin, 16, { align: 'right' });
+  doc.text(t('generateInspectionPDF.reportTitle'), pageWidth - margin, 16, { align: 'right' });
   
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  doc.text(`Documento: INS-${data.inspection.id.substring(0, 8).toUpperCase()}`, pageWidth - margin, 24, { align: 'right' });
-  doc.text(`Emitido: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, pageWidth - margin, 30, { align: 'right' });
+  doc.text(`${t('generateInspectionPDF.document')}: INS-${data.inspection.id.substring(0, 8).toUpperCase()}`, pageWidth - margin, 24, { align: 'right' });
+  doc.text(`${t('generateInspectionPDF.issued')}: ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: dateLocale })}`, pageWidth - margin, 30, { align: 'right' });
   
   yPos = 42;
 
@@ -170,12 +173,12 @@ export async function generateInspectionPDF(data: InspectionPDFData) {
   doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...MEDIUM_GRAY);
-  doc.text('UNIDADE / EMBARCAÇÃO', margin + 5, yPos + 6);
+  doc.text(t('generateInspectionPDF.unitShip'), margin + 5, yPos + 6);
   
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...DARK_GRAY);
-  const shipText = data.ship ? `${data.ship.name}${data.ship.code ? ` (${data.ship.code})` : ''}` : 'Não especificada';
+  const shipText = data.ship ? `${data.ship.name}${data.ship.code ? ` (${data.ship.code})` : ''}` : t('generateInspectionPDF.notSpecified');
   doc.text(shipText, margin + 5, yPos + 14);
 
   // Status badge
@@ -196,7 +199,7 @@ export async function generateInspectionPDF(data: InspectionPDFData) {
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
-  doc.text('STATUS DA INSPEÇÃO', statusBoxX + 5, yPos + 6);
+  doc.text(t('generateInspectionPDF.inspectionStatus'), statusBoxX + 5, yPos + 6);
   
   doc.setFontSize(14);
   doc.text(status, statusBoxX + 5, yPos + 15);
@@ -207,9 +210,9 @@ export async function generateInspectionPDF(data: InspectionPDFData) {
   const dateBoxWidth = (pageWidth - margin * 2 - 10) / 3;
   
   const dateBoxes = [
-    { label: 'DATA DA INSPEÇÃO', value: formatDate(data.inspection.inspection_date) },
-    { label: 'PRÓXIMA INSPEÇÃO', value: formatDate(data.inspection.next_inspection_date) },
-    { label: 'VALIDADE CERTIFICADO', value: formatDate(data.equipment.certificate_expiry) },
+    { label: t('generateInspectionPDF.inspectionDate'), value: formatDate(data.inspection.inspection_date) },
+    { label: t('generateInspectionPDF.nextInspection'), value: formatDate(data.inspection.next_inspection_date) },
+    { label: t('generateInspectionPDF.certificateValidity'), value: formatDate(data.equipment.certificate_expiry) },
   ];
   
   dateBoxes.forEach((box, index) => {
@@ -233,52 +236,52 @@ export async function generateInspectionPDF(data: InspectionPDFData) {
   yPos += 25;
 
   // === EQUIPMENT SECTION ===
-  yPos = addSectionHeader(doc, yPos, 'DADOS DO EQUIPAMENTO', SBM_BLUE, pageWidth - margin * 2);
+  yPos = addSectionHeader(doc, yPos, t('generateInspectionPDF.equipmentData'), SBM_BLUE, pageWidth - margin * 2);
   
   autoTable(doc, {
     startY: yPos,
     head: [],
     body: [
       [
-        { content: 'Nome:', styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
+        { content: `${t('generateInspectionPDF.name')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
         { content: data.equipment.name, styles: { fontStyle: 'bold', textColor: DARK_GRAY } },
-        { content: 'Código:', styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
+        { content: `${t('generateInspectionPDF.code')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
         { content: data.equipment.internal_code, styles: { fontStyle: 'bold', textColor: SBM_BLUE } }
       ],
       [
-        { content: 'Categoria:', styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
+        { content: `${t('generateInspectionPDF.category')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
         data.equipment.category_name || '-',
-        { content: 'Tipo:', styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
+        { content: `${t('generateInspectionPDF.type')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
         data.equipment.type
       ],
       [
-        { content: 'Fabricante:', styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
+        { content: `${t('generateInspectionPDF.manufacturer')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
         data.equipment.manufacturer || '-',
-        { content: 'Modelo:', styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
+        { content: `${t('generateInspectionPDF.model')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
         data.equipment.model || '-'
       ],
       [
-        { content: 'Nº Série:', styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
+        { content: `${t('generateInspectionPDF.serialNumber')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
         { content: data.equipment.serial_number, styles: { fontStyle: 'bold', textColor: DARK_GRAY } },
-        { content: 'Capacidade:', styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
+        { content: `${t('generateInspectionPDF.capacity')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
         data.equipment.capacity || '-'
       ],
       [
-        { content: 'Localização:', styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
+        { content: `${t('generateInspectionPDF.location')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
         data.equipment.location,
-        { content: 'Unidade:', styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
+        { content: `${t('generateInspectionPDF.unit')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
         data.equipment.unit
       ],
       [
-        { content: 'Data Fabricação:', styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
+        { content: `${t('generateInspectionPDF.manufacturingDate')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
         formatDate(data.equipment.manufacturing_date),
-        { content: 'Data Aquisição:', styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
+        { content: `${t('generateInspectionPDF.acquisitionDate')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
         formatDate(data.equipment.acquisition_date)
       ],
       [
-        { content: 'Data Validade:', styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
+        { content: `${t('generateInspectionPDF.expiryDate')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
         formatDate(data.equipment.expiry_date),
-        { content: 'Status Equipamento:', styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
+        { content: `${t('generateInspectionPDF.equipmentStatus')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
         { content: statusLabels[data.equipment.status || ''] || data.equipment.status || '-', styles: { fontStyle: 'bold' } }
       ],
     ],
@@ -300,22 +303,22 @@ export async function generateInspectionPDF(data: InspectionPDFData) {
   yPos = (doc as any).lastAutoTable.finalY + 8;
 
   // === INSPECTOR SECTION ===
-  yPos = addSectionHeader(doc, yPos, 'RESPONSÁVEL PELA INSPEÇÃO', SBM_BLUE, pageWidth - margin * 2);
+  yPos = addSectionHeader(doc, yPos, t('generateInspectionPDF.inspectorSection'), SBM_BLUE, pageWidth - margin * 2);
   
   autoTable(doc, {
     startY: yPos,
     head: [],
     body: [
       [
-        { content: 'Inspetor:', styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
+        { content: `${t('generateInspectionPDF.inspector')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
         { content: data.inspector.full_name, styles: { fontStyle: 'bold', textColor: DARK_GRAY } },
-        { content: 'Email:', styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
+        { content: `${t('generateInspectionPDF.email')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
         data.inspector.email
       ],
       [
-        { content: 'Cargo:', styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
+        { content: `${t('generateInspectionPDF.position')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
         data.inspector.position || '-',
-        { content: 'Departamento:', styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
+        { content: `${t('generateInspectionPDF.department')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } }, 
         data.inspector.department || '-'
       ],
     ],
@@ -337,7 +340,7 @@ export async function generateInspectionPDF(data: InspectionPDFData) {
   yPos = (doc as any).lastAutoTable.finalY + 8;
 
   // === CHECKLIST SECTION ===
-  yPos = addSectionHeader(doc, yPos, 'CHECKLIST DE VERIFICAÇÃO', SBM_BLUE, pageWidth - margin * 2);
+  yPos = addSectionHeader(doc, yPos, t('generateInspectionPDF.checklistSection'), SBM_BLUE, pageWidth - margin * 2);
   
   if (data.checklistItems.length > 0) {
     const checklistBody = data.checklistItems.map((item, index) => {
@@ -364,7 +367,7 @@ export async function generateInspectionPDF(data: InspectionPDFData) {
 
     autoTable(doc, {
       startY: yPos,
-      head: [['#', 'Item de Verificação', 'Resultado', 'Observações']],
+      head: [['#', t('generateInspectionPDF.verificationItem'), t('generateInspectionPDF.result'), t('generateInspectionPDF.observations')]],
       body: checklistBody,
       theme: 'striped',
       styles: { fontSize: 8, cellPadding: 3 },
@@ -389,15 +392,15 @@ export async function generateInspectionPDF(data: InspectionPDFData) {
     doc.setFontSize(9);
     doc.setFont('helvetica', 'italic');
     doc.setTextColor(...MEDIUM_GRAY);
-    doc.text('Nenhum item de checklist registrado para esta inspeção.', margin, yPos + 8);
+    doc.text(t('generateInspectionPDF.noChecklistItems'), margin, yPos + 8);
     yPos += 15;
   }
 
   // === OBSERVATIONS, RECOMMENDATIONS, ACTIONS ===
   const textSections = [
-    { title: 'AÇÕES TOMADAS', content: data.inspection.actions_taken },
-    { title: 'OBSERVAÇÕES', content: data.inspection.observations },
-    { title: 'RECOMENDAÇÕES', content: data.inspection.recommendations },
+    { title: t('generateInspectionPDF.actionsTaken'), content: data.inspection.actions_taken },
+    { title: t('generateInspectionPDF.observationsSection'), content: data.inspection.observations },
+    { title: t('generateInspectionPDF.recommendationsSection'), content: data.inspection.recommendations },
   ].filter(s => s.content);
 
   for (const section of textSections) {
@@ -423,7 +426,7 @@ export async function generateInspectionPDF(data: InspectionPDFData) {
     yPos = 20;
   }
 
-  yPos = addSectionHeader(doc, yPos, 'ASSINATURA E APROVAÇÃO', SBM_BLUE, pageWidth - margin * 2);
+  yPos = addSectionHeader(doc, yPos, t('generateInspectionPDF.signatureSection'), SBM_BLUE, pageWidth - margin * 2);
   yPos += 5;
   
   // Signature box
@@ -441,13 +444,13 @@ export async function generateInspectionPDF(data: InspectionPDFData) {
       doc.setFontSize(9);
       doc.setFont('helvetica', 'italic');
       doc.setTextColor(...MEDIUM_GRAY);
-      doc.text('Assinatura digital registrada', margin + 10, yPos + 18);
+      doc.text(t('generateInspectionPDF.digitalSignatureRegistered'), margin + 10, yPos + 18);
     }
   } else {
     doc.setFontSize(9);
     doc.setFont('helvetica', 'italic');
     doc.setTextColor(...MEDIUM_GRAY);
-    doc.text('Aguardando assinatura', margin + 15, yPos + 18);
+    doc.text(t('generateInspectionPDF.awaitingSignature'), margin + 15, yPos + 18);
   }
   
   // Signature line
@@ -474,18 +477,18 @@ export async function generateInspectionPDF(data: InspectionPDFData) {
   }
   if (data.inspection.signed_at) {
     doc.setTextColor(...SBM_BLUE);
-    doc.text(`Assinado em: ${format(new Date(data.inspection.signed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, detailsX, yPos + 31);
+    doc.text(`${t('generateInspectionPDF.signedAt')}: ${format(new Date(data.inspection.signed_at), "dd/MM/yyyy HH:mm", { locale: dateLocale })}`, detailsX, yPos + 31);
   }
 
   // Add standardized footer
   addPDFFooter(
     doc,
-    'SBM Offshore - Sistema de Gestão de Equipamentos de Segurança',
-    `Documento: INS-${data.inspection.id.substring(0, 8).toUpperCase()}`
+    data.branding?.name || t('generateInspectionPDF.footerCompany'),
+    `${t('generateInspectionPDF.document')}: INS-${data.inspection.id.substring(0, 8).toUpperCase()}`
   );
 
   // Save
-  const fileName = `SBM_Inspecao_${data.equipment.internal_code}_${format(new Date(data.inspection.inspection_date), 'yyyyMMdd')}.pdf`;
+  const fileName = `${t('generateInspectionPDF.filePrefix')}_${data.equipment.internal_code}_${format(new Date(data.inspection.inspection_date), 'yyyyMMdd')}.pdf`;
   doc.save(fileName);
   
   return fileName;
