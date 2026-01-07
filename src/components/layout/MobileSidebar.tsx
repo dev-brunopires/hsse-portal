@@ -16,12 +16,14 @@ import {
   Building2,
   History,
   Wrench,
+  Languages,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
+import { useLanguage } from '@/contexts/LanguageContext';
 import sbmLogoWhite from '@/assets/sbm-logo-white.png';
 
 interface MobileNavItemProps {
@@ -62,9 +64,14 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
   const { t } = useTranslation();
   const { isAdmin, isPlatformOwner } = useAuth();
   const { resolvedTheme, setTheme } = useTheme();
+  const { language, setLanguage } = useLanguage();
 
   const toggleTheme = () => {
     setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
+  };
+
+  const toggleLanguage = () => {
+    setLanguage(language === 'pt-BR' ? 'en' : 'pt-BR');
   };
 
   const handleNavClick = () => {
@@ -107,6 +114,19 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
             </span>
             <span className="text-sm">
               {resolvedTheme === 'dark' ? t('common.lightMode') : t('common.darkMode')}
+            </span>
+          </button>
+
+          {/* Language Toggle */}
+          <button
+            onClick={toggleLanguage}
+            className="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 w-full hover:bg-sidebar-accent text-sidebar-foreground"
+          >
+            <span className="flex-shrink-0">
+              <Languages size={20} />
+            </span>
+            <span className="text-sm">
+              {language === 'pt-BR' ? 'English' : 'Português'}
             </span>
           </button>
           

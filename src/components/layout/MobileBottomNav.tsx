@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { User, ClipboardList, Package, QrCode, Bell, Languages } from 'lucide-react';
+import { User, ClipboardList, Package, QrCode, Bell } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { QRCodeScannerDialog } from '@/components/equipment/QRCodeScannerDialog';
 import { hapticButton, hapticSuccess } from '@/utils/hapticFeedback';
-import { useLanguage } from '@/contexts/LanguageContext';
 
 interface NavItem {
   icon: React.ElementType;
@@ -27,7 +26,6 @@ export function MobileBottomNav() {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
-  const { language, setLanguage } = useLanguage();
   const [scannerOpen, setScannerOpen] = useState(false);
 
   const handleNavigation = (path: string) => {
@@ -44,11 +42,6 @@ export function MobileBottomNav() {
   const handleOpenScanner = () => {
     hapticButton();
     setScannerOpen(true);
-  };
-
-  const toggleLanguage = () => {
-    hapticButton();
-    setLanguage(language === 'pt-BR' ? 'en' : 'pt-BR');
   };
 
   const isActive = (path: string) => location.pathname === path;
@@ -106,28 +99,14 @@ export function MobileBottomNav() {
             </div>
           </div>
 
-          {/* Floating Action Buttons */}
-          <div className="absolute left-1/2 -translate-x-1/2 -top-6 flex items-center gap-2">
-            {/* Language Toggle */}
-            <button
-              onClick={toggleLanguage}
-              className="w-10 h-10 bg-muted rounded-full flex items-center justify-center shadow-md hover:bg-muted/80 transition-all active:scale-95 border-2 border-background touch-manipulation"
-              aria-label={t('header.language')}
-            >
-              <span className="text-xs font-bold text-foreground">
-                {language === 'pt-BR' ? 'EN' : 'PT'}
-              </span>
-            </button>
-
-            {/* QR Scanner */}
-            <button
-              onClick={handleOpenScanner}
-              className="w-14 h-14 bg-primary rounded-full flex items-center justify-center shadow-lg shadow-primary/30 hover:bg-primary/90 transition-all hover:scale-105 active:scale-95 border-4 border-background touch-manipulation"
-              aria-label={t('equipment.scanQRCode')}
-            >
-              <QrCode className="h-6 w-6 text-primary-foreground" />
-            </button>
-          </div>
+          {/* Floating Action Button for QR Scanner - Centered */}
+          <button
+            onClick={handleOpenScanner}
+            className="absolute left-1/2 -translate-x-1/2 -top-6 w-14 h-14 bg-primary rounded-full flex items-center justify-center shadow-lg shadow-primary/30 hover:bg-primary/90 transition-all hover:scale-105 active:scale-95 border-4 border-background touch-manipulation"
+            aria-label={t('equipment.scanQRCode')}
+          >
+            <QrCode className="h-6 w-6 text-primary-foreground" />
+          </button>
         </div>
 
         {/* Safe area padding for devices with home indicator */}
