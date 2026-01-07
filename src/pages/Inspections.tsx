@@ -241,12 +241,12 @@ export default function Inspections() {
         title={t('inspections.title')}
         subtitle={t('inspections.subtitle')}
         actions={
-          <>
+          <div className="flex flex-wrap gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-2">
+                <Button variant="outline" size="sm" className="gap-2">
                   <Download className="h-4 w-4" />
-                  {t('common.export')}
+                  <span className="hidden sm:inline">{t('common.export')}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-popover border border-border shadow-lg">
@@ -260,15 +260,16 @@ export default function Inspections() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button variant="outline" className="gap-2" onClick={() => setShowQRScanner(true)}>
+            <Button variant="outline" size="sm" className="gap-2 hidden md:flex" onClick={() => setShowQRScanner(true)}>
               <QrCode className="h-4 w-4" />
-              {t('equipment.scanQRCode')}
+              <span>{t('equipment.scanQRCode')}</span>
             </Button>
-            <Button className="gap-2" onClick={() => setShowNewInspectionForm(true)}>
+            <Button size="sm" className="gap-2" onClick={() => setShowNewInspectionForm(true)}>
               <Plus className="h-4 w-4" />
-              {t('inspections.newInspection')}
+              <span className="hidden sm:inline">{t('inspections.newInspection')}</span>
+              <span className="sm:hidden">{t('common.new')}</span>
             </Button>
-          </>
+          </div>
         }
       />
 
