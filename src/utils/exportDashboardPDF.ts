@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS } from 'date-fns/locale';
 import type { DashboardStats } from '@/types/equipment';
 import {
   SBM_BLUE,
@@ -17,6 +17,9 @@ import {
   preloadLogo,
 } from './pdfStyles';
 import type { OrganizationBranding } from '@/hooks/useOrganizationBranding';
+import i18n from '@/i18n';
+
+const getDateLocale = () => i18n.language === 'en' ? enUS : ptBR;
 
 interface ExportFilters {
   shipName?: string;
@@ -26,15 +29,19 @@ interface ExportFilters {
   branding?: OrganizationBranding;
 }
 
-const statusLabels: Record<string, string> = {
-  active: 'Ativo',
-  maintenance: 'Em Manutenção',
-  expired: 'Vencido',
-  rejected: 'Reprovado',
-  inactive: 'Inativo',
-};
+const getStatusLabels = (): Record<string, string> => ({
+  active: i18n.t('exportDashboardPDF.statusActive'),
+  maintenance: i18n.t('exportDashboardPDF.statusMaintenance'),
+  expired: i18n.t('exportDashboardPDF.statusExpired'),
+  rejected: i18n.t('exportDashboardPDF.statusRejected'),
+  inactive: i18n.t('exportDashboardPDF.statusInactive'),
+});
 
 export async function exportDashboardPDF(stats: DashboardStats, filters: ExportFilters) {
+  const t = i18n.t;
+  const dateLocale = getDateLocale();
+  const statusLabels = getStatusLabels();
+  
   // Preload logo before generating PDF with branding
   await preloadLogo(filters.branding);
   
@@ -45,45 +52,45 @@ export async function exportDashboardPDF(stats: DashboardStats, filters: ExportF
   // Build filters text
   const filtersApplied: string[] = [];
   if (filters.shipName && filters.shipName !== 'all') {
-    filtersApplied.push(`Unidade: ${filters.shipName}`);
+    filtersApplied.push(`${t('exportDashboardPDF.filterUnit')}: ${filters.shipName}`);
   }
   if (filters.categoryName && filters.categoryName !== 'all') {
-    filtersApplied.push(`Categoria: ${filters.categoryName}`);
+    filtersApplied.push(`${t('exportDashboardPDF.filterCategory')}: ${filters.categoryName}`);
   }
   if (filters.startDate && filters.endDate) {
-    filtersApplied.push(`Período: ${format(filters.startDate, 'dd/MM/yyyy')} - ${format(filters.endDate, 'dd/MM/yyyy')}`);
+    filtersApplied.push(`${t('exportDashboardPDF.filterPeriod')}: ${format(filters.startDate, 'dd/MM/yyyy')} - ${format(filters.endDate, 'dd/MM/yyyy')}`);
   }
   
-  const generatedDate = format(new Date(), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR });
+  const generatedDate = format(new Date(), "dd/MM/yyyy HH:mm", { locale: dateLocale });
   
   // Add standardized header with branding
   let yPos = await addPDFHeader(
     doc,
-    'RELATÓRIO GERENCIAL DE EQUIPAMENTOS',
-    `Gerado em: ${generatedDate}`,
+    t('exportDashboardPDF.reportTitle'),
+    `${t('exportDashboardPDF.generatedAt')}: ${generatedDate}`,
     filtersApplied.length > 0 ? [filtersApplied.join(' | ')] : undefined,
     { branding: filters.branding }
   );
   
   // === KPI SECTION ===
-  yPos = addSectionHeader(doc, yPos, 'INDICADORES PRINCIPAIS', SBM_BLUE, pageWidth - 28);
+  yPos = addSectionHeader(doc, yPos, t('exportDashboardPDF.mainIndicators'), SBM_BLUE, pageWidth - 28);
   yPos += 4;
   
   // KPI Cards - 2 rows
   const kpiWidth = (pageWidth - 70) / 5;
   const kpis = [
-    { label: 'Total Equipamentos', value: stats.totalEquipment.toString(), color: SBM_BLUE },
-    { label: 'Ativos', value: stats.activeEquipment.toString(), color: SUCCESS_GREEN },
-    { label: 'Cert. Vencidos', value: stats.expiredCertificates.toString(), color: DANGER_RED },
-    { label: 'Status Vencido', value: stats.expiredEquipment.toString(), color: DANGER_RED },
-    { label: 'Insp. Pendentes', value: stats.pendingInspections.toString(), color: WARNING_YELLOW },
+    { label: t('exportDashboardPDF.totalEquipment'), value: stats.totalEquipment.toString(), color: SBM_BLUE },
+    { label: t('exportDashboardPDF.activeEquipment'), value: stats.activeEquipment.toString(), color: SUCCESS_GREEN },
+    { label: t('exportDashboardPDF.expiredCertificates'), value: stats.expiredCertificates.toString(), color: DANGER_RED },
+    { label: t('exportDashboardPDF.expiredStatus'), value: stats.expiredEquipment.toString(), color: DANGER_RED },
+    { label: t('exportDashboardPDF.pendingInspections'), value: stats.pendingInspections.toString(), color: WARNING_YELLOW },
   ];
   
   const kpisRow2 = [
-    { label: 'Conformidade', value: `${stats.complianceRate}%`, color: SBM_BLUE },
-    { label: 'Manut. Pendentes', value: stats.pendingMaintenance.toString(), color: WARNING_YELLOW },
-    { label: 'Manut. Atrasadas', value: stats.overdueMaintenance.toString(), color: DANGER_RED },
-    { label: 'Manut. em Exec.', value: stats.inProgressMaintenance.toString(), color: SBM_BLUE },
+    { label: t('exportDashboardPDF.compliance'), value: `${stats.complianceRate}%`, color: SBM_BLUE },
+    { label: t('exportDashboardPDF.pendingMaintenance'), value: stats.pendingMaintenance.toString(), color: WARNING_YELLOW },
+    { label: t('exportDashboardPDF.overdueMaintenance'), value: stats.overdueMaintenance.toString(), color: DANGER_RED },
+    { label: t('exportDashboardPDF.inProgressMaintenance'), value: stats.inProgressMaintenance.toString(), color: SBM_BLUE },
   ];
   
   kpis.forEach((kpi, index) => {
@@ -147,7 +154,7 @@ export async function exportDashboardPDF(stats: DashboardStats, filters: ExportF
   const colWidth = (pageWidth - 42) / 2;
   
   // Left column: Status Table
-  addSectionHeader(doc, yPos, 'DISTRIBUIÇÃO POR STATUS', SBM_BLUE, colWidth);
+  addSectionHeader(doc, yPos, t('exportDashboardPDF.statusDistribution'), SBM_BLUE, colWidth);
   
   const statusData = stats.byStatus
     .filter(s => s.count > 0)
@@ -159,7 +166,7 @@ export async function exportDashboardPDF(stats: DashboardStats, filters: ExportF
   
   autoTable(doc, {
     startY: yPos + 10,
-    head: [['Status', 'Quantidade', 'Percentual']],
+    head: [[t('exportDashboardPDF.tableStatus'), t('exportDashboardPDF.tableQuantity'), t('exportDashboardPDF.tablePercentage')]],
     body: statusData,
     theme: 'striped',
     headStyles: { 
@@ -180,7 +187,7 @@ export async function exportDashboardPDF(stats: DashboardStats, filters: ExportF
   });
   
   // Right column: Category Table
-  addSectionHeader(doc, yPos, 'CONFORMIDADE POR CATEGORIA', SBM_BLUE, colWidth);
+  addSectionHeader(doc, yPos, t('exportDashboardPDF.categoryCompliance'), SBM_BLUE, colWidth);
   
   if (stats.byCategory.length > 0) {
     const categoryData = stats.byCategory.map(c => [
@@ -193,7 +200,7 @@ export async function exportDashboardPDF(stats: DashboardStats, filters: ExportF
     
     autoTable(doc, {
       startY: yPos + 10,
-      head: [['Categoria', 'Total', 'Conforme', 'N/C', 'Taxa']],
+      head: [[t('exportDashboardPDF.tableCategory'), t('exportDashboardPDF.tableTotal'), t('exportDashboardPDF.tableCompliant'), t('exportDashboardPDF.tableNC'), t('exportDashboardPDF.tableRate')]],
       body: categoryData,
       theme: 'striped',
       headStyles: { 
@@ -222,10 +229,10 @@ export async function exportDashboardPDF(stats: DashboardStats, filters: ExportF
   
   // Alerts Section - Full width
   if (stats.recentAlerts.length > 0 && yPos < pageHeight - 50) {
-    addSectionHeader(doc, yPos, 'ALERTAS PRIORITÁRIOS', DANGER_RED, pageWidth - 28);
+    addSectionHeader(doc, yPos, t('exportDashboardPDF.priorityAlerts'), DANGER_RED, pageWidth - 28);
     
     const alertData = stats.recentAlerts.slice(0, 8).map(a => {
-      const severityLabel = a.severity === 'high' ? 'Alta' : a.severity === 'medium' ? 'Média' : 'Baixa';
+      const severityLabel = a.severity === 'high' ? t('exportDashboardPDF.severityHigh') : a.severity === 'medium' ? t('exportDashboardPDF.severityMedium') : t('exportDashboardPDF.severityLow');
       const severityColor: [number, number, number] = a.severity === 'high' 
         ? DANGER_RED 
         : a.severity === 'medium' 
@@ -242,7 +249,7 @@ export async function exportDashboardPDF(stats: DashboardStats, filters: ExportF
     
     autoTable(doc, {
       startY: yPos + 10,
-      head: [['Descrição do Alerta', 'Equipamento', 'Data', 'Prioridade']],
+      head: [[t('exportDashboardPDF.alertDescription'), t('exportDashboardPDF.alertEquipment'), t('exportDashboardPDF.alertDate'), t('exportDashboardPDF.alertPriority')]],
       body: alertData,
       theme: 'striped',
       headStyles: { 
@@ -266,11 +273,11 @@ export async function exportDashboardPDF(stats: DashboardStats, filters: ExportF
   // Add standardized footer
   addPDFFooter(
     doc,
-    'SBM Offshore - Sistema de Gestão de Equipamentos de Segurança',
-    `Relatório Gerencial - ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`
+    filters.branding?.name || t('exportDashboardPDF.footerCompany'),
+    `${t('exportDashboardPDF.reportTitle')} - ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: dateLocale })}`
   );
   
   // Save
-  const fileName = `SBM_Relatorio_Gerencial_${format(new Date(), 'yyyy-MM-dd-HHmm')}.pdf`;
+  const fileName = `${t('exportDashboardPDF.filePrefix')}_${format(new Date(), 'yyyy-MM-dd-HHmm')}.pdf`;
   doc.save(fileName);
 }

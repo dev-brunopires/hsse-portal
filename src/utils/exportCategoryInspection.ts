@@ -311,7 +311,7 @@ export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFDat
   // Footer
   addPDFFooter(
     doc, 
-    `SafeShip © ${new Date().getFullYear()}`,
+    data.branding?.name || `SafeShip © ${new Date().getFullYear()}`,
     `${t('exportCategoryInspection.categoryInspection')} - ${data.category.name}`
   );
 
