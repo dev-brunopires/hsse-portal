@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useState, useMemo } from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
-
 export interface Organization {
   id: string;
   name: string;
@@ -24,42 +24,45 @@ interface OrganizationContextType {
 
 const OrganizationContext = createContext<OrganizationContextType | undefined>(undefined);
 
-// Helper to extract subdomain from hostname - memoize at module level
-const getSubdomainFromHostname = (): string | null => {
+// Helper to extract organization subdomain.
+// In preview/staging environments we use the `?org=` query param.
+const getSubdomainFromHostname = (search: string): string | null => {
   if (typeof window === 'undefined') return null;
-  
+
   const hostname = window.location.hostname;
-  
+  const params = new URLSearchParams(search);
+
   // For localhost development, use query parameter
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    const params = new URLSearchParams(window.location.search);
     return params.get('org') || null;
   }
-  
-  // For preview/staging domains (e.g., xxx.lovable.app)
-  if (hostname.endsWith('.lovable.app') || hostname.endsWith('.vercel.app') || hostname.endsWith('.lovableproject.com')) {
-    const params = new URLSearchParams(window.location.search);
+
+  // For preview/staging domains
+  if (
+    hostname.endsWith('.lovable.app') ||
+    hostname.endsWith('.vercel.app') ||
+    hostname.endsWith('.lovableproject.com')
+  ) {
     return params.get('org') || null;
   }
-  
+
   // For production domains like sbmoffshore.safeship.app
   const parts = hostname.split('.');
   if (parts.length >= 3) {
-    return parts[0]; // First part is the subdomain
+    return parts[0] || null;
   }
-  
+
   // Single domain or www - try to get from query param
-  const params = new URLSearchParams(window.location.search);
   return params.get('org') || null;
 };
 
 export function OrganizationProvider({ children }: { children: React.ReactNode }) {
   // Reuse isPlatformOwner from AuthContext to avoid duplicate query
   const { user, isPlatformOwner, loading: authLoading } = useAuth();
-  
-  // Calculate subdomain on each render to handle URL changes
-  const subdomain = useMemo(() => getSubdomainFromHostname(), []);
+  const location = useLocation();
 
+  // Recompute subdomain whenever URL query changes (SPA navigation)
+  const subdomain = useMemo(() => getSubdomainFromHostname(location.search), [location.search]);
   // Get org from subdomain (for login page)
   const { data: orgFromSubdomain, isLoading: isLoadingSubdomain } = useQuery({
     queryKey: ['organization', 'subdomain', subdomain],
