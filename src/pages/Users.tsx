@@ -431,7 +431,7 @@ export default function Users() {
           <div className="flex justify-end">
             <Button className="gap-2" onClick={handleNewShip}>
               <Plus className="h-4 w-4" />
-              {t('dialogs.newShip')}
+              {t('ships.newShip')}
             </Button>
           </div>
 
@@ -444,7 +444,7 @@ export default function Users() {
                     {t('usersPage.registeredShips')}
                   </CardTitle>
                   <CardDescription>
-                    {t('dialogs.manageShips')}
+                    {t('usersPage.allSystemShips')}
                   </CardDescription>
                 </div>
                 <div className="relative w-full sm:w-64">
@@ -467,18 +467,18 @@ export default function Users() {
                 <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                   <Ship className="h-16 w-16 mb-4" />
                   <p className="text-lg font-medium">{t('usersPage.noShipRegistered')}</p>
-                  <p className="text-sm mb-4">{t('dialogs.manageShips')}</p>
+                  <p className="text-sm mb-4">{t('usersPage.allSystemShips')}</p>
                   <Button onClick={handleNewShip} className="gap-2">
                     <Plus className="h-4 w-4" />
-                    {t('dialogs.newShip')}
+                    {t('ships.newShip')}
                   </Button>
                 </div>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>{t('dialogs.shipName')}</TableHead>
-                      <TableHead>{t('dialogs.code')}</TableHead>
+                      <TableHead>{t('ships.shipName')}</TableHead>
+                      <TableHead>{t('ships.shipCode')}</TableHead>
                       <TableHead>{t('common.description')}</TableHead>
                       <TableHead>{t('usersPage.usersTab')}</TableHead>
                       <TableHead>{t('usersPage.registration')}</TableHead>
