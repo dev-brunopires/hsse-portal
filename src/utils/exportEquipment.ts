@@ -171,9 +171,10 @@ export async function exportToPDF(
   });
 
   // Add standardized footer with organization name
+  const companyName = branding?.name || 'SafeShip';
   addPDFFooter(
     doc,
-    branding?.name || t('exportEquipment.footerCompany'),
+    t('exportEquipment.footerCompany', { companyName }),
     `${t('exportEquipment.reportTitle')} - ${format(new Date(), 'dd/MM/yyyy HH:mm')}`
   );
 
