@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import confetti from 'canvas-confetti';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -170,10 +171,39 @@ export function InspectionFormDialog({
     }
   }, [open, equipment, defaultTemplate, templateLoading, form, user, userSignatureSettings, t]);
 
+  const hasTriggeredConfetti = useRef(false);
+
   const updateChecklistItem = (itemId: string, field: 'status' | 'notes', value: string) => {
-    setChecklist(prev => prev.map(item => 
-      item.id === itemId ? { ...item, [field]: value } : item
-    ));
+    setChecklist(prev => {
+      const newChecklist = prev.map(item => 
+        item.id === itemId ? { ...item, [field]: value } : item
+      );
+      
+      // Check if all items are now completed and trigger confetti
+      if (field === 'status') {
+        const completedCount = newChecklist.filter(i => i.status !== 'pending').length;
+        const wasComplete = prev.filter(i => i.status !== 'pending').length === prev.length;
+        
+        if (completedCount === newChecklist.length && !wasComplete && !hasTriggeredConfetti.current) {
+          hasTriggeredConfetti.current = true;
+          // Trigger confetti celebration
+          confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6']
+          });
+          // Reset flag after a short delay to allow re-triggering if user unchecks and rechecks
+          setTimeout(() => {
+            hasTriggeredConfetti.current = false;
+          }, 2000);
+        } else if (completedCount < newChecklist.length) {
+          hasTriggeredConfetti.current = false;
+        }
+      }
+      
+      return newChecklist;
+    });
   };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
