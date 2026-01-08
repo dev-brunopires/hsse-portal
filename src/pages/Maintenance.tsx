@@ -41,10 +41,8 @@ import {
 import { PageHeader } from '@/components/layout/PageHeader';
 import { cn } from '@/lib/utils';
 import { formatDate } from '@/utils/dateFormat';
-import { 
-  useMaintenanceRequests, 
-  useMaintenanceStats,
-  type MaintenanceStatus,
+import {
+  useMaintenanceRequests,
   type MaintenanceRequestWithDetails,
 } from '@/hooks/useMaintenanceRequests';
 import { MaintenanceRequestDialog } from '@/components/maintenance/MaintenanceRequestDialog';
@@ -79,7 +77,7 @@ export default function Maintenance() {
   const statusConfig = getStatusConfig(t);
   const priorityConfig = getPriorityConfig(t);
   const typeLabels = getTypeLabels(t);
-  
+
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
@@ -89,10 +87,41 @@ export default function Maintenance() {
   const [activeTab, setActiveTab] = useState('all');
 
   const { data: requests = [], isLoading } = useMaintenanceRequests();
-  const { data: stats } = useMaintenanceStats();
   const { role } = useAuth();
   const branding = useOrganizationBranding();
   const [isExporting, setIsExporting] = useState(false);
+
+  // Derive stats from the same dataset rendered in the list to avoid badge/card mismatch.
+  const stats = useMemo(() => {
+    const acc = {
+      total: requests.length,
+      pending: 0,
+      approved: 0,
+      inProgress: 0,
+      completed: 0,
+      rejected: 0,
+      preventive: 0,
+      corrective: 0,
+      critical: 0,
+      high: 0,
+    };
+
+    for (const r of requests) {
+      if (r.status === 'pending') acc.pending += 1;
+      else if (r.status === 'approved') acc.approved += 1;
+      else if (r.status === 'in_progress') acc.inProgress += 1;
+      else if (r.status === 'completed') acc.completed += 1;
+      else if (r.status === 'rejected') acc.rejected += 1;
+
+      if (r.type === 'preventive') acc.preventive += 1;
+      else if (r.type === 'corrective') acc.corrective += 1;
+
+      if (r.priority === 'critical') acc.critical += 1;
+      else if (r.priority === 'high') acc.high += 1;
+    }
+
+    return acc;
+  }, [requests]);
 
   const isAdmin = role === 'admin' || (role as string) === 'admin_master';
   const canCreate = isAdmin || role === 'technician' || (role as string) === 'supervisor';
@@ -232,26 +261,26 @@ export default function Maintenance() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard 
             title={t('maintenance.pending')} 
-            value={stats?.pending || 0} 
+            value={stats.pending} 
             icon={Clock} 
             color="text-amber-600"
             description={t('maintenance.awaitingApproval')}
           />
           <StatCard 
             title={t('maintenance.inProgress')} 
-            value={stats?.inProgress || 0} 
+            value={stats.inProgress} 
             icon={Play} 
             color="text-primary"
           />
           <StatCard 
             title={t('maintenance.completed')} 
-            value={stats?.completed || 0} 
+            value={stats.completed} 
             icon={CheckCircle2} 
             color="text-green-600"
           />
           <StatCard 
             title={t('maintenance.critical')} 
-            value={stats?.critical || 0} 
+            value={stats.critical} 
             icon={AlertTriangle} 
             color="text-red-600"
             description={t('maintenance.highPriority')}
@@ -305,15 +334,15 @@ export default function Maintenance() {
             </TabsTrigger>
             <TabsTrigger value="pending" className="gap-2">
               {t('maintenance.pending')}
-              <Badge variant="secondary" className="ml-1">{(stats?.pending || 0) + (stats?.approved || 0)}</Badge>
+              <Badge variant="secondary" className="ml-1">{stats.pending + stats.approved}</Badge>
             </TabsTrigger>
             <TabsTrigger value="in_progress" className="gap-2">
               {t('maintenance.inProgress')}
-              <Badge variant="secondary" className="ml-1">{stats?.inProgress || 0}</Badge>
+              <Badge variant="secondary" className="ml-1">{stats.inProgress}</Badge>
             </TabsTrigger>
             <TabsTrigger value="completed" className="gap-2">
               {t('maintenance.completed')}
-              <Badge variant="secondary" className="ml-1">{stats?.completed || 0}</Badge>
+              <Badge variant="secondary" className="ml-1">{stats.completed}</Badge>
             </TabsTrigger>
           </TabsList>
 
