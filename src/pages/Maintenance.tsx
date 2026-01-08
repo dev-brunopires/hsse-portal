@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -52,6 +52,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useOrganizationBranding } from '@/hooks/useOrganizationBranding';
 import { exportMaintenanceToPDF, exportMaintenanceToExcel } from '@/utils/exportMaintenance';
 import { toast } from 'sonner';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { PullToRefreshIndicator } from '@/components/ui/PullToRefreshIndicator';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const getStatusConfig = (t: (key: string) => string) => ({
   pending: { label: t('maintenance.statusPending'), icon: Clock, color: 'text-amber-600', bgColor: 'bg-amber-50 dark:bg-amber-950/30' },
@@ -90,9 +93,18 @@ export default function Maintenance() {
   const { data: requests = [], isLoading, isFetching, refetch } = useMaintenanceRequests();
   const { role } = useAuth();
   const branding = useOrganizationBranding();
+  const isMobile = useIsMobile();
   const [isExporting, setIsExporting] = useState(false);
   
   const isSyncing = isFetching && !isLoading;
+  
+  const handleRefresh = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
+
+  const { pullDistance, isRefreshing, containerRef } = usePullToRefresh({
+    onRefresh: handleRefresh,
+  });
 
   // Derive stats from the same dataset rendered in the list to avoid badge/card mismatch.
   const stats = useMemo(() => {
@@ -369,35 +381,43 @@ export default function Maintenance() {
           </TabsList>
 
           <TabsContent value={activeTab} className="mt-4">
-            {isLoading ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map(i => (
-                  <Skeleton key={i} className="h-24 w-full" />
-                ))}
-              </div>
-            ) : filteredRequests.length === 0 ? (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <Wrench className="h-12 w-12 text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground text-center">
-                    {searchTerm || statusFilter !== 'all' || typeFilter !== 'all'
-                      ? t('maintenance.noRequestsFiltered')
-                      : t('maintenance.noRequests')}
-                  </p>
-                  {canCreate && !searchTerm && statusFilter === 'all' && typeFilter === 'all' && (
-                    <Button onClick={() => setCreateDialogOpen(true)} className="mt-4 gap-2">
-                      <Plus className="h-4 w-4" />
-                      {t('maintenance.createRequest')}
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-3">
-                {filteredRequests.map(request => {
-                  const status = statusConfig[request.status];
-                  const priority = priorityConfig[request.priority];
-                  const StatusIcon = status.icon;
+            <div 
+              ref={isMobile ? containerRef : undefined}
+              className="md:overflow-visible overflow-auto"
+            >
+              <PullToRefreshIndicator 
+                pullDistance={pullDistance} 
+                isRefreshing={isRefreshing} 
+              />
+              {isLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map(i => (
+                    <Skeleton key={i} className="h-24 w-full" />
+                  ))}
+                </div>
+              ) : filteredRequests.length === 0 ? (
+                <Card>
+                  <CardContent className="flex flex-col items-center justify-center py-12">
+                    <Wrench className="h-12 w-12 text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground text-center">
+                      {searchTerm || statusFilter !== 'all' || typeFilter !== 'all'
+                        ? t('maintenance.noRequestsFiltered')
+                        : t('maintenance.noRequests')}
+                    </p>
+                    {canCreate && !searchTerm && statusFilter === 'all' && typeFilter === 'all' && (
+                      <Button onClick={() => setCreateDialogOpen(true)} className="mt-4 gap-2">
+                        <Plus className="h-4 w-4" />
+                        {t('maintenance.createRequest')}
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-3">
+                  {filteredRequests.map(request => {
+                    const status = statusConfig[request.status];
+                    const priority = priorityConfig[request.priority];
+                    const StatusIcon = status.icon;
 
                   return (
                     <Card 
@@ -442,7 +462,8 @@ export default function Maintenance() {
                   );
                 })}
               </div>
-            )}
+              )}
+            </div>
           </TabsContent>
         </Tabs>
       {/* Dialogs */}
