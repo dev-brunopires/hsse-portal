@@ -2227,7 +2227,17 @@
     "code": "Código",
     "syncNow": "Sincronizar Agora",
     "syncFailed": "Falha na Sincronização",
-    "syncFailedDesc": "{{count}} inspeção(ões) não puderam ser sincronizadas."
+    "syncFailedDesc": "{{count}} inspeção(ões) não puderam ser sincronizadas.",
+    "noPendingActions": "Nenhuma ação pendente para sincronizar",
+    "refreshingCache": "Atualizando cache offline...",
+    "cacheRefreshed": "Cache offline atualizado",
+    "pendingCleared": "Ações pendentes removidas",
+    "clearPendingTitle": "Limpar Ações Pendentes?",
+    "clearPendingDescription": "Isso excluirá permanentemente todas as inspeções pendentes que não foram sincronizadas. Esta ação não pode ser desfeita.",
+    "syncStatus": "Status de Sincronização",
+    "online": "Online",
+    "pending": "Pendente",
+    "lastSync": "Última sync"
   },
   "pwa": {
     "installTitle": "Instalar SafeShip",
