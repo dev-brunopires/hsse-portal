@@ -93,7 +93,7 @@ export function PreInspectionWarningDialog({
             </div>
           </AlertDialogTitle>
           <AlertDialogDescription className="text-base">
-            {t('equipment.table.equipment')} <strong className="text-foreground">{equipment.internal_code} - {equipment.name}</strong> {t('preInspectionWarning.hasPendingIssues')}
+            {t('inspectionForm.equipment')} <strong className="text-foreground">{equipment.internal_code} - {equipment.name}</strong> {t('preInspectionWarning.hasPendingIssues')}
           </AlertDialogDescription>
         </AlertDialogHeader>
 
