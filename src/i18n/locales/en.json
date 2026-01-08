@@ -1340,6 +1340,13 @@
     "noRecommendations": "No pending recommendations"
   },
   "inspectionForm": {
+    "defaultChecklist": {
+      "accessible": "Equipment is accessible and unobstructed",
+      "labelVisible": "Identification/label is legible and visible",
+      "noCorrosion": "No signs of corrosion or external damage",
+      "sealIntact": "Safety seal is intact",
+      "validDate": "Expiry date is within valid range"
+    },
     "registerInspection": "Register Inspection",
     "newInspection": "New Inspection",
     "newInspectionDescription": "Fill in the data to register a new inspection",

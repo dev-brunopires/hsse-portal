@@ -1340,6 +1340,13 @@
     "noRecommendations": "Nenhuma recomendação pendente"
   },
   "inspectionForm": {
+    "defaultChecklist": {
+      "accessible": "Equipamento está acessível e desobstruído",
+      "labelVisible": "Identificação/etiqueta legível e visível",
+      "noCorrosion": "Sem sinais de corrosão ou danos externos",
+      "sealIntact": "Lacre de segurança íntegro",
+      "validDate": "Data de validade dentro do prazo"
+    },
     "registerInspection": "Registrar Inspeção",
     "newInspection": "Nova Inspeção",
     "newInspectionDescription": "Preencha os dados para registrar uma nova inspeção",
