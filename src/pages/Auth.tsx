@@ -22,8 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { SystemLogo } from '@/components/ui/SystemLogo';
 import { getOrganizationUrl } from '@/utils/organizationUrl';
-import loginBg from '@/assets/login-bg.jpg';
-
+import loginBg from '@/assets/login-bg-v2.jpg';
 const REMEMBER_EMAIL_KEY = 'safeship_remembered_email';
 
 export default function Auth() {
