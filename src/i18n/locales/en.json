@@ -1143,7 +1143,9 @@
     "confirmDeleteCategory": "Are you sure you want to delete the category \"{{name}}\"? This action cannot be undone.",
     "deleting": "Deleting...",
     "frequency": "Frequency",
-    "equipmentCount": "Equipment"
+    "equipmentCount": "Equipment",
+    "checklistItems": "Checklist",
+    "manageChecklist": "Manage inspection checklist"
   },
   "categoryForm": {
     "newCategory": "New Category",
@@ -2610,9 +2612,5 @@
     "defaultTemplateName": "Default Checklist",
     "duplicate": "Duplicate template",
     "copy": "Copy"
-  },
-  "categoriesPage": {
-    "checklistItems": "Checklist",
-    "manageChecklist": "Manage inspection checklist"
   }
 }
