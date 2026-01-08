@@ -393,23 +393,47 @@ export default function Reports() {
       `${t('reports.total')}: ${nonConformities.length}`
     );
 
-    const tableData = nonConformities.map(item => [
-      format(new Date(item.inspection_date), 'dd/MM/yyyy', { locale: dateLocale }),
-      item.equipment?.name || '—',
-      item.equipment?.internal_code || '—',
-      item.profiles?.full_name || '—',
-      item.status === 'attention' ? t('reports.attention') : t('reports.nonCompliant'),
-      item.observations?.substring(0, 40) || '—',
-      item.recommendations?.substring(0, 40) || '—',
-    ]);
+    const tableData = nonConformities.map(item => {
+      // Find full equipment data to check alerts
+      const fullEquipment = equipment.find(e => e.id === item.equipment_id);
+      const alertIndicators: string[] = [];
+      
+      if (fullEquipment) {
+        const today = new Date().toISOString().split('T')[0];
+        if (fullEquipment.certificate_expiry && fullEquipment.certificate_expiry < today) {
+          alertIndicators.push(t('alerts.reportCertExpired'));
+        }
+        if (fullEquipment.expiry_date && fullEquipment.expiry_date < today) {
+          alertIndicators.push(t('alerts.reportEquipExpired'));
+        }
+        if (fullEquipment.next_inspection && fullEquipment.next_inspection < today) {
+          alertIndicators.push(t('alerts.reportInspOverdue'));
+        }
+      }
+      
+      const alertsText = alertIndicators.length > 0 ? alertIndicators.join(' ') : '—';
+      
+      return [
+        format(new Date(item.inspection_date), 'dd/MM/yyyy', { locale: dateLocale }),
+        item.equipment?.name || '—',
+        item.equipment?.internal_code || '—',
+        item.profiles?.full_name || '—',
+        item.status === 'attention' ? t('reports.attention') : t('reports.nonCompliant'),
+        alertsText,
+        item.observations?.substring(0, 35) || '—',
+      ];
+    });
 
     autoTable(doc, {
       startY: startY,
-      head: [[t('reports.date'), t('reports.equipment'), t('reports.code'), t('reports.inspector'), t('reports.status'), t('reports.observations'), t('inspections.recommendations')]],
+      head: [[t('reports.date'), t('reports.equipment'), t('reports.code'), t('reports.inspector'), t('reports.status'), t('reports.equipmentAlerts'), t('reports.observations')]],
       body: tableData,
       styles: { fontSize: 8 },
       headStyles: { fillColor: [234, 88, 12] },
       alternateRowStyles: { fillColor: [255, 247, 237] },
+      columnStyles: {
+        5: { cellWidth: 35 } // Alerts column
+      }
     });
 
     const finalY = (doc as any).lastAutoTable?.finalY || startY + 50;
@@ -440,16 +464,36 @@ export default function Reports() {
       return;
     }
 
-    const data = nonConformities.map(item => ({
-      [t('reports.date')]: format(new Date(item.inspection_date), 'dd/MM/yyyy', { locale: dateLocale }),
-      [t('reports.equipment')]: item.equipment?.name || '—',
-      [t('reports.code')]: item.equipment?.internal_code || '—',
-      [t('reports.inspector')]: item.profiles?.full_name || '—',
-      [t('reports.status')]: item.status === 'attention' ? t('reports.attention') : t('reports.nonCompliant'),
-      [t('reports.observations')]: item.observations || '—',
-      [t('inspections.recommendations')]: item.recommendations || '—',
-      [t('inspections.actionsTaken')]: item.actions_taken || '—',
-    }));
+    const data = nonConformities.map(item => {
+      // Find full equipment data to check alerts
+      const fullEquipment = equipment.find(e => e.id === item.equipment_id);
+      const alertIndicators: string[] = [];
+      
+      if (fullEquipment) {
+        const today = new Date().toISOString().split('T')[0];
+        if (fullEquipment.certificate_expiry && fullEquipment.certificate_expiry < today) {
+          alertIndicators.push(t('alerts.reportCertExpired'));
+        }
+        if (fullEquipment.expiry_date && fullEquipment.expiry_date < today) {
+          alertIndicators.push(t('alerts.reportEquipExpired'));
+        }
+        if (fullEquipment.next_inspection && fullEquipment.next_inspection < today) {
+          alertIndicators.push(t('alerts.reportInspOverdue'));
+        }
+      }
+      
+      return {
+        [t('reports.date')]: format(new Date(item.inspection_date), 'dd/MM/yyyy', { locale: dateLocale }),
+        [t('reports.equipment')]: item.equipment?.name || '—',
+        [t('reports.code')]: item.equipment?.internal_code || '—',
+        [t('reports.inspector')]: item.profiles?.full_name || '—',
+        [t('reports.status')]: item.status === 'attention' ? t('reports.attention') : t('reports.nonCompliant'),
+        [t('reports.equipmentAlerts')]: alertIndicators.length > 0 ? alertIndicators.join(' | ') : '—',
+        [t('reports.observations')]: item.observations || '—',
+        [t('inspections.recommendations')]: item.recommendations || '—',
+        [t('inspections.actionsTaken')]: item.actions_taken || '—',
+      };
+    });
 
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
