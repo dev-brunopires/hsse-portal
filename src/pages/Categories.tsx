@@ -7,6 +7,7 @@ import {
   Trash2, 
   Loader2,
   Search,
+  ListChecks,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,11 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -33,7 +39,9 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useCategories, useDeleteCategory, type Category } from '@/hooks/useCategories';
 import { useEquipment } from '@/hooks/useEquipment';
+import { useChecklistTemplates } from '@/hooks/useChecklistTemplates';
 import { CategoryFormDialog } from '@/components/categories/CategoryFormDialog';
+import { ChecklistTemplatesDialog } from '@/components/categories/ChecklistTemplatesDialog';
 import { getCategoryIcon } from '@/utils/categoryIcons';
 
 const frequencyColors: Record<string, string> = {
@@ -50,12 +58,16 @@ export default function Categories() {
   const { data: equipment } = useEquipment();
   const deleteCategory = useDeleteCategory();
   
+  const { data: allTemplates } = useChecklistTemplates();
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+  const [templatesDialogOpen, setTemplatesDialogOpen] = useState(false);
+  const [categoryForTemplates, setCategoryForTemplates] = useState<Category | null>(null);
 
   const frequencyLabels: Record<string, string> = {
     monthly: t('categories.frequencyMonthly'),
@@ -72,6 +84,16 @@ export default function Categories() {
 
   const getEquipmentCount = (categoryId: string) => {
     return equipment?.filter(e => e.category_id === categoryId).length || 0;
+  };
+
+  const getChecklistItemsCount = (categoryId: string) => {
+    const template = allTemplates?.find(t => t.category_id === categoryId && t.is_default);
+    return template?.items?.length || 0;
+  };
+
+  const handleOpenTemplates = (category: Category) => {
+    setCategoryForTemplates(category);
+    setTemplatesDialogOpen(true);
   };
 
   const handleCreate = () => {
@@ -172,14 +194,16 @@ export default function Categories() {
                     <TableHead>{t('common.name')}</TableHead>
                     <TableHead className="hidden md:table-cell">{t('common.description')}</TableHead>
                     <TableHead>{t('categoriesPage.frequency')}</TableHead>
+                    <TableHead className="text-center hidden sm:table-cell">{t('categoriesPage.checklistItems')}</TableHead>
                     <TableHead className="text-center">{t('categoriesPage.equipmentCount')}</TableHead>
-                    <TableHead className="w-24">{t('common.actions')}</TableHead>
+                    <TableHead className="w-32">{t('common.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredCategories.map((category) => {
                     const IconComponent = getCategoryIcon(category.icon);
                     const equipmentCount = getEquipmentCount(category.id);
+                    const checklistCount = getChecklistItemsCount(category.id);
                     
                     return (
                       <TableRow key={category.id} className="group">
@@ -200,11 +224,31 @@ export default function Categories() {
                             {frequencyLabels[category.inspection_frequency] || category.inspection_frequency}
                           </Badge>
                         </TableCell>
+                        <TableCell className="text-center hidden sm:table-cell">
+                          <Badge 
+                            variant={checklistCount > 0 ? "default" : "outline"} 
+                            className={checklistCount === 0 ? "text-muted-foreground" : ""}
+                          >
+                            {checklistCount}
+                          </Badge>
+                        </TableCell>
                         <TableCell className="text-center">
                           <Badge variant="secondary">{equipmentCount}</Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleOpenTemplates(category)}
+                                >
+                                  <ListChecks className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>{t('categoriesPage.manageChecklist')}</TooltipContent>
+                            </Tooltip>
                             <Button
                               variant="ghost"
                               size="icon"
@@ -240,6 +284,15 @@ export default function Categories() {
         mode={formMode}
         category={selectedCategory}
       />
+
+      {/* Checklist Templates Dialog */}
+      {categoryForTemplates && (
+        <ChecklistTemplatesDialog
+          open={templatesDialogOpen}
+          onOpenChange={setTemplatesDialogOpen}
+          category={categoryForTemplates}
+        />
+      )}
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

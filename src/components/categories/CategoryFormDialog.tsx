@@ -29,9 +29,12 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
 import { Loader2, FolderOpen } from 'lucide-react';
 import { useCreateCategory, useUpdateCategory, type Category } from '@/hooks/useCategories';
+import { useCreateChecklistTemplate, useUpdateChecklistTemplate, useDefaultChecklistTemplate } from '@/hooks/useChecklistTemplates';
 import { categoryIconOptions, getCategoryIcon } from '@/utils/categoryIcons';
+import { ChecklistItemsEditor, type ChecklistItemData } from './ChecklistItemsEditor';
 
 type CategoryFormData = {
   name: string;
@@ -51,6 +54,14 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
   const { t } = useTranslation();
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
+  const createChecklistTemplate = useCreateChecklistTemplate();
+  const updateChecklistTemplate = useUpdateChecklistTemplate();
+  
+  // Fetch existing default template when editing
+  const { data: defaultTemplate } = useDefaultChecklistTemplate(category?.id);
+  
+  // State for checklist items
+  const [checklistItems, setChecklistItems] = useState<ChecklistItemData[]>([]);
 
   const categorySchema = z.object({
     name: z.string().min(2, t('validation.nameMinLength')),
@@ -85,6 +96,16 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
         icon: category.icon || 'package',
         inspection_frequency: category.inspection_frequency,
       });
+      // Load existing checklist items from default template
+      if (defaultTemplate?.items) {
+        setChecklistItems(defaultTemplate.items.map(i => ({
+          id: i.id,
+          description: i.description,
+          is_required: i.is_required,
+        })));
+      } else {
+        setChecklistItems([]);
+      }
     } else if (open && mode === 'create') {
       form.reset({
         name: '',
@@ -92,18 +113,33 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
         icon: 'package',
         inspection_frequency: 'monthly',
       });
+      setChecklistItems([]);
     }
-  }, [open, category, mode, form]);
+  }, [open, category, mode, form, defaultTemplate]);
 
   const onSubmit = async (data: CategoryFormData) => {
     if (mode === 'create') {
-      await createCategory.mutateAsync({
+      // Create category first
+      const newCategory = await createCategory.mutateAsync({
         name: data.name,
         description: data.description || null,
         icon: data.icon,
         inspection_frequency: data.inspection_frequency,
       });
+      
+      // Then create default checklist template if items exist
+      if (checklistItems.length > 0 && newCategory) {
+        await createChecklistTemplate.mutateAsync({
+          template: {
+            category_id: newCategory.id,
+            name: t('checklistTemplates.defaultTemplateName'),
+            is_default: true,
+          },
+          items: checklistItems,
+        });
+      }
     } else if (category) {
+      // Update category
       await updateCategory.mutateAsync({
         id: category.id,
         name: data.name,
@@ -111,17 +147,36 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
         icon: data.icon,
         inspection_frequency: data.inspection_frequency,
       });
+      
+      // Update or create default checklist template
+      if (defaultTemplate) {
+        await updateChecklistTemplate.mutateAsync({
+          id: defaultTemplate.id,
+          template: {},
+          items: checklistItems,
+        });
+      } else if (checklistItems.length > 0) {
+        await createChecklistTemplate.mutateAsync({
+          template: {
+            category_id: category.id,
+            name: t('checklistTemplates.defaultTemplateName'),
+            is_default: true,
+          },
+          items: checklistItems,
+        });
+      }
     }
     onOpenChange(false);
   };
 
-  const isSubmitting = createCategory.isPending || updateCategory.isPending;
+  const isSubmitting = createCategory.isPending || updateCategory.isPending || 
+    createChecklistTemplate.isPending || updateChecklistTemplate.isPending;
   const selectedIcon = categoryIconOptions.find(i => i.value === form.watch('icon'));
   const IconComponent = selectedIcon?.icon || FolderOpen;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FolderOpen className="h-5 w-5 text-primary" />
@@ -159,7 +214,7 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
                   <FormControl>
                     <Textarea 
                       placeholder={t('categoryForm.descriptionPlaceholder')}
-                      rows={3}
+                      rows={2}
                       {...field} 
                     />
                   </FormControl>
@@ -230,6 +285,14 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
                 )}
               />
             </div>
+
+            <Separator className="my-4" />
+
+            {/* Checklist Items Editor */}
+            <ChecklistItemsEditor
+              items={checklistItems}
+              onChange={setChecklistItems}
+            />
 
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
