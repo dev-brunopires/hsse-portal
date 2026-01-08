@@ -1143,7 +1143,9 @@
     "confirmDeleteCategory": "Tem certeza que deseja excluir a categoria \"{{name}}\"? Esta ação não pode ser desfeita.",
     "deleting": "Excluindo...",
     "frequency": "Frequência",
-    "equipmentCount": "Equipamentos"
+    "equipmentCount": "Equipamentos",
+    "checklistItems": "Checklist",
+    "manageChecklist": "Gerenciar checklist de inspeção"
   },
   "categoryForm": {
     "newCategory": "Nova Categoria",
@@ -2611,9 +2613,5 @@
     "defaultTemplateName": "Checklist Padrão",
     "duplicate": "Duplicar template",
     "copy": "Cópia"
-  },
-  "categoriesPage": {
-    "checklistItems": "Checklist",
-    "manageChecklist": "Gerenciar checklist de inspeção"
   }
 }
