@@ -51,6 +51,7 @@ import { MaintenanceDetailDialog } from '@/components/maintenance/MaintenanceDet
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganizationBranding } from '@/hooks/useOrganizationBranding';
 import { exportMaintenanceToPDF, exportMaintenanceToExcel } from '@/utils/exportMaintenance';
+import { formatMaintenanceId } from '@/utils/formatId';
 import { toast } from 'sonner';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { PullToRefreshIndicator } from '@/components/ui/PullToRefreshIndicator';
@@ -433,6 +434,9 @@ export default function Maintenance() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-xs font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                                  {formatMaintenanceId(request.id)}
+                                </span>
                                 <h3 className="font-medium truncate">{request.title}</h3>
                                 <Badge variant="outline" className={priority.color}>
                                   {priority.label}
