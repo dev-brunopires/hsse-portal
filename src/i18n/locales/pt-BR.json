@@ -1655,7 +1655,8 @@
       "pendenciesHeader": "Pendências",
       "recommendationsHeader": "Recomendações",
       "page": "Página",
-      "of": "de"
+      "of": "de",
+      "fileName": "relatorio_pendencias"
     }
   },
   "qrCode": {

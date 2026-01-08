@@ -36,6 +36,7 @@ import { CardSkeleton, ChartSkeleton, ListSkeleton } from '@/components/ui/table
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { exportDashboardPDF } from '@/utils/exportDashboardPDF';
+import { useOrganizationBranding } from '@/hooks/useOrganizationBranding';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -46,6 +47,7 @@ export default function Dashboard() {
   const { data: stats, isLoading, error, refetch, isFetching } = useDashboardStats();
   const { data: ships = [] } = useShips();
   const { data: categories = [] } = useCategories();
+  const branding = useOrganizationBranding();
   
   
   const [filters, setFilters] = useState<DashboardFiltersState>({
@@ -76,6 +78,7 @@ export default function Dashboard() {
       categoryName: selectedCategoryName,
       startDate: filters.startDate,
       endDate: filters.endDate,
+      branding,
     });
     
     toast.success(t('common.success'));

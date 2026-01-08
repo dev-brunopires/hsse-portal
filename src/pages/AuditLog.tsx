@@ -17,6 +17,7 @@ import { useAuditLogs, AuditLog } from '@/hooks/useAuditLogs';
 import { useShips } from '@/hooks/useShips';
 import { Skeleton } from '@/components/ui/skeleton';
 import { exportAuditLogsPDF, exportAuditLogsExcel } from '@/utils/exportAuditLogs';
+import { useOrganizationBranding } from '@/hooks/useOrganizationBranding';
 import { toast } from 'sonner';
 
 const getActionLabels = (t: (key: string) => string) => ({
@@ -208,6 +209,7 @@ function AuditLogItem({ log }: { log: AuditLog }) {
 export default function AuditLogPage() {
   const { t } = useTranslation();
   const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
+  const branding = useOrganizationBranding();
   
   const [search, setSearch] = useState('');
   const [tableFilter, setTableFilter] = useState<string>('all');
@@ -281,7 +283,7 @@ export default function AuditLogPage() {
         table: tableFilter !== 'all' ? tableFilter : undefined,
         action: actionFilter !== 'all' ? actionFilter : undefined,
       };
-      await exportAuditLogsPDF(filteredLogs, filters);
+      await exportAuditLogsPDF(filteredLogs, filters, branding);
       toast.success(t('auditLogPage.pdfExported'));
     } catch (error) {
       console.error('Error exporting PDF:', error);
