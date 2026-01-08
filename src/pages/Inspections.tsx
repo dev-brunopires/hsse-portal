@@ -67,6 +67,7 @@ import { InspectionCalendar } from '@/components/inspections/InspectionCalendar'
 import { InspectionTimeline } from '@/components/inspections/InspectionTimeline';
 import { CategoryInspectionTab } from '@/components/inspections/CategoryInspectionTab';
 import { exportInspectionsToExcel, exportInspectionsToPDF } from '@/utils/exportInspections';
+import { formatInspectionId } from '@/utils/formatId';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
@@ -536,7 +537,12 @@ export default function Inspections() {
                 >
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <div className="min-w-0 flex-1">
-                      <p className="font-medium truncate">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                          {formatInspectionId(inspection.id)}
+                        </span>
+                      </div>
+                      <p className="font-medium truncate mt-1">
                         {inspection.equipment?.name || t('inspectionsPage.equipmentNotFound')}
                       </p>
                       <p className="text-xs text-muted-foreground font-mono">
@@ -593,6 +599,7 @@ export default function Inspections() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-[100px]">ID</TableHead>
                   <TableHead>{t('inspectionsPage.tableEquipment')}</TableHead>
                   <TableHead>{t('inspectionsPage.tableCode')}</TableHead>
                   <TableHead>{t('inspectionsPage.tableDate')}</TableHead>
@@ -606,6 +613,7 @@ export default function Inspections() {
                 {isLoading ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}>
+                      <TableCell><Skeleton className="h-4 w-20" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-32" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-20" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-24" /></TableCell>
@@ -617,7 +625,7 @@ export default function Inspections() {
                   ))
                 ) : filteredInspections.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                       {searchTerm || hasActiveFilters
                         ? t('inspectionsPage.noInspectionFiltered') 
                         : t('inspectionsPage.noInspectionRegistered')}
@@ -630,6 +638,9 @@ export default function Inspections() {
                       className="cursor-pointer hover:bg-muted/50"
                       onDoubleClick={() => openDetailDialog(inspection)}
                     >
+                      <TableCell className="font-mono text-xs text-primary">
+                        {formatInspectionId(inspection.id)}
+                      </TableCell>
                       <TableCell className="font-medium">
                         {inspection.equipment?.name || t('inspectionsPage.equipmentNotFound')}
                       </TableCell>
