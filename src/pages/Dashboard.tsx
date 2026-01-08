@@ -68,7 +68,7 @@ export default function Dashboard() {
     return categories.find(c => c.id === filters.categoryId)?.name;
   }, [filters.categoryId, categories]);
 
-  const handleExportPDF = async () => {
+  const handleExportPDF = async (preview: boolean = false) => {
     if (!stats) return;
     
     toast.info(t('common.loading'));
@@ -79,9 +79,9 @@ export default function Dashboard() {
       startDate: filters.startDate,
       endDate: filters.endDate,
       branding,
-    });
+    }, { preview });
     
-    toast.success(t('common.success'));
+    toast.success(preview ? t('dashboard.pdfPreviewOpened') : t('common.success'));
   };
 
   const handleRefresh = async () => {
@@ -169,9 +169,18 @@ export default function Dashboard() {
             <span className="hidden sm:inline">{t('common.refresh')}</span>
           </Button>
           <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleExportPDF(true)}
+            className="gap-2"
+          >
+            <Download className="h-4 w-4" />
+            <span className="hidden sm:inline">{t('dashboard.previewPDF')}</span>
+          </Button>
+          <Button
             variant="default"
             size="sm"
-            onClick={handleExportPDF}
+            onClick={() => handleExportPDF(false)}
             className="gap-2"
           >
             <Download className="h-4 w-4" />

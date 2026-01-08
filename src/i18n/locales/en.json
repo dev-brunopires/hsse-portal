@@ -136,6 +136,8 @@
     "target": "Target",
     "updatedAt": "Updated at",
     "exportPDF": "Export PDF",
+    "previewPDF": "Preview PDF",
+    "pdfPreviewOpened": "PDF preview opened in new tab",
     "byCategory": "By Category",
     "byStatus": "By Status",
     "upcomingInspections": "Upcoming Inspections",

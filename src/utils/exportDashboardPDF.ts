@@ -37,7 +37,7 @@ const getStatusLabels = (): Record<string, string> => ({
   inactive: i18n.t('exportDashboardPDF.statusInactive'),
 });
 
-export async function exportDashboardPDF(stats: DashboardStats, filters: ExportFilters) {
+export async function exportDashboardPDF(stats: DashboardStats, filters: ExportFilters, options?: { preview?: boolean }) {
   const t = i18n.t;
   const dateLocale = getDateLocale();
   const statusLabels = getStatusLabels();
@@ -277,7 +277,15 @@ export async function exportDashboardPDF(stats: DashboardStats, filters: ExportF
     `${t('exportDashboardPDF.reportTitle')} - ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: dateLocale })}`
   );
   
-  // Save
+  // Preview or Save
   const fileName = `${t('exportDashboardPDF.filePrefix')}_${format(new Date(), 'yyyy-MM-dd-HHmm')}.pdf`;
-  doc.save(fileName);
+  
+  if (options?.preview) {
+    // Open PDF in new tab for preview
+    const pdfBlob = doc.output('blob');
+    const pdfUrl = URL.createObjectURL(pdfBlob);
+    window.open(pdfUrl, '_blank');
+  } else {
+    doc.save(fileName);
+  }
 }
