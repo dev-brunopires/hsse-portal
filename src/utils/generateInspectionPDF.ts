@@ -17,6 +17,7 @@ import {
 } from './pdfStyles';
 import i18n from '@/i18n';
 import type { OrganizationBranding } from '@/hooks/useOrganizationBranding';
+import { formatInspectionId } from './formatId';
 
 const getDateLocale = () => i18n.language === 'en' ? enUS : ptBR;
 
@@ -161,7 +162,7 @@ export async function generateInspectionPDF(data: InspectionPDFData, options?: {
   
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  doc.text(`${t('generateInspectionPDF.document')}: INS-${data.inspection.id.substring(0, 8).toUpperCase()}`, pageWidth - margin, 24, { align: 'right' });
+  doc.text(`${t('generateInspectionPDF.document')}: ${formatInspectionId(data.inspection.id)}`, pageWidth - margin, 24, { align: 'right' });
   doc.text(`${t('generateInspectionPDF.issued')}: ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: dateLocale })}`, pageWidth - margin, 30, { align: 'right' });
   
   yPos = 42;
@@ -484,7 +485,7 @@ export async function generateInspectionPDF(data: InspectionPDFData, options?: {
   addPDFFooter(
     doc,
     data.branding?.name || t('generateInspectionPDF.footerCompany'),
-    `${t('generateInspectionPDF.document')}: INS-${data.inspection.id.substring(0, 8).toUpperCase()}`
+    `${t('generateInspectionPDF.document')}: ${formatInspectionId(data.inspection.id)}`
   );
 
   // Save or Preview

@@ -7,6 +7,7 @@ import type { MaintenanceRequestWithDetails, MaintenancePhoto } from '@/hooks/us
 import { supabase } from '@/integrations/supabase/client';
 import i18n from '@/i18n';
 import type { OrganizationBranding } from '@/hooks/useOrganizationBranding';
+import { formatMaintenanceId } from './formatId';
 
 interface MaintenanceHistory {
   id: string;
@@ -109,7 +110,7 @@ export async function generateMaintenancePDF(data: MaintenanceDetailData, option
   doc.setTextColor(...DARK_GRAY);
   
   const requestInfo = [
-    [t('generateMaintenancePDF.requestNumber'), data.id.substring(0, 8).toUpperCase()],
+    [t('generateMaintenancePDF.requestNumber'), formatMaintenanceId(data.id)],
     [t('generateMaintenancePDF.type'), labels.type[data.type] || data.type],
     [t('generateMaintenancePDF.priority'), labels.priority[data.priority] || data.priority],
     [t('generateMaintenancePDF.status'), labels.status[data.status] || data.status],
@@ -359,7 +360,7 @@ export async function generateMaintenancePDF(data: MaintenanceDetailData, option
   addPDFFooter(doc, t('generateMaintenancePDF.footerTitle'), t('generateMaintenancePDF.footerSubtitle'));
 
   // Save or Preview
-  const fileName = `${t('generateMaintenancePDF.filePrefix')}_${data.id.substring(0, 8)}_${format(new Date(), 'yyyyMMdd')}.pdf`;
+  const fileName = `${t('generateMaintenancePDF.filePrefix')}_${formatMaintenanceId(data.id).replace('-', '_')}_${format(new Date(), 'yyyyMMdd')}.pdf`;
   
   if (options?.preview) {
     const pdfBlob = doc.output('blob');
