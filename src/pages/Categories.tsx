@@ -174,7 +174,7 @@ export default function Categories() {
             </div>
           </div>
 
-          {/* Table */}
+          {/* Empty State */}
           {filteredCategories.length === 0 ? (
             <div className="text-center py-12">
               <FolderOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -186,93 +186,170 @@ export default function Categories() {
               </p>
             </div>
           ) : (
-            <div className="rounded-lg border border-border overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="w-12"></TableHead>
-                    <TableHead>{t('common.name')}</TableHead>
-                    <TableHead className="hidden md:table-cell">{t('common.description')}</TableHead>
-                    <TableHead>{t('categoriesPage.frequency')}</TableHead>
-                    <TableHead className="text-center hidden sm:table-cell">{t('categoriesPage.checklistItems')}</TableHead>
-                    <TableHead className="text-center">{t('categoriesPage.equipmentCount')}</TableHead>
-                    <TableHead className="w-32">{t('common.actions')}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredCategories.map((category) => {
-                    const IconComponent = getCategoryIcon(category.icon);
-                    const equipmentCount = getEquipmentCount(category.id);
-                    const checklistCount = getChecklistItemsCount(category.id);
-                    
-                    return (
-                      <TableRow key={category.id} className="group">
-                        <TableCell>
-                          <div className="p-2 bg-primary/10 rounded-lg w-fit">
-                            <IconComponent className="h-4 w-4 text-primary" />
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-medium">{category.name}</TableCell>
-                        <TableCell className="hidden md:table-cell text-muted-foreground max-w-xs truncate">
-                          {category.description || '—'}
-                        </TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant="outline" 
-                            className={frequencyColors[category.inspection_frequency] || ''}
-                          >
-                            {frequencyLabels[category.inspection_frequency] || category.inspection_frequency}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-center hidden sm:table-cell">
-                          <Badge 
-                            variant={checklistCount > 0 ? "default" : "outline"} 
-                            className={checklistCount === 0 ? "text-muted-foreground" : ""}
-                          >
-                            {checklistCount}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Badge variant="secondary">{equipmentCount}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleOpenTemplates(category)}
-                                >
-                                  <ListChecks className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>{t('categoriesPage.manageChecklist')}</TooltipContent>
-                            </Tooltip>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleEdit(category)}
+            <>
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-3">
+                {filteredCategories.map((category) => {
+                  const IconComponent = getCategoryIcon(category.icon);
+                  const equipmentCount = getEquipmentCount(category.id);
+                  const checklistCount = getChecklistItemsCount(category.id);
+                  
+                  return (
+                    <div 
+                      key={category.id} 
+                      className="border rounded-lg p-4 bg-card"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg shrink-0">
+                          <IconComponent className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-foreground">{category.name}</h3>
+                          {category.description && (
+                            <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                              {category.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        <Badge 
+                          variant="outline" 
+                          className={frequencyColors[category.inspection_frequency] || ''}
+                        >
+                          {frequencyLabels[category.inspection_frequency] || category.inspection_frequency}
+                        </Badge>
+                        <Badge variant="secondary" className="gap-1">
+                          <ListChecks className="h-3 w-3" />
+                          {checklistCount}
+                        </Badge>
+                        <Badge variant="secondary" className="gap-1">
+                          {equipmentCount} {t('common.equipment')}
+                        </Badge>
+                      </div>
+                      
+                      <div className="flex items-center gap-2 mt-4 pt-3 border-t">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => handleOpenTemplates(category)}
+                        >
+                          <ListChecks className="h-4 w-4 mr-2" />
+                          Checklist
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handleEdit(category)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleDeleteClick(category)}
+                          disabled={equipmentCount > 0}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block rounded-lg border border-border overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="w-12"></TableHead>
+                      <TableHead>{t('common.name')}</TableHead>
+                      <TableHead className="hidden lg:table-cell">{t('common.description')}</TableHead>
+                      <TableHead>{t('categoriesPage.frequency')}</TableHead>
+                      <TableHead className="text-center">{t('categoriesPage.checklistItems')}</TableHead>
+                      <TableHead className="text-center">{t('categoriesPage.equipmentCount')}</TableHead>
+                      <TableHead className="w-32">{t('common.actions')}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredCategories.map((category) => {
+                      const IconComponent = getCategoryIcon(category.icon);
+                      const equipmentCount = getEquipmentCount(category.id);
+                      const checklistCount = getChecklistItemsCount(category.id);
+                      
+                      return (
+                        <TableRow key={category.id}>
+                          <TableCell>
+                            <div className="p-2 bg-primary/10 rounded-lg w-fit">
+                              <IconComponent className="h-4 w-4 text-primary" />
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-medium">{category.name}</TableCell>
+                          <TableCell className="hidden lg:table-cell text-muted-foreground max-w-xs truncate">
+                            {category.description || '—'}
+                          </TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant="outline" 
+                              className={frequencyColors[category.inspection_frequency] || ''}
                             >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-destructive hover:text-destructive"
-                              onClick={() => handleDeleteClick(category)}
-                              disabled={equipmentCount > 0}
+                              {frequencyLabels[category.inspection_frequency] || category.inspection_frequency}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge 
+                              variant={checklistCount > 0 ? "default" : "outline"} 
+                              className={checklistCount === 0 ? "text-muted-foreground" : ""}
                             >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
+                              {checklistCount}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="secondary">{equipmentCount}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleOpenTemplates(category)}
+                                  >
+                                    <ListChecks className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>{t('categoriesPage.manageChecklist')}</TooltipContent>
+                              </Tooltip>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleEdit(category)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => handleDeleteClick(category)}
+                                disabled={equipmentCount > 0}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
