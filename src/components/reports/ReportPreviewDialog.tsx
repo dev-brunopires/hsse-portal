@@ -27,7 +27,7 @@ interface ReportPreviewDialogProps {
   description?: string;
   data: Record<string, any>[];
   columns: Column[];
-  onExportPDF: () => void;
+  onExportPDF: (preview?: boolean) => void;
   onExportExcel: () => void;
   isExporting?: boolean;
   summary?: {
@@ -50,12 +50,21 @@ export function ReportPreviewDialog({
   summary,
 }: ReportPreviewDialogProps) {
   const { t } = useTranslation();
-  const [exporting, setExporting] = useState<'pdf' | 'excel' | null>(null);
+  const [exporting, setExporting] = useState<'pdf' | 'excel' | 'preview' | null>(null);
+
+  const handlePreviewPDF = async () => {
+    setExporting('preview');
+    try {
+      await onExportPDF(true);
+    } finally {
+      setExporting(null);
+    }
+  };
 
   const handleExportPDF = async () => {
     setExporting('pdf');
     try {
-      await onExportPDF();
+      await onExportPDF(false);
     } finally {
       setExporting(null);
     }
@@ -183,6 +192,19 @@ export function ReportPreviewDialog({
               <FileSpreadsheet className="h-4 w-4" />
             )}
             {t('reports.exportExcel')}
+          </Button>
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={handlePreviewPDF}
+            disabled={data.length === 0 || isExporting || exporting !== null}
+          >
+            {exporting === 'preview' ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Eye className="h-4 w-4" />
+            )}
+            {t('common.previewPDF')}
           </Button>
           <Button
             className="gap-2"

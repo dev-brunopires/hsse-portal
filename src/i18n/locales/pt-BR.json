@@ -74,7 +74,9 @@
     "create": "Criar",
     "upload": "Enviar",
     "uploading": "Enviando...",
-    "backToHome": "Voltar para Início"
+    "backToHome": "Voltar para Início",
+    "previewPDF": "Visualizar PDF",
+    "pdfPreviewOpened": "Visualização do PDF aberta em nova aba"
   },
   "auth": {
     "login": "Entrar",

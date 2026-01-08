@@ -74,7 +74,9 @@
     "create": "Create",
     "upload": "Upload",
     "uploading": "Uploading...",
-    "backToHome": "Back to Home"
+    "backToHome": "Back to Home",
+    "previewPDF": "Preview PDF",
+    "pdfPreviewOpened": "PDF preview opened in new tab"
   },
   "auth": {
     "login": "Login",
