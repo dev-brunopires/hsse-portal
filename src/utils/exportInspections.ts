@@ -55,24 +55,68 @@ const getStatusLabels = (): Record<string, string> => ({
   'non-compliant': i18n.t('exportInspections.statusNonCompliant'),
 });
 
-export function exportInspectionsToExcel(inspections: InspectionWithDetails[], filename = 'inspecoes') {
+const getAlertLabels = () => ({
+  certificateExpired: i18n.t('alerts.reportCertExpired'),
+  certificateExpiring: i18n.t('alerts.reportCertExpiring'),
+  equipmentExpired: i18n.t('alerts.reportEquipExpired'),
+  inspectionOverdue: i18n.t('alerts.reportInspOverdue'),
+  inspectionDueSoon: i18n.t('alerts.reportInspDueSoon'),
+});
+
+// Build alert indicators for an inspection's equipment
+const getEquipmentAlertIndicators = (
+  item: InspectionWithDetails,
+  allEquipment?: { id: string; certificate_expiry?: string | null; expiry_date?: string | null; next_inspection?: string | null }[]
+): string[] => {
+  const alertIndicators: string[] = [];
+  const today = new Date().toISOString().split('T')[0];
+  const alertLabels = getAlertLabels();
+  
+  // If we have full equipment data, use it
+  const fullEquipment = allEquipment?.find(e => e.id === item.equipment_id);
+  
+  if (fullEquipment) {
+    if (fullEquipment.certificate_expiry && fullEquipment.certificate_expiry < today) {
+      alertIndicators.push(alertLabels.certificateExpired);
+    }
+    if (fullEquipment.expiry_date && fullEquipment.expiry_date < today) {
+      alertIndicators.push(alertLabels.equipmentExpired);
+    }
+    if (fullEquipment.next_inspection && fullEquipment.next_inspection < today) {
+      alertIndicators.push(alertLabels.inspectionOverdue);
+    }
+  }
+  
+  return alertIndicators;
+};
+
+export function exportInspectionsToExcel(
+  inspections: InspectionWithDetails[], 
+  filename = 'inspecoes',
+  allEquipment?: { id: string; certificate_expiry?: string | null; expiry_date?: string | null; next_inspection?: string | null }[]
+) {
   const statusLabels = getStatusLabels();
   const t = i18n.t;
   const dateLocale = getDateLocale();
   
-  const data = inspections.map(item => ({
-    [t('exportInspections.inspectionDate')]: format(new Date(item.inspection_date), 'dd/MM/yyyy', { locale: dateLocale }),
-    [t('exportInspections.equipment')]: item.equipment?.name || '—',
-    [t('exportInspections.code')]: item.equipment?.internal_code || '—',
-    [t('exportInspections.inspector')]: item.profiles?.full_name || '—',
-    [t('exportInspections.inspectorEmail')]: item.profiles?.email || '—',
-    [t('exportInspections.status')]: statusLabels[item.status] || item.status,
-    [t('exportInspections.observations')]: item.observations || '—',
-    [t('exportInspections.recommendations')]: item.recommendations || '—',
-    [t('exportInspections.nextInspection')]: item.next_inspection_date 
-      ? format(new Date(item.next_inspection_date), 'dd/MM/yyyy', { locale: dateLocale }) 
-      : '—',
-  }));
+  const data = inspections.map(item => {
+    const alertIndicators = getEquipmentAlertIndicators(item, allEquipment);
+    
+    return {
+      [t('exportInspections.inspectionDate')]: format(new Date(item.inspection_date), 'dd/MM/yyyy', { locale: dateLocale }),
+      [t('exportInspections.equipment')]: item.equipment?.name || '—',
+      [t('exportInspections.code')]: item.equipment?.internal_code || '—',
+      [t('exportInspections.inspector')]: item.profiles?.full_name || '—',
+      [t('exportInspections.inspectorEmail')]: item.profiles?.email || '—',
+      [t('exportInspections.status')]: statusLabels[item.status] || item.status,
+      [t('reports.equipmentAlerts')]: alertIndicators.length > 0 ? alertIndicators.join(' | ') : '—',
+      [t('exportInspections.observations')]: item.observations || '—',
+      [t('exportInspections.recommendations')]: item.recommendations || '—',
+      [t('exportInspections.nextInspection')]: item.next_inspection_date 
+        ? format(new Date(item.next_inspection_date), 'dd/MM/yyyy', { locale: dateLocale }) 
+        : '—',
+    };
+  });
 
   const ws = XLSX.utils.json_to_sheet(data);
   const wb = XLSX.utils.book_new();
@@ -91,7 +135,8 @@ export async function exportInspectionsToPDF(
   inspections: InspectionWithDetails[], 
   filename = 'relatorio_inspecoes',
   branding?: OrganizationBranding,
-  options?: { preview?: boolean }
+  options?: { preview?: boolean },
+  allEquipment?: { id: string; certificate_expiry?: string | null; expiry_date?: string | null; next_inspection?: string | null }[]
 ) {
   const statusLabels = getStatusLabels();
   const t = i18n.t;
@@ -126,17 +171,23 @@ export async function exportInspectionsToPDF(
   doc.text(`${t('exportInspections.approved')}: ${approved} | ${t('exportInspections.rejected')}: ${rejected} | ${t('exportInspections.pending')}: ${pending}`, 14, yPos + 4);
   yPos += 12;
 
-  const tableData = inspections.map(item => [
-    format(new Date(item.inspection_date), 'dd/MM/yyyy', { locale: dateLocale }),
-    item.equipment?.name || '—',
-    item.equipment?.internal_code || '—',
-    item.profiles?.full_name || '—',
-    statusLabels[item.status] || item.status,
-    item.observations?.substring(0, 50) || '—',
-    item.next_inspection_date 
-      ? format(new Date(item.next_inspection_date), 'dd/MM/yyyy', { locale: dateLocale }) 
-      : '—',
-  ]);
+  const tableData = inspections.map(item => {
+    const alertIndicators = getEquipmentAlertIndicators(item, allEquipment);
+    const alertsText = alertIndicators.length > 0 ? alertIndicators.join(' ') : '—';
+    
+    return [
+      format(new Date(item.inspection_date), 'dd/MM/yyyy', { locale: dateLocale }),
+      item.equipment?.name || '—',
+      item.equipment?.internal_code || '—',
+      item.profiles?.full_name || '—',
+      statusLabels[item.status] || item.status,
+      alertsText,
+      item.observations?.substring(0, 35) || '—',
+      item.next_inspection_date 
+        ? format(new Date(item.next_inspection_date), 'dd/MM/yyyy', { locale: dateLocale }) 
+        : '—',
+    ];
+  });
 
   autoTable(doc, {
     startY: yPos,
@@ -146,6 +197,7 @@ export async function exportInspectionsToPDF(
       t('exportInspections.code'),
       t('exportInspections.inspector'),
       t('exportInspections.status'),
+      t('reports.equipmentAlerts'),
       t('exportInspections.observations'),
       t('exportInspections.next')
     ]],
@@ -153,6 +205,9 @@ export async function exportInspectionsToPDF(
     styles: { fontSize: 8 },
     headStyles: { fillColor: SBM_BLUE },
     alternateRowStyles: { fillColor: [248, 250, 252] },
+    columnStyles: {
+      5: { cellWidth: 30 } // Alerts column
+    }
   });
 
   // Add standardized footer
