@@ -282,7 +282,7 @@ export default function Auth() {
             <span className="text-primary hover:underline cursor-pointer">{t('authPage.termsOfUse')}</span>
             {' '}{t('authPage.and')}{' '}
             <span className="text-primary hover:underline cursor-pointer">{t('authPage.privacyPolicy')}</span>
-            {' '}{t('authPage.of')}
+            {' '}{t('authPage.of')} {organizationName}.
           </p>
         </div>
       </div>
