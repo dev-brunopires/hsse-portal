@@ -8,7 +8,9 @@ import i18n from '@/i18n';
 const getDateLocale = () => i18n.language === 'en' ? enUS : ptBR;
 
 // Default Brand Colors - Used when no organization branding is available
-export const SBM_BLUE: [number, number, number] = [22, 85, 154]; // #16559A
+export const PRIMARY_BLUE: [number, number, number] = [22, 85, 154]; // #16559A
+// Alias for backwards compatibility
+export const SBM_BLUE = PRIMARY_BLUE;
 export const DARK_GRAY: [number, number, number] = [51, 51, 51];
 export const LIGHT_GRAY: [number, number, number] = [245, 247, 250];
 export const MEDIUM_GRAY: [number, number, number] = [156, 163, 175];

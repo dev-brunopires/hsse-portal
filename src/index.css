@@ -2,12 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
-/* SBM Offshore Corporate Design System */
+/* SafeShip Corporate Design System */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 @layer base {
   :root {
-    /* SBM Offshore Brand Colors */
+    /* Primary Brand Colors */
     /* Primary: Blue #003366 → HSL 210 100% 20% */
     /* Accent: Orange #F26522 → HSL 18 89% 54% (used sparingly) */
     
@@ -20,7 +20,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 210 50% 10%;
 
-    /* SBM Blue - Primary Brand Color */
+    /* Primary Blue - Brand Color */
     --primary: 210 100% 25%;
     --primary-foreground: 0 0% 100%;
 
@@ -66,7 +66,7 @@
     --sidebar-border: 210 60% 25%;
     --sidebar-ring: 210 100% 50%;
 
-    /* Chart colors - SBM Brand */
+    /* Chart colors - Brand */
     --chart-1: 210 100% 30%;
     --chart-2: 210 60% 50%;
     --chart-3: 145 65% 38%;
