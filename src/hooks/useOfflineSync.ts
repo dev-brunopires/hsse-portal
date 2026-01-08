@@ -293,6 +293,24 @@ export function useOfflineSync() {
     }
   }, [isOnline, syncPendingInspections, checkAndRefreshCache, pendingActions.length]);
 
+  // Auto-retry failed sync every 30 seconds when online with pending actions
+  useEffect(() => {
+    if (!isOnline || pendingActions.length === 0 || isSyncing) return;
+
+    // Check if there are failed actions (retryCount > 0 but < MAX_RETRY_COUNT)
+    const hasFailedActions = pendingActions.some(a => (a.retryCount || 0) > 0);
+    if (!hasFailedActions) return;
+
+    const retryInterval = setInterval(() => {
+      if (isOnline && pendingActions.length > 0 && !isSyncing) {
+        console.log('Auto-retry sync triggered for failed actions');
+        syncPendingInspections();
+      }
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(retryInterval);
+  }, [isOnline, pendingActions, isSyncing, syncPendingInspections]);
+
   // Initial cache on mount
   useEffect(() => {
     if (isOnline) {
