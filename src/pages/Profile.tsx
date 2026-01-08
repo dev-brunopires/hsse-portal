@@ -327,8 +327,8 @@ export default function Profile() {
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   {/* Avatar Section */}
-                  <div className="flex items-center gap-6">
-                    <div className="relative">
+                  <div className="flex items-center gap-4 sm:gap-6">
+                    <div className="relative flex-shrink-0">
                       <Avatar className="h-24 w-24 border-4 border-primary/20">
                         <AvatarImage src={avatarPreview || undefined} />
                         <AvatarFallback className="text-xl bg-primary/10 text-primary">
@@ -349,11 +349,11 @@ export default function Profile() {
                         />
                       </label>
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-lg">{form.watch('full_name')}</h3>
-                      <p className="text-sm text-muted-foreground">{form.watch('email')}</p>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold text-lg truncate">{form.watch('full_name')}</h3>
+                      <p className="text-sm text-muted-foreground break-all">{form.watch('email')}</p>
                       {profileData?.position && (
-                        <p className="text-sm text-muted-foreground mt-1">{profileData.position}</p>
+                        <p className="text-sm text-muted-foreground mt-1 truncate">{profileData.position}</p>
                       )}
                     </div>
                   </div>
