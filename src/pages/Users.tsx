@@ -533,7 +533,7 @@ export default function Users() {
                                   className="text-destructive focus:text-destructive"
                                 >
                                   <Trash2 className="h-4 w-4 mr-2" />
-                                  {t('dialogs.deleteShip')}
+                                  {t('dialogs.removeShip')}
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
