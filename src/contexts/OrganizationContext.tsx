@@ -53,13 +53,12 @@ const getSubdomainFromHostname = (): string | null => {
   return params.get('org') || null;
 };
 
-// Cache subdomain at module level to avoid recalculating
-const cachedSubdomain = getSubdomainFromHostname();
-
 export function OrganizationProvider({ children }: { children: React.ReactNode }) {
   // Reuse isPlatformOwner from AuthContext to avoid duplicate query
   const { user, isPlatformOwner, loading: authLoading } = useAuth();
-  const [subdomain] = useState<string | null>(cachedSubdomain);
+  
+  // Calculate subdomain on each render to handle URL changes
+  const subdomain = useMemo(() => getSubdomainFromHostname(), []);
 
   // Get org from subdomain (for login page)
   const { data: orgFromSubdomain, isLoading: isLoadingSubdomain } = useQuery({
