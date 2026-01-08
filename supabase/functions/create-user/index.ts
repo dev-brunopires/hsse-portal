@@ -39,14 +39,24 @@ Deno.serve(async (req) => {
       )
     }
 
+    // Create admin client with service role key
+    const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      }
+    })
+
     // Check if user is admin, admin_master, or platform_owner
     const [roleResult, platformOwnerResult] = await Promise.all([
-      userClient.from('user_roles').select('role').eq('user_id', currentUser.id).maybeSingle(),
-      userClient.from('platform_owners').select('id').eq('user_id', currentUser.id).maybeSingle(),
+      adminClient.from('user_roles').select('role, organization_id').eq('user_id', currentUser.id).maybeSingle(),
+      adminClient.from('platform_owners').select('id').eq('user_id', currentUser.id).maybeSingle(),
     ])
 
     const isPlatformOwner = !!platformOwnerResult.data
-    const isAdmin = roleResult.data && ['admin', 'admin_master'].includes(roleResult.data.role)
+    const currentUserRole = roleResult.data?.role
+    const currentUserOrgId = roleResult.data?.organization_id
+    const isAdmin = currentUserRole && ['admin', 'admin_master'].includes(currentUserRole)
 
     if (!isPlatformOwner && !isAdmin) {
       return new Response(
@@ -63,12 +73,32 @@ Deno.serve(async (req) => {
 
     // If not a platform owner providing an org ID, use the admin's organization
     if (!organizationId && !isPlatformOwner) {
-      const { data: currentUserOrg } = await userClient
-        .from('user_organizations')
-        .select('organization_id')
-        .eq('user_id', currentUser.id)
-        .single()
-      organizationId = currentUserOrg?.organization_id
+      organizationId = currentUserOrgId
+    }
+
+    // SECURITY: Non-platform owners can only create users in their own organization
+    if (!isPlatformOwner && organizationId !== currentUserOrgId) {
+      return new Response(
+        JSON.stringify({ error: 'You can only create users in your own organization' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // SECURITY: Prevent privilege escalation - only admin_master/platform_owner can create admin roles
+    if (role === 'admin_master') {
+      if (!isPlatformOwner) {
+        return new Response(
+          JSON.stringify({ error: 'Only platform owners can create admin_master users' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+    } else if (role === 'admin') {
+      if (!isPlatformOwner && currentUserRole !== 'admin_master') {
+        return new Response(
+          JSON.stringify({ error: 'Only admin_master can create admin users' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
     }
 
     console.log('Creating user with data:', { email, fullName, role, shipIds, language, organizationId, isPlatformOwner })
@@ -80,16 +110,42 @@ Deno.serve(async (req) => {
       )
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid email format' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Validate password length
+    if (password.length < 6) {
+      return new Response(
+        JSON.stringify({ error: 'Password must be at least 6 characters' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Validate fullName length
+    if (fullName.length > 100) {
+      return new Response(
+        JSON.stringify({ error: 'Full name must be less than 100 characters' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Validate role if provided
+    const validRoles = ['viewer', 'technician', 'supervisor', 'admin', 'admin_master']
+    if (role && !validRoles.includes(role)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid role' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     // Default language to pt-BR if not provided
     const userLanguage = language || 'pt-BR'
-
-    // Create admin client with service role key
-    const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      }
-    })
 
     // Create user using admin API (won't log in as the new user)
     const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
