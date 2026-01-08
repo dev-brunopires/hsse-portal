@@ -41,8 +41,9 @@ async function loadLogoToCache(url: string | null): Promise<string | null> {
  * Preloads the organization logo for PDF generation
  */
 export async function preloadLogo(branding?: OrganizationBranding): Promise<void> {
-  if (branding?.logoWhiteUrl) {
-    await loadLogoToCache(branding.logoWhiteUrl);
+  const logoUrl = branding?.logoWhiteUrl || branding?.logoUrl;
+  if (logoUrl) {
+    await loadLogoToCache(logoUrl);
   }
 }
 
@@ -71,8 +72,9 @@ export async function addPDFHeader(
   // Try to add the organization logo
   let logoAdded = false;
   
-  if (branding?.logoWhiteUrl) {
-    const logoBase64 = await loadLogoToCache(branding.logoWhiteUrl);
+  const logoUrl = branding?.logoWhiteUrl || branding?.logoUrl;
+  if (logoUrl) {
+    const logoBase64 = await loadLogoToCache(logoUrl);
     if (logoBase64) {
       try {
         // Detect image type from base64
@@ -152,8 +154,9 @@ export function addPDFHeaderSync(
   
   // Try to use cached logo
   let logoAdded = false;
-  if (branding?.logoWhiteUrl && logoCache.has(branding.logoWhiteUrl)) {
-    const cachedLogo = logoCache.get(branding.logoWhiteUrl);
+  const logoUrl = branding?.logoWhiteUrl || branding?.logoUrl;
+  if (logoUrl && logoCache.has(logoUrl)) {
+    const cachedLogo = logoCache.get(logoUrl);
     if (cachedLogo) {
       try {
         const imageType = cachedLogo.includes('image/png') ? 'PNG' : 
