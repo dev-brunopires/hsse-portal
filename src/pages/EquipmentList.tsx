@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EquipmentTable } from '@/components/equipment/EquipmentTable';
@@ -15,8 +15,12 @@ import { PageHeader } from '@/components/layout/PageHeader';
 export default function EquipmentList() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<string>('all');
-  const { data: equipment = [], isLoading: equipmentLoading } = useEquipment();
+  const { data: equipment = [], isLoading: equipmentLoading, refetch: refetchEquipment } = useEquipment();
   const { data: categories = [], isLoading: categoriesLoading } = useCategories();
+
+  const handleRefresh = useCallback(async () => {
+    await refetchEquipment();
+  }, [refetchEquipment]);
 
   const isLoading = equipmentLoading || categoriesLoading;
 
@@ -112,7 +116,7 @@ export default function EquipmentList() {
         </ScrollArea>
 
         <TabsContent value={activeTab} className="mt-0">
-          <EquipmentTable equipment={filteredEquipment} />
+          <EquipmentTable equipment={filteredEquipment} onRefresh={handleRefresh} />
         </TabsContent>
       </Tabs>
     </div>

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -69,6 +69,9 @@ import { CategoryInspectionTab } from '@/components/inspections/CategoryInspecti
 import { exportInspectionsToExcel, exportInspectionsToPDF } from '@/utils/exportInspections';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { PullToRefreshIndicator } from '@/components/ui/PullToRefreshIndicator';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const getStatusConfig = (t: (key: string) => string) => ({
   compliant: { label: t('inspections.statusCompliant'), variant: 'default' as const, icon: CheckCircle },
@@ -85,11 +88,20 @@ export default function Inspections() {
   const statusConfig = getStatusConfig(t);
   const [searchParams, setSearchParams] = useSearchParams();
   const scanEquipmentId = searchParams.get('scan');
+  const isMobile = useIsMobile();
   
-  const { data: inspections = [], isLoading } = useInspections();
+  const { data: inspections = [], isLoading, refetch: refetchInspections } = useInspections();
   const { data: profiles = [] } = useProfiles();
   const { data: scannedEquipment } = useEquipmentById(scanEquipmentId || undefined);
   const { toast } = useToast();
+  
+  const handleRefresh = useCallback(async () => {
+    await refetchInspections();
+  }, [refetchInspections]);
+
+  const { pullDistance, isRefreshing, containerRef } = usePullToRefresh({
+    onRefresh: handleRefresh,
+  });
   
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -489,8 +501,15 @@ export default function Inspections() {
             </div>
           )}
 
-          {/* Mobile Card View */}
-          <div className="md:hidden space-y-3">
+          {/* Mobile Card View with Pull to Refresh */}
+          <div 
+            ref={isMobile ? containerRef : undefined}
+            className="md:hidden space-y-3 overflow-auto"
+          >
+            <PullToRefreshIndicator 
+              pullDistance={pullDistance} 
+              isRefreshing={isRefreshing} 
+            />
             {isLoading ? (
               Array.from({ length: 3 }).map((_, i) => (
                 <Card key={i} className="p-4">

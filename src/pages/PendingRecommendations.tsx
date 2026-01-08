@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertTriangle,
@@ -57,6 +57,9 @@ import { getEffectiveEquipmentStatus } from '@/utils/equipmentStatus';
 import { useTranslation } from 'react-i18next';
 import { useOrganizationBranding } from '@/hooks/useOrganizationBranding';
 import { addPDFHeader, addPDFFooter, SBM_BLUE, preloadLogo } from '@/utils/pdfStyles';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { PullToRefreshIndicator } from '@/components/ui/PullToRefreshIndicator';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface PendingItem {
   equipment: EquipmentWithCategory;
@@ -77,9 +80,18 @@ export default function PendingRecommendations() {
   const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
   const navigate = useNavigate();
   const branding = useOrganizationBranding();
-  const { data: equipment = [], isLoading: equipmentLoading } = useEquipment();
-  const { data: inspections = [], isLoading: inspectionsLoading } = useInspections();
-  const { data: categories = [] } = useCategories();
+  const isMobile = useIsMobile();
+  const { data: equipment = [], isLoading: equipmentLoading, refetch: refetchEquipment } = useEquipment();
+  const { data: inspections = [], isLoading: inspectionsLoading, refetch: refetchInspections } = useInspections();
+  const { data: categories = [], refetch: refetchCategories } = useCategories();
+  
+  const handleRefresh = useCallback(async () => {
+    await Promise.all([refetchEquipment(), refetchInspections(), refetchCategories()]);
+  }, [refetchEquipment, refetchInspections, refetchCategories]);
+
+  const { pullDistance, isRefreshing, containerRef } = usePullToRefresh({
+    onRefresh: handleRefresh,
+  });
   
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -465,8 +477,15 @@ export default function PendingRecommendations() {
             </div>
           )}
 
-          {/* Mobile Card View */}
-          <div className="md:hidden space-y-3">
+          {/* Mobile Card View with Pull to Refresh */}
+          <div 
+            ref={isMobile ? containerRef : undefined}
+            className="md:hidden space-y-3 overflow-auto"
+          >
+            <PullToRefreshIndicator 
+              pullDistance={pullDistance} 
+              isRefreshing={isRefreshing} 
+            />
             {isLoading ? (
               Array.from({ length: 3 }).map((_, i) => (
                 <Card key={i} className="p-4">

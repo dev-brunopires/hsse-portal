@@ -1,6 +1,8 @@
 {
   "common": {
     "loading": "Carregando...",
+    "pullToRefresh": "Puxe para atualizar",
+    "releaseToRefresh": "Solte para atualizar",
     "save": "Salvar",
     "cancel": "Cancelar",
     "delete": "Excluir",

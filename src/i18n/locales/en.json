@@ -1,6 +1,8 @@
 {
   "common": {
     "loading": "Loading...",
+    "pullToRefresh": "Pull to refresh",
+    "releaseToRefresh": "Release to refresh",
     "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",

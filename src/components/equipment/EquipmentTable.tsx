@@ -69,12 +69,16 @@ import { exportToExcel, exportToPDF } from '@/utils/exportEquipment';
 import { useOrganizationBranding } from '@/hooks/useOrganizationBranding';
 import { cn } from '@/lib/utils';
 import { formatDate } from '@/utils/dateFormat';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { PullToRefreshIndicator } from '@/components/ui/PullToRefreshIndicator';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface EquipmentTableProps {
   equipment: EquipmentWithCategory[];
   categoryName?: string;
   categoryDescription?: string;
   inspectionFrequency?: string;
+  onRefresh?: () => Promise<void>;
 }
 
 type SortField = 'internal_code' | 'name' | 'location' | 'status' | 'last_inspection' | 'next_inspection' | 'certificate_expiry' | 'capacity';
@@ -96,10 +100,16 @@ export function EquipmentTable({
   equipment, 
   categoryName,
   categoryDescription,
-  inspectionFrequency 
+  inspectionFrequency,
+  onRefresh 
 }: EquipmentTableProps) {
   const { t } = useTranslation();
   const branding = useOrganizationBranding();
+  const isMobile = useIsMobile();
+
+  const { pullDistance, isRefreshing, containerRef } = usePullToRefresh({
+    onRefresh: onRefresh || (async () => {}),
+  });
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -409,8 +419,15 @@ export function EquipmentTable({
           )}
         </div>
 
-        {/* Mobile Card View */}
-        <div className="md:hidden space-y-3 p-3">
+        {/* Mobile Card View with Pull to Refresh */}
+        <div 
+          ref={isMobile ? containerRef : undefined}
+          className="md:hidden space-y-3 p-3 overflow-auto"
+        >
+          <PullToRefreshIndicator 
+            pullDistance={pullDistance} 
+            isRefreshing={isRefreshing} 
+          />
           {filteredAndSortedEquipment.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               {t('equipmentTable.noEquipmentFound')}
