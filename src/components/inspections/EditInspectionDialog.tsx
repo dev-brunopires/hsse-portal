@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, forwardRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -25,7 +25,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
 import { DatePickerField } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -35,7 +34,6 @@ import {
   Loader2,
   Save,
 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import { useUpdateInspection, type InspectionWithDetails } from '@/hooks/useInspections';
 
 type EditInspectionFormData = {
@@ -54,14 +52,13 @@ interface EditInspectionDialogProps {
   onSuccess?: () => void;
 }
 
-export function EditInspectionDialog({ 
+export const EditInspectionDialog = forwardRef<HTMLDivElement, EditInspectionDialogProps>(({ 
   open, 
   onOpenChange, 
   inspection,
   onSuccess,
-}: EditInspectionDialogProps) {
+}, _ref) => {
   const { t } = useTranslation();
-  const { toast } = useToast();
   const updateInspection = useUpdateInspection();
 
   const editInspectionSchema = z.object({
@@ -295,4 +292,6 @@ export function EditInspectionDialog({
       </DialogContent>
     </Dialog>
   );
-}
+});
+
+EditInspectionDialog.displayName = 'EditInspectionDialog';
