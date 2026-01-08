@@ -59,6 +59,7 @@ export function useShips() {
     },
     // Enable when org is ready OR platform owner without org
     enabled: !isOrgLoading && (!!organization?.id || isPlatformOwnerWithoutOrg),
+    staleTime: 1000 * 60 * 10, // 10 minutes - ships rarely change
   });
 }
 
