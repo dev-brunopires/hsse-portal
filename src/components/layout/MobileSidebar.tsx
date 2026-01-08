@@ -24,7 +24,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
 import { useLanguage } from '@/contexts/LanguageContext';
-import sbmLogoWhite from '@/assets/sbm-logo-white.png';
+import { useOrganization } from '@/contexts/OrganizationContext';
+import { SystemLogo } from '@/components/ui/SystemLogo';
 
 interface MobileNavItemProps {
   to: string;
@@ -65,6 +66,9 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
   const { isAdmin, isPlatformOwner } = useAuth();
   const { resolvedTheme, setTheme } = useTheme();
   const { language, setLanguage } = useLanguage();
+  const { organization, logoWhiteUrl } = useOrganization();
+
+  const organizationName = organization?.name || 'SafeShip';
 
   const toggleTheme = () => {
     setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
@@ -86,7 +90,22 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
       >
         <SheetHeader className="h-16 flex flex-row items-center justify-between border-b border-sidebar-border px-4">
           <div className="flex items-center gap-3">
-            <img src={sbmLogoWhite} alt="SBM Offshore" className="h-10" />
+            {logoWhiteUrl ? (
+              <img 
+                src={logoWhiteUrl} 
+                alt={organizationName} 
+                className="h-10 w-auto max-w-[150px] object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  if (e.currentTarget.nextElementSibling) {
+                    (e.currentTarget.nextElementSibling as HTMLElement).classList.remove('hidden');
+                  }
+                }}
+              />
+            ) : null}
+            <div className={logoWhiteUrl ? 'hidden' : ''}>
+              <SystemLogo variant="white" />
+            </div>
           </div>
         </SheetHeader>
 

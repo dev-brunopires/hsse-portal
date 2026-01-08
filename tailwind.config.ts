@@ -79,7 +79,13 @@ export default {
           "4": "hsl(var(--chart-4))",
           "5": "hsl(var(--chart-5))",
         },
-        // SBM Brand colors for direct use
+        // Brand accent colors for direct use
+        brand: {
+          orange: "hsl(18, 89%, 54%)",
+          blue: "hsl(210, 100%, 20%)",
+          "blue-light": "hsl(210, 80%, 40%)",
+        },
+        // Alias for backwards compatibility
         sbm: {
           orange: "hsl(18, 89%, 54%)",
           blue: "hsl(210, 100%, 20%)",

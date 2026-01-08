@@ -24,7 +24,7 @@ import { SystemLogo } from '@/components/ui/SystemLogo';
 import { getOrganizationUrl } from '@/utils/organizationUrl';
 import loginBg from '@/assets/login-bg.jpg';
 
-const REMEMBER_EMAIL_KEY = 'sbm_remembered_email';
+const REMEMBER_EMAIL_KEY = 'safeship_remembered_email';
 
 export default function Auth() {
   const { t } = useTranslation();
@@ -291,7 +291,7 @@ export default function Auth() {
       <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 relative">
         <img
           src={loginBg}
-          alt="SBM Offshore - Wind Turbine"
+          alt={t('authPage.loginBackground')}
           className="absolute inset-0 w-full h-full object-cover"
         />
         
