@@ -496,7 +496,7 @@ export default function Profile() {
                         />
                       </div>
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex flex-col sm:flex-row gap-3">
                       <Button variant="outline" onClick={handleClearSignature} className="flex-1">
                         {t('profilePage.removeSignature')}
                       </Button>
