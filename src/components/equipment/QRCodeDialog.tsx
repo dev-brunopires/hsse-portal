@@ -500,19 +500,27 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
           </DialogTitle>
         </DialogHeader>
 
-        {/* Preview with SBM styling */}
+        {/* Preview with organization branding */}
         <div className="flex flex-col items-center">
           <div className="border-2 border-dashed border-primary rounded-lg overflow-hidden w-full max-w-xs">
-            {/* Header */}
-            <div className="bg-primary py-2 px-4 flex justify-center">
-              <svg viewBox="0 0 437 150" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-6">
-                <path d="M30.4461 0.0790735C10.4387 0.0790735 0 17.1605 0 34.0047C0 50.8489 10.4387 67.9303 30.4461 67.9303H123.129V0L30.4461 0.0790735Z" fill="white"/>
-                <path d="M238.349 0.079071H145.667V68.0094H238.349C258.357 68.0094 268.795 50.928 268.795 34.0838C268.795 17.1605 258.357 0.079071 238.349 0.079071Z" fill="white"/>
-                <path d="M238.349 82.9557H145.667V150.886H238.349C258.357 150.886 268.795 133.805 268.795 116.96C268.795 100.037 258.357 82.9557 238.349 82.9557Z" fill="white"/>
-                <path d="M320.198 0.079071C303.354 0.079071 286.272 10.5177 286.272 30.5251V150.886H354.203V30.5251C354.123 10.5177 337.042 0.079071 320.198 0.079071Z" fill="white"/>
-                <path d="M402.995 0.079071C386.151 0.079071 369.07 10.5177 369.07 30.5251V150.886H437V30.5251C437 10.5177 419.919 0.079071 402.995 0.079071Z" fill="white"/>
-                <path d="M97.7437 82.9557H5.0611V150.886H97.7437C117.751 150.886 128.19 133.805 128.19 116.96C128.19 100.037 117.751 82.9557 97.7437 82.9557Z" fill="white"/>
-              </svg>
+            {/* Header - Dynamic logo */}
+            <div className="bg-primary py-2 px-4 flex justify-center items-center min-h-[40px]">
+              {logoWhiteUrl ? (
+                <img 
+                  src={logoWhiteUrl} 
+                  alt={organizationName} 
+                  className="h-6 w-auto max-w-[150px] object-contain"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    if (e.currentTarget.nextElementSibling) {
+                      (e.currentTarget.nextElementSibling as HTMLElement).classList.remove('hidden');
+                    }
+                  }}
+                />
+              ) : null}
+              <span className={`text-white font-bold text-sm ${logoWhiteUrl ? 'hidden' : ''}`}>
+                {organizationName}
+              </span>
             </div>
 
             {/* Content */}
