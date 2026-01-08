@@ -88,37 +88,15 @@ interface ChecklistItem {
   required: boolean;
 }
 
-const getChecklistForCategory = (categoryId: string): ChecklistItem[] => {
-  const baseChecklist: ChecklistItem[] = [
+// Default fallback checklist if no template exists
+const getDefaultChecklist = (): ChecklistItem[] => {
+  return [
     { id: '1', description: 'Equipamento está acessível e desobstruído', status: 'pending', notes: '', required: true },
     { id: '2', description: 'Identificação/etiqueta legível e visível', status: 'pending', notes: '', required: true },
     { id: '3', description: 'Sem sinais de corrosão ou danos externos', status: 'pending', notes: '', required: true },
     { id: '4', description: 'Lacre de segurança íntegro', status: 'pending', notes: '', required: true },
     { id: '5', description: 'Data de validade dentro do prazo', status: 'pending', notes: '', required: true },
   ];
-
-  const extintorChecklist: ChecklistItem[] = [
-    ...baseChecklist,
-    { id: '6', description: 'Manômetro na faixa verde (pressurizado)', status: 'pending', notes: '', required: true },
-    { id: '7', description: 'Mangueira sem rachaduras ou obstruções', status: 'pending', notes: '', required: true },
-    { id: '8', description: 'Gatilho e trava funcionando corretamente', status: 'pending', notes: '', required: true },
-    { id: '9', description: 'Suporte de fixação em bom estado', status: 'pending', notes: '', required: false },
-    { id: '10', description: 'Sinalização de localização visível', status: 'pending', notes: '', required: false },
-  ];
-
-  const scbaChecklist: ChecklistItem[] = [
-    ...baseChecklist,
-    { id: '6', description: 'Cilindro com pressão adequada', status: 'pending', notes: '', required: true },
-    { id: '7', description: 'Máscara facial sem danos ou rachaduras', status: 'pending', notes: '', required: true },
-    { id: '8', description: 'Válvula de demanda funcionando', status: 'pending', notes: '', required: true },
-    { id: '9', description: 'Correias e tirantes em bom estado', status: 'pending', notes: '', required: true },
-    { id: '10', description: 'Alarme de baixa pressão funcional', status: 'pending', notes: '', required: true },
-    { id: '11', description: 'Teste de vedação realizado', status: 'pending', notes: '', required: true },
-  ];
-
-  if (categoryId === 'cat-1') return extintorChecklist;
-  if (categoryId === 'cat-3') return scbaChecklist;
-  return baseChecklist;
 };
 
 export function InspectionFormDialog({ 
@@ -156,7 +134,7 @@ export function InspectionFormDialog({
 
   useEffect(() => {
     if (open && equipment) {
-      setChecklist(getChecklistForCategory(equipment.categoryId));
+      setChecklist(getDefaultChecklist());
       form.reset({
         inspectorId: user?.id || '',
         inspectionDate: new Date().toISOString().split('T')[0],
@@ -382,7 +360,7 @@ export function InspectionFormDialog({
 
   // Initialize checklist on open
   if (checklist.length === 0) {
-    setChecklist(getChecklistForCategory(equipment.categoryId));
+    setChecklist(getDefaultChecklist());
   }
 
   return (
