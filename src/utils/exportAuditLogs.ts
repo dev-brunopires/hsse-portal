@@ -28,7 +28,8 @@ const getTableLabels = (): Record<string, string> => ({
 export async function exportAuditLogsPDF(
   logs: AuditLog[], 
   filters?: { ship?: string; table?: string; action?: string },
-  branding?: OrganizationBranding
+  branding?: OrganizationBranding,
+  options?: { preview?: boolean }
 ) {
   // Preload logo with branding
   await preloadLogo(branding);
@@ -102,7 +103,15 @@ export async function exportAuditLogsPDF(
   const companyName = branding?.name || t('footerCompany');
   addPDFFooter(doc, companyName, t('title'));
 
-  doc.save(`${t('fileName')}-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+  const pdfFileName = `${t('fileName')}-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+  
+  if (options?.preview) {
+    const pdfBlob = doc.output('blob');
+    const pdfUrl = URL.createObjectURL(pdfBlob);
+    window.open(pdfUrl, '_blank');
+  } else {
+    doc.save(pdfFileName);
+  }
 }
 
 export function exportAuditLogsExcel(logs: AuditLog[], filters?: { ship?: string; table?: string; action?: string }) {

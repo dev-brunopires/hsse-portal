@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { History, Search, Filter, ChevronDown, ChevronUp, Package, ClipboardCheck, User, Calendar, ArrowRight, Ship, Settings, UserCircle, Download, FileSpreadsheet, FileText } from 'lucide-react';
+import { History, Search, Filter, ChevronDown, ChevronUp, Package, ClipboardCheck, User, Calendar, ArrowRight, Ship, Settings, UserCircle, Download, FileSpreadsheet, FileText, Eye } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { format } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
@@ -275,7 +275,7 @@ export default function AuditLogPage() {
     };
   }, [logs]);
 
-  const handleExportPDF = async () => {
+  const handleExportPDF = async (preview: boolean = false) => {
     setIsExporting(true);
     try {
       const filters = {
@@ -283,8 +283,8 @@ export default function AuditLogPage() {
         table: tableFilter !== 'all' ? tableFilter : undefined,
         action: actionFilter !== 'all' ? actionFilter : undefined,
       };
-      await exportAuditLogsPDF(filteredLogs, filters, branding);
-      toast.success(t('auditLogPage.pdfExported'));
+      await exportAuditLogsPDF(filteredLogs, filters, branding, { preview });
+      toast.success(preview ? t('auditLogPage.pdfPreviewOpened') : t('auditLogPage.pdfExported'));
     } catch (error) {
       console.error('Error exporting PDF:', error);
       toast.error(t('auditLogPage.exportError'));
@@ -344,7 +344,11 @@ export default function AuditLogPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleExportPDF}>
+              <DropdownMenuItem onClick={() => handleExportPDF(true)}>
+                <Eye className="h-4 w-4 mr-2" />
+                {t('auditLogPage.previewPDF')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExportPDF(false)}>
                 <FileText className="h-4 w-4 mr-2" />
                 {t('auditLogPage.exportPDF')}
               </DropdownMenuItem>

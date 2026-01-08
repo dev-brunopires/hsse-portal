@@ -87,7 +87,7 @@ async function loadPhotoAsBase64(filePath: string): Promise<string | null> {
   }
 }
 
-export async function generateMaintenancePDF(data: MaintenanceDetailData): Promise<void> {
+export async function generateMaintenancePDF(data: MaintenanceDetailData, options?: { preview?: boolean }): Promise<void> {
   // Preload logo with branding
   await preloadLogo(data.branding);
   
@@ -358,7 +358,14 @@ export async function generateMaintenancePDF(data: MaintenanceDetailData): Promi
   // Add footer
   addPDFFooter(doc, t('generateMaintenancePDF.footerTitle'), t('generateMaintenancePDF.footerSubtitle'));
 
-  // Save the PDF
+  // Save or Preview
   const fileName = `${t('generateMaintenancePDF.filePrefix')}_${data.id.substring(0, 8)}_${format(new Date(), 'yyyyMMdd')}.pdf`;
-  doc.save(fileName);
+  
+  if (options?.preview) {
+    const pdfBlob = doc.output('blob');
+    const pdfUrl = URL.createObjectURL(pdfBlob);
+    window.open(pdfUrl, '_blank');
+  } else {
+    doc.save(fileName);
+  }
 }
