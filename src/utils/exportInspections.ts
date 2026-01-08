@@ -90,7 +90,8 @@ export function exportInspectionsToExcel(inspections: InspectionWithDetails[], f
 export async function exportInspectionsToPDF(
   inspections: InspectionWithDetails[], 
   filename = 'relatorio_inspecoes',
-  branding?: OrganizationBranding
+  branding?: OrganizationBranding,
+  options?: { preview?: boolean }
 ) {
   const statusLabels = getStatusLabels();
   const t = i18n.t;
@@ -161,13 +162,22 @@ export async function exportInspectionsToPDF(
     `${t('exportInspections.reportTitle')} - ${format(new Date(), 'dd/MM/yyyy HH:mm')}`
   );
 
-  doc.save(`${filename}_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+  const pdfFileName = `${filename}_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+  
+  if (options?.preview) {
+    const pdfBlob = doc.output('blob');
+    const pdfUrl = URL.createObjectURL(pdfBlob);
+    window.open(pdfUrl, '_blank');
+  } else {
+    doc.save(pdfFileName);
+  }
 }
 
 export async function exportSingleInspectionPDF(
   inspection: InspectionWithDetails, 
   checklistItems: { description: string; status: string; notes: string | null }[] = [],
-  photos: InspectionPhoto[] = []
+  photos: InspectionPhoto[] = [],
+  options?: { preview?: boolean }
 ) {
   const statusLabels = getStatusLabels();
   const t = i18n.t;
@@ -394,5 +404,13 @@ export async function exportSingleInspectionPDF(
     `${t('exportInspections.singleReportTitle')} - ${format(new Date(), 'dd/MM/yyyy HH:mm')}`
   );
 
-  doc.save(`inspecao_${inspection.id.substring(0, 8)}_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+  const pdfFileName = `inspecao_${inspection.id.substring(0, 8)}_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+  
+  if (options?.preview) {
+    const pdfBlob = doc.output('blob');
+    const pdfUrl = URL.createObjectURL(pdfBlob);
+    window.open(pdfUrl, '_blank');
+  } else {
+    doc.save(pdfFileName);
+  }
 }

@@ -228,10 +228,10 @@ export default function Inspections() {
     exportInspectionsToExcel(filteredInspections);
   };
 
-  const handleExportPDF = async () => {
+  const handleExportPDF = async (preview: boolean = false) => {
     toast({ title: t('common.loading'), description: t('common.loading') });
-    await exportInspectionsToPDF(filteredInspections);
-    toast({ title: t('common.success'), description: t('common.success') });
+    await exportInspectionsToPDF(filteredInspections, 'relatorio_inspecoes', undefined, { preview });
+    toast({ title: t('common.success'), description: preview ? t('inspections.pdfPreviewOpened') : t('common.success') });
   };
 
   return (
@@ -254,7 +254,11 @@ export default function Inspections() {
                   <FileSpreadsheet className="h-4 w-4" />
                   {t('inspections.exportExcel')}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleExportPDF} className="gap-2 cursor-pointer">
+                <DropdownMenuItem onClick={() => handleExportPDF(true)} className="gap-2 cursor-pointer">
+                  <Eye className="h-4 w-4" />
+                  {t('inspections.previewPDF')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExportPDF(false)} className="gap-2 cursor-pointer">
                   <FileText className="h-4 w-4" />
                   {t('inspections.exportPDF')}
                 </DropdownMenuItem>

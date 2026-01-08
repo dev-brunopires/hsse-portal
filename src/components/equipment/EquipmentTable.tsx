@@ -285,11 +285,11 @@ export function EquipmentTable({
     exportToExcel(dataToExport);
   };
 
-  const handleExportPDF = async () => {
+  const handleExportPDF = async (preview: boolean = false) => {
     const dataToExport = selectedRows.length > 0 
       ? filteredAndSortedEquipment.filter(e => selectedRows.includes(e.id))
       : filteredAndSortedEquipment;
-    await exportToPDF(dataToExport, 'equipamentos', branding);
+    await exportToPDF(dataToExport, 'equipamentos', branding, { preview });
   };
 
 
@@ -370,7 +370,11 @@ export function EquipmentTable({
                   <FileSpreadsheet className="h-4 w-4" />
                   {t('equipmentTable.exportExcel')}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleExportPDF} className="gap-2 cursor-pointer">
+                <DropdownMenuItem onClick={() => handleExportPDF(true)} className="gap-2 cursor-pointer">
+                  <Eye className="h-4 w-4" />
+                  {t('equipmentTable.previewPDF')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExportPDF(false)} className="gap-2 cursor-pointer">
                   <FileText className="h-4 w-4" />
                   {t('equipmentTable.exportPDF')}
                 </DropdownMenuItem>
@@ -396,7 +400,7 @@ export function EquipmentTable({
                 <Button variant="outline" size="sm" onClick={handleExportExcel}>
                   {t('equipmentTable.export')}
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleExportPDF}>
+                <Button variant="outline" size="sm" onClick={() => handleExportPDF(false)}>
                   {t('equipmentTable.pdfReport')}
                 </Button>
                 <Button variant="destructive" size="sm">{t('equipmentTable.delete')}</Button>

@@ -115,7 +115,7 @@ async function loadLogoBase64(): Promise<string | null> {
   }
 }
 
-export async function generateInspectionPDF(data: InspectionPDFData) {
+export async function generateInspectionPDF(data: InspectionPDFData, options?: { preview?: boolean }) {
   const t = i18n.t;
   const dateLocale = getDateLocale();
   const statusLabels = getStatusLabels();
@@ -487,9 +487,16 @@ export async function generateInspectionPDF(data: InspectionPDFData) {
     `${t('generateInspectionPDF.document')}: INS-${data.inspection.id.substring(0, 8).toUpperCase()}`
   );
 
-  // Save
+  // Save or Preview
   const fileName = `${t('generateInspectionPDF.filePrefix')}_${data.equipment.internal_code}_${format(new Date(data.inspection.inspection_date), 'yyyyMMdd')}.pdf`;
-  doc.save(fileName);
+  
+  if (options?.preview) {
+    const pdfBlob = doc.output('blob');
+    const pdfUrl = URL.createObjectURL(pdfBlob);
+    window.open(pdfUrl, '_blank');
+  } else {
+    doc.save(fileName);
+  }
   
   return fileName;
 }

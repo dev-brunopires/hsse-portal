@@ -72,7 +72,8 @@ export function exportToExcel(equipment: EquipmentWithCategory[], filename = 'eq
 export async function exportToPDF(
   equipment: EquipmentWithCategory[], 
   filename = 'equipamentos',
-  branding?: OrganizationBranding
+  branding?: OrganizationBranding,
+  options?: { preview?: boolean }
 ) {
   const statusLabels = getStatusLabels();
   const t = i18n.t;
@@ -131,5 +132,13 @@ export async function exportToPDF(
     `${t('exportEquipment.reportTitle')} - ${format(new Date(), 'dd/MM/yyyy HH:mm')}`
   );
 
-  doc.save(`${filename}_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+  const pdfFileName = `${filename}_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+  
+  if (options?.preview) {
+    const pdfBlob = doc.output('blob');
+    const pdfUrl = URL.createObjectURL(pdfBlob);
+    window.open(pdfUrl, '_blank');
+  } else {
+    doc.save(pdfFileName);
+  }
 }

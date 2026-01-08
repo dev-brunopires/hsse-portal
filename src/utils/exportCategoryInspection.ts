@@ -45,7 +45,7 @@ const getExpiryStatusLabels = (): Record<string, string> => ({
   'both_expired': i18n.t('exportCategoryInspection.bothExpired'),
 });
 
-export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFData): Promise<void> {
+export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFData, options?: { preview?: boolean }): Promise<void> {
   const t = i18n.t;
   const dateLocale = getDateLocale();
   const statusLabels = getStatusLabels();
@@ -315,7 +315,14 @@ export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFDat
     `${t('exportCategoryInspection.categoryInspection')} - ${data.category.name}`
   );
 
-  // Save
+  // Save or Preview
   const fileName = `inspecao_categoria_${data.category.name.toLowerCase().replace(/\s+/g, '_')}_${format(new Date(), 'yyyyMMdd_HHmmss')}.pdf`;
-  doc.save(fileName);
+  
+  if (options?.preview) {
+    const pdfBlob = doc.output('blob');
+    const pdfUrl = URL.createObjectURL(pdfBlob);
+    window.open(pdfUrl, '_blank');
+  } else {
+    doc.save(fileName);
+  }
 }
