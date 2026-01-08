@@ -91,22 +91,27 @@ const formatDate = (date: string | null | undefined): string => {
   }
 };
 
-// Cache for the logo base64
-let logoBase64Cache: string | null = null;
+// Cache for organization logos
+const logoCache = new Map<string, string>();
 
-async function loadLogoBase64(): Promise<string | null> {
-  if (logoBase64Cache) return logoBase64Cache;
+async function loadOrganizationLogo(logoUrl: string | null): Promise<string | null> {
+  if (!logoUrl) return null;
+  
+  // Check cache first
+  if (logoCache.has(logoUrl)) {
+    return logoCache.get(logoUrl) || null;
+  }
   
   try {
-    const logoModule = await import('@/assets/sbm-logo-white.png');
-    const response = await fetch(logoModule.default);
+    const response = await fetch(logoUrl);
     const blob = await response.blob();
     
     return new Promise((resolve) => {
       const reader = new FileReader();
       reader.onloadend = () => {
-        logoBase64Cache = reader.result as string;
-        resolve(logoBase64Cache);
+        const base64 = reader.result as string;
+        logoCache.set(logoUrl, base64);
+        resolve(base64);
       };
       reader.onerror = () => resolve(null);
       reader.readAsDataURL(blob);
@@ -120,10 +125,12 @@ export async function generateInspectionPDF(data: InspectionPDFData, options?: {
   const t = i18n.t;
   const dateLocale = getDateLocale();
   const statusLabels = getStatusLabels();
+  const companyName = data.branding?.name || 'SafeShip';
   
-  // Preload logos
+  // Preload logos - prioritize white logo, fallback to colored logo
   await preloadLogo(data.branding);
-  const logoBase64 = await loadLogoBase64();
+  const logoUrl = data.branding?.logoWhiteUrl || data.branding?.logoUrl || null;
+  const logoBase64 = await loadOrganizationLogo(logoUrl);
   
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -131,27 +138,26 @@ export async function generateInspectionPDF(data: InspectionPDFData, options?: {
   const margin = 15;
   let yPos = 0;
 
-  // === HEADER WITH BRANDING (Blue only, no orange) ===
+  // === HEADER WITH BRANDING ===
   doc.setFillColor(...SBM_BLUE);
   doc.rect(0, 0, pageWidth, 32, 'F');
   
-  // Add logo image or fallback to text - maintain aspect ratio (original is ~200x50)
+  // Add organization logo or fallback to text
   if (logoBase64) {
     try {
-      // Logo with correct aspect ratio (4:1) - width:height
       doc.addImage(logoBase64, 'PNG', margin, 6, 32, 20);
     } catch {
-      // Fallback to text
+      // Fallback to organization name
       doc.setTextColor(255, 255, 255);
-      doc.setFontSize(24);
+      doc.setFontSize(18);
       doc.setFont('helvetica', 'bold');
-      doc.text(data.branding?.name || 'SafeShip', margin, 18);
+      doc.text(companyName, margin, 18);
     }
   } else {
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
-    doc.text(data.branding?.name || 'SafeShip', margin, 18);
+    doc.text(companyName, margin, 18);
   }
   
   // Report title
