@@ -1,4 +1,4 @@
-import { useEffect, forwardRef } from 'react';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -52,12 +52,12 @@ interface EditInspectionDialogProps {
   onSuccess?: () => void;
 }
 
-export const EditInspectionDialog = forwardRef<HTMLDivElement, EditInspectionDialogProps>(({ 
+export function EditInspectionDialog({ 
   open, 
   onOpenChange, 
   inspection,
   onSuccess,
-}, _ref) => {
+}: EditInspectionDialogProps) {
   const { t } = useTranslation();
   const updateInspection = useUpdateInspection();
 
@@ -292,6 +292,4 @@ export const EditInspectionDialog = forwardRef<HTMLDivElement, EditInspectionDia
       </DialogContent>
     </Dialog>
   );
-});
-
-EditInspectionDialog.displayName = 'EditInspectionDialog';
+}
