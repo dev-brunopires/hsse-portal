@@ -18,7 +18,10 @@ import {
 } from '@/components/ui/form';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { SystemLogo } from '@/components/ui/SystemLogo';
+import { getOrganizationUrl } from '@/utils/organizationUrl';
 import loginBg from '@/assets/login-bg.jpg';
 
 const REMEMBER_EMAIL_KEY = 'sbm_remembered_email';
@@ -30,7 +33,8 @@ export default function Auth() {
   const [rememberMe, setRememberMe] = useState(false);
   const { signIn, user } = useAuth();
   const navigate = useNavigate();
-  const { organization, logoUrl } = useOrganization();
+  const { toast } = useToast();
+  const { organization, logoUrl, subdomain } = useOrganization();
   
   // Use organization logo or system default logo
   const hasOrgLogo = organization && logoUrl;
@@ -76,12 +80,72 @@ export default function Auth() {
       localStorage.removeItem(REMEMBER_EMAIL_KEY);
     }
     
-    const { error } = await signIn(data.email, data.password);
-    setIsLoading(false);
+    const { error, data: authData } = await signIn(data.email, data.password);
     
-    if (!error) {
-      navigate('/');
+    if (error) {
+      setIsLoading(false);
+      return;
     }
+
+    // After successful login, validate organization membership
+    if (authData?.user && subdomain) {
+      try {
+        // Check if user is platform owner (they can access any org)
+        const { data: isPlatformOwner } = await supabase
+          .from('platform_owners')
+          .select('id')
+          .eq('user_id', authData.user.id)
+          .maybeSingle();
+
+        if (!isPlatformOwner) {
+          // Get user's actual organization
+          const { data: userOrgData } = await supabase
+            .from('user_organizations')
+            .select(`
+              organizations:organization_id (
+                subdomain,
+                name
+              )
+            `)
+            .eq('user_id', authData.user.id)
+            .maybeSingle();
+
+          const userSubdomain = userOrgData?.organizations?.subdomain;
+          
+          // If user's org doesn't match URL org, redirect to correct URL
+          if (userSubdomain && userSubdomain !== subdomain) {
+            toast({
+              title: t('authPage.wrongOrganization', 'Organização incorreta'),
+              description: t('authPage.redirectingToCorrectOrg', 'Redirecionando para {{org}}...', { 
+                org: userOrgData?.organizations?.name 
+              }),
+            });
+            
+            // Redirect to correct organization URL
+            const correctUrl = getOrganizationUrl(userSubdomain, '/');
+            window.location.href = correctUrl;
+            return;
+          }
+
+          // If user has no org and trying to access specific org, show error
+          if (!userSubdomain) {
+            toast({
+              title: t('authPage.noOrganization', 'Sem organização'),
+              description: t('authPage.userNotAssigned', 'Usuário não está vinculado a nenhuma organização.'),
+              variant: 'destructive',
+            });
+            await supabase.auth.signOut();
+            setIsLoading(false);
+            return;
+          }
+        }
+      } catch (err) {
+        console.error('Error validating organization:', err);
+      }
+    }
+
+    setIsLoading(false);
+    navigate('/');
   };
 
   return (
