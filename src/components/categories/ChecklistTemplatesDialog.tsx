@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ListChecks, Plus, Edit, Trash2, Loader2, Star, StarOff } from 'lucide-react';
+import { ListChecks, Plus, Trash2, Loader2, Star, Copy } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -14,6 +14,11 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -86,6 +91,17 @@ export function ChecklistTemplatesDialog({ open, onOpenChange, category }: Check
     setEditingTemplate(null);
     setTemplateName('');
     setTemplateItems([]);
+  };
+
+  const handleDuplicate = (template: ChecklistTemplate) => {
+    setIsCreating(true);
+    setEditingTemplate(null);
+    setTemplateName(`${template.name} (${t('checklistTemplates.copy')})`);
+    setTemplateItems(template.items?.map(i => ({
+      description: i.description,
+      is_required: i.is_required,
+      tempId: `dup-${Date.now()}-${Math.random()}`,
+    })) || []);
   };
 
   const handleSave = async () => {
@@ -191,11 +207,29 @@ export function ChecklistTemplatesDialog({ open, onOpenChange, category }: Check
                           <span className="font-medium text-sm truncate flex-1">
                             {template.name}
                           </span>
-                          {template.is_default && (
-                            <Badge variant="secondary" className="ml-2 text-xs">
-                              {t('common.default')}
-                            </Badge>
-                          )}
+                          <div className="flex items-center gap-1 ml-2">
+                            {template.is_default && (
+                              <Badge variant="secondary" className="text-xs">
+                                {t('common.default')}
+                              </Badge>
+                            )}
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDuplicate(template);
+                                  }}
+                                >
+                                  <Copy className="h-3 w-3" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>{t('checklistTemplates.duplicate')}</TooltipContent>
+                            </Tooltip>
+                          </div>
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
                           {template.items?.length || 0} {t('checklistTemplates.items')}

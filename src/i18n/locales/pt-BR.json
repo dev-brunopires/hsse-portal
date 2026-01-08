@@ -2608,7 +2608,9 @@
     "setAsDefault": "Definir como padrão",
     "confirmDelete": "Excluir Template",
     "confirmDeleteDescription": "Tem certeza que deseja excluir o template \"{{name}}\"?",
-    "defaultTemplateName": "Checklist Padrão"
+    "defaultTemplateName": "Checklist Padrão",
+    "duplicate": "Duplicar template",
+    "copy": "Cópia"
   },
   "categoriesPage": {
     "checklistItems": "Checklist",
