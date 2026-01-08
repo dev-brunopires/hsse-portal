@@ -37,6 +37,7 @@ import {
   FileSpreadsheet,
   Eye,
   Loader2,
+  RefreshCw,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { cn } from '@/lib/utils';
@@ -86,10 +87,12 @@ export default function Maintenance() {
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [activeTab, setActiveTab] = useState('all');
 
-  const { data: requests = [], isLoading } = useMaintenanceRequests();
+  const { data: requests = [], isLoading, isFetching, refetch } = useMaintenanceRequests();
   const { role } = useAuth();
   const branding = useOrganizationBranding();
   const [isExporting, setIsExporting] = useState(false);
+  
+  const isSyncing = isFetching && !isLoading;
 
   // Derive stats from the same dataset rendered in the list to avoid badge/card mismatch.
   const stats = useMemo(() => {
@@ -219,7 +222,26 @@ export default function Maintenance() {
           title={t('maintenance.title')}
           subtitle={t('maintenance.subtitle')}
           actions={
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
+              {/* Sync indicator */}
+              {isSyncing && (
+                <div className="flex items-center gap-1.5 text-sm text-muted-foreground animate-pulse">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="hidden sm:inline">{t('common.syncing')}</span>
+                </div>
+              )}
+              
+              {/* Refresh button */}
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => refetch()}
+                disabled={isFetching}
+                title={t('common.refresh')}
+              >
+                <RefreshCw className={cn("h-4 w-4", isFetching && "animate-spin")} />
+              </Button>
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="gap-2" disabled={isExporting || filteredRequests.length === 0}>
