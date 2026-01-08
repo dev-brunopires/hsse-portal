@@ -12,6 +12,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Wrench,
@@ -26,6 +33,10 @@ import {
   Calendar,
   Package,
   TrendingUp,
+  Download,
+  FileSpreadsheet,
+  Eye,
+  Loader2,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { cn } from '@/lib/utils';
@@ -39,6 +50,9 @@ import {
 import { MaintenanceRequestDialog } from '@/components/maintenance/MaintenanceRequestDialog';
 import { MaintenanceDetailDialog } from '@/components/maintenance/MaintenanceDetailDialog';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOrganizationBranding } from '@/hooks/useOrganizationBranding';
+import { exportMaintenanceToPDF, exportMaintenanceToExcel } from '@/utils/exportMaintenance';
+import { toast } from 'sonner';
 
 const getStatusConfig = (t: (key: string) => string) => ({
   pending: { label: t('maintenance.statusPending'), icon: Clock, color: 'text-amber-600', bgColor: 'bg-amber-50 dark:bg-amber-950/30' },
@@ -77,9 +91,40 @@ export default function Maintenance() {
   const { data: requests = [], isLoading } = useMaintenanceRequests();
   const { data: stats } = useMaintenanceStats();
   const { role } = useAuth();
+  const branding = useOrganizationBranding();
+  const [isExporting, setIsExporting] = useState(false);
 
   const isAdmin = role === 'admin' || (role as string) === 'admin_master';
   const canCreate = isAdmin || role === 'technician' || (role as string) === 'supervisor';
+
+  const handleExportPDF = async (preview = false) => {
+    if (filteredRequests.length === 0) {
+      toast.error(t('maintenance.noRequestsToExport'));
+      return;
+    }
+    setIsExporting(true);
+    try {
+      await exportMaintenanceToPDF(filteredRequests, 'manutencoes', branding, { preview });
+      toast.success(preview ? t('common.pdfPreviewOpened') : t('maintenance.pdfExported'));
+    } catch (error) {
+      toast.error(t('maintenance.exportError'));
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportExcel = () => {
+    if (filteredRequests.length === 0) {
+      toast.error(t('maintenance.noRequestsToExport'));
+      return;
+    }
+    try {
+      exportMaintenanceToExcel(filteredRequests, 'manutencoes');
+      toast.success(t('maintenance.excelExported'));
+    } catch (error) {
+      toast.error(t('maintenance.exportError'));
+    }
+  };
 
   const filteredRequests = useMemo(() => {
     return requests.filter(req => {
@@ -145,12 +190,41 @@ export default function Maintenance() {
           title={t('maintenance.title')}
           subtitle={t('maintenance.subtitle')}
           actions={
-            canCreate && (
-              <Button onClick={() => setCreateDialogOpen(true)} className="gap-2">
-                <Plus className="h-4 w-4" />
-                {t('maintenance.newRequest')}
-              </Button>
-            )
+            <div className="flex gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="gap-2" disabled={isExporting || filteredRequests.length === 0}>
+                    {isExporting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Download className="h-4 w-4" />
+                    )}
+                    {t('common.export')}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => handleExportPDF(true)} className="gap-2">
+                    <Eye className="h-4 w-4" />
+                    {t('common.previewPDF')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExportPDF(false)} className="gap-2">
+                    <Download className="h-4 w-4" />
+                    {t('maintenance.exportPDF')}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleExportExcel} className="gap-2">
+                    <FileSpreadsheet className="h-4 w-4" />
+                    {t('maintenance.exportExcel')}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {canCreate && (
+                <Button onClick={() => setCreateDialogOpen(true)} className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  {t('maintenance.newRequest')}
+                </Button>
+              )}
+            </div>
           }
         />
 
