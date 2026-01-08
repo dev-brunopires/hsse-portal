@@ -61,6 +61,7 @@ import { useCreateInspection } from '@/hooks/useInspections';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserSignature } from '@/hooks/useUserSignature';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
+import { useDefaultChecklistTemplate } from '@/hooks/useChecklistTemplates';
 
 const createInspectionSchema = (t: (key: string) => string) => z.object({
   inspectorId: z.string().min(1, t('inspectionForm.selectInspectorBefore')),
@@ -89,13 +90,13 @@ interface ChecklistItem {
 }
 
 // Default fallback checklist if no template exists
-const getDefaultChecklist = (): ChecklistItem[] => {
+const getDefaultChecklist = (t: (key: string) => string): ChecklistItem[] => {
   return [
-    { id: '1', description: 'Equipamento está acessível e desobstruído', status: 'pending', notes: '', required: true },
-    { id: '2', description: 'Identificação/etiqueta legível e visível', status: 'pending', notes: '', required: true },
-    { id: '3', description: 'Sem sinais de corrosão ou danos externos', status: 'pending', notes: '', required: true },
-    { id: '4', description: 'Lacre de segurança íntegro', status: 'pending', notes: '', required: true },
-    { id: '5', description: 'Data de validade dentro do prazo', status: 'pending', notes: '', required: true },
+    { id: '1', description: t('inspectionForm.defaultChecklist.accessible'), status: 'pending', notes: '', required: true },
+    { id: '2', description: t('inspectionForm.defaultChecklist.labelVisible'), status: 'pending', notes: '', required: true },
+    { id: '3', description: t('inspectionForm.defaultChecklist.noCorrosion'), status: 'pending', notes: '', required: true },
+    { id: '4', description: t('inspectionForm.defaultChecklist.sealIntact'), status: 'pending', notes: '', required: true },
+    { id: '5', description: t('inspectionForm.defaultChecklist.validDate'), status: 'pending', notes: '', required: true },
   ];
 };
 
@@ -115,6 +116,7 @@ export function InspectionFormDialog({
   
   const { data: inspectors = [], isLoading: inspectorsLoading } = useTechniciansAndAdmins();
   const { data: userSignatureSettings } = useUserSignature();
+  const { data: defaultTemplate, isLoading: templateLoading } = useDefaultChecklistTemplate(equipment?.categoryId);
   const createInspection = useCreateInspection();
   const { isOnline, addPendingInspection } = useOfflineSync();
 
@@ -132,9 +134,24 @@ export function InspectionFormDialog({
     },
   });
 
+  // Load checklist from category template or use default fallback
   useEffect(() => {
     if (open && equipment) {
-      setChecklist(getDefaultChecklist());
+      // If template is loaded, use it
+      if (defaultTemplate?.items && defaultTemplate.items.length > 0) {
+        const templateItems: ChecklistItem[] = defaultTemplate.items.map((item, index) => ({
+          id: item.id || `item-${index}`,
+          description: item.description,
+          status: 'pending',
+          notes: '',
+          required: item.is_required ?? true,
+        }));
+        setChecklist(templateItems);
+      } else if (!templateLoading) {
+        // Fallback to default if no template exists
+        setChecklist(getDefaultChecklist(t));
+      }
+      
       form.reset({
         inspectorId: user?.id || '',
         inspectionDate: new Date().toISOString().split('T')[0],
@@ -151,7 +168,7 @@ export function InspectionFormDialog({
         setSignatureData(null);
       }
     }
-  }, [open, equipment, form, user, userSignatureSettings]);
+  }, [open, equipment, defaultTemplate, templateLoading, form, user, userSignatureSettings, t]);
 
   const updateChecklistItem = (itemId: string, field: 'status' | 'notes', value: string) => {
     setChecklist(prev => prev.map(item => 
@@ -357,11 +374,6 @@ export function InspectionFormDialog({
   const statusCounts = getStatusCounts();
 
   if (!equipment) return null;
-
-  // Initialize checklist on open
-  if (checklist.length === 0) {
-    setChecklist(getDefaultChecklist());
-  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

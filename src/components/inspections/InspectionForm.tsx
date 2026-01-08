@@ -50,6 +50,7 @@ import { useCreateInspection, useLastInspection } from '@/hooks/useInspections';
 import { useEquipment, type EquipmentWithCategory } from '@/hooks/useEquipment';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserSignature } from '@/hooks/useUserSignature';
+import { useDefaultChecklistTemplate } from '@/hooks/useChecklistTemplates';
 import { EquipmentWarningAlert } from './EquipmentWarningAlert';
 import {
   Command,
@@ -91,37 +92,15 @@ interface ChecklistItem {
   required: boolean;
 }
 
-const getChecklistForCategory = (categoryId: string): ChecklistItem[] => {
-  const baseChecklist: ChecklistItem[] = [
-    { id: '1', description: 'Equipamento está acessível e desobstruído', status: 'pending', notes: '', required: true },
-    { id: '2', description: 'Identificação/etiqueta legível e visível', status: 'pending', notes: '', required: true },
-    { id: '3', description: 'Sem sinais de corrosão ou danos externos', status: 'pending', notes: '', required: true },
-    { id: '4', description: 'Lacre de segurança íntegro', status: 'pending', notes: '', required: true },
-    { id: '5', description: 'Data de validade dentro do prazo', status: 'pending', notes: '', required: true },
+// Default fallback checklist if no template exists
+const getDefaultChecklist = (t: (key: string) => string): ChecklistItem[] => {
+  return [
+    { id: '1', description: t('inspectionForm.defaultChecklist.accessible'), status: 'pending', notes: '', required: true },
+    { id: '2', description: t('inspectionForm.defaultChecklist.labelVisible'), status: 'pending', notes: '', required: true },
+    { id: '3', description: t('inspectionForm.defaultChecklist.noCorrosion'), status: 'pending', notes: '', required: true },
+    { id: '4', description: t('inspectionForm.defaultChecklist.sealIntact'), status: 'pending', notes: '', required: true },
+    { id: '5', description: t('inspectionForm.defaultChecklist.validDate'), status: 'pending', notes: '', required: true },
   ];
-
-  const extintorChecklist: ChecklistItem[] = [
-    ...baseChecklist,
-    { id: '6', description: 'Manômetro na faixa verde (pressurizado)', status: 'pending', notes: '', required: true },
-    { id: '7', description: 'Mangueira sem rachaduras ou obstruções', status: 'pending', notes: '', required: true },
-    { id: '8', description: 'Gatilho e trava funcionando corretamente', status: 'pending', notes: '', required: true },
-    { id: '9', description: 'Suporte de fixação em bom estado', status: 'pending', notes: '', required: false },
-    { id: '10', description: 'Sinalização de localização visível', status: 'pending', notes: '', required: false },
-  ];
-
-  const scbaChecklist: ChecklistItem[] = [
-    ...baseChecklist,
-    { id: '6', description: 'Cilindro com pressão adequada', status: 'pending', notes: '', required: true },
-    { id: '7', description: 'Máscara facial sem danos ou rachaduras', status: 'pending', notes: '', required: true },
-    { id: '8', description: 'Válvula de demanda funcionando', status: 'pending', notes: '', required: true },
-    { id: '9', description: 'Correias e tirantes em bom estado', status: 'pending', notes: '', required: true },
-    { id: '10', description: 'Alarme de baixa pressão funcional', status: 'pending', notes: '', required: true },
-    { id: '11', description: 'Teste de vedação realizado', status: 'pending', notes: '', required: true },
-  ];
-
-  if (categoryId === 'cat-1') return extintorChecklist;
-  if (categoryId === 'cat-3') return scbaChecklist;
-  return baseChecklist;
 };
 
 interface InspectionFormProps {
@@ -150,6 +129,7 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
   const { data: inspectors = [], isLoading: inspectorsLoading } = useTechniciansAndAdmins();
   const { data: lastInspection } = useLastInspection(selectedEquipment?.id);
   const { data: userSignatureSettings } = useUserSignature();
+  const { data: defaultTemplate, isLoading: templateLoading } = useDefaultChecklistTemplate(selectedEquipment?.category_id);
   const createInspection = useCreateInspection();
 
   const inspectionSchema = createInspectionSchema(t);
@@ -213,11 +193,25 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
     }
   }, [preSelectedEquipmentId, equipment, selectedEquipment, form]);
 
+  // Load checklist from category template when equipment is selected
   useEffect(() => {
     if (selectedEquipment) {
-      setChecklist(getChecklistForCategory(selectedEquipment.category_id));
+      // If template is loaded, use it
+      if (defaultTemplate?.items && defaultTemplate.items.length > 0) {
+        const templateItems: ChecklistItem[] = defaultTemplate.items.map((item, index) => ({
+          id: item.id || `item-${index}`,
+          description: item.description,
+          status: 'pending',
+          notes: '',
+          required: item.is_required ?? true,
+        }));
+        setChecklist(templateItems);
+      } else if (!templateLoading) {
+        // Fallback to default if no template exists
+        setChecklist(getDefaultChecklist(t));
+      }
     }
-  }, [selectedEquipment]);
+  }, [selectedEquipment, defaultTemplate, templateLoading, t]);
 
   const updateChecklistItem = (itemId: string, field: 'status' | 'notes', value: string) => {
     setChecklist(prev => prev.map(item => 
