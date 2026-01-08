@@ -465,8 +465,142 @@ export default function PendingRecommendations() {
             </div>
           )}
 
-          {/* Table */}
-          <div className="rounded-md border">
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-3">
+            {isLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <Card key={i} className="p-4">
+                  <Skeleton className="h-5 w-32 mb-2" />
+                  <Skeleton className="h-4 w-24 mb-3" />
+                  <div className="flex gap-2 mb-3">
+                    <Skeleton className="h-5 w-16" />
+                    <Skeleton className="h-5 w-20" />
+                  </div>
+                  <Skeleton className="h-9 w-full" />
+                </Card>
+              ))
+            ) : filteredItems.length === 0 ? (
+              <Card className="p-8 text-center text-muted-foreground">
+                <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-status-success" />
+                <p>{t('pendingRecommendations.noResults')}</p>
+                <p className="text-sm">{t('pendingRecommendations.noResultsDescription')}</p>
+              </Card>
+            ) : (
+              filteredItems.map((item) => (
+                <Card 
+                  key={item.equipment.id}
+                  className={`p-4 ${item.isAutoRejected ? 'border-l-4 border-l-red-500 bg-red-500/5' : ''}`}
+                >
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${
+                      item.isAutoRejected
+                        ? 'bg-red-500/20'
+                        : item.isCertificateExpired || item.hasCriticalStatus 
+                          ? 'bg-status-danger/10' 
+                          : item.isInspectionOverdue 
+                            ? 'bg-status-warning/10'
+                            : 'bg-primary/10'
+                    }`}>
+                      {item.isAutoRejected ? (
+                        <ShieldAlert className="h-5 w-5 text-red-500" />
+                      ) : (
+                        <Package className={`h-5 w-5 ${
+                          item.isCertificateExpired || item.hasCriticalStatus 
+                            ? 'text-status-danger' 
+                            : item.isInspectionOverdue 
+                              ? 'text-status-warning'
+                              : 'text-primary'
+                        }`} />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{item.equipment.name}</p>
+                      <p className="text-xs text-muted-foreground font-mono">
+                        {item.equipment.internal_code}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                        <Badge variant="outline" className="text-xs">
+                          {item.equipment.categories?.name || '-'}
+                        </Badge>
+                        <span>•</span>
+                        <span>{item.equipment.location}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Pendencies Badges */}
+                  <div className="flex flex-wrap gap-1 mb-3">
+                    {item.isAutoRejected && (
+                      <Badge className="text-xs bg-red-500 text-white font-bold">
+                        {t('common.rejected').toUpperCase()}
+                      </Badge>
+                    )}
+                    {item.isAutoRejected && item.autoRejectedReasonKeys.map((reasonKey, idx) => (
+                      <Badge key={idx} variant="destructive" className="text-xs">
+                        {t(reasonKey)}
+                      </Badge>
+                    ))}
+                    {!item.isAutoRejected && item.isCertificateExpired && (
+                      <Badge variant="destructive" className="text-xs">
+                        {t('pendingRecommendations.certExpired')}
+                      </Badge>
+                    )}
+                    {!item.isAutoRejected && item.isEquipmentExpired && (
+                      <Badge variant="destructive" className="text-xs">
+                        {t('pendingRecommendations.expiryExpired')}
+                      </Badge>
+                    )}
+                    {item.isInspectionOverdue && (
+                      <Badge className="text-xs bg-status-warning text-status-warning-foreground">
+                        {t('pendingRecommendations.inspOverdue')} ({item.daysOverdue}{t('pendingRecommendations.days')})
+                      </Badge>
+                    )}
+                    {item.hasUnresolvedRecommendations && (
+                      <Badge variant="outline" className="text-xs border-primary text-primary">
+                        {t('pendingRecommendations.pendingRecommendation')}
+                      </Badge>
+                    )}
+                    {!item.isAutoRejected && item.hasCriticalStatus && (
+                      <Badge variant="destructive" className="text-xs">
+                        {item.equipment.status === 'rejected' ? t('common.rejected') : t('pendingRecommendations.expired')}
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* Last Inspection */}
+                  {item.lastInspection && (
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground mb-3">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {t('pendingRecommendations.lastInspectionColumn')}: {format(new Date(item.lastInspection.inspection_date), 'dd/MM/yyyy')}
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => openDetailDialog(item)}
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      {t('common.details')}
+                    </Button>
+                    <Button 
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handleStartInspection(item.equipment.id)}
+                    >
+                      {t('pendingRecommendations.startInspection')}
+                    </Button>
+                  </div>
+                </Card>
+              ))
+            )}
+          </div>
+
+          {/* Desktop Table */}
+          <div className="hidden md:block rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
