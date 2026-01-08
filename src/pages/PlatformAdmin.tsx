@@ -204,7 +204,7 @@ export default function PlatformAdmin() {
   };
 
   const getOrgUrl = (subdomain: string) => {
-    return getOrganizationUrl(subdomain);
+    return getOrganizationUrl(subdomain, '/auth');
   };
 
   return (
