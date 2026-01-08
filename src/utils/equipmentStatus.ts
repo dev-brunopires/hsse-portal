@@ -20,6 +20,16 @@ export interface EffectiveStatusResult {
   reasonKeys: string[]; // i18n keys for translation
 }
 
+export interface EquipmentAlerts {
+  hasCertificateExpired: boolean;
+  hasCertificateExpiringSoon: boolean;
+  hasEquipmentExpired: boolean;
+  hasInspectionOverdue: boolean;
+  hasInspectionDueSoon: boolean;
+  alertCount: number;
+  alertKeys: string[];
+}
+
 export function getEffectiveEquipmentStatus(equipment: EquipmentWithDates): EffectiveStatusResult {
   const today = new Date().toISOString().split('T')[0];
   const reasons: string[] = [];
@@ -59,6 +69,115 @@ export function getEffectiveEquipmentStatus(equipment: EquipmentWithDates): Effe
     reasons: [],
     reasonKeys: []
   };
+}
+
+/**
+ * Get all alerts for an equipment item
+ * Used in reports to show notifications alongside status
+ */
+export function getEquipmentAlerts(equipment: EquipmentWithDates): EquipmentAlerts {
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+  const thirtyDaysFromNow = new Date(today);
+  thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+  const thirtyDaysStr = thirtyDaysFromNow.toISOString().split('T')[0];
+  
+  const alertKeys: string[] = [];
+  
+  // Certificate expired
+  const hasCertificateExpired = !!(equipment.certificate_expiry && equipment.certificate_expiry < todayStr);
+  if (hasCertificateExpired) {
+    alertKeys.push('alerts.certificateExpired');
+  }
+  
+  // Certificate expiring soon (within 30 days)
+  const hasCertificateExpiringSoon = !!(
+    equipment.certificate_expiry && 
+    equipment.certificate_expiry >= todayStr && 
+    equipment.certificate_expiry <= thirtyDaysStr
+  );
+  if (hasCertificateExpiringSoon) {
+    alertKeys.push('alerts.certificateExpiring');
+  }
+  
+  // Equipment expired
+  const hasEquipmentExpired = !!(equipment.expiry_date && equipment.expiry_date < todayStr);
+  if (hasEquipmentExpired) {
+    alertKeys.push('alerts.equipmentExpired');
+  }
+  
+  // Inspection overdue
+  const hasInspectionOverdue = !!(equipment.next_inspection && equipment.next_inspection < todayStr);
+  if (hasInspectionOverdue) {
+    alertKeys.push('alerts.inspectionOverdue');
+  }
+  
+  // Inspection due soon (within 30 days)
+  const hasInspectionDueSoon = !!(
+    equipment.next_inspection && 
+    equipment.next_inspection >= todayStr && 
+    equipment.next_inspection <= thirtyDaysStr
+  );
+  if (hasInspectionDueSoon) {
+    alertKeys.push('alerts.inspectionDueSoon');
+  }
+  
+  return {
+    hasCertificateExpired,
+    hasCertificateExpiringSoon,
+    hasEquipmentExpired,
+    hasInspectionOverdue,
+    hasInspectionDueSoon,
+    alertCount: alertKeys.length,
+    alertKeys
+  };
+}
+
+/**
+ * Format status with alerts for display in reports
+ */
+export function formatStatusWithAlerts(
+  status: string,
+  equipment: EquipmentWithDates,
+  statusLabels: Record<string, string>,
+  alertLabels: {
+    certificateExpired?: string;
+    certificateExpiring?: string;
+    equipmentExpired?: string;
+    inspectionOverdue?: string;
+    inspectionDueSoon?: string;
+  }
+): string {
+  const alerts = getEquipmentAlerts(equipment);
+  const effectiveResult = getEffectiveEquipmentStatus(equipment);
+  
+  // Use effective status
+  let statusText = statusLabels[effectiveResult.effectiveStatus] || status;
+  
+  // Build alert indicators
+  const alertIndicators: string[] = [];
+  
+  if (alerts.hasCertificateExpired) {
+    alertIndicators.push(alertLabels.certificateExpired || '⚠️ Cert. Vencido');
+  } else if (alerts.hasCertificateExpiringSoon) {
+    alertIndicators.push(alertLabels.certificateExpiring || '⏰ Cert. a Vencer');
+  }
+  
+  if (alerts.hasEquipmentExpired) {
+    alertIndicators.push(alertLabels.equipmentExpired || '⚠️ Validade Vencida');
+  }
+  
+  if (alerts.hasInspectionOverdue) {
+    alertIndicators.push(alertLabels.inspectionOverdue || '⚠️ Inspeção Atrasada');
+  } else if (alerts.hasInspectionDueSoon) {
+    alertIndicators.push(alertLabels.inspectionDueSoon || '⏰ Inspeção Próxima');
+  }
+  
+  if (alertIndicators.length > 0) {
+    return `${statusText} | ${alertIndicators.join(' | ')}`;
+  }
+  
+  return statusText;
 }
 
 export function getEffectiveStatusLabel(effectiveStatus: string): string {

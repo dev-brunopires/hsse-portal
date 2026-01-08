@@ -14,6 +14,7 @@ import {
   addSectionHeader,
   preloadLogo,
 } from './pdfStyles';
+import { formatStatusWithAlerts, getEquipmentAlerts } from './equipmentStatus';
 import i18n from '@/i18n';
 import type { OrganizationBranding } from '@/hooks/useOrganizationBranding';
 
@@ -27,6 +28,14 @@ const getStatusLabels = (): Record<string, string> => ({
   inactive: i18n.t('exportEquipment.statusInactive'),
 });
 
+const getAlertLabels = () => ({
+  certificateExpired: i18n.t('alerts.reportCertExpired'),
+  certificateExpiring: i18n.t('alerts.reportCertExpiring'),
+  equipmentExpired: i18n.t('alerts.reportEquipExpired'),
+  inspectionOverdue: i18n.t('alerts.reportInspOverdue'),
+  inspectionDueSoon: i18n.t('alerts.reportInspDueSoon'),
+});
+
 const formatDate = (dateString: string | null) => {
   if (!dateString) return '—';
   return format(new Date(dateString), 'dd/MM/yyyy', { locale: getDateLocale() });
@@ -34,27 +43,43 @@ const formatDate = (dateString: string | null) => {
 
 export function exportToExcel(equipment: EquipmentWithCategory[], filename = 'equipamentos') {
   const statusLabels = getStatusLabels();
+  const alertLabels = getAlertLabels();
   const t = i18n.t;
   
-  const data = equipment.map(item => ({
-    [t('exportEquipment.internalCode')]: item.internal_code,
-    [t('exportEquipment.name')]: item.name,
-    [t('exportEquipment.category')]: item.categories?.name || '—',
-    [t('exportEquipment.type')]: item.type,
-    [t('exportEquipment.manufacturer')]: item.manufacturer,
-    [t('exportEquipment.model')]: item.model,
-    [t('exportEquipment.serialNumber')]: item.serial_number,
-    [t('exportEquipment.capacity')]: item.capacity || '—',
-    [t('exportEquipment.unit')]: item.unit,
-    [t('exportEquipment.location')]: item.location,
-    [t('exportEquipment.status')]: statusLabels[item.status] || item.status,
-    [t('exportEquipment.manufacturingDate')]: formatDate(item.manufacturing_date),
-    [t('exportEquipment.acquisitionDate')]: formatDate(item.acquisition_date),
-    [t('exportEquipment.expiryDate')]: formatDate(item.expiry_date),
-    [t('exportEquipment.certificateExpiry')]: formatDate(item.certificate_expiry),
-    [t('exportEquipment.lastInspection')]: formatDate(item.last_inspection),
-    [t('exportEquipment.nextInspection')]: formatDate(item.next_inspection),
-  }));
+  const data = equipment.map(item => {
+    // Get status with alerts
+    const statusWithAlerts = formatStatusWithAlerts(
+      item.status,
+      {
+        status: item.status,
+        certificate_expiry: item.certificate_expiry,
+        expiry_date: item.expiry_date,
+        next_inspection: item.next_inspection
+      },
+      statusLabels,
+      alertLabels
+    );
+    
+    return {
+      [t('exportEquipment.internalCode')]: item.internal_code,
+      [t('exportEquipment.name')]: item.name,
+      [t('exportEquipment.category')]: item.categories?.name || '—',
+      [t('exportEquipment.type')]: item.type,
+      [t('exportEquipment.manufacturer')]: item.manufacturer,
+      [t('exportEquipment.model')]: item.model,
+      [t('exportEquipment.serialNumber')]: item.serial_number,
+      [t('exportEquipment.capacity')]: item.capacity || '—',
+      [t('exportEquipment.unit')]: item.unit,
+      [t('exportEquipment.location')]: item.location,
+      [t('exportEquipment.status')]: statusWithAlerts,
+      [t('exportEquipment.manufacturingDate')]: formatDate(item.manufacturing_date),
+      [t('exportEquipment.acquisitionDate')]: formatDate(item.acquisition_date),
+      [t('exportEquipment.expiryDate')]: formatDate(item.expiry_date),
+      [t('exportEquipment.certificateExpiry')]: formatDate(item.certificate_expiry),
+      [t('exportEquipment.lastInspection')]: formatDate(item.last_inspection),
+      [t('exportEquipment.nextInspection')]: formatDate(item.next_inspection),
+    };
+  });
 
   const ws = XLSX.utils.json_to_sheet(data);
   const wb = XLSX.utils.book_new();
@@ -94,17 +119,34 @@ export async function exportToPDF(
     { branding }
   );
 
-  const tableData = equipment.map(item => [
-    item.internal_code,
-    item.name,
-    item.categories?.name || '—',
-    item.capacity || '—',
-    item.location,
-    statusLabels[item.status] || item.status,
-    formatDate(item.last_inspection),
-    formatDate(item.next_inspection),
-    formatDate(item.certificate_expiry),
-  ]);
+  const alertLabels = getAlertLabels();
+
+  const tableData = equipment.map(item => {
+    // Get status with alerts for PDF
+    const statusWithAlerts = formatStatusWithAlerts(
+      item.status,
+      {
+        status: item.status,
+        certificate_expiry: item.certificate_expiry,
+        expiry_date: item.expiry_date,
+        next_inspection: item.next_inspection
+      },
+      statusLabels,
+      alertLabels
+    );
+    
+    return [
+      item.internal_code,
+      item.name,
+      item.categories?.name || '—',
+      item.capacity || '—',
+      item.location,
+      statusWithAlerts,
+      formatDate(item.last_inspection),
+      formatDate(item.next_inspection),
+      formatDate(item.certificate_expiry),
+    ];
+  });
 
   autoTable(doc, {
     startY: yPos,
@@ -123,6 +165,9 @@ export async function exportToPDF(
     styles: { fontSize: 8 },
     headStyles: { fillColor: SBM_BLUE },
     alternateRowStyles: { fillColor: [248, 250, 252] },
+    columnStyles: {
+      5: { cellWidth: 45 } // Status column wider to accommodate alerts
+    }
   });
 
   // Add standardized footer with organization name

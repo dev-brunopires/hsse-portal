@@ -758,18 +758,39 @@ export default function Reports() {
         return {
           title: t('reports.previewNonConformity'),
           description: `${nonConformities.length} ${t('reports.nonConformitiesFound')}`,
-          data: nonConformities.map(i => ({
-            date: format(new Date(i.inspection_date), 'dd/MM/yyyy', { locale: dateLocale }),
-            equipment: i.equipment?.name || '—',
-            code: i.equipment?.internal_code || '—',
-            status: i.status === 'attention' ? t('reports.attention') : t('reports.nonCompliant'),
-            observations: i.observations?.substring(0, 50) || '—',
-          })),
+          data: nonConformities.map(i => {
+            // Find full equipment data to check alerts
+            const fullEquipment = equipment.find(e => e.id === i.equipment_id);
+            const alertIndicators: string[] = [];
+            
+            if (fullEquipment) {
+              const today = new Date().toISOString().split('T')[0];
+              if (fullEquipment.certificate_expiry && fullEquipment.certificate_expiry < today) {
+                alertIndicators.push(t('alerts.reportCertExpired'));
+              }
+              if (fullEquipment.expiry_date && fullEquipment.expiry_date < today) {
+                alertIndicators.push(t('alerts.reportEquipExpired'));
+              }
+              if (fullEquipment.next_inspection && fullEquipment.next_inspection < today) {
+                alertIndicators.push(t('alerts.reportInspOverdue'));
+              }
+            }
+            
+            return {
+              date: format(new Date(i.inspection_date), 'dd/MM/yyyy', { locale: dateLocale }),
+              equipment: i.equipment?.name || '—',
+              code: i.equipment?.internal_code || '—',
+              status: i.status === 'attention' ? t('reports.attention') : t('reports.nonCompliant'),
+              alerts: alertIndicators.length > 0 ? alertIndicators.join(' ') : '—',
+              observations: i.observations?.substring(0, 40) || '—',
+            };
+          }),
           columns: [
             { key: 'date', label: t('reports.date') },
             { key: 'equipment', label: t('reports.equipment') },
             { key: 'code', label: t('reports.code') },
             { key: 'status', label: t('reports.status') },
+            { key: 'alerts', label: t('reports.equipmentAlerts') },
             { key: 'observations', label: t('reports.observations') },
           ],
           onExportPDF: handleNonConformitiesReportPDF,
