@@ -55,6 +55,8 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { getEffectiveEquipmentStatus } from '@/utils/equipmentStatus';
 import { useTranslation } from 'react-i18next';
+import { useOrganizationBranding } from '@/hooks/useOrganizationBranding';
+import { addPDFHeader, addPDFFooter, SBM_BLUE, preloadLogo } from '@/utils/pdfStyles';
 
 interface PendingItem {
   equipment: EquipmentWithCategory;
@@ -74,6 +76,7 @@ export default function PendingRecommendations() {
   const { t, i18n } = useTranslation();
   const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
   const navigate = useNavigate();
+  const branding = useOrganizationBranding();
   const { data: equipment = [], isLoading: equipmentLoading } = useEquipment();
   const { data: inspections = [], isLoading: inspectionsLoading } = useInspections();
   const { data: categories = [] } = useCategories();
@@ -206,28 +209,28 @@ export default function PendingRecommendations() {
     navigate(`/inspections?scan=${equipmentId}`);
   };
 
-  const exportToPDF = () => {
+  const exportToPDF = async () => {
+    // Preload logo with branding
+    await preloadLogo(branding);
+    
     const doc = new jsPDF('landscape');
     const pageWidth = doc.internal.pageSize.getWidth();
-    let yPos = 15;
+    const generatedDate = format(new Date(), "dd/MM/yyyy HH:mm", { locale: dateLocale });
 
-    // Header
-    doc.setFontSize(18);
-    doc.setFont('helvetica', 'bold');
-    doc.text(t('pendingRecommendations.pdfReport.title'), pageWidth / 2, yPos, { align: 'center' });
-    
-    yPos += 7;
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`${t('pendingRecommendations.pdfReport.generatedAt')} ${format(new Date(), "dd/MM/yyyy", { locale: dateLocale })} ${t('pendingRecommendations.pdfReport.at')} ${format(new Date(), "HH:mm", { locale: dateLocale })}`, pageWidth / 2, yPos, { align: 'center' });
+    // Add standardized header with branding
+    const yPos = await addPDFHeader(
+      doc,
+      t('pendingRecommendations.pdfReport.title'),
+      `${t('pendingRecommendations.pdfReport.generatedAt')} ${generatedDate}`,
+      [`${t('pendingRecommendations.pdfReport.totalPendencies')}: ${stats.total}`],
+      { branding }
+    );
 
     // Summary
-    yPos += 10;
     doc.setFontSize(10);
-    doc.text(`${t('pendingRecommendations.pdfReport.totalPendencies')}: ${stats.total} | ${t('pendingRecommendations.pdfReport.recommendations')}: ${stats.unresolvedRecommendations} | ${t('pendingRecommendations.pdfReport.expiredCertificates')}: ${stats.expiredCertificates} | ${t('pendingRecommendations.pdfReport.overdueInspections')}: ${stats.overdueInspections}`, 14, yPos);
+    doc.text(`${t('pendingRecommendations.pdfReport.recommendations')}: ${stats.unresolvedRecommendations} | ${t('pendingRecommendations.pdfReport.expiredCertificates')}: ${stats.expiredCertificates} | ${t('pendingRecommendations.pdfReport.overdueInspections')}: ${stats.overdueInspections}`, 14, yPos + 5);
 
     // Table
-    yPos += 5;
     const tableBody = filteredItems.map(item => {
       const issues: string[] = [];
       if (item.isAutoRejected) issues.push(t('pendingRecommendations.autoRejected'));
@@ -249,7 +252,7 @@ export default function PendingRecommendations() {
     });
 
     autoTable(doc, {
-      startY: yPos,
+      startY: yPos + 12,
       head: [[
         t('pendingRecommendations.pdfReport.codeHeader'),
         t('pendingRecommendations.pdfReport.equipmentHeader'),
@@ -262,7 +265,7 @@ export default function PendingRecommendations() {
       body: tableBody,
       theme: 'striped',
       styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [59, 130, 246] },
+      headStyles: { fillColor: SBM_BLUE },
       columnStyles: {
         0: { cellWidth: 25 },
         1: { cellWidth: 40 },
@@ -274,20 +277,10 @@ export default function PendingRecommendations() {
       },
     });
 
-    // Footer
-    const pageCount = doc.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      doc.setFontSize(8);
-      doc.text(
-        `${t('pendingRecommendations.pdfReport.page')} ${i} ${t('pendingRecommendations.pdfReport.of')} ${pageCount}`,
-        pageWidth / 2,
-        doc.internal.pageSize.getHeight() - 10,
-        { align: 'center' }
-      );
-    }
+    // Add standardized footer
+    addPDFFooter(doc, branding?.name || 'SafeShip', t('pendingRecommendations.pdfReport.title'));
 
-    doc.save(`relatorio_pendencias_${format(new Date(), 'yyyyMMdd_HHmm')}.pdf`);
+    doc.save(`${t('pendingRecommendations.pdfReport.fileName')}_${format(new Date(), 'yyyyMMdd_HHmm')}.pdf`);
   };
 
   return (

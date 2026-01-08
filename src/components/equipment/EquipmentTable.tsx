@@ -66,6 +66,7 @@ import { ImportEquipmentDialog } from './ImportEquipmentDialog';
 import { QRCodeDialog } from './QRCodeDialog';
 import { AdvancedFiltersDialog, type AdvancedFilters } from './AdvancedFiltersDialog';
 import { exportToExcel, exportToPDF } from '@/utils/exportEquipment';
+import { useOrganizationBranding } from '@/hooks/useOrganizationBranding';
 import { cn } from '@/lib/utils';
 import { formatDate } from '@/utils/dateFormat';
 
@@ -98,6 +99,7 @@ export function EquipmentTable({
   inspectionFrequency 
 }: EquipmentTableProps) {
   const { t } = useTranslation();
+  const branding = useOrganizationBranding();
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -287,7 +289,7 @@ export function EquipmentTable({
     const dataToExport = selectedRows.length > 0 
       ? filteredAndSortedEquipment.filter(e => selectedRows.includes(e.id))
       : filteredAndSortedEquipment;
-    await exportToPDF(dataToExport);
+    await exportToPDF(dataToExport, 'equipamentos', branding);
   };
 
 

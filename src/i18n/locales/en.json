@@ -1655,7 +1655,8 @@
       "pendenciesHeader": "Pending Issues",
       "recommendationsHeader": "Recommendations",
       "page": "Page",
-      "of": "of"
+      "of": "of",
+      "fileName": "pending_issues_report"
     }
   },
   "qrCode": {
