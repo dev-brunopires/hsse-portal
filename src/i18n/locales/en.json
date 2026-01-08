@@ -574,6 +574,7 @@
     "byMonth": "Month",
     "clearFilters": "Clear Filters",
     "actions": "Actions",
+    "equipmentAlerts": "Alerts",
     "showing": "Showing",
     "of": "of",
     "records": "records",
@@ -910,7 +911,12 @@
     "msgMaintenanceCorrectiveOverdue": "Corrective maintenance overdue",
     "msgMaintenancePreventiveOverdue": "Preventive maintenance overdue",
     "msgMaintenanceCriticalPending": "Critical maintenance pending",
-    "msgMaintenanceHighPending": "High priority maintenance pending"
+    "msgMaintenanceHighPending": "High priority maintenance pending",
+    "reportCertExpired": "⚠️ Cert. Expired",
+    "reportCertExpiring": "⏰ Cert. Expiring",
+    "reportEquipExpired": "⚠️ Validity Expired",
+    "reportInspOverdue": "⚠️ Insp. Overdue",
+    "reportInspDueSoon": "⏰ Insp. Due Soon"
   },
   "auditLog": {
     "title": "Audit Log",
