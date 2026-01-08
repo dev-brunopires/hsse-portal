@@ -611,7 +611,7 @@
     "code": "Code",
     "equipment": "Equipment",
     "date": "Date",
-    "title": "Title",
+    "columnTitle": "Title",
     "type": "Type",
     "priority": "Priority",
     "status": "Status",

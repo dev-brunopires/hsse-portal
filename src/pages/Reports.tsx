@@ -491,7 +491,7 @@ export default function Reports() {
 
     autoTable(doc, {
       startY: startY,
-      head: [[t('reports.date'), t('reports.title'), t('reports.equipment'), t('reports.type'), t('reports.priority'), t('reports.status'), t('maintenance.dueDate'), t('maintenance.completedDate')]],
+      head: [[t('reports.date'), t('reports.columnTitle'), t('reports.equipment'), t('reports.type'), t('reports.priority'), t('reports.status'), t('maintenance.dueDate'), t('maintenance.completedDate')]],
       body: tableData,
       styles: { fontSize: 8 },
       headStyles: { fillColor: [59, 130, 246] },
@@ -528,7 +528,7 @@ export default function Reports() {
 
     const data = filteredMaintenance.map(item => ({
       [t('reports.date')]: format(new Date(item.created_at), 'dd/MM/yyyy', { locale: dateLocale }),
-      [t('reports.title')]: item.title || '—',
+      [t('reports.columnTitle')]: item.title || '—',
       [t('reports.equipment')]: item.equipment?.name || '—',
       [t('reports.code')]: item.equipment?.internal_code || '—',
       [t('reports.type')]: maintenanceTypeLabels[item.type] || item.type,
@@ -715,7 +715,7 @@ export default function Reports() {
           })),
           columns: [
             { key: 'date', label: t('reports.date') },
-            { key: 'title', label: t('reports.title') },
+            { key: 'title', label: t('reports.columnTitle') },
             { key: 'equipment', label: t('reports.equipment') },
             { key: 'type', label: t('reports.type') },
             { key: 'priority', label: t('reports.priority') },
