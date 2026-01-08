@@ -1340,6 +1340,8 @@
     "noRecommendations": "No pending recommendations"
   },
   "inspectionForm": {
+    "requiredBadge": "Required",
+    "optionalBadge": "Optional",
     "defaultChecklist": {
       "accessible": "Equipment is accessible and unobstructed",
       "labelVisible": "Identification/label is legible and visible",
