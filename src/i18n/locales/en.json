@@ -1375,6 +1375,7 @@
     "attention": "Attention",
     "notConform": "Non-Conforming",
     "describeProblem": "Describe the problem found...",
+    "itemsCompleted": "completed",
     "generalObservations": "General Observations",
     "observationsPlaceholder": "Observations about the inspection...",
     "recommendationsActions": "Recommendations / Corrective Actions",

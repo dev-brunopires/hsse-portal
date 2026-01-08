@@ -558,20 +558,34 @@ export function InspectionFormDialog({
               <TabsContent value="checklist" className="flex-1 overflow-hidden mt-4">
                 <ScrollArea className="h-full px-1">
                   <div className="space-y-4 pb-4 pr-3">
-                    <div className="flex items-center justify-between sticky top-0 bg-card py-2 z-10">
-                      <h3 className="font-semibold">{t('inspectionForm.verificationItems')}</h3>
-                      <div className="flex items-center gap-3 text-sm">
-                        <span className="flex items-center gap-1">
-                          <CheckCircle2 className="h-4 w-4 text-status-success" />
-                          {statusCounts.ok}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <AlertTriangle className="h-4 w-4 text-status-warning" />
-                          {statusCounts.attention}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <XCircle className="h-4 w-4 text-status-danger" />
-                          {statusCounts.fail}
+                    <div className="flex flex-col gap-2 sticky top-0 bg-card py-2 z-10">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold">{t('inspectionForm.verificationItems')}</h3>
+                        <div className="flex items-center gap-3 text-sm">
+                          <span className="flex items-center gap-1">
+                            <CheckCircle2 className="h-4 w-4 text-status-success" />
+                            {statusCounts.ok}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <AlertTriangle className="h-4 w-4 text-status-warning" />
+                            {statusCounts.attention}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <XCircle className="h-4 w-4 text-status-danger" />
+                            {statusCounts.fail}
+                          </span>
+                        </div>
+                      </div>
+                      {/* Progress indicator */}
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-primary transition-all duration-300 ease-out"
+                            style={{ width: `${checklist.length > 0 ? ((checklist.filter(i => i.status !== 'pending').length / checklist.length) * 100) : 0}%` }}
+                          />
+                        </div>
+                        <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+                          {checklist.filter(i => i.status !== 'pending').length}/{checklist.length} {t('inspectionForm.itemsCompleted')}
                         </span>
                       </div>
                     </div>
