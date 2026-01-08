@@ -797,14 +797,14 @@ export default function Profile() {
 
               <div className="space-y-3">
                 <h4 className="font-medium">{t('profilePage.sessionInfo')}</h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                  <div className="min-w-0">
                     <span className="text-muted-foreground">{t('profilePage.email')}:</span>
-                    <p className="font-medium">{user?.email}</p>
+                    <p className="font-medium break-all">{user?.email}</p>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <span className="text-muted-foreground">{t('profilePage.userId')}:</span>
-                    <p className="font-mono text-xs truncate">{user?.id}</p>
+                    <p className="font-mono text-xs break-all">{user?.id}</p>
                   </div>
                   <div>
                     <span className="text-muted-foreground">{t('profilePage.lastAccess')}:</span>
