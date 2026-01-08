@@ -42,14 +42,26 @@ Deno.serve(async (req) => {
     // Create admin client to check role
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Check if requesting user is admin or admin_master
-    const { data: roleData, error: roleError } = await adminClient
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', requestingUser.id)
-      .single();
+    // Check if requesting user is platform_owner, admin_master, or admin
+    const [roleResult, platformOwnerResult] = await Promise.all([
+      adminClient
+        .from('user_roles')
+        .select('role, organization_id')
+        .eq('user_id', requestingUser.id)
+        .single(),
+      adminClient
+        .from('platform_owners')
+        .select('id')
+        .eq('user_id', requestingUser.id)
+        .maybeSingle(),
+    ]);
 
-    if (roleError || !roleData || !['admin', 'admin_master'].includes(roleData.role)) {
+    const isPlatformOwner = !!platformOwnerResult.data;
+    const requestingUserRole = roleResult.data?.role;
+    const requestingUserOrgId = roleResult.data?.organization_id;
+
+    // Only admin, admin_master, or platform_owner can delete users
+    if (!isPlatformOwner && (!requestingUserRole || !['admin', 'admin_master'].includes(requestingUserRole))) {
       return new Response(
         JSON.stringify({ error: 'Only admins can delete users' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -73,9 +85,54 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Get the target user's role and organization
+    const { data: targetUserRole, error: targetRoleError } = await adminClient
+      .from('user_roles')
+      .select('role, organization_id')
+      .eq('user_id', userId)
+      .single();
+
+    if (targetRoleError) {
+      return new Response(
+        JSON.stringify({ error: 'User not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // SECURITY: Prevent privilege escalation attacks
+    // 1. Only platform_owner can delete admin_master users
+    if (targetUserRole.role === 'admin_master' && !isPlatformOwner) {
+      return new Response(
+        JSON.stringify({ error: 'Only platform owners can delete admin_master users' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // 2. Only admin_master or platform_owner can delete admin users
+    if (targetUserRole.role === 'admin' && !isPlatformOwner && requestingUserRole !== 'admin_master') {
+      return new Response(
+        JSON.stringify({ error: 'Only admin_master can delete admin users' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // 3. Non-platform owners can only delete users from their own organization
+    if (!isPlatformOwner && targetUserRole.organization_id !== requestingUserOrgId) {
+      return new Response(
+        JSON.stringify({ error: 'You can only delete users from your own organization' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Delete user_ships first (if any)
     await adminClient
       .from('user_ships')
+      .delete()
+      .eq('user_id', userId);
+
+    // Delete user_organizations
+    await adminClient
+      .from('user_organizations')
       .delete()
       .eq('user_id', userId);
 
