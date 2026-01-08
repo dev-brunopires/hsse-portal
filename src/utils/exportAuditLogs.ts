@@ -2,24 +2,28 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS } from 'date-fns/locale';
 import { AuditLog } from '@/hooks/useAuditLogs';
 import { addPDFHeader, addPDFFooter, SBM_BLUE, DARK_GRAY, MEDIUM_GRAY, preloadLogo } from './pdfStyles';
 import type { OrganizationBranding } from '@/hooks/useOrganizationBranding';
+import i18n from '@/i18n';
 
-const actionLabels: Record<string, string> = {
-  INSERT: 'Criação',
-  UPDATE: 'Atualização',
-  DELETE: 'Exclusão',
-};
+const t = (key: string) => i18n.t(`exportAuditLogs.${key}`);
+const getDateLocale = () => i18n.language === 'pt-BR' ? ptBR : enUS;
 
-const tableLabels: Record<string, string> = {
-  equipment: 'Equipamento',
-  inspections: 'Inspeção',
-  categories: 'Categoria',
-  ships: 'Embarcação',
-  profiles: 'Perfil',
-};
+const getActionLabels = (): Record<string, string> => ({
+  INSERT: t('actionInsert'),
+  UPDATE: t('actionUpdate'),
+  DELETE: t('actionDelete'),
+});
+
+const getTableLabels = (): Record<string, string> => ({
+  equipment: t('tableEquipment'),
+  inspections: t('tableInspection'),
+  categories: t('tableCategory'),
+  ships: t('tableShip'),
+  profiles: t('tableProfile'),
+});
 
 export async function exportAuditLogsPDF(
   logs: AuditLog[], 
@@ -32,20 +36,23 @@ export async function exportAuditLogsPDF(
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 14;
+  const dateLocale = getDateLocale();
+  const actionLabels = getActionLabels();
+  const tableLabels = getTableLabels();
 
   // Build filter info for header
   const filterParts: string[] = [];
-  if (filters?.ship) filterParts.push(`Embarcação: ${filters.ship}`);
-  if (filters?.table) filterParts.push(`Tipo: ${tableLabels[filters.table] || filters.table}`);
-  if (filters?.action) filterParts.push(`Ação: ${actionLabels[filters.action] || filters.action}`);
+  if (filters?.ship) filterParts.push(`${t('filterShip')}: ${filters.ship}`);
+  if (filters?.table) filterParts.push(`${t('filterType')}: ${tableLabels[filters.table] || filters.table}`);
+  if (filters?.action) filterParts.push(`${t('filterAction')}: ${actionLabels[filters.action] || filters.action}`);
 
-  const rightText = filterParts.length > 0 ? filterParts : ['Todos os registros'];
+  const rightText = filterParts.length > 0 ? filterParts : [t('allRecords')];
 
   // Add header with branding
   const startY = await addPDFHeader(
     doc,
-    'Histórico de Alterações',
-    format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }),
+    t('title'),
+    format(new Date(), "dd/MM/yyyy HH:mm", { locale: dateLocale }),
     rightText,
     { branding }
   );
@@ -53,20 +60,20 @@ export async function exportAuditLogsPDF(
   // Stats
   doc.setFontSize(11);
   doc.setTextColor(...DARK_GRAY);
-  doc.text(`Total de registros: ${logs.length}`, margin, startY + 5);
+  doc.text(`${t('totalRecords')}: ${logs.length}`, margin, startY + 5);
 
   // Table
   const tableData = logs.map(log => [
-    format(new Date(log.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR }),
+    format(new Date(log.created_at), 'dd/MM/yyyy HH:mm', { locale: dateLocale }),
     tableLabels[log.table_name] || log.table_name,
     actionLabels[log.action] || log.action,
-    log.user_name || 'Sistema',
+    log.user_name || t('system'),
     getChangeSummary(log),
   ]);
 
   autoTable(doc, {
     startY: startY + 12,
-    head: [['Data/Hora', 'Tipo', 'Ação', 'Usuário', 'Resumo']],
+    head: [[t('headerDateTime'), t('headerType'), t('headerAction'), t('headerUser'), t('headerSummary')]],
     body: tableData,
     headStyles: {
       fillColor: SBM_BLUE,
@@ -92,20 +99,25 @@ export async function exportAuditLogsPDF(
   });
 
   // Add footer
-  addPDFFooter(doc, 'SBM Offshore - Sistema de Gestão', 'Histórico de Alterações');
+  const companyName = branding?.name || t('footerCompany');
+  addPDFFooter(doc, companyName, t('title'));
 
-  doc.save(`historico-alteracoes-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+  doc.save(`${t('fileName')}-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
 }
 
 export function exportAuditLogsExcel(logs: AuditLog[], filters?: { ship?: string; table?: string; action?: string }) {
+  const dateLocale = getDateLocale();
+  const actionLabels = getActionLabels();
+  const tableLabels = getTableLabels();
+
   const data = logs.map(log => ({
-    'Data/Hora': format(new Date(log.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR }),
-    'Tipo de Registro': tableLabels[log.table_name] || log.table_name,
-    'Ação': actionLabels[log.action] || log.action,
-    'Usuário': log.user_name || 'Sistema',
-    'Resumo': getChangeSummary(log),
-    'Campos Alterados': log.changed_fields?.join(', ') || '-',
-    'ID do Registro': log.record_id,
+    [t('headerDateTime')]: format(new Date(log.created_at), 'dd/MM/yyyy HH:mm', { locale: dateLocale }),
+    [t('excelRecordType')]: tableLabels[log.table_name] || log.table_name,
+    [t('headerAction')]: actionLabels[log.action] || log.action,
+    [t('headerUser')]: log.user_name || t('system'),
+    [t('headerSummary')]: getChangeSummary(log),
+    [t('excelChangedFields')]: log.changed_fields?.join(', ') || '-',
+    [t('excelRecordId')]: log.record_id,
   }));
 
   const ws = XLSX.utils.json_to_sheet(data);
@@ -122,70 +134,70 @@ export function exportAuditLogsExcel(logs: AuditLog[], filters?: { ship?: string
   ];
 
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Histórico');
+  XLSX.utils.book_append_sheet(wb, ws, t('sheetHistory'));
 
   // Add info sheet
   const infoData = [
-    ['Relatório de Histórico de Alterações'],
+    [t('excelReportTitle')],
     [''],
-    ['Gerado em:', format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })],
-    ['Total de registros:', logs.length.toString()],
+    [t('excelGeneratedAt'), format(new Date(), "dd/MM/yyyy HH:mm", { locale: dateLocale })],
+    [t('totalRecords'), logs.length.toString()],
     [''],
-    ['Filtros aplicados:'],
-    ['Embarcação:', filters?.ship || 'Todas'],
-    ['Tipo:', filters?.table ? (tableLabels[filters.table] || filters.table) : 'Todos'],
-    ['Ação:', filters?.action ? (actionLabels[filters.action] || filters.action) : 'Todas'],
+    [t('excelFiltersApplied')],
+    [t('filterShip'), filters?.ship || t('filterAll')],
+    [t('filterType'), filters?.table ? (tableLabels[filters.table] || filters.table) : t('filterAll')],
+    [t('filterAction'), filters?.action ? (actionLabels[filters.action] || filters.action) : t('filterAll')],
   ];
 
   const infoWs = XLSX.utils.aoa_to_sheet(infoData);
   infoWs['!cols'] = [{ wch: 25 }, { wch: 40 }];
-  XLSX.utils.book_append_sheet(wb, infoWs, 'Informações');
+  XLSX.utils.book_append_sheet(wb, infoWs, t('sheetInfo'));
 
-  XLSX.writeFile(wb, `historico-alteracoes-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+  XLSX.writeFile(wb, `${t('fileName')}-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
 }
 
 function getChangeSummary(log: AuditLog): string {
   const fieldLabels: Record<string, string> = {
-    name: 'Nome',
-    internal_code: 'Código Interno',
-    status: 'Status',
-    category_id: 'Categoria',
-    ship_id: 'Embarcação',
-    location: 'Localização',
-    manufacturer: 'Fabricante',
-    model: 'Modelo',
-    serial_number: 'Número de Série',
-    acquisition_date: 'Data de Aquisição',
-    manufacturing_date: 'Data de Fabricação',
-    expiry_date: 'Data de Validade',
-    certificate_expiry: 'Validade do Certificado',
-    next_inspection: 'Próxima Inspeção',
-    last_inspection: 'Última Inspeção',
-    observations: 'Observações',
-    inspection_date: 'Data da Inspeção',
-    inspector_id: 'Inspetor',
-    recommendations: 'Recomendações',
-    actions_taken: 'Ações Tomadas',
-    full_name: 'Nome Completo',
-    email: 'Email',
-    phone: 'Telefone',
-    position: 'Cargo',
-    department: 'Departamento',
-    description: 'Descrição',
-    icon: 'Ícone',
-    inspection_frequency: 'Frequência de Inspeção',
-    code: 'Código',
+    name: t('fieldName'),
+    internal_code: t('fieldInternalCode'),
+    status: t('fieldStatus'),
+    category_id: t('fieldCategory'),
+    ship_id: t('fieldShip'),
+    location: t('fieldLocation'),
+    manufacturer: t('fieldManufacturer'),
+    model: t('fieldModel'),
+    serial_number: t('fieldSerialNumber'),
+    acquisition_date: t('fieldAcquisitionDate'),
+    manufacturing_date: t('fieldManufacturingDate'),
+    expiry_date: t('fieldExpiryDate'),
+    certificate_expiry: t('fieldCertificateExpiry'),
+    next_inspection: t('fieldNextInspection'),
+    last_inspection: t('fieldLastInspection'),
+    observations: t('fieldObservations'),
+    inspection_date: t('fieldInspectionDate'),
+    inspector_id: t('fieldInspector'),
+    recommendations: t('fieldRecommendations'),
+    actions_taken: t('fieldActionsTaken'),
+    full_name: t('fieldFullName'),
+    email: t('fieldEmail'),
+    phone: t('fieldPhone'),
+    position: t('fieldPosition'),
+    department: t('fieldDepartment'),
+    description: t('fieldDescription'),
+    icon: t('fieldIcon'),
+    inspection_frequency: t('fieldInspectionFrequency'),
+    code: t('fieldCode'),
   };
 
-  if (log.action === 'INSERT') return 'Registro criado';
-  if (log.action === 'DELETE') return 'Registro excluído';
+  if (log.action === 'INSERT') return t('recordCreated');
+  if (log.action === 'DELETE') return t('recordDeleted');
   if (log.changed_fields && log.changed_fields.length > 0) {
     const fieldNames = log.changed_fields
       .filter(f => f !== 'updated_at')
       .map(f => fieldLabels[f] || f)
       .slice(0, 3);
     const remaining = log.changed_fields.length - 3;
-    return fieldNames.join(', ') + (remaining > 0 ? ` e mais ${remaining}` : '');
+    return fieldNames.join(', ') + (remaining > 0 ? ` ${t('andMore')} ${remaining}` : '');
   }
-  return 'Alterações realizadas';
+  return t('changesPerformed');
 }
