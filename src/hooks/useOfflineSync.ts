@@ -5,6 +5,26 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { hapticSuccess, hapticWarning } from '@/utils/hapticFeedback';
 
+// Push notification helper for sync completion
+const showSyncPushNotification = async (title: string, body: string) => {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  
+  try {
+    if ('serviceWorker' in navigator) {
+      const registration = await navigator.serviceWorker.ready;
+      await registration.showNotification(title, {
+        body,
+        icon: '/pwa-192x192.png',
+        tag: 'sync-completed',
+      });
+    } else {
+      new Notification(title, { body, icon: '/pwa-192x192.png' });
+    }
+  } catch (error) {
+    console.error('Error showing sync push notification:', error);
+  }
+};
+
 export interface PendingInspection {
   id: string;
   equipment_id: string;
@@ -216,6 +236,13 @@ export function useOfflineSync() {
       toast.success(t('offline.syncCompleted'), {
         description: t('offline.syncCompletedDesc', { count: syncedCount }),
       });
+      
+      // Show push notification for sync completion
+      showSyncPushNotification(
+        t('offline.syncCompleted'),
+        t('offline.syncCompletedDesc', { count: syncedCount })
+      );
+      
       // Refresh data
       queryClient.invalidateQueries({ queryKey: ['inspections'] });
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
