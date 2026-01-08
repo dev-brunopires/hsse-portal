@@ -63,17 +63,14 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
 
   // Recompute subdomain whenever URL query changes (SPA navigation)
   const subdomain = useMemo(() => getSubdomainFromHostname(location.search), [location.search]);
-  // Get org from subdomain (for login page)
+  // Get org from subdomain (for login page) - uses SECURITY DEFINER function to bypass RLS
   const { data: orgFromSubdomain, isLoading: isLoadingSubdomain } = useQuery({
     queryKey: ['organization', 'subdomain', subdomain],
     queryFn: async () => {
       if (!subdomain) return null;
       
       const { data, error } = await supabase
-        .from('organizations')
-        .select('*')
-        .eq('subdomain', subdomain)
-        .eq('is_active', true)
+        .rpc('get_org_branding_by_subdomain', { _subdomain: subdomain })
         .maybeSingle();
       
       if (error) throw error;
