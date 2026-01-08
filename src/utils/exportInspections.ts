@@ -20,6 +20,7 @@ import {
 } from './pdfStyles';
 import i18n from '@/i18n';
 import type { OrganizationBranding } from '@/hooks/useOrganizationBranding';
+import { formatInspectionId } from './formatId';
 
 const getDateLocale = () => i18n.language === 'en' ? enUS : ptBR;
 
@@ -248,7 +249,7 @@ export async function exportSingleInspectionPDF(
   let yPos = await addPDFHeader(
     doc,
     t('exportInspections.singleReportTitle'),
-    `${t('exportInspections.document')}: INS-${inspection.id.substring(0, 8).toUpperCase()}`,
+    `${t('exportInspections.document')}: ${formatInspectionId(inspection.id)}`,
     [`${t('exportInspections.issued')}: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: dateLocale })}`]
   );
   
@@ -459,7 +460,7 @@ export async function exportSingleInspectionPDF(
     `${t('exportInspections.singleReportTitle')} - ${format(new Date(), 'dd/MM/yyyy HH:mm')}`
   );
 
-  const pdfFileName = `inspecao_${inspection.id.substring(0, 8)}_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+  const pdfFileName = `inspecao_${formatInspectionId(inspection.id).replace('-', '_')}_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
   
   if (options?.preview) {
     const pdfBlob = doc.output('blob');
