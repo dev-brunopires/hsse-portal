@@ -121,9 +121,8 @@ export function useInspectorStats(startDate?: Date, endDate?: Date) {
       }).sort((a, b) => b.totalInspections - a.totalInspections);
 
       const totalInspections = inspectorStats.reduce((sum, s) => sum + s.totalInspections, 0);
-      const bestPerformer = inspectorStats.reduce((best, current) => 
-        current.approvalRate > (best?.approvalRate || 0) ? current : best
-      , inspectorStats[0]);
+      // Best performer is the one with most inspections (first in the sorted list)
+      const bestPerformer = inspectorStats[0];
       const mostProductive = inspectorStats[0];
 
       return {
