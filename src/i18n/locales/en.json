@@ -77,7 +77,9 @@
     "uploading": "Uploading...",
     "backToHome": "Back to Home",
     "previewPDF": "Preview PDF",
-    "pdfPreviewOpened": "PDF preview opened in new tab"
+    "pdfPreviewOpened": "PDF preview opened in new tab",
+    "inspect": "Inspect",
+    "new": "New"
   },
   "auth": {
     "login": "Login",
