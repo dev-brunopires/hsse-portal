@@ -209,7 +209,7 @@ export default function PlatformAdmin() {
 
   return (
     <AppLayout>
-      <div className="container mx-auto p-6 max-w-6xl">
+      <div className="container mx-auto p-6 max-w-6xl min-h-screen bg-background">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold">{t('platformAdmin.title')}</h1>
