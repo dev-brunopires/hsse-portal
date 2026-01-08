@@ -211,10 +211,11 @@ export async function exportInspectionsToPDF(
     }
   });
 
-  // Add standardized footer
+  // Add standardized footer with organization name
+  const companyName = branding?.name || 'SafeShip';
   addPDFFooter(
     doc,
-    t('exportInspections.footerCompany'),
+    t('exportInspections.footerCompany', { companyName }),
     `${t('exportInspections.reportTitle')} - ${format(new Date(), 'dd/MM/yyyy HH:mm')}`
   );
 
@@ -456,7 +457,7 @@ export async function exportSingleInspectionPDF(
   // Add standardized footer
   addPDFFooter(
     doc,
-    t('exportInspections.footerCompany'),
+    t('exportInspections.footerCompany', { companyName: 'SafeShip' }),
     `${t('exportInspections.singleReportTitle')} - ${format(new Date(), 'dd/MM/yyyy HH:mm')}`
   );
 

@@ -198,7 +198,7 @@ export default function Auth() {
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                           type="email"
-                          placeholder="seu.email@sbmoffshore.com"
+                          placeholder={t('authPage.emailPlaceholder', 'seu.email@empresa.com')}
                           className="pl-10"
                           {...field}
                         />

@@ -270,10 +270,11 @@ export async function exportDashboardPDF(stats: DashboardStats, filters: ExportF
     });
   }
   
-  // Add standardized footer
+  // Add standardized footer with organization name
+  const companyName = filters.branding?.name || 'SafeShip';
   addPDFFooter(
     doc,
-    filters.branding?.name || t('exportDashboardPDF.footerCompany'),
+    t('exportDashboardPDF.footerCompany', { companyName }),
     `${t('exportDashboardPDF.reportTitle')} - ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: dateLocale })}`
   );
   
