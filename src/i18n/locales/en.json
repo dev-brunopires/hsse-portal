@@ -2226,7 +2226,17 @@
     "code": "Code",
     "syncNow": "Sync Now",
     "syncFailed": "Sync Failed",
-    "syncFailedDesc": "{{count}} inspection(s) could not be synced."
+    "syncFailedDesc": "{{count}} inspection(s) could not be synced.",
+    "noPendingActions": "No pending actions to sync",
+    "refreshingCache": "Refreshing offline cache...",
+    "cacheRefreshed": "Offline cache updated",
+    "pendingCleared": "Pending actions cleared",
+    "clearPendingTitle": "Clear Pending Actions?",
+    "clearPendingDescription": "This will permanently delete all pending inspections that haven't been synced. This action cannot be undone.",
+    "syncStatus": "Sync Status",
+    "online": "Online",
+    "pending": "Pending",
+    "lastSync": "Last sync"
   },
   "pwa": {
     "installTitle": "Install SafeShip",

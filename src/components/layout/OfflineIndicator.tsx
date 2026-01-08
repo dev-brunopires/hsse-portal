@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { WifiOff, Cloud, RefreshCw, ChevronUp, ChevronDown, ClipboardCheck, Wifi } from 'lucide-react';
+import { WifiOff, Cloud, RefreshCw, ChevronUp, ChevronDown, ClipboardCheck, Wifi, Database, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -7,16 +7,59 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 
 export function OfflineIndicator() {
   const { t } = useTranslation();
-  const { isOnline, pendingCount, isSyncing, getPendingInspections, syncPendingInspections } = useOfflineSync();
+  const { 
+    isOnline, 
+    pendingCount, 
+    isSyncing, 
+    getPendingInspections, 
+    syncPendingInspections,
+    clearPendingActions,
+    preCacheData,
+    isCacheAvailable,
+    lastSyncTime,
+  } = useOfflineSync();
   const [expanded, setExpanded] = useState(false);
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
   const pendingInspections = getPendingInspections();
+
+  const handleForceSync = async () => {
+    if (pendingCount > 0) {
+      await syncPendingInspections();
+    } else {
+      toast.info(t('offline.noPendingActions'));
+    }
+  };
+
+  const handleRefreshCache = async () => {
+    toast.loading(t('offline.refreshingCache'));
+    await preCacheData();
+    toast.dismiss();
+    toast.success(t('offline.cacheRefreshed'));
+  };
+
+  const handleClearPending = () => {
+    clearPendingActions();
+    toast.success(t('offline.pendingCleared'));
+  };
 
   // Always show a subtle indicator on mobile when online with no pending
   const showOnlineIndicator = isOnline && pendingCount === 0;
@@ -95,27 +138,56 @@ export function OfflineIndicator() {
                       </div>
                     ))}
                   </div>
-                  {isOnline && (
-                    <Button 
-                      size="sm" 
-                      variant="secondary" 
-                      className="w-full"
-                      onClick={() => syncPendingInspections()}
-                      disabled={isSyncing}
-                    >
-                      {isSyncing ? (
-                        <>
-                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                          {t('offline.syncing')}
-                        </>
-                      ) : (
-                        <>
-                          <RefreshCw className="h-4 w-4 mr-2" />
-                          {t('offline.syncNow')}
-                        </>
-                      )}
-                    </Button>
-                  )}
+                  
+                  <div className="flex gap-2">
+                    {isOnline && (
+                      <Button 
+                        size="sm" 
+                        variant="secondary" 
+                        className="flex-1"
+                        onClick={handleForceSync}
+                        disabled={isSyncing}
+                      >
+                        {isSyncing ? (
+                          <>
+                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                            {t('offline.syncing')}
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            {t('offline.syncNow')}
+                          </>
+                        )}
+                      </Button>
+                    )}
+                    
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          size="sm" 
+                          variant="destructive" 
+                          className="flex-shrink-0"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>{t('offline.clearPendingTitle')}</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            {t('offline.clearPendingDescription')}
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleClearPending}>
+                            {t('common.confirm')}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
               </CollapsibleContent>
             )}
@@ -123,12 +195,50 @@ export function OfflineIndicator() {
         </div>
       )}
 
-      {/* Mobile online status indicator (subtle) */}
+      {/* Mobile online status indicator with debug options */}
       {showOnlineIndicator && (
         <div className="fixed bottom-20 right-4 lg:hidden z-40">
-          <div className="bg-status-success/90 text-status-success-foreground rounded-full p-2 shadow-lg">
-            <Wifi className="h-4 w-4" />
-          </div>
+          <Collapsible open={showDebugPanel} onOpenChange={setShowDebugPanel}>
+            <CollapsibleTrigger asChild>
+              <button className="bg-status-success/90 text-status-success-foreground rounded-full p-2 shadow-lg">
+                <Wifi className="h-4 w-4" />
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="absolute bottom-10 right-0 bg-card border rounded-lg shadow-lg p-3 min-w-[200px] space-y-2">
+                <p className="text-xs font-medium text-foreground">{t('offline.syncStatus')}</p>
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p>📶 {t('offline.online')}</p>
+                  <p>📦 {t('offline.pending')}: {pendingCount}</p>
+                  <p>💾 Cache: {isCacheAvailable() ? '✓' : '✗'}</p>
+                  {lastSyncTime && (
+                    <p>🕐 {t('offline.lastSync')}: {format(new Date(lastSyncTime), 'HH:mm')}</p>
+                  )}
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="flex-1 text-xs h-8"
+                    onClick={handleRefreshCache}
+                  >
+                    <Database className="h-3 w-3 mr-1" />
+                    Cache
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="flex-1 text-xs h-8"
+                    onClick={handleForceSync}
+                    disabled={isSyncing || pendingCount === 0}
+                  >
+                    <RefreshCw className={cn("h-3 w-3 mr-1", isSyncing && "animate-spin")} />
+                    Sync
+                  </Button>
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         </div>
       )}
     </>
