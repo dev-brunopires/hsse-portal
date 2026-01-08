@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
+import React, { createContext, useContext, useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './AuthContext';
 
 export interface Organization {
   id: string;
@@ -23,8 +24,8 @@ interface OrganizationContextType {
 
 const OrganizationContext = createContext<OrganizationContextType | undefined>(undefined);
 
-// Helper to extract subdomain from hostname
-function getSubdomainFromHostname(): string | null {
+// Helper to extract subdomain from hostname - memoize at module level
+const getSubdomainFromHostname = (): string | null => {
   if (typeof window === 'undefined') return null;
   
   const hostname = window.location.hostname;
@@ -36,7 +37,7 @@ function getSubdomainFromHostname(): string | null {
   }
   
   // For preview/staging domains (e.g., xxx.lovable.app)
-  if (hostname.endsWith('.lovable.app') || hostname.endsWith('.vercel.app')) {
+  if (hostname.endsWith('.lovable.app') || hostname.endsWith('.vercel.app') || hostname.endsWith('.lovableproject.com')) {
     const params = new URLSearchParams(window.location.search);
     return params.get('org') || null;
   }
@@ -50,66 +51,15 @@ function getSubdomainFromHostname(): string | null {
   // Single domain or www - try to get from query param
   const params = new URLSearchParams(window.location.search);
   return params.get('org') || null;
-}
+};
+
+// Cache subdomain at module level to avoid recalculating
+const cachedSubdomain = getSubdomainFromHostname();
 
 export function OrganizationProvider({ children }: { children: React.ReactNode }) {
-  const [subdomain, setSubdomain] = useState<string | null>(null);
-  const [isPlatformOwner, setIsPlatformOwner] = useState(false);
-  const [authReady, setAuthReady] = useState(false);
-  
-  useEffect(() => {
-    const detected = getSubdomainFromHostname();
-    setSubdomain(detected);
-  }, []);
-
-  // Check if user is a platform owner
-  useEffect(() => {
-    let mounted = true;
-    
-    const checkPlatformOwner = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!mounted) return;
-      
-      if (user) {
-        const { data } = await supabase
-          .from('platform_owners')
-          .select('id')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        if (mounted) {
-          setIsPlatformOwner(!!data);
-        }
-      } else {
-        setIsPlatformOwner(false);
-      }
-      if (mounted) {
-        setAuthReady(true);
-      }
-    };
-    
-    checkPlatformOwner();
-    
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!mounted) return;
-      
-      // Only update state synchronously, defer async calls
-      if (session?.user) {
-        setTimeout(() => {
-          if (mounted) {
-            checkPlatformOwner();
-          }
-        }, 0);
-      } else {
-        setIsPlatformOwner(false);
-        setAuthReady(true);
-      }
-    });
-    
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
+  // Reuse isPlatformOwner from AuthContext to avoid duplicate query
+  const { user, isPlatformOwner, loading: authLoading } = useAuth();
+  const [subdomain] = useState<string | null>(cachedSubdomain);
 
   // Get org from subdomain (for login page)
   const { data: orgFromSubdomain, isLoading: isLoadingSubdomain } = useQuery({
@@ -128,13 +78,14 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
       return data as Organization | null;
     },
     enabled: !!subdomain,
+    staleTime: 1000 * 60 * 30, // 30 minutes - org data rarely changes
+    gcTime: 1000 * 60 * 60, // 1 hour
   });
 
-  // Get org from user's membership
-  const { data: userOrg, isLoading: isLoadingUserOrg, isFetched: isUserOrgFetched, error: userOrgError } = useQuery({
-    queryKey: ['user-organization'],
+  // Get org from user's membership - only when user is available
+  const { data: userOrg, isLoading: isLoadingUserOrg, isFetched: isUserOrgFetched } = useQuery({
+    queryKey: ['user-organization', user?.id],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
       // Try to get user's organization membership
@@ -163,7 +114,9 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
       
       return data?.organizations as Organization | null;
     },
-    enabled: authReady,
+    enabled: !!user && !authLoading,
+    staleTime: 1000 * 60 * 30, // 30 minutes
+    gcTime: 1000 * 60 * 60, // 1 hour
     retry: false, // Don't retry on RLS errors
   });
 
@@ -179,14 +132,14 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
 
   // Loading is done when:
   // - If subdomain exists, subdomain query must finish
-  // - User org query must finish (if authReady)
+  // - User org query must finish (if user exists)
   // - For platform owners without org, we should NOT be loading forever
   const isLoading = useMemo(() => {
+    if (authLoading) return true;
     if (subdomain && isLoadingSubdomain) return true;
-    if (!authReady) return true;
-    if (isLoadingUserOrg) return true;
+    if (user && isLoadingUserOrg) return true;
     return false;
-  }, [subdomain, isLoadingSubdomain, authReady, isLoadingUserOrg]);
+  }, [subdomain, isLoadingSubdomain, authLoading, user, isLoadingUserOrg]);
 
   const value = useMemo(() => ({
     organization,
