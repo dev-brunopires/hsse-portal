@@ -2607,7 +2607,9 @@
     "setAsDefault": "Set as default",
     "confirmDelete": "Delete Template",
     "confirmDeleteDescription": "Are you sure you want to delete the template \"{{name}}\"?",
-    "defaultTemplateName": "Default Checklist"
+    "defaultTemplateName": "Default Checklist",
+    "duplicate": "Duplicate template",
+    "copy": "Copy"
   },
   "categoriesPage": {
     "checklistItems": "Checklist",
