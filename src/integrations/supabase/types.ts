@@ -1140,6 +1140,18 @@ export type Database = {
     Functions: {
       can_manage_users: { Args: { _user_id: string }; Returns: boolean }
       generate_equipment_short_code: { Args: never; Returns: string }
+      get_org_branding_by_subdomain: {
+        Args: { _subdomain: string }
+        Returns: {
+          id: string
+          is_active: boolean
+          logo_url: string
+          logo_white_url: string
+          name: string
+          slug: string
+          subdomain: string
+        }[]
+      }
       get_user_organization_id: { Args: { _user_id: string }; Returns: string }
       get_user_role: {
         Args: { _user_id: string }
