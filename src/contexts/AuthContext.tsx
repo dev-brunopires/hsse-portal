@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { User, Session } from '@supabase/supabase-js';
+import type { User, Session, AuthTokenResponsePassword } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -21,7 +21,7 @@ interface AuthContextType {
   profile: Profile | null;
   role: AppRole | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null; data: AuthTokenResponsePassword['data'] | null }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -119,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -132,7 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             : error.message,
           variant: 'destructive',
         });
-        return { error };
+        return { error, data: null };
       }
 
       toast({
@@ -140,9 +140,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: 'Bem-vindo ao sistema!',
       });
 
-      return { error: null };
+      return { error: null, data };
     } catch (error) {
-      return { error: error as Error };
+      return { error: error as Error, data: null };
     }
   };
 
