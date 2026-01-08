@@ -600,6 +600,18 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <Separator />
+                    {/* Progress indicator */}
+                    <div className="flex items-center gap-3 p-4 pb-0">
+                      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-primary transition-all duration-300 ease-out"
+                          style={{ width: `${checklist.length > 0 ? ((checklist.filter(i => i.status !== 'pending').length / checklist.length) * 100) : 0}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+                        {checklist.filter(i => i.status !== 'pending').length}/{checklist.length} {t('inspectionForm.itemsCompleted')}
+                      </span>
+                    </div>
                     <div className="p-4 space-y-3">
                       {checklist.map((item, index) => (
                         <div 
