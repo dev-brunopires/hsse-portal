@@ -319,71 +319,71 @@ export default function Inspections() {
       />
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <ClipboardCheck className="h-5 w-5 text-primary" />
-              {t('inspectionsPage.total')}
+          <CardHeader className="p-3 md:p-4 pb-1 md:pb-2">
+            <CardTitle className="flex items-center gap-1 md:gap-2 text-xs md:text-base">
+              <ClipboardCheck className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+              <span className="truncate">{t('inspectionsPage.total')}</span>
             </CardTitle>
-            <CardDescription>{t('inspectionsPage.allInspections')}</CardDescription>
+            <CardDescription className="text-xs hidden sm:block">{t('inspectionsPage.allInspections')}</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-3 md:p-4 pt-1 md:pt-2">
             {isLoading ? (
-              <Skeleton className="h-9 w-16" />
+              <Skeleton className="h-7 md:h-9 w-12 md:w-16" />
             ) : (
-              <p className="text-3xl font-bold">{inspections.length}</p>
+              <p className="text-2xl md:text-3xl font-bold">{inspections.length}</p>
             )}
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Calendar className="h-5 w-5 text-status-warning" />
-              {t('inspectionsPage.pending')}
+          <CardHeader className="p-3 md:p-4 pb-1 md:pb-2">
+            <CardTitle className="flex items-center gap-1 md:gap-2 text-xs md:text-base">
+              <Calendar className="h-4 w-4 md:h-5 md:w-5 text-status-warning" />
+              <span className="truncate">{t('inspectionsPage.pending')}</span>
             </CardTitle>
-            <CardDescription>{t('inspectionsPage.scheduledInspections')}</CardDescription>
+            <CardDescription className="text-xs hidden sm:block">{t('inspectionsPage.scheduledInspections')}</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-3 md:p-4 pt-1 md:pt-2">
             {isLoading ? (
-              <Skeleton className="h-9 w-16" />
+              <Skeleton className="h-7 md:h-9 w-12 md:w-16" />
             ) : (
-              <p className="text-3xl font-bold">{pendingInspections}</p>
+              <p className="text-2xl md:text-3xl font-bold">{pendingInspections}</p>
             )}
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <CheckCircle className="h-5 w-5 text-status-success" />
-              {t('inspectionsPage.completedMonth')}
+          <CardHeader className="p-3 md:p-4 pb-1 md:pb-2">
+            <CardTitle className="flex items-center gap-1 md:gap-2 text-xs md:text-base">
+              <CheckCircle className="h-4 w-4 md:h-5 md:w-5 text-status-success" />
+              <span className="truncate">{t('inspectionsPage.completedMonth')}</span>
             </CardTitle>
-            <CardDescription>{t('inspectionsPage.completedInspections')}</CardDescription>
+            <CardDescription className="text-xs hidden sm:block">{t('inspectionsPage.completedInspections')}</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-3 md:p-4 pt-1 md:pt-2">
             {isLoading ? (
-              <Skeleton className="h-9 w-16" />
+              <Skeleton className="h-7 md:h-9 w-12 md:w-16" />
             ) : (
-              <p className="text-3xl font-bold">{completedThisMonth}</p>
+              <p className="text-2xl md:text-3xl font-bold">{completedThisMonth}</p>
             )}
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <AlertTriangle className="h-5 w-5 text-status-danger" />
-              {t('inspectionsPage.nonConformant')}
+          <CardHeader className="p-3 md:p-4 pb-1 md:pb-2">
+            <CardTitle className="flex items-center gap-1 md:gap-2 text-xs md:text-base">
+              <AlertTriangle className="h-4 w-4 md:h-5 md:w-5 text-status-danger" />
+              <span className="truncate">{t('inspectionsPage.nonConformant')}</span>
             </CardTitle>
-            <CardDescription>{t('inspectionsPage.requireAction')}</CardDescription>
+            <CardDescription className="text-xs hidden sm:block">{t('inspectionsPage.requireAction')}</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-3 md:p-4 pt-1 md:pt-2">
             {isLoading ? (
-              <Skeleton className="h-9 w-16" />
+              <Skeleton className="h-7 md:h-9 w-12 md:w-16" />
             ) : (
-              <p className="text-3xl font-bold">{nonConformant}</p>
+              <p className="text-2xl md:text-3xl font-bold">{nonConformant}</p>
             )}
           </CardContent>
         </Card>
@@ -489,8 +489,88 @@ export default function Inspections() {
             </div>
           )}
 
-          {/* Inspections Table */}
-          <div className="rounded-md border">
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-3">
+            {isLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <Card key={i} className="p-4">
+                  <Skeleton className="h-5 w-32 mb-2" />
+                  <Skeleton className="h-4 w-24 mb-3" />
+                  <div className="flex gap-2 mb-3">
+                    <Skeleton className="h-5 w-16" />
+                  </div>
+                  <Skeleton className="h-9 w-full" />
+                </Card>
+              ))
+            ) : filteredInspections.length === 0 ? (
+              <Card className="p-8 text-center text-muted-foreground">
+                {searchTerm || hasActiveFilters
+                  ? t('inspectionsPage.noInspectionFiltered') 
+                  : t('inspectionsPage.noInspectionRegistered')}
+              </Card>
+            ) : (
+              filteredInspections.map((inspection) => (
+                <Card 
+                  key={inspection.id}
+                  className="p-4 cursor-pointer hover:border-primary/50 transition-colors"
+                  onClick={() => openDetailDialog(inspection)}
+                >
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium truncate">
+                        {inspection.equipment?.name || t('inspectionsPage.equipmentNotFound')}
+                      </p>
+                      <p className="text-xs text-muted-foreground font-mono">
+                        {inspection.equipment?.internal_code || '-'}
+                      </p>
+                    </div>
+                    {getStatusBadge(inspection.status)}
+                  </div>
+
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mb-3">
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      {formatDate(inspection.inspection_date)}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <User className="h-3 w-3" />
+                      {inspection.profiles?.full_name || t('inspectionsPage.inspectorNotFound')}
+                    </span>
+                  </div>
+
+                  {inspection.next_inspection_date && (
+                    <div className="text-xs text-muted-foreground mb-3">
+                      {t('inspectionsPage.tableNext')}: {formatDate(inspection.next_inspection_date)}
+                    </div>
+                  )}
+
+                  <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => openDetailDialog(inspection)}
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      {t('common.details')}
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => handleEditInspection(inspection)}
+                    >
+                      <Edit className="h-4 w-4 mr-1" />
+                      {t('inspectionsPage.edit')}
+                    </Button>
+                  </div>
+                </Card>
+              ))
+            )}
+          </div>
+
+          {/* Desktop Table */}
+          <div className="hidden md:block rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
