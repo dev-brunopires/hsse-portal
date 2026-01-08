@@ -136,6 +136,8 @@
     "target": "Meta",
     "updatedAt": "Atualizado em",
     "exportPDF": "Exportar PDF",
+    "previewPDF": "Visualizar PDF",
+    "pdfPreviewOpened": "Visualização do PDF aberta em nova aba",
     "byCategory": "Por Categoria",
     "byStatus": "Por Status",
     "upcomingInspections": "Próximas Inspeções",
