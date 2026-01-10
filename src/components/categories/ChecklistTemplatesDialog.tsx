@@ -1,13 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ListChecks, Plus, Trash2, Loader2, Star, Copy } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { ResponsiveDialog, ResponsiveDialogFooter } from '@/components/ui/responsive-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,6 +32,8 @@ import {
   type ChecklistTemplate 
 } from '@/hooks/useChecklistTemplates';
 import type { Category } from '@/hooks/useCategories';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 interface ChecklistTemplatesDialogProps {
   open: boolean;
@@ -47,6 +43,7 @@ interface ChecklistTemplatesDialogProps {
 
 export function ChecklistTemplatesDialog({ open, onOpenChange, category }: ChecklistTemplatesDialogProps) {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
   const { data: templates, isLoading } = useChecklistTemplates(category.id);
   const createTemplate = useCreateChecklistTemplate();
   const updateTemplate = useUpdateChecklistTemplate();
@@ -153,36 +150,42 @@ export function ChecklistTemplatesDialog({ open, onOpenChange, category }: Check
   const isSaving = createTemplate.isPending || updateTemplate.isPending;
   const isEditorOpen = isCreating || editingTemplate !== null;
 
+  // Mobile: Show templates list or editor, not both
+  const showTemplatesList = !isMobile || !isEditorOpen;
+  const showEditor = !isMobile || isEditorOpen;
+
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-2xl max-h-[85vh]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ListChecks className="h-5 w-5 text-primary" />
-              {t('checklistTemplates.title')}
-            </DialogTitle>
-            <DialogDescription>
-              {t('checklistTemplates.description', { category: category.name })}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="flex gap-4 h-[500px]">
-            {/* Templates List */}
-            <div className="w-1/3 border-r pr-4">
+      <ResponsiveDialog
+        open={open}
+        onOpenChange={onOpenChange}
+        title={t('checklistTemplates.title')}
+        description={t('checklistTemplates.description', { category: category.name })}
+        titleIcon={<ListChecks className="h-5 w-5 text-primary" />}
+        className="sm:max-w-2xl"
+      >
+        <div className={cn(
+          'flex gap-4',
+          isMobile ? 'flex-col h-auto' : 'h-[500px]'
+        )}>
+          {/* Templates List */}
+          {showTemplatesList && (
+            <div className={cn(
+              isMobile ? 'w-full' : 'w-1/3 border-r pr-4'
+            )}>
               <div className="flex items-center justify-between mb-3">
                 <Label className="text-sm font-medium">{t('checklistTemplates.templates')}</Label>
                 <Button 
                   size="sm" 
                   variant="outline" 
                   onClick={handleStartCreate}
-                  disabled={isEditorOpen}
+                  disabled={isEditorOpen && !isMobile}
                 >
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
               
-              <ScrollArea className="h-[calc(100%-40px)]">
+              <ScrollArea className={cn(isMobile ? 'max-h-[200px]' : 'h-[calc(100%-40px)]')}>
                 {isLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -196,11 +199,12 @@ export function ChecklistTemplatesDialog({ open, onOpenChange, category }: Check
                     {templates?.map((template) => (
                       <div
                         key={template.id}
-                        className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                        className={cn(
+                          'p-3 rounded-lg border cursor-pointer transition-colors',
                           editingTemplate?.id === template.id 
                             ? 'border-primary bg-primary/5' 
                             : 'hover:bg-muted/50'
-                        }`}
+                        )}
                         onClick={() => handleStartEdit(template)}
                       >
                         <div className="flex items-center justify-between">
@@ -218,7 +222,7 @@ export function ChecklistTemplatesDialog({ open, onOpenChange, category }: Check
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  className="h-6 w-6"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleDuplicate(template);
@@ -240,11 +244,25 @@ export function ChecklistTemplatesDialog({ open, onOpenChange, category }: Check
                 )}
               </ScrollArea>
             </div>
+          )}
 
-            {/* Editor */}
+          {/* Editor */}
+          {showEditor && (
             <div className="flex-1">
               {isEditorOpen ? (
                 <div className="h-full flex flex-col">
+                  {/* Mobile: Back button */}
+                  {isMobile && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleCancel}
+                      className="self-start mb-2 -ml-2"
+                    >
+                      ← {t('common.back')}
+                    </Button>
+                  )}
+                  
                   <div className="space-y-4 flex-1 overflow-y-auto">
                     <div>
                       <Label>{t('checklistTemplates.templateName')}</Label>
@@ -264,8 +282,11 @@ export function ChecklistTemplatesDialog({ open, onOpenChange, category }: Check
                     />
                   </div>
 
-                  <div className="flex items-center justify-between pt-4 border-t mt-4">
-                    <div className="flex gap-2">
+                  <div className={cn(
+                    'flex items-center pt-4 border-t mt-4',
+                    isMobile ? 'flex-col gap-2' : 'justify-between'
+                  )}>
+                    <div className={cn('flex gap-2', isMobile && 'w-full')}>
                       {editingTemplate && !editingTemplate.is_default && (
                         <Button
                           type="button"
@@ -273,6 +294,7 @@ export function ChecklistTemplatesDialog({ open, onOpenChange, category }: Check
                           size="sm"
                           onClick={() => handleSetDefault(editingTemplate)}
                           disabled={updateTemplate.isPending}
+                          className={cn(isMobile && 'flex-1')}
                         >
                           <Star className="h-4 w-4 mr-1" />
                           {t('checklistTemplates.setAsDefault')}
@@ -283,7 +305,7 @@ export function ChecklistTemplatesDialog({ open, onOpenChange, category }: Check
                           type="button"
                           variant="outline"
                           size="sm"
-                          className="text-destructive hover:text-destructive"
+                          className={cn('text-destructive hover:text-destructive', isMobile && 'flex-1')}
                           onClick={() => handleDeleteClick(editingTemplate)}
                         >
                           <Trash2 className="h-4 w-4 mr-1" />
@@ -291,13 +313,16 @@ export function ChecklistTemplatesDialog({ open, onOpenChange, category }: Check
                         </Button>
                       )}
                     </div>
-                    <div className="flex gap-2">
-                      <Button type="button" variant="ghost" onClick={handleCancel}>
-                        {t('common.cancel')}
-                      </Button>
+                    <div className={cn('flex gap-2', isMobile && 'w-full')}>
+                      {!isMobile && (
+                        <Button type="button" variant="ghost" onClick={handleCancel}>
+                          {t('common.cancel')}
+                        </Button>
+                      )}
                       <Button 
                         onClick={handleSave}
                         disabled={!templateName.trim() || isSaving}
+                        className={cn(isMobile && 'flex-1')}
                       >
                         {isSaving ? (
                           <>
@@ -320,9 +345,9 @@ export function ChecklistTemplatesDialog({ open, onOpenChange, category }: Check
                 </div>
               )}
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+          )}
+        </div>
+      </ResponsiveDialog>
 
       {/* Delete Confirmation */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

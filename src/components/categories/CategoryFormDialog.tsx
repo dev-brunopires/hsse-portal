@@ -3,13 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { ResponsiveDialog, ResponsiveDialogBody, ResponsiveDialogFooter } from '@/components/ui/responsive-dialog';
 import {
   Form,
   FormControl,
@@ -175,22 +169,19 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
   const IconComponent = selectedIcon?.icon || FolderOpen;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FolderOpen className="h-5 w-5 text-primary" />
-            {mode === 'create' ? t('categoryForm.newCategory') : t('categoryForm.editCategory')}
-          </DialogTitle>
-          <DialogDescription>
-            {mode === 'create' 
-              ? t('categoryForm.createDescription')
-              : t('categoryForm.editDescription')}
-          </DialogDescription>
-        </DialogHeader>
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={mode === 'create' ? t('categoryForm.newCategory') : t('categoryForm.editCategory')}
+      description={mode === 'create' 
+        ? t('categoryForm.createDescription')
+        : t('categoryForm.editDescription')}
+      titleIcon={<FolderOpen className="h-5 w-5 text-primary" />}
+      className="sm:max-w-lg"
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <ResponsiveDialogBody>
             <FormField
               control={form.control}
               name="name"
@@ -223,7 +214,7 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="icon"
@@ -241,7 +232,7 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
                           </SelectValue>
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent className="max-h-[300px]">
+                      <SelectContent className="max-h-[300px] bg-popover border border-border z-50">
                         {categoryIconOptions.map((option) => (
                           <SelectItem key={option.value} value={option.value}>
                             <div className="flex items-center gap-2">
@@ -269,7 +260,7 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
                           <SelectValue placeholder={t('common.select')} />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent className="bg-popover border border-border z-50">
                         {frequencyOptions.map((option) => (
                           <SelectItem key={option.value} value={option.value}>
                             {option.label}
@@ -277,7 +268,7 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
                         ))}
                       </SelectContent>
                     </Select>
-                    <FormDescription>
+                    <FormDescription className="text-xs">
                       {t('categoryForm.frequencyDescription')}
                     </FormDescription>
                     <FormMessage />
@@ -286,34 +277,34 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
               />
             </div>
 
-            <Separator className="my-4" />
+            <Separator className="my-2" />
 
             {/* Checklist Items Editor */}
             <ChecklistItemsEditor
               items={checklistItems}
               onChange={setChecklistItems}
             />
+          </ResponsiveDialogBody>
 
-            <div className="flex justify-end gap-3 pt-4">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                {t('common.cancel')}
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    {t('common.saving')}
-                  </>
-                ) : mode === 'create' ? (
-                  t('common.createCategory')
-                ) : (
-                  t('common.saveChanges')
-                )}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+          <ResponsiveDialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              {t('common.cancel')}
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  {t('common.saving')}
+                </>
+              ) : mode === 'create' ? (
+                t('common.createCategory')
+              ) : (
+                t('common.saveChanges')
+              )}
+            </Button>
+          </ResponsiveDialogFooter>
+        </form>
+      </Form>
+    </ResponsiveDialog>
   );
 }
