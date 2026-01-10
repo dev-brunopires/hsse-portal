@@ -479,46 +479,46 @@ export function EquipmentTable({
                       </div>
                     </div>
 
-                    <div className="mt-3 flex gap-2">
+                    <div className="mt-3 flex items-center gap-2">
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        className="flex-1"
+                        className="flex-1 min-w-0"
                         onClick={() => openDetailDialog(item)}
                       >
-                        <Eye className="h-4 w-4 mr-1" />
-                        {t('equipmentTable.view')}
+                        <Eye className="h-4 w-4 shrink-0" />
+                        <span className="ml-1 truncate">{t('equipmentTable.view')}</span>
                       </Button>
                       <Button 
                         size="sm" 
-                        className="flex-1"
+                        className="flex-1 min-w-0"
                         onClick={() => openInspectionForm(item)}
                       >
-                        <ClipboardCheck className="h-4 w-4 mr-1" />
-                        {t('common.inspect')}
+                        <ClipboardCheck className="h-4 w-4 shrink-0" />
+                        <span className="ml-1 truncate">{t('common.inspect')}</span>
                       </Button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="icon" className="h-8 w-8">
+                          <Button variant="outline" size="icon" className="h-8 w-8 shrink-0">
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-popover border border-border shadow-lg z-50">
+                        <DropdownMenuContent align="end" className="bg-popover border border-border shadow-lg z-50 min-w-[180px]">
                           <DropdownMenuItem 
-                            className="gap-2 cursor-pointer"
+                            className="gap-2 cursor-pointer py-2.5"
                             onClick={() => openEditForm(item)}
                           >
                             <Edit className="h-4 w-4" /> {t('equipmentTable.edit')}
                           </DropdownMenuItem>
                           <DropdownMenuItem 
-                            className="gap-2 cursor-pointer"
+                            className="gap-2 cursor-pointer py-2.5"
                             onClick={() => openQRCodeDialog(item)}
                           >
                             <QrCode className="h-4 w-4" /> {t('equipmentTable.generateQRCode')}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem 
-                            className="gap-2 text-destructive cursor-pointer"
+                            className="gap-2 text-destructive cursor-pointer py-2.5"
                             onClick={() => openDeleteDialog(item)}
                           >
                             <Trash2 className="h-4 w-4" /> {t('common.delete')}
