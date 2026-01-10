@@ -7,6 +7,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -20,8 +26,8 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { 
   Package, 
   MapPin, 
@@ -84,6 +90,7 @@ export function EquipmentDetailDialog({
   onNewInspection,
 }: EquipmentDetailDialogProps) {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
   const [uploadingFile, setUploadingFile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -248,454 +255,467 @@ export function EquipmentDetailDialog({
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col bg-card border border-border" hideCloseButton>
-          <DialogHeader className="pb-4 border-b border-border pr-0">
-            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-              <div className="min-w-0">
-                <DialogTitle className="flex items-center gap-3 text-xl">
-                  <div className="p-2 bg-primary/10 rounded-lg shrink-0">
-                    <Package className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="truncate">
-                    <span className="font-mono text-primary">{equipment.internalCode}</span>
-                    <span className="mx-2 text-muted-foreground">•</span>
-                    <span>{equipment.name}</span>
-                  </div>
-                </DialogTitle>
-                <div className="flex items-center gap-2 mt-2 ml-12">
-                  <Badge variant="outline">{equipment.category || equipment.categoryName}</Badge>
-                  <StatusBadge status={equipment.status} />
-                </div>
+      {/* Header Content - shared between Dialog/Drawer */}
+      {(() => {
+        const headerContent = (
+          <div className="flex flex-col gap-3 w-full">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg shrink-0">
+                <Package className="h-5 w-5 text-primary" />
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <Button variant="outline" size="sm" className="gap-2" onClick={onEdit}>
-                  <Edit className="h-4 w-4" />
-                  {t('equipmentDetail.edit')}
-                </Button>
-                <Button size="sm" className="gap-2" onClick={onNewInspection}>
-                  <ClipboardCheck className="h-4 w-4" />
-                  {t('equipmentDetail.newInspection')}
-                </Button>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-mono text-primary font-semibold">{equipment.internalCode}</span>
+                  <span className="text-muted-foreground hidden sm:inline">•</span>
+                  <span className="font-semibold truncate">{equipment.name}</span>
+                </div>
               </div>
             </div>
-          </DialogHeader>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge variant="outline">{equipment.category || equipment.categoryName}</Badge>
+              <StatusBadge status={equipment.status} />
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" className="gap-2 flex-1 sm:flex-none" onClick={onEdit}>
+                <Edit className="h-4 w-4" />
+                {t('equipmentDetail.edit')}
+              </Button>
+              <Button size="sm" className="gap-2 flex-1 sm:flex-none" onClick={onNewInspection}>
+                <ClipboardCheck className="h-4 w-4" />
+                {t('equipmentDetail.newInspection')}
+              </Button>
+            </div>
+          </div>
+        );
 
-        <Tabs defaultValue="details" className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="w-full justify-start border-b border-border rounded-none bg-transparent h-auto p-0">
-            <TabsTrigger 
-              value="details"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
-            >
-              <Package className="h-4 w-4 mr-2" />
-              {t('equipmentDetail.details')}
-            </TabsTrigger>
-            <TabsTrigger 
-              value="inspections"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
-            >
-              <History className="h-4 w-4 mr-2" />
-              {t('equipmentDetail.inspections')} ({inspections?.length || 0})
-            </TabsTrigger>
-            <TabsTrigger 
-              value="documents"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
-            >
-              <FileText className="h-4 w-4 mr-2" />
-              {t('equipmentDetail.documents')} ({documents?.length || 0})
-            </TabsTrigger>
-          </TabsList>
+        const mainContent = (
+          <Tabs defaultValue="details" className="flex-1 flex flex-col overflow-hidden">
+            <TabsList className="w-full justify-start border-b border-border rounded-none bg-transparent h-auto p-0 overflow-x-auto">
+              <TabsTrigger 
+                value="details"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-3 sm:px-4 py-3 text-sm"
+              >
+                <Package className="h-4 w-4 mr-1.5" />
+                <span className="hidden xs:inline">{t('equipmentDetail.details')}</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="inspections"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-3 sm:px-4 py-3 text-sm"
+              >
+                <History className="h-4 w-4 mr-1.5" />
+                <span className="hidden xs:inline">{t('equipmentDetail.inspections')}</span> ({inspections?.length || 0})
+              </TabsTrigger>
+              <TabsTrigger 
+                value="documents"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-3 sm:px-4 py-3 text-sm"
+              >
+                <FileText className="h-4 w-4 mr-1.5" />
+                <span className="hidden xs:inline">{t('equipmentDetail.documents')}</span> ({documents?.length || 0})
+              </TabsTrigger>
+            </TabsList>
 
-          <ScrollArea className="flex-1">
-            {/* Details Tab */}
-            <TabsContent value="details" className="mt-0 p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Identification */}
-                <div className="space-y-4">
-                  <h3 className="font-semibold flex items-center gap-2">
-                    <Tag className="h-4 w-4 text-primary" />
-                    {t('equipmentDetail.identification')}
-                  </h3>
-                  <div className="space-y-3 pl-6">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t('equipmentDetail.internalCode')}</span>
-                      <span className="font-mono font-medium">{equipment.internalCode}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t('equipmentDetail.name')}</span>
-                      <span className="font-medium">{equipment.name}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t('equipmentDetail.category')}</span>
-                      <span>{equipment.category || equipment.categoryName}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t('equipmentDetail.type')}</span>
-                      <span>{equipment.type}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Technical */}
-                <div className="space-y-4">
-                  <h3 className="font-semibold flex items-center gap-2">
-                    <Factory className="h-4 w-4 text-primary" />
-                    {t('equipmentDetail.technicalData')}
-                  </h3>
-                  <div className="space-y-3 pl-6">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t('equipmentDetail.manufacturer')}</span>
-                      <span className="font-medium">{equipment.manufacturer}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t('equipmentDetail.model')}</span>
-                      <span>{equipment.model}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t('equipmentDetail.serialNumber')}</span>
-                      <span className="font-mono">{equipment.serialNumber}</span>
-                    </div>
-                    {equipment.capacity && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">{t('equipmentDetail.capacity')}</span>
-                        <span className="font-medium">{equipment.capacity}</span>
+            <div className="flex-1 overflow-y-auto">
+              {/* Details Tab */}
+              <TabsContent value="details" className="mt-0 p-4 sm:p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Identification */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <Tag className="h-4 w-4 text-primary" />
+                      {t('equipmentDetail.identification')}
+                    </h3>
+                    <div className="space-y-3 pl-6">
+                      <div className="flex justify-between gap-2">
+                        <span className="text-muted-foreground">{t('equipmentDetail.internalCode')}</span>
+                        <span className="font-mono font-medium text-right">{equipment.internalCode}</span>
                       </div>
-                    )}
+                      <div className="flex justify-between gap-2">
+                        <span className="text-muted-foreground">{t('equipmentDetail.name')}</span>
+                        <span className="font-medium text-right">{equipment.name}</span>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <span className="text-muted-foreground">{t('equipmentDetail.category')}</span>
+                        <span className="text-right">{equipment.category || equipment.categoryName}</span>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <span className="text-muted-foreground">{t('equipmentDetail.type')}</span>
+                        <span className="text-right">{equipment.type}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Technical */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <Factory className="h-4 w-4 text-primary" />
+                      {t('equipmentDetail.technicalData')}
+                    </h3>
+                    <div className="space-y-3 pl-6">
+                      <div className="flex justify-between gap-2">
+                        <span className="text-muted-foreground">{t('equipmentDetail.manufacturer')}</span>
+                        <span className="font-medium text-right">{equipment.manufacturer}</span>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <span className="text-muted-foreground">{t('equipmentDetail.model')}</span>
+                        <span className="text-right">{equipment.model}</span>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <span className="text-muted-foreground">{t('equipmentDetail.serialNumber')}</span>
+                        <span className="font-mono text-right">{equipment.serialNumber}</span>
+                      </div>
+                      {equipment.capacity && (
+                        <div className="flex justify-between gap-2">
+                          <span className="text-muted-foreground">{t('equipmentDetail.capacity')}</span>
+                          <span className="font-medium text-right">{equipment.capacity}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Location */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-primary" />
+                      {t('equipmentDetail.locationSection')}
+                    </h3>
+                    <div className="space-y-3 pl-6">
+                      <div className="flex justify-between gap-2">
+                        <span className="text-muted-foreground">{t('equipmentDetail.unit')}</span>
+                        <span className="font-medium text-right">{equipment.unit}</span>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <span className="text-muted-foreground">{t('equipmentDetail.physicalLocation')}</span>
+                        <span className="text-right">{equipment.location}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Dates */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-primary" />
+                      {t('equipmentDetail.datesSection')}
+                    </h3>
+                    <div className="space-y-3 pl-6">
+                      <div className="flex justify-between gap-2">
+                        <span className="text-muted-foreground">{t('equipmentDetail.manufacturing')}</span>
+                        <span className="text-right">{formatDate(equipment.manufacturingDate)}</span>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <span className="text-muted-foreground">{t('equipmentDetail.acquisition')}</span>
+                        <span className="text-right">{formatDate(equipment.acquisitionDate)}</span>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <span className="text-muted-foreground">{t('equipmentDetail.validity')}</span>
+                        <span className="text-right">{formatDate(equipment.expiryDate)}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Location */}
-                <div className="space-y-4">
-                  <h3 className="font-semibold flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-primary" />
-                    {t('equipmentDetail.locationSection')}
-                  </h3>
-                  <div className="space-y-3 pl-6">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t('equipmentDetail.unit')}</span>
-                      <span className="font-medium">{equipment.unit}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t('equipmentDetail.physicalLocation')}</span>
-                      <span>{equipment.location}</span>
-                    </div>
-                  </div>
-                </div>
+                <Separator className="my-6" />
 
-                {/* Dates */}
-                <div className="space-y-4">
-                  <h3 className="font-semibold flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-primary" />
-                    {t('equipmentDetail.datesSection')}
-                  </h3>
-                  <div className="space-y-3 pl-6">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t('equipmentDetail.manufacturing')}</span>
-                      <span>{formatDate(equipment.manufacturingDate)}</span>
+                {/* Status Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {/* Last Inspection */}
+                  <div className="p-4 rounded-lg border border-border bg-muted/30">
+                    <div className="flex items-center gap-2 mb-2">
+                      <CheckCircle2 className="h-5 w-5 text-status-success" />
+                      <span className="font-medium text-sm">{t('equipmentDetail.lastInspection')}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t('equipmentDetail.acquisition')}</span>
-                      <span>{formatDate(equipment.acquisitionDate)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t('equipmentDetail.validity')}</span>
-                      <span>{formatDate(equipment.expiryDate)}</span>
-                    </div>
+                    <p className="text-xl sm:text-2xl font-bold">
+                      {equipment.lastInspection ? new Date(equipment.lastInspection).toLocaleDateString('pt-BR') : '—'}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {inspections?.[0]?.status === 'approved' ? t('equipmentDetail.approved') : 
+                       inspections?.[0]?.status === 'rejected' ? t('equipmentDetail.rejected') : '—'}
+                    </p>
                   </div>
-                </div>
-              </div>
 
-              <Separator className="my-6" />
-
-              {/* Status Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Last Inspection */}
-                <div className="p-4 rounded-lg border border-border bg-muted/30">
-                  <div className="flex items-center gap-2 mb-2">
-                    <CheckCircle2 className="h-5 w-5 text-status-success" />
-                    <span className="font-medium">{t('equipmentDetail.lastInspection')}</span>
-                  </div>
-                  <p className="text-2xl font-bold">
-                    {equipment.lastInspection ? new Date(equipment.lastInspection).toLocaleDateString('pt-BR') : '—'}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {inspections?.[0]?.status === 'approved' ? t('equipmentDetail.approved') : 
-                     inspections?.[0]?.status === 'rejected' ? t('equipmentDetail.rejected') : '—'}
-                  </p>
-                </div>
-
-                {/* Next Inspection */}
-                <div className={cn(
-                  'p-4 rounded-lg border',
-                  equipment.nextInspection ? (
-                    inspectionDays <= 7 ? 'border-status-danger bg-status-danger/10' :
-                    inspectionDays <= 30 ? 'border-status-warning bg-status-warning/10' :
-                    'border-border bg-muted/30'
-                  ) : 'border-border bg-muted/30'
-                )}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Clock className={cn(
-                      'h-5 w-5',
-                      equipment.nextInspection ? (
-                        inspectionDays <= 7 ? 'text-status-danger' :
-                        inspectionDays <= 30 ? 'text-status-warning' :
-                        'text-muted-foreground'
-                      ) : 'text-muted-foreground'
-                    )} />
-                    <span className="font-medium">{t('equipmentDetail.nextInspection')}</span>
-                  </div>
-                  <p className="text-2xl font-bold">
-                    {equipment.nextInspection ? new Date(equipment.nextInspection).toLocaleDateString('pt-BR') : '—'}
-                  </p>
-                  <p className={cn(
-                    'text-sm',
+                  {/* Next Inspection */}
+                  <div className={cn(
+                    'p-4 rounded-lg border',
                     equipment.nextInspection ? (
-                      inspectionDays <= 7 ? 'text-status-danger' :
-                      inspectionDays <= 30 ? 'text-status-warning' :
-                      'text-muted-foreground'
-                    ) : 'text-muted-foreground'
+                      inspectionDays <= 7 ? 'border-status-danger bg-status-danger/10' :
+                      inspectionDays <= 30 ? 'border-status-warning bg-status-warning/10' :
+                      'border-border bg-muted/30'
+                    ) : 'border-border bg-muted/30'
                   )}>
-                    {equipment.nextInspection ? (inspectionDays > 0 ? t('equipmentDetail.inDays', { days: inspectionDays }) : t('equipmentDetail.expired')) : '—'}
-                  </p>
-                </div>
-
-                {/* Certificate */}
-                <div className={cn(
-                  'p-4 rounded-lg border',
-                  equipment.certificateExpiry ? (
-                    certificateDays <= 30 ? 'border-status-danger bg-status-danger/10' :
-                    certificateDays <= 90 ? 'border-status-warning bg-status-warning/10' :
-                    'border-border bg-muted/30'
-                  ) : 'border-border bg-muted/30'
-                )}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <FileText className={cn(
-                      'h-5 w-5',
-                      equipment.certificateExpiry ? (
-                        certificateDays <= 30 ? 'text-status-danger' :
-                        certificateDays <= 90 ? 'text-status-warning' :
+                    <div className="flex items-center gap-2 mb-2">
+                      <Clock className={cn(
+                        'h-5 w-5',
+                        equipment.nextInspection && inspectionDays <= 7 ? 'text-status-danger' :
+                        equipment.nextInspection && inspectionDays <= 30 ? 'text-status-warning' :
                         'text-muted-foreground'
-                      ) : 'text-muted-foreground'
-                    )} />
-                    <span className="font-medium">{t('equipmentDetail.certificateValidity')}</span>
-                  </div>
-                  <p className="text-2xl font-bold">
-                    {equipment.certificateExpiry ? new Date(equipment.certificateExpiry).toLocaleDateString('pt-BR') : '—'}
-                  </p>
-                  <p className={cn(
-                    'text-sm',
-                    equipment.certificateExpiry ? (
-                      certificateDays <= 30 ? 'text-status-danger' :
-                      certificateDays <= 90 ? 'text-status-warning' :
-                      'text-muted-foreground'
-                    ) : 'text-muted-foreground'
-                  )}>
-                    {equipment.certificateExpiry ? (certificateDays > 0 ? t('equipmentDetail.daysRemaining', { days: certificateDays }) : t('equipmentDetail.certificateExpired')) : '—'}
-                  </p>
-                </div>
-              </div>
-            </TabsContent>
-
-            {/* Inspections Tab */}
-            <TabsContent value="inspections" className="mt-0 p-6">
-              {loadingInspections ? (
-                <div className="space-y-4">
-                  {[1, 2, 3].map(i => (
-                    <Skeleton key={i} className="h-24 w-full" />
-                  ))}
-                </div>
-              ) : inspections && inspections.length > 0 ? (
-                <div className="space-y-4">
-                  {inspections.map((inspection) => (
-                    <div 
-                      key={inspection.id}
-                      className={cn(
-                        'p-4 rounded-lg border-l-4 bg-card border',
-                        inspection.status === 'approved' && 'border-l-status-success',
-                        inspection.status === 'pending' && 'border-l-status-warning',
-                        inspection.status === 'rejected' && 'border-l-status-danger',
-                      )}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          {inspection.status === 'approved' && (
-                            <CheckCircle2 className="h-5 w-5 text-status-success" />
-                          )}
-                          {inspection.status === 'pending' && (
-                            <AlertTriangle className="h-5 w-5 text-status-warning" />
-                          )}
-                          {inspection.status === 'rejected' && (
-                            <XCircle className="h-5 w-5 text-status-danger" />
-                          )}
-                          <div>
-                            <p className="font-medium">
-                              {new Date(inspection.inspection_date).toLocaleDateString('pt-BR', {
-                                day: '2-digit',
-                                month: 'long',
-                                year: 'numeric'
-                              })}
-                            </p>
-                            <p className="text-sm text-muted-foreground flex items-center gap-1">
-                              <User className="h-3 w-3" />
-                              {inspection.profiles?.full_name || t('equipmentDetail.inspectorNotIdentified')}
-                            </p>
-                          </div>
-                        </div>
-                        <Badge variant={statusLabels[inspection.status]?.variant || 'secondary'}>
-                          {statusLabels[inspection.status]?.label || inspection.status}
-                        </Badge>
-                      </div>
-                      {inspection.observations && (
-                        <div className="mt-3 ml-8">
-                          <p className="text-sm font-medium text-foreground">{t('equipmentDetail.observations')}:</p>
-                          <p className="text-sm text-muted-foreground">{inspection.observations}</p>
-                        </div>
-                      )}
-                      {inspection.recommendations && (
-                        <div className="mt-2 ml-8">
-                          <p className="text-sm font-medium text-foreground">{t('equipmentDetail.recommendations')}:</p>
-                          <p className="text-sm text-muted-foreground">{inspection.recommendations}</p>
-                        </div>
-                      )}
-                      {inspection.next_inspection_date && (
-                        <div className="mt-2 ml-8">
-                          <p className="text-sm text-muted-foreground">
-                            {t('equipmentDetail.nextScheduledInspection')}: {new Date(inspection.next_inspection_date).toLocaleDateString('pt-BR')}
-                          </p>
-                        </div>
-                      )}
+                      )} />
+                      <span className="font-medium text-sm">{t('equipmentDetail.nextInspectionTitle')}</span>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <History className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-lg font-medium">{t('equipmentDetail.noInspectionRegistered')}</p>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {t('equipmentDetail.noInspectionMessage')}
-                  </p>
-                  <Button onClick={onNewInspection} className="gap-2">
-                    <ClipboardCheck className="h-4 w-4" />
-                    {t('equipmentDetail.registerFirstInspection')}
-                  </Button>
-                </div>
-              )}
-            </TabsContent>
+                    <p className="text-xl sm:text-2xl font-bold">
+                      {equipment.nextInspection ? new Date(equipment.nextInspection).toLocaleDateString('pt-BR') : '—'}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {equipment.nextInspection ? (
+                        inspectionDays < 0 ? t('equipmentDetail.overdue') :
+                        inspectionDays === 0 ? t('equipmentDetail.today') :
+                        `${inspectionDays} ${t('equipmentDetail.daysRemaining')}`
+                      ) : '—'}
+                    </p>
+                  </div>
 
-            {/* Documents Tab */}
-            <TabsContent value="documents" className="mt-0 p-6">
-              <div className="mb-4">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp"
-                  className="hidden"
-                  onChange={handleFileUpload}
-                />
-                <Button 
-                  variant="outline" 
-                  className="gap-2"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploadingFile}
-                >
-                  {uploadingFile ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      {t('equipmentDetail.uploading')}
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="h-4 w-4" />
-                      {t('equipmentDetail.uploadDocument')}
-                    </>
-                  )}
-                </Button>
-              </div>
-
-              {loadingDocuments ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map(i => (
-                    <Skeleton key={i} className="h-16 w-full" />
-                  ))}
+                  {/* Certificate */}
+                  <div className={cn(
+                    'p-4 rounded-lg border',
+                    equipment.certificateExpiry ? (
+                      certificateDays <= 0 ? 'border-status-danger bg-status-danger/10' :
+                      certificateDays <= 30 ? 'border-status-warning bg-status-warning/10' :
+                      'border-border bg-muted/30'
+                    ) : 'border-border bg-muted/30'
+                  )}>
+                    <div className="flex items-center gap-2 mb-2">
+                      {equipment.certificateExpiry && certificateDays <= 0 ? (
+                        <XCircle className="h-5 w-5 text-status-danger" />
+                      ) : equipment.certificateExpiry && certificateDays <= 30 ? (
+                        <AlertTriangle className="h-5 w-5 text-status-warning" />
+                      ) : (
+                        <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
+                      )}
+                      <span className="font-medium text-sm">{t('equipmentDetail.certificateValidity')}</span>
+                    </div>
+                    <p className="text-xl sm:text-2xl font-bold">
+                      {equipment.certificateExpiry ? new Date(equipment.certificateExpiry).toLocaleDateString('pt-BR') : '—'}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {equipment.certificateExpiry ? (
+                        certificateDays < 0 ? t('equipmentDetail.expired') :
+                        certificateDays === 0 ? t('equipmentDetail.expiresToday') :
+                        `${certificateDays} ${t('equipmentDetail.daysRemaining')}`
+                      ) : '—'}
+                    </p>
+                  </div>
                 </div>
-              ) : documents && documents.length > 0 ? (
-                <div className="space-y-3">
-                  {documents.map((doc) => {
-                    const FileIcon = getFileIcon(doc.file_type);
-                    return (
+
+                {/* Observations */}
+                {(equipment as any).observations && (
+                  <>
+                    <Separator className="my-6" />
+                    <div className="space-y-2">
+                      <h3 className="font-semibold flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-primary" />
+                        {t('equipmentDetail.observations')}
+                      </h3>
+                      <p className="text-muted-foreground whitespace-pre-wrap pl-6">
+                        {(equipment as any).observations}
+                      </p>
+                    </div>
+                  </>
+                )}
+              </TabsContent>
+
+              {/* Inspections Tab */}
+              <TabsContent value="inspections" className="mt-0 p-4 sm:p-6">
+                {loadingInspections ? (
+                  <div className="space-y-4">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="flex items-start gap-4 p-4 border rounded-lg">
+                        <Skeleton className="h-10 w-10 rounded-full" />
+                        <div className="flex-1 space-y-2">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-3 w-full" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : inspections && inspections.length > 0 ? (
+                  <div className="space-y-4">
+                    {inspections.map((inspection) => (
                       <div 
-                        key={doc.id}
-                        className="flex items-center gap-4 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                        key={inspection.id} 
+                        className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                       >
                         <div className={cn(
-                          'p-2 rounded-lg',
-                          doc.file_type === 'application/pdf' ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' : 
-                          doc.file_type.startsWith('image/') ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' :
-                          'bg-muted text-muted-foreground'
+                          'p-2 rounded-full shrink-0',
+                          inspection.status === 'approved' ? 'bg-status-success/10' :
+                          inspection.status === 'rejected' ? 'bg-status-danger/10' :
+                          'bg-status-warning/10'
                         )}>
-                          <FileIcon className="h-5 w-5" />
+                          {inspection.status === 'approved' ? (
+                            <CheckCircle2 className="h-5 w-5 text-status-success" />
+                          ) : inspection.status === 'rejected' ? (
+                            <XCircle className="h-5 w-5 text-status-danger" />
+                          ) : (
+                            <AlertTriangle className="h-5 w-5 text-status-warning" />
+                          )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{doc.file_name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {new Date(doc.created_at).toLocaleDateString('pt-BR')} • {formatFileSize(doc.file_size)}
-                          </p>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="gap-2"
-                            onClick={() => handleView(doc.file_path, doc.file_type)}
-                          >
-                            <ExternalLink className="h-4 w-4" />
-                            {t('equipmentDetail.view')}
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="gap-2"
-                            onClick={() => handleDownload(doc.file_path, doc.file_name)}
-                          >
-                            <Download className="h-4 w-4" />
-                            {t('equipmentDetail.download')}
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => setDeleteDocDialog({ open: true, doc })}
-                            disabled={deleteDocument.isPending}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                            <p className="font-medium">
+                              {new Date(inspection.inspection_date).toLocaleDateString('pt-BR')}
+                            </p>
+                            <Badge variant={
+                              inspection.status === 'approved' ? 'default' :
+                              inspection.status === 'rejected' ? 'destructive' :
+                              'secondary'
+                            }>
+                              {inspection.status === 'approved' ? t('equipmentDetail.approved') :
+                               inspection.status === 'rejected' ? t('equipmentDetail.rejected') :
+                               t('equipmentDetail.pending')}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+                            <User className="h-3 w-3" />
+                            <span>{inspection.inspector_id}</span>
+                          </div>
+                          {inspection.observations && (
+                            <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                              {inspection.observations}
+                            </p>
+                          )}
                         </div>
                       </div>
-                    );
-                  })}
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <History className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">{t('equipmentDetail.noInspections')}</p>
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* Documents Tab */}
+              <TabsContent value="documents" className="mt-0 p-4 sm:p-6">
+                {/* Upload Section */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                  <div>
+                    <h3 className="font-semibold">{t('equipmentDetail.documentsAndFiles')}</h3>
+                    <p className="text-sm text-muted-foreground">{t('equipmentDetail.documentsDescription')}</p>
+                  </div>
+                  <div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      className="hidden"
+                      onChange={handleFileUpload}
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif"
+                    />
+                    <Button 
+                      variant="outline" 
+                      className="gap-2"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingFile}
+                    >
+                      {uploadingFile ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Upload className="h-4 w-4" />
+                      )}
+                      {t('equipmentDetail.uploadDocument')}
+                    </Button>
+                  </div>
                 </div>
-              ) : (
-                <div className="text-center py-12">
-                  <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-lg font-medium">{t('equipmentDetail.noDocumentAttached')}</p>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {t('equipmentDetail.addDocumentsMessage')}
-                  </p>
-                  <Button 
-                    variant="outline" 
-                    className="gap-2"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <Upload className="h-4 w-4" />
-                    {t('equipmentDetail.uploadFirstDocument')}
-                  </Button>
+
+                {loadingDocuments ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <Skeleton key={i} className="h-16 w-full" />
+                    ))}
+                  </div>
+                ) : documents && documents.length > 0 ? (
+                  <div className="space-y-3">
+                    {documents.map((doc) => {
+                      const FileIcon = getFileIcon(doc.file_type);
+                      return (
+                        <div 
+                          key={doc.id} 
+                          className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                        >
+                          <div className="p-2 bg-primary/10 rounded shrink-0">
+                            <FileIcon className="h-5 w-5 text-primary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium truncate">{doc.file_name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {formatFileSize(doc.file_size)} • {new Date(doc.created_at).toLocaleDateString('pt-BR')}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleView(doc.file_path, doc.file_type)}
+                              title={t('equipmentDetail.view')}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDownload(doc.file_path, doc.file_name)}
+                              title={t('equipmentDetail.download')}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => setDeleteDocDialog({ open: true, doc })}
+                              title={t('common.delete')}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground mb-4">{t('equipmentDetail.noDocuments')}</p>
+                    <Button 
+                      variant="outline" 
+                      className="gap-2"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload className="h-4 w-4" />
+                      {t('equipmentDetail.uploadFirstDocument')}
+                    </Button>
+                  </div>
+                )}
+              </TabsContent>
+            </div>
+          </Tabs>
+        );
+
+        if (isMobile) {
+          return (
+            <Drawer open={open} onOpenChange={onOpenChange}>
+              <DrawerContent className="max-h-[90vh] flex flex-col">
+                <DrawerHeader className="text-left pb-2 border-b border-border">
+                  <DrawerTitle className="sr-only">{equipment.name}</DrawerTitle>
+                  {headerContent}
+                </DrawerHeader>
+                <div className="flex-1 overflow-hidden">
+                  {mainContent}
                 </div>
-              )}
-            </TabsContent>
-          </ScrollArea>
-        </Tabs>
-      </DialogContent>
-    </Dialog>
+              </DrawerContent>
+            </Drawer>
+          );
+        }
+
+        return (
+          <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col bg-card border border-border" hideCloseButton>
+              <DialogHeader className="pb-4 border-b border-border">
+                <DialogTitle className="sr-only">{equipment.name}</DialogTitle>
+                {headerContent}
+              </DialogHeader>
+              {mainContent}
+            </DialogContent>
+          </Dialog>
+        );
+      })()}
     </>
   );
 }

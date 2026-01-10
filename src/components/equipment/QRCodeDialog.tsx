@@ -5,12 +5,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { Download, Printer, QrCode, Copy, Check } from 'lucide-react';
 import { useRef, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface QRCodeDialogProps {
   open: boolean;
@@ -30,6 +37,7 @@ const BRAND_COLOR = '#F36F27';
 
 export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProps) {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
   const qrRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
@@ -490,6 +498,119 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
     printWindow.document.close();
   };
 
+  const qrContent = (
+    <>
+      {/* Preview with organization branding */}
+      <div className="flex flex-col items-center">
+        <div className="border-2 border-dashed border-primary rounded-lg overflow-hidden w-full max-w-xs">
+          {/* Header - Dynamic logo */}
+          <div className="bg-primary py-2 px-4 flex justify-center items-center min-h-[40px]">
+            {logoWhiteUrl ? (
+              <img 
+                src={logoWhiteUrl} 
+                alt={organizationName} 
+                className="h-6 w-auto max-w-[150px] object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  if (e.currentTarget.nextElementSibling) {
+                    (e.currentTarget.nextElementSibling as HTMLElement).classList.remove('hidden');
+                  }
+                }}
+              />
+            ) : null}
+            <span className={`text-white font-bold text-sm ${logoWhiteUrl ? 'hidden' : ''}`}>
+              {organizationName}
+            </span>
+          </div>
+
+          {/* Content */}
+          <div className="bg-white p-4 flex flex-col items-center">
+            <p className="font-mono text-xs text-muted-foreground">{equipment.internalCode}</p>
+            
+            <div ref={qrRef} className="bg-white p-3 sm:p-4 rounded-lg border mt-3 relative">
+              <QRCodeSVG 
+                value={inspectionUrl} 
+                size={isMobile ? 160 : 190}
+                level="H"
+                includeMargin
+              />
+              {equipment.shortCode && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="bg-white px-3 py-1 rounded border shadow-sm">
+                    <span className="font-mono text-sm font-bold text-foreground">
+                      {equipment.shortCode}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <p className="text-sm text-foreground text-center mt-2 font-medium">{equipment.name}</p>
+            {equipment.location && (
+              <p className="text-xs text-muted-foreground">📍 {equipment.location}</p>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="bg-primary py-1.5 text-center">
+            <p className="text-xs text-white font-semibold">📱 {t('qrCode.scanToInspect').toUpperCase()}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-muted/50 p-3 rounded-lg text-center">
+        <p className="text-xs text-muted-foreground mb-2">
+          {t('qrScanner.dialogDescription')}
+        </p>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="gap-2 text-xs h-7"
+          onClick={handleCopyUrl}
+        >
+          {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+          {copied ? t('qrCode.linkCopied') : t('qrCode.copyLink')}
+        </Button>
+      </div>
+
+      <div className="space-y-2">
+        <p className="text-sm font-medium text-muted-foreground">{t('reports.printOptions')}:</p>
+        <div className="grid grid-cols-2 gap-2">
+          <Button variant="outline" className="gap-2 text-xs sm:text-sm" onClick={handlePrintLabel}>
+            <Printer className="h-4 w-4" />
+            <span className="truncate">{t('qrCode.printLabel')}</span>
+          </Button>
+          <Button variant="outline" className="gap-2 text-xs sm:text-sm" onClick={handlePrintFull}>
+            <Printer className="h-4 w-4" />
+            <span className="truncate">{t('qrCode.printFull')}</span>
+          </Button>
+        </div>
+        <Button variant="secondary" className="w-full gap-2" onClick={handleDownload}>
+          <Download className="h-4 w-4" />
+          {t('qrCode.download')} PNG
+        </Button>
+      </div>
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer open={open} onOpenChange={onOpenChange}>
+        <DrawerContent className="max-h-[90vh]">
+          <DrawerHeader className="text-left pb-2">
+            <DrawerTitle className="flex items-center gap-2">
+              <QrCode className="h-5 w-5 text-primary" />
+              {t('qrCode.dialogTitle')}
+            </DrawerTitle>
+          </DrawerHeader>
+          <div className="overflow-y-auto px-4 pb-6 space-y-4">
+            {qrContent}
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
@@ -499,96 +620,8 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
             {t('qrCode.dialogTitle')}
           </DialogTitle>
         </DialogHeader>
-
-        {/* Preview with organization branding */}
-        <div className="flex flex-col items-center">
-          <div className="border-2 border-dashed border-primary rounded-lg overflow-hidden w-full max-w-xs">
-            {/* Header - Dynamic logo */}
-            <div className="bg-primary py-2 px-4 flex justify-center items-center min-h-[40px]">
-              {logoWhiteUrl ? (
-                <img 
-                  src={logoWhiteUrl} 
-                  alt={organizationName} 
-                  className="h-6 w-auto max-w-[150px] object-contain"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                    if (e.currentTarget.nextElementSibling) {
-                      (e.currentTarget.nextElementSibling as HTMLElement).classList.remove('hidden');
-                    }
-                  }}
-                />
-              ) : null}
-              <span className={`text-white font-bold text-sm ${logoWhiteUrl ? 'hidden' : ''}`}>
-                {organizationName}
-              </span>
-            </div>
-
-            {/* Content */}
-            <div className="bg-white p-4 flex flex-col items-center">
-              <p className="font-mono text-xs text-muted-foreground">{equipment.internalCode}</p>
-              
-              <div ref={qrRef} className="bg-white p-4 rounded-lg border mt-3 relative">
-                <QRCodeSVG 
-                  value={inspectionUrl} 
-                  size={190}
-                  level="H"
-                  includeMargin
-                />
-                {equipment.shortCode && (
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="bg-white px-3 py-1 rounded border shadow-sm">
-                      <span className="font-mono text-sm font-bold text-foreground">
-                        {equipment.shortCode}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <p className="text-sm text-foreground text-center mt-2 font-medium">{equipment.name}</p>
-              {equipment.location && (
-                <p className="text-xs text-muted-foreground">📍 {equipment.location}</p>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="bg-primary py-1.5 text-center">
-              <p className="text-xs text-white font-semibold">📱 {t('qrCode.scanToInspect').toUpperCase()}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-muted/50 p-3 rounded-lg text-center">
-          <p className="text-xs text-muted-foreground mb-2">
-            {t('qrScanner.dialogDescription')}
-          </p>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="gap-2 text-xs h-7"
-            onClick={handleCopyUrl}
-          >
-            {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-            {copied ? t('qrCode.linkCopied') : t('qrCode.copyLink')}
-          </Button>
-        </div>
-
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-muted-foreground">{t('reports.printOptions')}:</p>
-          <div className="grid grid-cols-2 gap-2">
-            <Button variant="outline" className="gap-2" onClick={handlePrintLabel}>
-              <Printer className="h-4 w-4" />
-              {t('qrCode.printLabel')}
-            </Button>
-            <Button variant="outline" className="gap-2" onClick={handlePrintFull}>
-              <Printer className="h-4 w-4" />
-              {t('qrCode.printFull')}
-            </Button>
-          </div>
-          <Button variant="secondary" className="w-full gap-2" onClick={handleDownload}>
-            <Download className="h-4 w-4" />
-            {t('qrCode.download')} PNG
-          </Button>
+        <div className="space-y-4">
+          {qrContent}
         </div>
       </DialogContent>
     </Dialog>
