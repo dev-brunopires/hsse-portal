@@ -3,6 +3,7 @@ import { useForm, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTranslation } from 'react-i18next';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Dialog,
   DialogContent,
@@ -10,6 +11,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer';
 import {
   Form,
   FormControl,
@@ -102,6 +110,7 @@ export function EquipmentFormDialog({
   onSuccess,
 }: EquipmentFormDialogProps) {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('general');
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -428,21 +437,21 @@ export function EquipmentFormDialog({
     documents: true,
   };
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col bg-card border border-border" hideCloseButton>
-        <DialogHeader className="pb-4 border-b border-border pr-0">
-          <DialogTitle className="flex items-center gap-2 text-xl">
-            <Package className="h-5 w-5 text-primary" />
-            {mode === 'create' ? t('equipmentForm.newEquipment') : t('equipmentForm.editEquipment')}
-          </DialogTitle>
-          <DialogDescription>
-            {t('equipmentForm.fillEquipmentInfo')}
-          </DialogDescription>
-        </DialogHeader>
+  const headerContent = (
+    <>
+      <div className="flex items-center gap-2 text-xl font-semibold">
+        <Package className="h-5 w-5 text-primary" />
+        {mode === 'create' ? t('equipmentForm.newEquipment') : t('equipmentForm.editEquipment')}
+      </div>
+      <p className="text-sm text-muted-foreground">
+        {t('equipmentForm.fillEquipmentInfo')}
+      </p>
+    </>
+  );
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="flex-1 overflow-hidden flex flex-col">
+  const formContent = (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="flex-1 overflow-hidden flex flex-col min-h-0">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
               <TabsList className="grid w-full grid-cols-4 mb-4">
                 <TabsTrigger value="general" className="gap-2 relative">
@@ -987,7 +996,7 @@ export function EquipmentFormDialog({
             </Tabs>
 
             {/* Footer */}
-            <div className="flex items-center justify-between pt-4 mt-4 border-t border-border">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 mt-4 border-t border-border flex-shrink-0">
               <div className="flex items-center gap-2">
                 {activeTab !== 'general' && (
                   <Button
@@ -1004,7 +1013,7 @@ export function EquipmentFormDialog({
                 )}
               </div>
               
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                   {t('equipmentForm.cancel')}
                 </Button>
@@ -1051,6 +1060,32 @@ export function EquipmentFormDialog({
             </div>
           </form>
         </Form>
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer open={open} onOpenChange={onOpenChange}>
+        <DrawerContent className="max-h-[95vh] flex flex-col">
+          <DrawerHeader className="pb-2 border-b border-border flex-shrink-0">
+            <DrawerTitle>{headerContent}</DrawerTitle>
+          </DrawerHeader>
+          <div className="flex-1 overflow-y-auto px-4 pb-4 min-h-0">
+            {formContent}
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl max-h-[95vh] overflow-hidden flex flex-col bg-card border border-border" hideCloseButton>
+        <DialogHeader className="pb-4 border-b border-border flex-shrink-0">
+          <DialogTitle>{headerContent}</DialogTitle>
+        </DialogHeader>
+        <div className="flex-1 overflow-hidden min-h-0">
+          {formContent}
+        </div>
       </DialogContent>
     </Dialog>
   );
