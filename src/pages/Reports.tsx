@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FileText, Download, Calendar, Filter, AlertTriangle, Loader2, BarChart3, Wrench, ClipboardCheck, Eye } from 'lucide-react';
+import { FileText, Download, Calendar, Filter, AlertTriangle, Loader2, BarChart3, Wrench, ClipboardCheck, Eye, FileSpreadsheet } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,18 +17,21 @@ import { useMaintenanceRequests } from '@/hooks/useMaintenanceRequests';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useUserSignature } from '@/hooks/useUserSignature';
+import { useOrganizationBranding } from '@/hooks/useOrganizationBranding';
 import { exportInspectionsToExcel, exportInspectionsToPDF } from '@/utils/exportInspections';
 import { exportCategoryInspectionPDF } from '@/utils/exportCategoryInspection';
+import { exportMonthlyConsolidatedPDF, exportMonthlyConsolidatedExcel } from '@/utils/exportMonthlyConsolidated';
 import { addPDFHeader, addPDFFooter, addSignatureSection, preloadLogo } from '@/utils/pdfStyles';
 import { ReportPreviewDialog } from '@/components/reports/ReportPreviewDialog';
+import { MonthQuickFilter } from '@/components/reports/MonthQuickFilter';
 import { toast } from 'sonner';
-import { format, isAfter, isBefore, addDays, startOfDay } from 'date-fns';
+import { format, isAfter, isBefore, addDays, startOfDay, parseISO } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
-type ReportType = 'inspections' | 'maintenance' | 'category' | 'expiry' | 'non-conformities' | 'category-inspection' | null;
+type ReportType = 'inspections' | 'maintenance' | 'category' | 'expiry' | 'non-conformities' | 'category-inspection' | 'monthly-consolidated' | null;
 
 export default function Reports() {
   const { t, i18n } = useTranslation();
@@ -77,11 +80,12 @@ export default function Reports() {
   const { data: maintenanceRequests = [], isLoading: maintenanceLoading } = useMaintenanceRequests();
   const { data: signatureData } = useUserSignature();
   const signature = signatureData?.default_signature;
+  const branding = useOrganizationBranding();
 
   // Preload logo for PDFs
   useEffect(() => {
-    preloadLogo();
-  }, []);
+    preloadLogo(branding);
+  }, [branding]);
 
   // Get full profile with position
   const currentUserProfile = useMemo(() => {
@@ -93,6 +97,7 @@ export default function Reports() {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [startDateStr, setStartDateStr] = useState<string>('');
   const [endDateStr, setEndDateStr] = useState<string>('');
+  const [monthFilter, setMonthFilter] = useState<string>('all');
 
   // Preview dialog state
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -717,9 +722,65 @@ export default function Reports() {
     setCategoryFilter('all');
     setStartDateStr('');
     setEndDateStr('');
+    setMonthFilter('all');
   };
 
-  const hasFilters = shipFilter !== 'all' || categoryFilter !== 'all' || startDateStr || endDateStr;
+  const handleMonthChange = (value: string) => {
+    setMonthFilter(value);
+  };
+
+  const handleMonthDateRangeChange = (start: string, end: string) => {
+    setStartDateStr(start);
+    setEndDateStr(end);
+  };
+
+  const hasFilters = shipFilter !== 'all' || categoryFilter !== 'all' || startDateStr || endDateStr || monthFilter !== 'all';
+
+  // Monthly consolidated report data
+  const monthlyConsolidatedData = useMemo(() => {
+    if (categoryFilter === 'all' || !monthFilter || monthFilter === 'all') return null;
+    
+    const category = categories.find(c => c.id === categoryFilter);
+    if (!category) return null;
+
+    const categoryEquipment = filteredEquipment.filter(e => e.category_id === categoryFilter);
+    const categoryInspections = filteredInspections.filter(i => {
+      const equip = equipment.find(e => e.id === i.equipment_id);
+      return equip?.category_id === categoryFilter;
+    });
+
+    return {
+      category,
+      equipment: categoryEquipment,
+      inspections: categoryInspections,
+      monthLabel: monthFilter,
+      branding,
+      inspector: currentUserProfile ? {
+        name: currentUserProfile.full_name,
+        position: currentUserProfile.position || undefined,
+      } : undefined,
+      signature,
+    };
+  }, [categoryFilter, monthFilter, categories, filteredEquipment, filteredInspections, equipment, branding, currentUserProfile, signature]);
+
+  // Monthly consolidated report handlers
+  const handleMonthlyConsolidatedPDF = async (preview = false) => {
+    if (!monthlyConsolidatedData) {
+      toast.error(t('reports.selectCategoryAndMonth'));
+      return;
+    }
+    await exportMonthlyConsolidatedPDF(monthlyConsolidatedData, { preview });
+    toast.success(preview ? t('common.pdfPreviewOpened') : t('reports.monthlyExportedPDF'));
+  };
+
+  const handleMonthlyConsolidatedExcel = () => {
+    if (!monthlyConsolidatedData) {
+      toast.error(t('reports.selectCategoryAndMonth'));
+      return;
+    }
+    exportMonthlyConsolidatedExcel(monthlyConsolidatedData);
+    toast.success(t('reports.monthlyExportedExcel'));
+  };
 
   // Preview data configurations
   const getPreviewData = () => {
@@ -914,6 +975,46 @@ export default function Reports() {
             { label: t('reports.nonCompliant'), value: categoryInspectionData.filter(i => i.status === 'non-compliant').length, color: 'bg-red-100 text-red-700' },
           ],
         };
+      case 'monthly-consolidated':
+        if (!monthlyConsolidatedData) return null;
+        return {
+          title: t('reports.previewMonthlyConsolidated'),
+          description: `${monthlyConsolidatedData.equipment.length} ${t('reports.equipmentPlural')} - ${monthlyConsolidatedData.category.name}`,
+          data: monthlyConsolidatedData.equipment.map(equip => {
+            const equipInspections = monthlyConsolidatedData.inspections.filter(i => i.equipment_id === equip.id);
+            const lastInsp = equipInspections.sort((a, b) => 
+              new Date(b.inspection_date).getTime() - new Date(a.inspection_date).getTime()
+            )[0];
+            return {
+              code: equip.internal_code,
+              name: equip.name,
+              location: equip.location || '—',
+              eqStatus: statusLabels[equip.status] || equip.status,
+              inspCount: equipInspections.length,
+              lastInsp: lastInsp ? format(parseISO(lastInsp.inspection_date), 'dd/MM/yy', { locale: dateLocale }) : '—',
+              inspStatus: lastInsp ? inspectionStatusLabels[lastInsp.status] || lastInsp.status : '—',
+              inspector: lastInsp?.profiles?.full_name || '—',
+            };
+          }),
+          columns: [
+            { key: 'code', label: t('reports.code') },
+            { key: 'name', label: t('reports.equipment') },
+            { key: 'location', label: t('common.location') },
+            { key: 'eqStatus', label: t('reports.eqStatus') },
+            { key: 'inspCount', label: t('reports.inspCount') },
+            { key: 'lastInsp', label: t('reports.lastInspection') },
+            { key: 'inspStatus', label: t('reports.inspStatus') },
+            { key: 'inspector', label: t('reports.inspector') },
+          ],
+          onExportPDF: handleMonthlyConsolidatedPDF,
+          onExportExcel: handleMonthlyConsolidatedExcel,
+          summary: [
+            { label: t('reports.compliant'), value: monthlyConsolidatedData.inspections.filter(i => i.status === 'compliant').length, color: 'bg-emerald-100 text-emerald-700' },
+            { label: t('reports.attention'), value: monthlyConsolidatedData.inspections.filter(i => i.status === 'attention').length, color: 'bg-amber-100 text-amber-700' },
+            { label: t('reports.nonCompliant'), value: monthlyConsolidatedData.inspections.filter(i => i.status === 'non-compliant').length, color: 'bg-red-100 text-red-700' },
+            { label: t('reports.notInspected'), value: monthlyConsolidatedData.equipment.length - monthlyConsolidatedData.inspections.length, color: 'bg-slate-100 text-slate-700' },
+          ],
+        };
       default:
         return null;
     }
@@ -981,6 +1082,16 @@ export default function Reports() {
       iconColor: 'text-white',
       bgColor: 'bg-orange-500',
     },
+    {
+      id: 'monthly-consolidated' as ReportType,
+      title: t('reports.monthlyConsolidatedReport'),
+      description: t('reports.monthlyConsolidatedDesc'),
+      icon: FileSpreadsheet,
+      count: monthlyConsolidatedData?.equipment.length || 0,
+      iconColor: 'text-white',
+      bgColor: 'bg-indigo-600',
+      requiresFilter: true,
+    },
   ];
 
   return (
@@ -1045,11 +1156,20 @@ export default function Reports() {
               </Select>
             </div>
 
+            <MonthQuickFilter
+              value={monthFilter}
+              onChange={handleMonthChange}
+              onDateRangeChange={handleMonthDateRangeChange}
+            />
+
             <div className="space-y-2">
               <Label>{t('reports.startDate')}</Label>
               <DatePicker
                 value={startDateStr}
-                onChange={setStartDateStr}
+                onChange={(val) => {
+                  setStartDateStr(val);
+                  if (val) setMonthFilter('all');
+                }}
                 placeholder={t('common.select')}
               />
             </div>
@@ -1058,13 +1178,62 @@ export default function Reports() {
               <Label>{t('reports.endDate')}</Label>
               <DatePicker
                 value={endDateStr}
-                onChange={setEndDateStr}
+                onChange={(val) => {
+                  setEndDateStr(val);
+                  if (val) setMonthFilter('all');
+                }}
                 placeholder={t('common.select')}
               />
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Monthly Consolidated Quick Export */}
+      {monthlyConsolidatedData && (
+        <Card className="border-indigo-200 bg-indigo-50/50 dark:border-indigo-800 dark:bg-indigo-950/20">
+          <CardContent className="pt-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h3 className="font-semibold text-indigo-900 dark:text-indigo-100">
+                  {t('reports.monthlyConsolidatedReport')}
+                </h3>
+                <p className="text-sm text-indigo-700 dark:text-indigo-300">
+                  {monthlyConsolidatedData.category.name} - {monthlyConsolidatedData.equipment.length} {t('reports.equipmentPlural')} - {monthlyConsolidatedData.inspections.length} {t('reports.inspectionsPerformed')}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => openPreview('monthly-consolidated')}
+                  className="border-indigo-300 text-indigo-700 hover:bg-indigo-100 dark:border-indigo-700 dark:text-indigo-300"
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  {t('reports.preview')}
+                </Button>
+                <Button 
+                  size="sm" 
+                  onClick={() => handleMonthlyConsolidatedPDF()}
+                  className="bg-indigo-600 hover:bg-indigo-700"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  PDF
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={handleMonthlyConsolidatedExcel}
+                  className="border-indigo-300 text-indigo-700 hover:bg-indigo-100 dark:border-indigo-700 dark:text-indigo-300"
+                >
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Excel
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Loading State */}
       {isLoading ? (
