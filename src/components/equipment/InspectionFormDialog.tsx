@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTranslation } from 'react-i18next';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Dialog,
   DialogContent,
@@ -11,6 +12,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer';
 import {
   Form,
   FormControl,
@@ -114,6 +122,7 @@ export function InspectionFormDialog({
   const [signatureData, setSignatureData] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   
   const { data: inspectors = [], isLoading: inspectorsLoading } = useTechniciansAndAdmins();
   const { data: userSignatureSettings } = useUserSignature();
@@ -405,479 +414,495 @@ export function InspectionFormDialog({
 
   if (!equipment) return null;
 
+  const headerContent = (
+    <>
+      <div className="flex items-center gap-2 text-xl font-semibold">
+        <ClipboardCheck className="h-5 w-5 text-primary" />
+        {t('inspectionForm.registerInspection')}
+        {!isOnline && (
+          <Badge variant="destructive" className="ml-2 gap-1">
+            <WifiOff className="h-3 w-3" />
+            {t('inspectionForm.offline')}
+          </Badge>
+        )}
+      </div>
+      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+        <span>
+          <strong className="text-foreground">{equipment.internalCode}</strong> - {equipment.name}
+        </span>
+        <span className="text-xs px-2 py-1 bg-muted rounded">
+          {equipment.categoryName}
+        </span>
+      </div>
+    </>
+  );
+
+  const formContent = (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-hidden flex flex-col min-h-0">
+        <Tabs defaultValue="info" className="flex-1 flex flex-col overflow-hidden min-h-0">
+          <TabsList className="grid w-full grid-cols-5 flex-shrink-0">
+            <TabsTrigger value="info" className="flex items-center gap-1 px-1 sm:px-3 sm:gap-2">
+              <Info className="h-4 w-4" />
+              <span className="hidden sm:inline">{t('inspectionForm.info')}</span>
+            </TabsTrigger>
+            <TabsTrigger value="checklist" className="flex items-center gap-1 px-1 sm:px-3 sm:gap-2">
+              <ClipboardList className="h-4 w-4" />
+              <span className="hidden sm:inline">{t('inspectionForm.checklist')}</span>
+              {statusCounts.pending > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                  {statusCounts.pending}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="observations" className="flex items-center gap-1 px-1 sm:px-3 sm:gap-2">
+              <FileText className="h-4 w-4" />
+              <span className="hidden sm:inline">{t('inspectionForm.observationsTab')}</span>
+            </TabsTrigger>
+            <TabsTrigger value="photos" className="flex items-center gap-1 px-1 sm:px-3 sm:gap-2">
+              <ImageIcon className="h-4 w-4" />
+              <span className="hidden sm:inline">{t('inspectionForm.photos')}</span>
+              {uploadedPhotos.length > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                  {uploadedPhotos.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="signature" className="flex items-center gap-1 px-1 sm:px-3 sm:gap-2">
+              <PenTool className="h-4 w-4" />
+              <span className="hidden sm:inline">{t('inspectionForm.sign')}</span>
+              {signatureData && (
+                <CheckCircle2 className="h-4 w-4 text-status-success" />
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Tab: Dados Gerais */}
+          <TabsContent value="info" className="flex-1 overflow-y-auto mt-4 min-h-0">
+            <div className="space-y-6 pb-4 px-1">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="inspectorId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        {t('inspectionForm.responsibleInspector')} *
+                      </FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value} disabled={inspectorsLoading}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={inspectorsLoading ? t('common.loading') : t('inspectionForm.selectInspector')} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="bg-popover border border-border shadow-lg z-50">
+                          {inspectors.map((inspector) => (
+                            <SelectItem key={inspector.user_id} value={inspector.user_id}>
+                              <div className="flex items-center gap-2">
+                                <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
+                                  {inspector.full_name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()}
+                                </div>
+                                <span>{inspector.full_name}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="inspectionDate"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        {t('inspectionForm.inspectionDate')} *
+                      </FormLabel>
+                      <FormControl>
+                        <DatePickerField
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder={t('inspectionForm.selectDate')}
+                          fromYear={new Date().getFullYear() - 5}
+                          toYear={new Date().getFullYear() + 1}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="nextInspectionDate"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col max-w-xs">
+                    <FormLabel>{t('inspectionForm.nextScheduledInspection')}</FormLabel>
+                    <FormControl>
+                      <DatePickerField
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder={t('inspectionForm.selectDate')}
+                        fromYear={new Date().getFullYear()}
+                        toYear={new Date().getFullYear() + 10}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Overall Status Summary */}
+              <div className={cn(
+                'p-4 rounded-lg border',
+                calculateOverallStatus() === 'compliant' && 'border-status-success bg-status-success/10',
+                calculateOverallStatus() === 'attention' && 'border-status-warning bg-status-warning/10',
+                calculateOverallStatus() === 'non-compliant' && 'border-status-danger bg-status-danger/10',
+              )}>
+                <div className="flex items-center gap-3">
+                  {calculateOverallStatus() === 'compliant' && (
+                    <CheckCircle2 className="h-6 w-6 text-status-success" />
+                  )}
+                  {calculateOverallStatus() === 'attention' && (
+                    <AlertTriangle className="h-6 w-6 text-status-warning" />
+                  )}
+                  {calculateOverallStatus() === 'non-compliant' && (
+                    <XCircle className="h-6 w-6 text-status-danger" />
+                  )}
+                  <div>
+                    <p className="font-semibold">
+                      {t('inspectionForm.overallStatus')}: {' '}
+                      {calculateOverallStatus() === 'compliant' && t('inspectionForm.compliant')}
+                      {calculateOverallStatus() === 'attention' && t('inspectionForm.attentionNeeded')}
+                      {calculateOverallStatus() === 'non-compliant' && t('inspectionForm.nonCompliant')}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {statusCounts.ok} {t('inspectionForm.conforming')} • {statusCounts.attention} {t('inspectionForm.withAttention')} • {statusCounts.fail} {t('inspectionForm.nonConforming')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Tab: Checklist */}
+          <TabsContent value="checklist" className="flex-1 overflow-y-auto mt-4 min-h-0">
+            <div className="space-y-4 pb-4 px-1">
+              <div className="flex flex-col gap-2 sticky top-0 bg-card py-2 z-10">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold">{t('inspectionForm.verificationItems')}</h3>
+                  <div className="flex items-center gap-3 text-sm">
+                    <span className="flex items-center gap-1">
+                      <CheckCircle2 className="h-4 w-4 text-status-success" />
+                      {statusCounts.ok}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <AlertTriangle className="h-4 w-4 text-status-warning" />
+                      {statusCounts.attention}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <XCircle className="h-4 w-4 text-status-danger" />
+                      {statusCounts.fail}
+                    </span>
+                  </div>
+                </div>
+                {/* Progress indicator */}
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-primary transition-all duration-300 ease-out"
+                      style={{ width: `${checklist.length > 0 ? ((checklist.filter(i => i.status !== 'pending').length / checklist.length) * 100) : 0}%` }}
+                    />
+                  </div>
+                  <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+                    {checklist.filter(i => i.status !== 'pending').length}/{checklist.length} {t('inspectionForm.itemsCompleted')}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {checklist.map((item, index) => (
+                  <div 
+                    key={item.id}
+                    className={cn(
+                      'p-4 rounded-lg border transition-colors',
+                      item.status === 'ok' && 'border-status-success/30 bg-status-success/5',
+                      item.status === 'attention' && 'border-status-warning/30 bg-status-warning/5',
+                      item.status === 'fail' && 'border-status-danger/30 bg-status-danger/5',
+                      item.status === 'pending' && 'border-border bg-card',
+                    )}
+                  >
+                    <div className="flex items-start gap-4">
+                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
+                        {index + 1}
+                      </span>
+                      
+                      <div className="flex-1 space-y-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="font-medium text-sm flex items-center gap-2">
+                            {item.description}
+                            {item.required ? (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-destructive/10 text-destructive border border-destructive/20">
+                                {t('inspectionForm.requiredBadge')}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground border border-border">
+                                {t('inspectionForm.optionalBadge')}
+                              </span>
+                            )}
+                          </p>
+                        </div>
+
+                        <RadioGroup
+                          value={item.status}
+                          onValueChange={(value) => updateChecklistItem(item.id, 'status', value)}
+                          className="flex flex-wrap items-center gap-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="ok" id={`${item.id}-ok`} />
+                            <Label 
+                              htmlFor={`${item.id}-ok`}
+                              className="flex items-center gap-1 text-sm cursor-pointer text-status-success"
+                            >
+                              <CheckCircle2 className="h-4 w-4" />
+                              {t('inspectionForm.conform')}
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="attention" id={`${item.id}-attention`} />
+                            <Label 
+                              htmlFor={`${item.id}-attention`}
+                              className="flex items-center gap-1 text-sm cursor-pointer text-status-warning"
+                            >
+                              <AlertTriangle className="h-4 w-4" />
+                              {t('inspectionForm.attention')}
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="fail" id={`${item.id}-fail`} />
+                            <Label 
+                              htmlFor={`${item.id}-fail`}
+                              className="flex items-center gap-1 text-sm cursor-pointer text-status-danger"
+                            >
+                              <XCircle className="h-4 w-4" />
+                              {t('inspectionForm.notConform')}
+                            </Label>
+                          </div>
+                        </RadioGroup>
+
+                        {(item.status === 'attention' || item.status === 'fail') && (
+                          <Input
+                            placeholder={t('inspectionForm.describeProblem')}
+                            value={item.notes}
+                            onChange={(e) => updateChecklistItem(item.id, 'notes', e.target.value)}
+                            className="text-sm"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Tab: Observações */}
+          <TabsContent value="observations" className="flex-1 overflow-y-auto mt-4 min-h-0">
+            <div className="space-y-6 pb-4 px-1">
+              <FormField
+                control={form.control}
+                name="observations"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('inspectionForm.generalObservations')}</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder={t('inspectionForm.observationsPlaceholder')}
+                        rows={6}
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="recommendations"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('inspectionForm.recommendationsActions')}</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder={t('inspectionForm.necessaryActions')}
+                        rows={6}
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </TabsContent>
+
+          {/* Tab: Fotos */}
+          <TabsContent value="photos" className="flex-1 overflow-y-auto mt-4 min-h-0">
+            <div className="space-y-4 pb-4 px-1">
+              <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                  className="hidden"
+                  id="photo-upload"
+                />
+                <label htmlFor="photo-upload" className="cursor-pointer">
+                  <Camera className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="font-medium text-sm">{t('inspectionForm.addPhotos')}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t('inspectionForm.clickOrDragImages')}
+                  </p>
+                </label>
+              </div>
+
+              {uploadedPhotos.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  {uploadedPhotos.map((photo, index) => (
+                    <div key={index} className="relative group">
+                      <div className="aspect-square rounded-lg bg-muted flex items-center justify-center overflow-hidden border border-border">
+                        <img
+                          src={URL.createObjectURL(photo)}
+                          alt={`${t('inspectionForm.evidence')} ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-2 -right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => removePhoto(index)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <ImageIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">{t('inspectionForm.noPhotosAdded')}</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* Tab: Assinatura */}
+          <TabsContent value="signature" className="flex-1 overflow-y-auto mt-4 min-h-0">
+            <div className="space-y-4 pb-4 px-1">
+              <div className="text-center mb-4">
+                <p className="text-sm text-muted-foreground">
+                  {t('inspectionForm.signBelow')}
+                </p>
+              </div>
+              
+              <SignaturePad
+                onSave={(data) => {
+                  setSignatureData(data);
+                  toast({
+                    title: t('inspectionForm.signatureCaptured'),
+                    description: t('inspectionForm.signatureRegistered'),
+                  });
+                }}
+                initialSignature={signatureData || undefined}
+              />
+              
+              {signatureData && (
+                <div className="mt-4 p-4 rounded-lg border border-status-success bg-status-success/10">
+                  <div className="flex items-center gap-2 text-status-success">
+                    <CheckCircle2 className="h-5 w-5" />
+                    <span className="font-medium">{t('inspectionForm.signatureConfirmed')}</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {t('inspectionForm.signatureAttached')}
+                  </p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        {/* Footer */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 mt-4 border-t border-border flex-shrink-0">
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            {t('inspectionForm.cancel')}
+          </Button>
+          
+          <div className="flex items-center gap-2">
+            {/* Quick Inspection Button */}
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isSubmitting}
+              onClick={handleQuickInspection}
+              className="gap-2 bg-status-success/10 border-status-success/30 text-status-success hover:bg-status-success/20 hover:text-status-success"
+            >
+              <Zap className="h-4 w-4" />
+              <span className="hidden sm:inline">{t('inspectionForm.launchAs')}</span> {t('inspectionForm.conform')}
+            </Button>
+
+            <Button type="submit" disabled={isSubmitting} className="gap-2">
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {t('inspectionForm.registering')}
+                </>
+              ) : (
+                <>
+                  <ClipboardCheck className="h-4 w-4" />
+                  {t('inspectionForm.finalizeInspection')}
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </form>
+    </Form>
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer open={open} onOpenChange={onOpenChange}>
+        <DrawerContent className="max-h-[95vh] flex flex-col">
+          <DrawerHeader className="pb-2 border-b border-border flex-shrink-0">
+            <DrawerTitle>{headerContent}</DrawerTitle>
+          </DrawerHeader>
+          <div className="flex-1 overflow-y-auto px-4 pb-4 min-h-0">
+            {formContent}
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[95vh] overflow-hidden flex flex-col bg-card border border-border">
         <DialogHeader className="pb-4 border-b border-border flex-shrink-0">
-          <DialogTitle className="flex items-center gap-2 text-xl">
-            <ClipboardCheck className="h-5 w-5 text-primary" />
-            {t('inspectionForm.registerInspection')}
-            {!isOnline && (
-              <Badge variant="destructive" className="ml-2 gap-1">
-                <WifiOff className="h-3 w-3" />
-                {t('inspectionForm.offline')}
-              </Badge>
-            )}
-          </DialogTitle>
-          <DialogDescription className="flex items-center gap-4">
-            <span>
-              <strong>{equipment.internalCode}</strong> - {equipment.name}
-            </span>
-            <span className="text-xs px-2 py-1 bg-muted rounded">
-              {equipment.categoryName}
-            </span>
-          </DialogDescription>
+          <DialogTitle>{headerContent}</DialogTitle>
         </DialogHeader>
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-hidden flex flex-col">
-            <Tabs defaultValue="info" className="flex-1 flex flex-col overflow-hidden">
-              <TabsList className="grid w-full grid-cols-5 flex-shrink-0">
-                <TabsTrigger value="info" className="flex items-center gap-2">
-                  <Info className="h-4 w-4" />
-                  <span className="hidden sm:inline">{t('inspectionForm.info')}</span>
-                </TabsTrigger>
-                <TabsTrigger value="checklist" className="flex items-center gap-2">
-                  <ClipboardList className="h-4 w-4" />
-                  <span className="hidden sm:inline">{t('inspectionForm.checklist')}</span>
-                  {statusCounts.pending > 0 && (
-                    <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
-                      {statusCounts.pending}
-                    </Badge>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger value="observations" className="flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  <span className="hidden sm:inline">{t('inspectionForm.observationsTab')}</span>
-                </TabsTrigger>
-                <TabsTrigger value="photos" className="flex items-center gap-2">
-                  <ImageIcon className="h-4 w-4" />
-                  <span className="hidden sm:inline">{t('inspectionForm.photos')}</span>
-                  {uploadedPhotos.length > 0 && (
-                    <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
-                      {uploadedPhotos.length}
-                    </Badge>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger value="signature" className="flex items-center gap-2">
-                  <PenTool className="h-4 w-4" />
-                  <span className="hidden sm:inline">{t('inspectionForm.sign')}</span>
-                  {signatureData && (
-                    <CheckCircle2 className="h-4 w-4 text-status-success" />
-                  )}
-                </TabsTrigger>
-              </TabsList>
-
-              {/* Tab: Dados Gerais */}
-              <TabsContent value="info" className="flex-1 overflow-hidden mt-4">
-                <ScrollArea className="h-full px-1">
-                  <div className="space-y-6 pb-4 pr-3">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="inspectorId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="flex items-center gap-2">
-                              <User className="h-4 w-4" />
-                              {t('inspectionForm.responsibleInspector')} *
-                            </FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value} disabled={inspectorsLoading}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder={inspectorsLoading ? t('common.loading') : t('inspectionForm.selectInspector')} />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent className="bg-popover border border-border shadow-lg z-50">
-                                {inspectors.map((inspector) => (
-                                  <SelectItem key={inspector.user_id} value={inspector.user_id}>
-                                    <div className="flex items-center gap-2">
-                                      <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
-                                        {inspector.full_name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()}
-                                      </div>
-                                      <span>{inspector.full_name}</span>
-                                    </div>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="inspectionDate"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-col">
-                            <FormLabel className="flex items-center gap-2">
-                              <Calendar className="h-4 w-4" />
-                              {t('inspectionForm.inspectionDate')} *
-                            </FormLabel>
-                            <FormControl>
-                              <DatePickerField
-                                value={field.value}
-                                onChange={field.onChange}
-                                placeholder={t('inspectionForm.selectDate')}
-                                fromYear={new Date().getFullYear() - 5}
-                                toYear={new Date().getFullYear() + 1}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <FormField
-                      control={form.control}
-                      name="nextInspectionDate"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-col max-w-xs">
-                          <FormLabel>{t('inspectionForm.nextScheduledInspection')}</FormLabel>
-                          <FormControl>
-                            <DatePickerField
-                              value={field.value}
-                              onChange={field.onChange}
-                              placeholder={t('inspectionForm.selectDate')}
-                              fromYear={new Date().getFullYear()}
-                              toYear={new Date().getFullYear() + 10}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Overall Status Summary */}
-                    <div className={cn(
-                      'p-4 rounded-lg border',
-                      calculateOverallStatus() === 'compliant' && 'border-status-success bg-status-success/10',
-                      calculateOverallStatus() === 'attention' && 'border-status-warning bg-status-warning/10',
-                      calculateOverallStatus() === 'non-compliant' && 'border-status-danger bg-status-danger/10',
-                    )}>
-                      <div className="flex items-center gap-3">
-                        {calculateOverallStatus() === 'compliant' && (
-                          <CheckCircle2 className="h-6 w-6 text-status-success" />
-                        )}
-                        {calculateOverallStatus() === 'attention' && (
-                          <AlertTriangle className="h-6 w-6 text-status-warning" />
-                        )}
-                        {calculateOverallStatus() === 'non-compliant' && (
-                          <XCircle className="h-6 w-6 text-status-danger" />
-                        )}
-                        <div>
-                          <p className="font-semibold">
-                            {t('inspectionForm.overallStatus')}: {' '}
-                            {calculateOverallStatus() === 'compliant' && t('inspectionForm.compliant')}
-                            {calculateOverallStatus() === 'attention' && t('inspectionForm.attentionNeeded')}
-                            {calculateOverallStatus() === 'non-compliant' && t('inspectionForm.nonCompliant')}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {statusCounts.ok} {t('inspectionForm.conforming')} • {statusCounts.attention} {t('inspectionForm.withAttention')} • {statusCounts.fail} {t('inspectionForm.nonConforming')}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </ScrollArea>
-              </TabsContent>
-
-              {/* Tab: Checklist */}
-              <TabsContent value="checklist" className="flex-1 overflow-hidden mt-4">
-                <ScrollArea className="h-full px-1">
-                  <div className="space-y-4 pb-4 pr-3">
-                    <div className="flex flex-col gap-2 sticky top-0 bg-card py-2 z-10">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-semibold">{t('inspectionForm.verificationItems')}</h3>
-                        <div className="flex items-center gap-3 text-sm">
-                          <span className="flex items-center gap-1">
-                            <CheckCircle2 className="h-4 w-4 text-status-success" />
-                            {statusCounts.ok}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <AlertTriangle className="h-4 w-4 text-status-warning" />
-                            {statusCounts.attention}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <XCircle className="h-4 w-4 text-status-danger" />
-                            {statusCounts.fail}
-                          </span>
-                        </div>
-                      </div>
-                      {/* Progress indicator */}
-                      <div className="flex items-center gap-3">
-                        <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-primary transition-all duration-300 ease-out"
-                            style={{ width: `${checklist.length > 0 ? ((checklist.filter(i => i.status !== 'pending').length / checklist.length) * 100) : 0}%` }}
-                          />
-                        </div>
-                        <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
-                          {checklist.filter(i => i.status !== 'pending').length}/{checklist.length} {t('inspectionForm.itemsCompleted')}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      {checklist.map((item, index) => (
-                        <div 
-                          key={item.id}
-                          className={cn(
-                            'p-4 rounded-lg border transition-colors',
-                            item.status === 'ok' && 'border-status-success/30 bg-status-success/5',
-                            item.status === 'attention' && 'border-status-warning/30 bg-status-warning/5',
-                            item.status === 'fail' && 'border-status-danger/30 bg-status-danger/5',
-                            item.status === 'pending' && 'border-border bg-card',
-                          )}
-                        >
-                          <div className="flex items-start gap-4">
-                            <span className="flex-shrink-0 w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
-                              {index + 1}
-                            </span>
-                            
-                            <div className="flex-1 space-y-3">
-                              <div className="flex items-center justify-between gap-2">
-                                <p className="font-medium text-sm flex items-center gap-2">
-                                  {item.description}
-                                  {item.required ? (
-                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-destructive/10 text-destructive border border-destructive/20">
-                                      {t('inspectionForm.requiredBadge')}
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground border border-border">
-                                      {t('inspectionForm.optionalBadge')}
-                                    </span>
-                                  )}
-                                </p>
-                              </div>
-
-                              <RadioGroup
-                                value={item.status}
-                                onValueChange={(value) => updateChecklistItem(item.id, 'status', value)}
-                                className="flex flex-wrap items-center gap-4"
-                              >
-                                <div className="flex items-center space-x-2">
-                                  <RadioGroupItem value="ok" id={`${item.id}-ok`} />
-                                  <Label 
-                                    htmlFor={`${item.id}-ok`}
-                                    className="flex items-center gap-1 text-sm cursor-pointer text-status-success"
-                                  >
-                                    <CheckCircle2 className="h-4 w-4" />
-                                    {t('inspectionForm.conform')}
-                                  </Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                  <RadioGroupItem value="attention" id={`${item.id}-attention`} />
-                                  <Label 
-                                    htmlFor={`${item.id}-attention`}
-                                    className="flex items-center gap-1 text-sm cursor-pointer text-status-warning"
-                                  >
-                                    <AlertTriangle className="h-4 w-4" />
-                                    {t('inspectionForm.attention')}
-                                  </Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                  <RadioGroupItem value="fail" id={`${item.id}-fail`} />
-                                  <Label 
-                                    htmlFor={`${item.id}-fail`}
-                                    className="flex items-center gap-1 text-sm cursor-pointer text-status-danger"
-                                  >
-                                    <XCircle className="h-4 w-4" />
-                                    {t('inspectionForm.notConform')}
-                                  </Label>
-                                </div>
-                              </RadioGroup>
-
-                              {(item.status === 'attention' || item.status === 'fail') && (
-                                <Input
-                                  placeholder={t('inspectionForm.describeProblem')}
-                                  value={item.notes}
-                                  onChange={(e) => updateChecklistItem(item.id, 'notes', e.target.value)}
-                                  className="text-sm"
-                                />
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </ScrollArea>
-              </TabsContent>
-
-              {/* Tab: Observações */}
-              <TabsContent value="observations" className="flex-1 overflow-hidden mt-4">
-                <ScrollArea className="h-full px-1">
-                  <div className="space-y-6 pb-4 pr-3">
-                    <FormField
-                      control={form.control}
-                      name="observations"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{t('inspectionForm.generalObservations')}</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder={t('inspectionForm.observationsPlaceholder')}
-                              rows={6}
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="recommendations"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{t('inspectionForm.recommendationsActions')}</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder={t('inspectionForm.necessaryActions')}
-                              rows={6}
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </ScrollArea>
-              </TabsContent>
-
-              {/* Tab: Fotos */}
-              <TabsContent value="photos" className="flex-1 overflow-hidden mt-4">
-                <ScrollArea className="h-full px-1">
-                  <div className="space-y-4 pb-4 pr-3">
-                    <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
-                      <input
-                        type="file"
-                        multiple
-                        accept="image/*"
-                        onChange={handlePhotoUpload}
-                        className="hidden"
-                        id="photo-upload"
-                      />
-                      <label htmlFor="photo-upload" className="cursor-pointer">
-                        <Camera className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                        <p className="font-medium text-sm">{t('inspectionForm.addPhotos')}</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {t('inspectionForm.clickOrDragImages')}
-                        </p>
-                      </label>
-                    </div>
-
-                    {uploadedPhotos.length > 0 ? (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                        {uploadedPhotos.map((photo, index) => (
-                          <div key={index} className="relative group">
-                            <div className="aspect-square rounded-lg bg-muted flex items-center justify-center overflow-hidden border border-border">
-                              <img
-                                src={URL.createObjectURL(photo)}
-                                alt={`${t('inspectionForm.evidence')} ${index + 1}`}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              size="icon"
-                              className="absolute -top-2 -right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => removePhoto(index)}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <ImageIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm">{t('inspectionForm.noPhotosAdded')}</p>
-                      </div>
-                    )}
-                  </div>
-                </ScrollArea>
-              </TabsContent>
-
-              {/* Tab: Assinatura */}
-              <TabsContent value="signature" className="flex-1 overflow-hidden mt-4">
-                <ScrollArea className="h-full px-1">
-                  <div className="space-y-4 pb-4 pr-3">
-                    <div className="text-center mb-4">
-                      <p className="text-sm text-muted-foreground">
-                        {t('inspectionForm.signBelow')}
-                      </p>
-                    </div>
-                    
-                    <SignaturePad
-                      onSave={(data) => {
-                        setSignatureData(data);
-                        toast({
-                          title: t('inspectionForm.signatureCaptured'),
-                          description: t('inspectionForm.signatureRegistered'),
-                        });
-                      }}
-                      initialSignature={signatureData || undefined}
-                    />
-                    
-                    {signatureData && (
-                      <div className="mt-4 p-4 rounded-lg border border-status-success bg-status-success/10">
-                        <div className="flex items-center gap-2 text-status-success">
-                          <CheckCircle2 className="h-5 w-5" />
-                          <span className="font-medium">{t('inspectionForm.signatureConfirmed')}</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {t('inspectionForm.signatureAttached')}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </ScrollArea>
-              </TabsContent>
-            </Tabs>
-
-            {/* Footer */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 mt-4 border-t border-border flex-shrink-0">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                {t('inspectionForm.cancel')}
-              </Button>
-              
-              <div className="flex items-center gap-2">
-                {/* Quick Inspection Button */}
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={isSubmitting}
-                  onClick={handleQuickInspection}
-                  className="gap-2 bg-status-success/10 border-status-success/30 text-status-success hover:bg-status-success/20 hover:text-status-success"
-                >
-                  <Zap className="h-4 w-4" />
-                  <span className="hidden sm:inline">{t('inspectionForm.launchAs')}</span> {t('inspectionForm.conform')}
-                </Button>
-
-                <Button type="submit" disabled={isSubmitting} className="gap-2">
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      {t('inspectionForm.registering')}
-                    </>
-                  ) : (
-                    <>
-                      <ClipboardCheck className="h-4 w-4" />
-                      {t('inspectionForm.finalizeInspection')}
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          </form>
-        </Form>
+        <div className="flex-1 overflow-hidden min-h-0">
+          {formContent}
+        </div>
       </DialogContent>
     </Dialog>
   );
