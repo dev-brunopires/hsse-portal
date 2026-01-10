@@ -809,11 +809,9 @@ export function InspectionFormDialog({
           {/* Tab: Assinatura */}
           <TabsContent value="signature" className="flex-1 overflow-y-auto mt-4 min-h-0">
             <div className="space-y-4 pb-4 px-1">
-              <div className="text-center mb-4">
-                <p className="text-sm text-muted-foreground">
-                  {t('inspectionForm.signBelow')}
-                </p>
-              </div>
+              <p className="text-sm text-muted-foreground text-center">
+                {t('inspectionForm.signBelow')}
+              </p>
               
               <SignaturePad
                 onSave={(data) => {
@@ -827,7 +825,7 @@ export function InspectionFormDialog({
               />
               
               {signatureData && (
-                <div className="mt-4 p-4 rounded-lg border border-status-success bg-status-success/10">
+                <div className="p-4 rounded-lg border border-status-success bg-status-success/10">
                   <div className="flex items-center gap-2 text-status-success">
                     <CheckCircle2 className="h-5 w-5" />
                     <span className="font-medium">{t('inspectionForm.signatureConfirmed')}</span>
@@ -842,29 +840,29 @@ export function InspectionFormDialog({
         </Tabs>
 
         {/* Footer */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 mt-4 border-t border-border flex-shrink-0">
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+        <div className="pt-4 mt-4 border-t border-border flex-shrink-0 space-y-3">
+          <Button type="button" variant="outline" className="w-full" onClick={() => onOpenChange(false)}>
             {t('inspectionForm.cancel')}
           </Button>
           
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch gap-2">
             {/* Quick Inspection Button */}
             <Button
               type="button"
               variant="outline"
               disabled={isSubmitting}
               onClick={handleQuickInspection}
-              className="gap-2 bg-status-success/10 border-status-success/30 text-status-success hover:bg-status-success/20 hover:text-status-success"
+              className="gap-2 bg-status-success/10 border-status-success/30 text-status-success hover:bg-status-success/20 hover:text-status-success flex-1"
             >
               <Zap className="h-4 w-4" />
-              <span className="hidden sm:inline">{t('inspectionForm.launchAs')}</span> {t('inspectionForm.conform')}
+              {t('inspectionForm.conform')}
             </Button>
 
-            <Button type="submit" disabled={isSubmitting} className="gap-2">
+            <Button type="submit" disabled={isSubmitting} className="gap-2 flex-1">
               {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  {t('inspectionForm.registering')}
+                  <span className="hidden sm:inline">{t('inspectionForm.registering')}</span>
                 </>
               ) : (
                 <>

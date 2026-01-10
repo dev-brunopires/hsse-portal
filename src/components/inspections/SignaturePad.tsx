@@ -1,7 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import SignaturePadLib from 'signature_pad';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Eraser, Check, PenTool } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -61,47 +60,43 @@ export function SignaturePad({ onSave, onCancel, initialSignature }: SignaturePa
   };
 
   return (
-    <Card className="border-2 border-dashed border-primary/30">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base flex items-center gap-2">
-          <PenTool className="h-4 w-4" />
-          {t('signaturePad.title')}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="border rounded-lg overflow-hidden bg-white">
-          <canvas
-            ref={canvasRef}
-            className="w-full h-32 touch-none"
-            style={{ touchAction: 'none' }}
-          />
-        </div>
-        <p className="text-xs text-muted-foreground text-center">
-          {t('signaturePad.hint')}
-        </p>
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleClear}
-            className="flex-1"
-          >
-            <Eraser className="h-4 w-4 mr-2" />
-            {t('signaturePad.clear')}
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            onClick={handleSave}
-            disabled={isEmpty}
-            className="flex-1"
-          >
-            <Check className="h-4 w-4 mr-2" />
-            {t('signaturePad.confirm')}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="border-2 border-dashed border-primary/30 rounded-lg p-4 space-y-3">
+      <div className="flex items-center gap-2 text-base font-medium">
+        <PenTool className="h-4 w-4" />
+        {t('signaturePad.title')}
+      </div>
+      <div className="border rounded-lg overflow-hidden bg-white">
+        <canvas
+          ref={canvasRef}
+          className="w-full h-32 touch-none"
+          style={{ touchAction: 'none' }}
+        />
+      </div>
+      <p className="text-xs text-muted-foreground text-center">
+        {t('signaturePad.hint')}
+      </p>
+      <div className="flex flex-col sm:flex-row gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={handleClear}
+          className="flex-1"
+        >
+          <Eraser className="h-4 w-4 mr-2" />
+          {t('signaturePad.clear')}
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          onClick={handleSave}
+          disabled={isEmpty}
+          className="flex-1"
+        >
+          <Check className="h-4 w-4 mr-2" />
+          {t('signaturePad.confirm')}
+        </Button>
+      </div>
+    </div>
   );
 }

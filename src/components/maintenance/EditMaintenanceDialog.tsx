@@ -3,13 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { ResponsiveDialog, ResponsiveDialogBody, ResponsiveDialogFooter } from '@/components/ui/responsive-dialog';
 import {
   Form,
   FormControl,
@@ -157,22 +151,19 @@ export function EditMaintenanceDialog({
   if (!request) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto bg-card">
-        <DialogHeader className="pb-2">
-          <DialogTitle className="flex items-center gap-2">
-            <Wrench className="h-5 w-5 text-primary" />
-            {t('maintenanceForm.editMaintenance')}
-          </DialogTitle>
-          <DialogDescription>
-            {t('maintenanceForm.editMaintenanceDesc')}
-          </DialogDescription>
-        </DialogHeader>
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 pb-4">
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={t('maintenanceForm.editMaintenance')}
+      description={t('maintenanceForm.editMaintenanceDesc')}
+      titleIcon={<Wrench className="h-5 w-5 text-primary" />}
+      className="max-w-2xl"
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <ResponsiveDialogBody className="space-y-4">
             {/* Type and Priority */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="type"
@@ -181,11 +172,11 @@ export function EditMaintenanceDialog({
                     <FormLabel>{t('maintenanceForm.maintenanceType')} *</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
-                        <SelectTrigger className="border-border focus-visible:ring-offset-0">
+                        <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent className="bg-popover border border-border z-50">
                         <SelectItem value="corrective">{t('maintenanceForm.corrective')}</SelectItem>
                         <SelectItem value="preventive">{t('maintenanceForm.preventive')}</SelectItem>
                       </SelectContent>
@@ -203,11 +194,11 @@ export function EditMaintenanceDialog({
                     <FormLabel>{t('maintenance.priority')} *</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
-                        <SelectTrigger className="border-border focus-visible:ring-offset-0">
+                        <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent className="bg-popover border border-border z-50">
                         {priorityOptions.map(opt => (
                           <SelectItem key={opt.value} value={opt.value}>
                             <span className={opt.color}>{opt.label}</span>
@@ -268,11 +259,7 @@ export function EditMaintenanceDialog({
                 <FormItem>
                   <FormLabel>{t('maintenanceForm.workOrderNumber')}</FormLabel>
                   <FormControl>
-                    <Input 
-                      className="border-border focus-visible:ring-offset-0" 
-                      placeholder={t('maintenanceForm.workOrderPlaceholder')} 
-                      {...field} 
-                    />
+                    <Input placeholder={t('maintenanceForm.workOrderPlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -287,11 +274,7 @@ export function EditMaintenanceDialog({
                 <FormItem>
                   <FormLabel>{t('maintenance.requestTitle')} *</FormLabel>
                   <FormControl>
-                    <Input 
-                      className="border-border focus-visible:ring-offset-0" 
-                      placeholder={t('maintenanceForm.titlePlaceholder')} 
-                      {...field} 
-                    />
+                    <Input placeholder={t('maintenanceForm.titlePlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -308,7 +291,7 @@ export function EditMaintenanceDialog({
                   <FormControl>
                     <Textarea 
                       placeholder={t('maintenanceForm.detailedDescriptionPlaceholder')}
-                      className="min-h-[80px] border-border resize-none focus-visible:ring-offset-0"
+                      className="min-h-[80px] resize-none"
                       {...field} 
                     />
                   </FormControl>
@@ -327,7 +310,7 @@ export function EditMaintenanceDialog({
                   <FormControl>
                     <Textarea 
                       placeholder={t('maintenanceForm.problemCausePlaceholder')}
-                      className="min-h-[60px] border-border resize-none focus-visible:ring-offset-0"
+                      className="min-h-[60px] resize-none"
                       {...field} 
                     />
                   </FormControl>
@@ -335,20 +318,19 @@ export function EditMaintenanceDialog({
                 </FormItem>
               )}
             />
+          </ResponsiveDialogBody>
 
-            {/* Submit */}
-            <div className="flex justify-end gap-3 pt-4 border-t">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                {t('common.cancel')}
-              </Button>
-              <Button type="submit" disabled={updateMutation.isPending}>
-                {updateMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                {t('dialogs.saveChanges')}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+          <ResponsiveDialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              {t('common.cancel')}
+            </Button>
+            <Button type="submit" disabled={updateMutation.isPending}>
+              {updateMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {t('dialogs.saveChanges')}
+            </Button>
+          </ResponsiveDialogFooter>
+        </form>
+      </Form>
+    </ResponsiveDialog>
   );
 }
