@@ -45,6 +45,7 @@ import { useDeleteInspection } from '@/hooks/useInspections';
 import { supabase } from '@/integrations/supabase/client';
 import { exportSingleInspectionPDF } from '@/utils/exportInspections';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOrganizationBranding } from '@/hooks/useOrganizationBranding';
 
 interface InspectionDetailDialogProps {
   open: boolean;
@@ -67,6 +68,7 @@ export function InspectionDetailDialog({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   
   const { role } = useAuth();
+  const branding = useOrganizationBranding();
   const deleteInspection = useDeleteInspection();
   
   const isAdmin = role === 'admin' || (role as string) === 'admin_master';
@@ -144,7 +146,8 @@ export function InspectionDetailDialog({
         status: item.status,
         notes: item.notes,
       })),
-      photos
+      photos,
+      branding
     );
   };
 

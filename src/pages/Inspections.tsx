@@ -73,6 +73,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { PullToRefreshIndicator } from '@/components/ui/PullToRefreshIndicator';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useOrganizationBranding } from '@/hooks/useOrganizationBranding';
 
 const getStatusConfig = (t: (key: string) => string) => ({
   compliant: { label: t('inspections.statusCompliant'), variant: 'default' as const, icon: CheckCircle },
@@ -90,6 +91,7 @@ export default function Inspections() {
   const [searchParams, setSearchParams] = useSearchParams();
   const scanEquipmentId = searchParams.get('scan');
   const isMobile = useIsMobile();
+  const branding = useOrganizationBranding();
   
   const { data: inspections = [], isLoading, refetch: refetchInspections } = useInspections();
   const { data: profiles = [] } = useProfiles();
@@ -243,7 +245,7 @@ export default function Inspections() {
 
   const handleExportPDF = async (preview: boolean = false) => {
     toast({ title: t('common.loading'), description: t('common.loading') });
-    await exportInspectionsToPDF(filteredInspections, 'relatorio_inspecoes', undefined, { preview });
+    await exportInspectionsToPDF(filteredInspections, 'relatorio_inspecoes', branding, { preview });
     toast({ title: t('common.success'), description: preview ? t('inspections.pdfPreviewOpened') : t('common.success') });
   };
 

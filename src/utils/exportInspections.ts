@@ -234,14 +234,16 @@ export async function exportSingleInspectionPDF(
   inspection: InspectionWithDetails, 
   checklistItems: { description: string; status: string; notes: string | null }[] = [],
   photos: InspectionPhoto[] = [],
+  branding?: OrganizationBranding,
   options?: { preview?: boolean }
 ) {
   const statusLabels = getStatusLabels();
   const t = i18n.t;
   const dateLocale = getDateLocale();
+  const companyName = branding?.name || 'SafeShip';
   
-  // Preload logo
-  await preloadLogo();
+  // Preload logo with branding
+  await preloadLogo(branding);
   
   const doc = new jsPDF();
   const generatedDate = format(new Date(), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: dateLocale });
@@ -251,7 +253,8 @@ export async function exportSingleInspectionPDF(
     doc,
     t('exportInspections.singleReportTitle'),
     `${t('exportInspections.document')}: ${formatInspectionId(inspection.id)}`,
-    [`${t('exportInspections.issued')}: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: dateLocale })}`]
+    [`${t('exportInspections.issued')}: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: dateLocale })}`],
+    { branding }
   );
   
   // Inspection info section
@@ -454,10 +457,10 @@ export async function exportSingleInspectionPDF(
     doc.text(`${t('exportInspections.signedAt')}: ${format(new Date(inspection.signed_at), "dd/MM/yyyy 'às' HH:mm", { locale: dateLocale })}`, detailsX, yPos + 22);
   }
 
-  // Add standardized footer
+  // Add standardized footer with organization name
   addPDFFooter(
     doc,
-    t('exportInspections.footerCompany', { companyName: 'SafeShip' }),
+    t('exportInspections.footerCompany', { companyName }),
     `${t('exportInspections.singleReportTitle')} - ${format(new Date(), 'dd/MM/yyyy HH:mm')}`
   );
 

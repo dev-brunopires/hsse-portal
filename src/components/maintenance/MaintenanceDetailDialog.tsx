@@ -52,6 +52,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { generateMaintenancePDF } from '@/utils/generateMaintenancePDF';
 import { EditMaintenanceDialog } from './EditMaintenanceDialog';
+import { useOrganizationBranding } from '@/hooks/useOrganizationBranding';
 
 interface MaintenanceDetailDialogProps {
   open: boolean;
@@ -61,6 +62,7 @@ interface MaintenanceDetailDialogProps {
 
 export function MaintenanceDetailDialog({ open, onOpenChange, requestId }: MaintenanceDetailDialogProps) {
   const { t } = useTranslation();
+  const branding = useOrganizationBranding();
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
@@ -161,7 +163,7 @@ export function MaintenanceDetailDialog({ open, onOpenChange, requestId }: Maint
 
   const handleExportPDF = async () => {
     if (!request) return;
-    await generateMaintenancePDF(request);
+    await generateMaintenancePDF({ ...request, branding });
   };
 
   return (
