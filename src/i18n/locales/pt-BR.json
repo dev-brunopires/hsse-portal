@@ -1,4 +1,14 @@
 {
+  "pwa": {
+    "installTitle": "Instalar Aplicativo",
+    "installDescription": "Instale este app no seu dispositivo para uma melhor experiência",
+    "install": "Instalar",
+    "notNow": "Agora não",
+    "updateAvailable": "Atualização Disponível",
+    "updateDescription": "Uma nova versão está disponível. Atualize agora para obter os recursos mais recentes.",
+    "updateNow": "Atualizar Agora",
+    "later": "Depois"
+  },
   "errorBoundary": {
     "updateAvailable": "Atualização Disponível",
     "somethingWentWrong": "Algo deu errado",
