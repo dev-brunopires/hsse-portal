@@ -5,25 +5,17 @@ import {
   Package,
   ClipboardCheck,
   FileText,
-  Settings,
   Users,
   Bell,
   FolderOpen,
-  User,
   AlertCircle,
-  Moon,
-  Sun,
   Building2,
   History,
   Wrench,
-  Languages,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader } from '@/components/ui/sheet';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTheme } from '@/hooks/useTheme';
-import { useLanguage } from '@/contexts/LanguageContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { SystemLogo } from '@/components/ui/SystemLogo';
 
@@ -64,19 +56,9 @@ interface MobileSidebarProps {
 export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
   const { t } = useTranslation();
   const { isAdmin, isPlatformOwner } = useAuth();
-  const { resolvedTheme, setTheme } = useTheme();
-  const { language, setLanguage } = useLanguage();
   const { organization, logoWhiteUrl } = useOrganization();
 
   const organizationName = organization?.name || 'SafeShip';
-
-  const toggleTheme = () => {
-    setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
-  };
-
-  const toggleLanguage = () => {
-    setLanguage(language === 'pt-BR' ? 'en' : 'pt-BR');
-  };
 
   const handleNavClick = () => {
     onOpenChange(false);
@@ -109,7 +91,7 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
           </div>
         </SheetHeader>
 
-        {/* Navigation */}
+        {/* Navigation - Main items only */}
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           <MobileNavItem to="/" icon={<LayoutDashboard size={20} />} label={t('navigation.dashboard')} onClick={handleNavClick} />
           <MobileNavItem to="/equipment" icon={<Package size={20} />} label={t('navigation.equipment')} onClick={handleNavClick} />
@@ -121,46 +103,20 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
           <MobileNavItem to="/categories" icon={<FolderOpen size={20} />} label={t('navigation.categories')} onClick={handleNavClick} />
         </nav>
 
-        {/* Bottom Section */}
-        <div className="border-t border-sidebar-border p-3 space-y-1">
-          {/* Theme Toggle */}
-          <button
-            onClick={toggleTheme}
-            className="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 w-full hover:bg-sidebar-accent text-sidebar-foreground"
-          >
-            <span className="flex-shrink-0">
-              {resolvedTheme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-            </span>
-            <span className="text-sm">
-              {resolvedTheme === 'dark' ? t('common.lightMode') : t('common.darkMode')}
-            </span>
-          </button>
-
-          {/* Language Toggle */}
-          <button
-            onClick={toggleLanguage}
-            className="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 w-full hover:bg-sidebar-accent text-sidebar-foreground"
-          >
-            <span className="flex-shrink-0">
-              <Languages size={20} />
-            </span>
-            <span className="text-sm">
-              {language === 'pt-BR' ? 'English' : 'Português'}
-            </span>
-          </button>
-          
-          <MobileNavItem to="/profile" icon={<User size={20} />} label={t('navigation.profile')} onClick={handleNavClick} />
-          {isAdmin && (
-            <>
-              <MobileNavItem to="/users" icon={<Users size={20} />} label={t('navigation.users')} onClick={handleNavClick} />
-              <MobileNavItem to="/audit-log" icon={<History size={20} />} label={t('navigation.auditLog')} onClick={handleNavClick} />
-              <MobileNavItem to="/settings" icon={<Settings size={20} />} label={t('navigation.settings')} onClick={handleNavClick} />
-            </>
-          )}
-          {isPlatformOwner && (
-            <MobileNavItem to="/platform-admin" icon={<Building2 size={20} />} label={t('navigation.platformAdmin')} onClick={handleNavClick} />
-          )}
-        </div>
+        {/* Admin Section - Only admin-specific items */}
+        {(isAdmin || isPlatformOwner) && (
+          <div className="border-t border-sidebar-border p-3 space-y-1">
+            {isAdmin && (
+              <>
+                <MobileNavItem to="/users" icon={<Users size={20} />} label={t('navigation.users')} onClick={handleNavClick} />
+                <MobileNavItem to="/audit-log" icon={<History size={20} />} label={t('navigation.auditLog')} onClick={handleNavClick} />
+              </>
+            )}
+            {isPlatformOwner && (
+              <MobileNavItem to="/platform-admin" icon={<Building2 size={20} />} label={t('navigation.platformAdmin')} onClick={handleNavClick} />
+            )}
+          </div>
+        )}
       </SheetContent>
     </Sheet>
   );
