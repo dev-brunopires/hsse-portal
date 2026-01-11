@@ -7,9 +7,10 @@ import { MobileBottomNav } from './MobileBottomNav';
 import { Header } from './Header';
 import { OfflineIndicator } from './OfflineIndicator';
 import { PWAInstallPrompt } from './PWAInstallPrompt';
+import { PWAUpdatePrompt } from './PWAUpdatePrompt';
+import { SyncProgressIndicator } from './SyncProgressIndicator';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
-import { Loader2, Menu } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -59,8 +60,11 @@ export function AppLayout({ children }: AppLayoutProps) {
       {/* Mobile Bottom Navigation */}
       <MobileBottomNav />
 
+      {/* System Indicators */}
       <OfflineIndicator />
       <PWAInstallPrompt />
+      <PWAUpdatePrompt />
+      <SyncProgressIndicator />
     </div>
   );
 }
