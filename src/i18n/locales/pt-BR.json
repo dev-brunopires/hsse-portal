@@ -2325,7 +2325,7 @@
     "pendingSync": "Pendente Sync",
     "pendingTab": "Pendente",
     "cachedEquipment": "Equipamentos em Cache",
-    "cachedEquipmentDesc": "Equipamentos disponíveis offline",
+    "cachedEquipmentDesc": "Equipamentos disponíveis para uso offline - clique para inspecionar",
     "cachedShips": "Navios em Cache",
     "cachedShipsDesc": "Navios disponíveis para acesso offline",
     "cachedCategories": "Categorias em Cache",
@@ -2335,7 +2335,9 @@
     "pendingInspectionsDesc": "Inspeções aguardando sincronização",
     "noPending": "Tudo Sincronizado",
     "noPendingDesc": "Nenhuma inspeção pendente para sincronizar",
-    "viewCachedData": "Ver Dados em Cache"
+    "viewCachedData": "Ver Dados em Cache",
+    "inspect": "Inspecionar",
+    "offlineInspection": "Inspeção Offline"
   },
   "pwa": {
     "installTitle": "Instalar SafeShip",
