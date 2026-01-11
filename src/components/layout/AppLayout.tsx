@@ -45,22 +45,11 @@ export function AppLayout({ children }: AppLayoutProps) {
       <MobileSidebar open={mobileMenuOpen} onOpenChange={setMobileMenuOpen} />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Mobile Header with hamburger */}
-        <div className="lg:hidden h-14 bg-card border-b border-border flex items-center px-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setMobileMenuOpen(true)}
-            className="flex-shrink-0"
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
-        </div>
-
-        {/* Desktop Header */}
-        <div className="hidden lg:block">
-          <Header />
-        </div>
+        {/* Unified Header for both mobile and desktop */}
+        <Header 
+          showMenuButton={true} 
+          onMenuClick={() => setMobileMenuOpen(true)} 
+        />
 
         <main className="flex-1 overflow-auto p-4 lg:p-6 pb-24 lg:pb-6">
           {children}
