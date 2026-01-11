@@ -1,8 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import i18n from '@/i18n';
+import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { translateError } from '@/utils/errorTranslation';
 
 export interface ChecklistTemplate {
   id: string;
@@ -106,6 +107,8 @@ export function useDefaultChecklistTemplate(categoryId?: string) {
 
 export function useCreateChecklistTemplate() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const { t } = useTranslation();
   const { organization } = useOrganization();
 
   return useMutation({
@@ -163,17 +166,24 @@ export function useCreateChecklistTemplate() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['checklist-templates'] });
       queryClient.invalidateQueries({ queryKey: ['default-checklist-template'] });
-      toast.success(i18n.t('hooks.checklistTemplate.created'));
+      toast({
+        title: t('hooks.checklistTemplate.created'),
+      });
     },
-    onError: (error) => {
-      toast.error(i18n.t('hooks.checklistTemplate.createError'));
-      console.error('Error creating checklist template:', error);
+    onError: (error: Error) => {
+      toast({
+        title: t('hooks.checklistTemplate.createError'),
+        description: translateError(error),
+        variant: 'destructive',
+      });
     },
   });
 }
 
 export function useUpdateChecklistTemplate() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const { t } = useTranslation();
   const { organization } = useOrganization();
 
   return useMutation({
@@ -230,17 +240,24 @@ export function useUpdateChecklistTemplate() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['checklist-templates'] });
       queryClient.invalidateQueries({ queryKey: ['default-checklist-template'] });
-      toast.success(i18n.t('hooks.checklistTemplate.updated'));
+      toast({
+        title: t('hooks.checklistTemplate.updated'),
+      });
     },
-    onError: (error) => {
-      toast.error(i18n.t('hooks.checklistTemplate.updateError'));
-      console.error('Error updating checklist template:', error);
+    onError: (error: Error) => {
+      toast({
+        title: t('hooks.checklistTemplate.updateError'),
+        description: translateError(error),
+        variant: 'destructive',
+      });
     },
   });
 }
 
 export function useDeleteChecklistTemplate() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -254,11 +271,16 @@ export function useDeleteChecklistTemplate() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['checklist-templates'] });
       queryClient.invalidateQueries({ queryKey: ['default-checklist-template'] });
-      toast.success(i18n.t('hooks.checklistTemplate.deleted'));
+      toast({
+        title: t('hooks.checklistTemplate.deleted'),
+      });
     },
-    onError: (error) => {
-      toast.error(i18n.t('hooks.checklistTemplate.deleteError'));
-      console.error('Error deleting checklist template:', error);
+    onError: (error: Error) => {
+      toast({
+        title: t('hooks.checklistTemplate.deleteError'),
+        description: translateError(error),
+        variant: 'destructive',
+      });
     },
   });
 }
