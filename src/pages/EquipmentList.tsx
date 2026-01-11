@@ -9,16 +9,11 @@ import { Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getCategoryIcon } from '@/utils/categoryIcons';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { useEquipmentPaginated } from '@/hooks/useEquipmentPaginated';
 
 export default function EquipmentList() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<string>('all');
   const { data: categories = [], isLoading: categoriesLoading } = useCategories();
-  
-  // Get counts for each category using paginated hook
-  const { data: allEquipmentData } = useEquipmentPaginated({});
-  const totalCount = allEquipmentData?.pages[0]?.totalCount || 0;
 
   if (categoriesLoading) {
     return (
@@ -63,14 +58,6 @@ export default function EquipmentList() {
             >
               <Package className="h-4 w-4" />
               <span>{t('common.all')}</span>
-              <span className={cn(
-                "ml-1 px-1.5 py-0.5 text-xs rounded-full",
-                activeTab === 'all'
-                  ? "bg-primary/10 text-primary"
-                  : "bg-muted text-muted-foreground"
-              )}>
-                {totalCount}
-              </span>
             </button>
 
             {/* Category Tabs */}
