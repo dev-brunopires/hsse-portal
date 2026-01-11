@@ -9,8 +9,9 @@ const getDateLocale = () => i18n.language === 'en' ? enUS : ptBR;
 
 // Default Brand Colors - Used when no organization branding is available
 export const PRIMARY_BLUE: [number, number, number] = [22, 85, 154]; // #16559A
-// Alias for backwards compatibility
+// Alias for backwards compatibility - keeping old name to avoid breaking imports
 export const SBM_BLUE = PRIMARY_BLUE;
+export const BRAND_BLUE = PRIMARY_BLUE;
 export const DARK_GRAY: [number, number, number] = [51, 51, 51];
 export const LIGHT_GRAY: [number, number, number] = [245, 247, 250];
 export const MEDIUM_GRAY: [number, number, number] = [156, 163, 175];

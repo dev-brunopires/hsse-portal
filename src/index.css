@@ -84,7 +84,7 @@
     --popover: 210 40% 11%;
     --popover-foreground: 210 15% 95%;
 
-    /* SBM Blue - Primary */
+    /* Brand Blue - Primary */
     --primary: 210 80% 55%;
     --primary-foreground: 210 40% 8%;
 
@@ -177,7 +177,7 @@
     @apply bg-status-danger/15 text-[hsl(var(--status-danger))];
   }
 
-  /* KPI Cards with SBM styling */
+  /* KPI Cards with corporate styling */
   .kpi-card {
     @apply bg-card rounded-xl border border-border p-6 shadow-sm hover:shadow-md transition-all duration-300;
   }

@@ -85,7 +85,7 @@ export default {
           blue: "hsl(210, 100%, 20%)",
           "blue-light": "hsl(210, 80%, 40%)",
         },
-        // Alias for backwards compatibility
+        // Legacy alias for backwards compatibility - do not use in new code
         sbm: {
           orange: "hsl(18, 89%, 54%)",
           blue: "hsl(210, 100%, 20%)",
