@@ -2677,5 +2677,21 @@
     "defaultTemplateName": "Checklist Padrão",
     "duplicate": "Duplicar template",
     "copy": "Cópia"
+  },
+  "hooks": {
+    "checklist": {
+      "updated": "Checklist Atualizado",
+      "updatedDesc": "Os itens do checklist foram atualizados com sucesso"
+    },
+    "photo": {
+      "added": "Foto Adicionada",
+      "addedDesc": "A foto foi enviada com sucesso",
+      "deleted": "Foto Removida",
+      "deletedDesc": "A foto foi removida com sucesso"
+    },
+    "signature": {
+      "updated": "Assinatura Atualizada",
+      "updatedDesc": "A assinatura foi atualizada com sucesso"
+    }
   }
 }

@@ -2676,5 +2676,21 @@
     "defaultTemplateName": "Default Checklist",
     "duplicate": "Duplicate template",
     "copy": "Copy"
+  },
+  "hooks": {
+    "checklist": {
+      "updated": "Checklist Updated",
+      "updatedDesc": "Checklist items have been updated successfully"
+    },
+    "photo": {
+      "added": "Photo Added",
+      "addedDesc": "The photo has been uploaded successfully",
+      "deleted": "Photo Removed",
+      "deletedDesc": "The photo has been removed successfully"
+    },
+    "signature": {
+      "updated": "Signature Updated",
+      "updatedDesc": "The signature has been updated successfully"
+    }
   }
 }
