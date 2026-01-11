@@ -30,6 +30,7 @@ const PendingRecommendations = lazyWithRetry(() => import("./pages/PendingRecomm
 const AuditLog = lazyWithRetry(() => import("./pages/AuditLog"));
 const Maintenance = lazyWithRetry(() => import("./pages/Maintenance"));
 const PlatformAdmin = lazyWithRetry(() => import("./pages/PlatformAdmin"));
+const OfflineData = lazyWithRetry(() => import("./pages/OfflineData"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -183,6 +184,16 @@ function App() {
                     <ProtectedRoute>
                       <AppLayout>
                         <Profile />
+                      </AppLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/offline"
+                  element={
+                    <ProtectedRoute>
+                      <AppLayout>
+                        <OfflineData />
                       </AppLayout>
                     </ProtectedRoute>
                   }
