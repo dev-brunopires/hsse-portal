@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { FileText, ClipboardList, Package, QrCode, Bell } from 'lucide-react';
+import { FileText, ClipboardList, Package, QrCode, Bell, LayoutDashboard, Wrench } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { QRCodeScannerDialog } from '@/components/equipment/QRCodeScannerDialog';
 import { hapticButton, hapticSuccess } from '@/utils/hapticFeedback';
@@ -10,15 +10,18 @@ interface NavItem {
   icon: React.ElementType;
   labelKey: string;
   path: string;
+  tabletOnly?: boolean;
 }
 
 const leftNavItems: NavItem[] = [
+  { icon: LayoutDashboard, labelKey: 'navigation.dashboard', path: '/', tabletOnly: true },
   { icon: FileText, labelKey: 'navigation.reports', path: '/reports' },
   { icon: ClipboardList, labelKey: 'navigation.inspections', path: '/inspections' },
 ];
 
 const rightNavItems: NavItem[] = [
   { icon: Package, labelKey: 'common.equipment', path: '/equipment' },
+  { icon: Wrench, labelKey: 'navigation.maintenance', path: '/maintenance', tabletOnly: true },
   { icon: Bell, labelKey: 'navigation.alerts', path: '/alerts' },
 ];
 
@@ -63,7 +66,8 @@ export function MobileBottomNav() {
                     "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[64px] min-h-[48px] touch-manipulation active:scale-95",
                     isActive(item.path) 
                       ? "text-primary" 
-                      : "text-muted-foreground hover:text-foreground active:text-foreground"
+                      : "text-muted-foreground hover:text-foreground active:text-foreground",
+                    item.tabletOnly && "hidden md:flex"
                   )}
                 >
                   <item.icon className={cn(
@@ -86,7 +90,8 @@ export function MobileBottomNav() {
                     "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[64px] min-h-[48px] touch-manipulation active:scale-95",
                     isActive(item.path) 
                       ? "text-primary" 
-                      : "text-muted-foreground hover:text-foreground active:text-foreground"
+                      : "text-muted-foreground hover:text-foreground active:text-foreground",
+                    item.tabletOnly && "hidden md:flex"
                   )}
                 >
                   <item.icon className={cn(
