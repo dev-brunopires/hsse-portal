@@ -43,7 +43,7 @@ import { useChecklistTemplates } from '@/hooks/useChecklistTemplates';
 import { CategoryFormDialog } from '@/components/categories/CategoryFormDialog';
 import { ChecklistTemplatesDialog } from '@/components/categories/ChecklistTemplatesDialog';
 import { getCategoryIcon } from '@/utils/categoryIcons';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile, useIsTabletOrMobile } from '@/hooks/use-mobile';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { PullToRefreshIndicator } from '@/components/ui/PullToRefreshIndicator';
 import { useQueryClient } from '@tanstack/react-query';
@@ -62,6 +62,7 @@ export default function Categories() {
   const { data: equipment } = useEquipment();
   const deleteCategory = useDeleteCategory();
   const isMobile = useIsMobile();
+  const isTabletOrMobile = useIsTabletOrMobile();
   const queryClient = useQueryClient();
   
   const { data: allTemplates } = useChecklistTemplates();
@@ -202,10 +203,10 @@ export default function Categories() {
             </div>
           ) : (
             <>
-              {/* Mobile Card View with Pull to Refresh */}
+              {/* Mobile/Tablet Card View with Pull to Refresh */}
               <div 
                 ref={isMobile ? containerRef : undefined}
-                className="md:hidden space-y-3 overflow-auto"
+                className="lg:hidden grid grid-cols-1 sm:grid-cols-2 gap-3 overflow-auto"
               >
                 <PullToRefreshIndicator 
                   pullDistance={pullDistance} 
@@ -283,8 +284,8 @@ export default function Categories() {
                 })}
               </div>
 
-              {/* Desktop Table View */}
-              <div className="hidden md:block rounded-lg border border-border overflow-hidden">
+              {/* Desktop Table View - only on large screens */}
+              <div className="hidden lg:block rounded-lg border border-border overflow-hidden">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/50">

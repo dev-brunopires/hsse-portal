@@ -71,7 +71,7 @@ import { cn } from '@/lib/utils';
 import { formatDate } from '@/utils/dateFormat';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { PullToRefreshIndicator } from '@/components/ui/PullToRefreshIndicator';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile, useIsTabletOrMobile } from '@/hooks/use-mobile';
 
 interface EquipmentTableProps {
   equipment: EquipmentWithCategory[];
@@ -106,6 +106,7 @@ export function EquipmentTable({
   const { t } = useTranslation();
   const branding = useOrganizationBranding();
   const isMobile = useIsMobile();
+  const isTabletOrMobile = useIsTabletOrMobile();
 
   const { pullDistance, isRefreshing, containerRef } = usePullToRefresh({
     onRefresh: onRefresh || (async () => {}),
@@ -419,11 +420,11 @@ export function EquipmentTable({
           )}
         </div>
 
-        {/* Mobile Card View with Pull to Refresh */}
-        {isMobile && (
+        {/* Mobile/Tablet Card View with Pull to Refresh */}
+        {isTabletOrMobile && (
           <div 
-            ref={containerRef}
-            className="space-y-3 p-3 overflow-auto"
+            ref={isMobile ? containerRef : undefined}
+            className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 overflow-auto"
           >
             <PullToRefreshIndicator 
               pullDistance={pullDistance} 
@@ -535,8 +536,8 @@ export function EquipmentTable({
           </div>
         )}
 
-        {/* Desktop Table */}
-        {!isMobile && (
+        {/* Desktop Table - only on large screens */}
+        {!isTabletOrMobile && (
           <div className="overflow-x-auto">
           <Table>
             <TableHeader>
