@@ -74,7 +74,7 @@ export function useCertificates(filters?: {
   type?: string;
   expiringDays?: number;
 }) {
-  const { selectedShipId, isFilterEnabled } = useShipFilter();
+  const { selectedShipId, isReady } = useShipFilter();
   const { organization } = useOrganization();
 
   return useQuery({
@@ -94,8 +94,8 @@ export function useCertificates(filters?: {
         query = query.eq('organization_id', organization.id);
       }
 
-      // Filter by ship
-      if (isFilterEnabled && selectedShipId) {
+      // Filter by ship - always apply when a ship is selected
+      if (selectedShipId) {
         query = query.eq('ship_id', selectedShipId);
       }
 
@@ -127,12 +127,12 @@ export function useCertificates(filters?: {
       if (error) throw error;
       return data as Certificate[];
     },
-    enabled: !!organization?.id,
+    enabled: isReady && !!organization?.id,
   });
 }
 
 export function useCertificateStats() {
-  const { selectedShipId, isFilterEnabled } = useShipFilter();
+  const { selectedShipId, isReady } = useShipFilter();
   const { organization } = useOrganization();
 
   return useQuery({
@@ -146,7 +146,8 @@ export function useCertificateStats() {
         query = query.eq('organization_id', organization.id);
       }
 
-      if (isFilterEnabled && selectedShipId) {
+      // Always apply ship filter when a ship is selected
+      if (selectedShipId) {
         query = query.eq('ship_id', selectedShipId);
       }
 
@@ -192,7 +193,7 @@ export function useCertificateStats() {
 
       return stats;
     },
-    enabled: !!organization?.id,
+    enabled: isReady && !!organization?.id,
   });
 }
 
