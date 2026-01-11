@@ -352,8 +352,17 @@ export default function Reports() {
       startY: startY,
       head: [[t('reports.code'), t('reports.equipment'), t('reports.category'), t('common.location'), t('reports.expiry'), t('reports.status')]],
       body: tableData,
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: [220, 38, 38] },
+      styles: { 
+        fontSize: 9, 
+        cellPadding: 4,
+        minCellHeight: 10,
+      },
+      headStyles: { 
+        fillColor: [220, 38, 38],
+        fontSize: 9,
+        fontStyle: 'bold',
+        cellPadding: 4,
+      },
       alternateRowStyles: { fillColor: [254, 242, 242] },
     });
 

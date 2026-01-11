@@ -278,9 +278,9 @@ export function addSignatureSection(
     yPos = 20;
   }
   
-  // Reduced signature box width to ~1/3 of original (was 180, now 100)
-  const signatureBoxWidth = 100;
-  const signatureBoxHeight = 25; // Reduced height (was 35)
+  // Compact signature box - 1/3 of page width for clean layout
+  const signatureBoxWidth = 70;
+  const signatureBoxHeight = 25;
   const signatureBoxX = (pageWidth - signatureBoxWidth) / 2;
   
   const t = i18n.t;
