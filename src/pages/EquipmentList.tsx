@@ -7,7 +7,7 @@ import { useCategories } from '@/hooks/useCategories';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { TableSkeleton } from '@/components/ui/table-skeleton';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Package, FolderOpen } from 'lucide-react';
+import { Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getCategoryIcon } from '@/utils/categoryIcons';
 import { PageHeader } from '@/components/layout/PageHeader';
