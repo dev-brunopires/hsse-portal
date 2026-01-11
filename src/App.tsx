@@ -12,24 +12,25 @@ import { AppLayout } from "./components/layout/AppLayout";
 import { OnboardingProvider } from "./components/onboarding/OnboardingProvider";
 import { PageLoadingFallback } from "@/components/ui/PageLoadingFallback";
 import { ChunkErrorBoundary } from "@/components/ui/ChunkErrorBoundary";
-import { Suspense, lazy } from "react";
+import { Suspense } from "react";
+import { lazyWithRetry } from "@/utils/lazyWithRetry";
 
-// Lazy load pages for better performance (code splitting)
-const Index = lazy(() => import("./pages/Index"));
-const Auth = lazy(() => import("./pages/Auth"));
-const EquipmentList = lazy(() => import("./pages/EquipmentList"));
-const Inspections = lazy(() => import("./pages/Inspections"));
-const Reports = lazy(() => import("./pages/Reports"));
-const Alerts = lazy(() => import("./pages/Alerts"));
-const Categories = lazy(() => import("./pages/Categories"));
-const Users = lazy(() => import("./pages/Users"));
-const Settings = lazy(() => import("./pages/Settings"));
-const Profile = lazy(() => import("./pages/Profile"));
-const PendingRecommendations = lazy(() => import("./pages/PendingRecommendations"));
-const AuditLog = lazy(() => import("./pages/AuditLog"));
-const Maintenance = lazy(() => import("./pages/Maintenance"));
-const PlatformAdmin = lazy(() => import("./pages/PlatformAdmin"));
-const NotFound = lazy(() => import("./pages/NotFound"));
+// Lazy load pages with retry for better resilience
+const Index = lazyWithRetry(() => import("./pages/Index"));
+const Auth = lazyWithRetry(() => import("./pages/Auth"));
+const EquipmentList = lazyWithRetry(() => import("./pages/EquipmentList"));
+const Inspections = lazyWithRetry(() => import("./pages/Inspections"));
+const Reports = lazyWithRetry(() => import("./pages/Reports"));
+const Alerts = lazyWithRetry(() => import("./pages/Alerts"));
+const Categories = lazyWithRetry(() => import("./pages/Categories"));
+const Users = lazyWithRetry(() => import("./pages/Users"));
+const Settings = lazyWithRetry(() => import("./pages/Settings"));
+const Profile = lazyWithRetry(() => import("./pages/Profile"));
+const PendingRecommendations = lazyWithRetry(() => import("./pages/PendingRecommendations"));
+const AuditLog = lazyWithRetry(() => import("./pages/AuditLog"));
+const Maintenance = lazyWithRetry(() => import("./pages/Maintenance"));
+const PlatformAdmin = lazyWithRetry(() => import("./pages/PlatformAdmin"));
+const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
   defaultOptions: {

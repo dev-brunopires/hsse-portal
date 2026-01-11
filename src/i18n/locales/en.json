@@ -1,4 +1,11 @@
 {
+  "errorBoundary": {
+    "updateAvailable": "Update Available",
+    "somethingWentWrong": "Something went wrong",
+    "newVersionMessage": "A new version of the app is available. Reload to continue.",
+    "unexpectedErrorMessage": "An unexpected error occurred. Try reloading the page.",
+    "reload": "Reload"
+  },
   "common": {
     "loading": "Loading...",
     "pullToRefresh": "Pull to refresh",
