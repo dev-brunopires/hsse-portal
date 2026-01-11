@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FileText, Download, Calendar, Filter, AlertTriangle, Loader2, BarChart3, Wrench, ClipboardCheck, Eye, FileSpreadsheet, X } from 'lucide-react';
+import { FileText, Download, Calendar, Filter, AlertTriangle, Loader2, BarChart3, Wrench, ClipboardCheck, Eye, FileSpreadsheet, X, RefreshCw } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { PullToRefreshIndicator } from '@/components/ui/PullToRefreshIndicator';
 import { useEquipment } from '@/hooks/useEquipment';
 import { useInspections } from '@/hooks/useInspections';
 import { useCategories } from '@/hooks/useCategories';
@@ -20,6 +22,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useUserSignature } from '@/hooks/useUserSignature';
 import { useOrganizationBranding } from '@/hooks/useOrganizationBranding';
+import { useQueryClient } from '@tanstack/react-query';
 import { exportInspectionsToExcel, exportInspectionsToPDF } from '@/utils/exportInspections';
 import { exportCategoryInspectionPDF } from '@/utils/exportCategoryInspection';
 import { exportMonthlyConsolidatedPDF, exportMonthlyConsolidatedExcel } from '@/utils/exportMonthlyConsolidated';
@@ -29,6 +32,7 @@ import { MonthQuickFilter } from '@/components/reports/MonthQuickFilter';
 import { toast } from 'sonner';
 import { format, isAfter, isBefore, addDays, startOfDay, parseISO } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
+import { haptic } from '@/utils/hapticFeedback';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -75,15 +79,33 @@ export default function Reports() {
     rejected: t('inspections.statusRejected'),
   };
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { data: profiles = [] } = useProfiles();
-  const { data: equipment = [], isLoading: equipmentLoading } = useEquipment();
-  const { data: inspections = [], isLoading: inspectionsLoading } = useInspections();
-  const { data: categories = [] } = useCategories();
-  const { data: ships = [] } = useShips();
-  const { data: maintenanceRequests = [], isLoading: maintenanceLoading } = useMaintenanceRequests();
+  const { data: equipment = [], isLoading: equipmentLoading, refetch: refetchEquipment } = useEquipment();
+  const { data: inspections = [], isLoading: inspectionsLoading, refetch: refetchInspections } = useInspections();
+  const { data: categories = [], refetch: refetchCategories } = useCategories();
+  const { data: ships = [], refetch: refetchShips } = useShips();
+  const { data: maintenanceRequests = [], isLoading: maintenanceLoading, refetch: refetchMaintenance } = useMaintenanceRequests();
   const { data: signatureData } = useUserSignature();
   const signature = signatureData?.default_signature;
   const branding = useOrganizationBranding();
+
+  // Pull to refresh handler
+  const handleRefresh = useCallback(async () => {
+    haptic('medium');
+    await Promise.all([
+      refetchEquipment(),
+      refetchInspections(),
+      refetchCategories(),
+      refetchShips(),
+      refetchMaintenance(),
+    ]);
+    toast.success(t('common.dataRefreshed'));
+  }, [refetchEquipment, refetchInspections, refetchCategories, refetchShips, refetchMaintenance, t]);
+
+  const { pullDistance, isRefreshing, containerRef, pullIndicatorStyle } = usePullToRefresh({
+    onRefresh: handleRefresh,
+  });
 
   // Preload logo for PDFs
   useEffect(() => {
@@ -1099,17 +1121,42 @@ export default function Reports() {
   ];
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div 
+      ref={containerRef}
+      className="space-y-6 animate-fade-in overflow-auto"
+      style={pullIndicatorStyle}
+    >
+      {/* Pull to Refresh Indicator */}
+      <PullToRefreshIndicator
+        pullDistance={pullDistance}
+        isRefreshing={isRefreshing}
+      />
+
       <PageHeader
         icon={FileText}
         title={t('reports.title')}
-        subtitle={t('reports.subtitle')}
+        subtitle={isMobile ? undefined : t('reports.subtitle')}
         actions={
-          hasFilters && (
-            <Button variant="outline" size="sm" onClick={clearFilters}>
-              {t('reports.clearFilters')}
+          <div className="flex items-center gap-2">
+            {/* Mobile Refresh Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleRefresh}
+              disabled={isRefreshing || isLoading}
+              className="lg:hidden"
+              title={t('common.refresh')}
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             </Button>
-          )
+            {hasFilters && (
+              <Button variant="outline" size="sm" onClick={clearFilters}>
+                <X className="h-4 w-4 mr-1 lg:mr-2" />
+                <span className="hidden sm:inline">{t('reports.clearFilters')}</span>
+                <span className="sm:hidden">{t('common.clear')}</span>
+              </Button>
+            )}
+          </div>
         }
       />
 
@@ -1273,64 +1320,103 @@ export default function Reports() {
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : (
-        /* Reports Grid - Responsive: single column on mobile */
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {reportTypes.map((report) => (
-            <Card key={report.id} className="hover:border-primary/50 transition-colors">
-              <CardContent className="pt-4">
-                <div className="flex items-start gap-3">
-                  <div className={`p-2 sm:p-2.5 rounded-lg shrink-0 ${report.bgColor}`}>
-                    <report.icon className={`h-4 w-4 sm:h-5 sm:w-5 ${report.iconColor}`} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-medium text-sm sm:text-base truncate">{report.title}</h3>
-                      <Badge variant="secondary" className="shrink-0 text-xs">
-                        {report.count}
-                      </Badge>
+        <>
+          {/* Summary Stats - Mobile optimized */}
+          <div className="grid grid-cols-4 gap-2 sm:hidden">
+            <div className="bg-card border rounded-lg p-2 text-center">
+              <p className="text-lg font-bold text-foreground">{filteredEquipment.length}</p>
+              <p className="text-[10px] text-muted-foreground truncate">{t('reports.equipment')}</p>
+            </div>
+            <div className="bg-card border rounded-lg p-2 text-center">
+              <p className="text-lg font-bold text-foreground">{filteredInspections.length}</p>
+              <p className="text-[10px] text-muted-foreground truncate">{t('navigation.inspections')}</p>
+            </div>
+            <div className="bg-card border rounded-lg p-2 text-center">
+              <p className="text-lg font-bold text-red-500">{expiringEquipment.length}</p>
+              <p className="text-[10px] text-muted-foreground truncate">{t('reports.expiringNow')}</p>
+            </div>
+            <div className="bg-card border rounded-lg p-2 text-center">
+              <p className="text-lg font-bold text-orange-500">{nonConformities.length}</p>
+              <p className="text-[10px] text-muted-foreground truncate">{t('reports.nonCompliant')}</p>
+            </div>
+          </div>
+
+          {/* Reports Grid - Responsive: single column on mobile */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            {reportTypes.map((report) => (
+              <Card 
+                key={report.id} 
+                className="hover:border-primary/50 transition-colors active:scale-[0.98] touch-manipulation"
+              >
+                <CardContent className="p-3 sm:pt-4 sm:px-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 sm:p-2.5 rounded-lg shrink-0 ${report.bgColor}`}>
+                      <report.icon className={`h-4 w-4 sm:h-5 sm:w-5 ${report.iconColor}`} />
                     </div>
-                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{report.description}</p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="font-medium text-sm sm:text-base truncate">{report.title}</h3>
+                        <Badge 
+                          variant="secondary" 
+                          className={`shrink-0 text-xs ${report.count === 0 ? 'bg-muted text-muted-foreground' : ''}`}
+                        >
+                          {report.count}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1 sm:line-clamp-2 hidden sm:block">
+                        {report.description}
+                      </p>
+                    </div>
+                    {/* Mobile: icon-only button */}
                     <Button 
-                      size="sm"
-                      className="gap-2 w-full mt-3"
+                      size="icon"
+                      variant="ghost"
+                      className="sm:hidden shrink-0"
                       onClick={() => openPreview(report.id)}
                       disabled={report.count === 0}
                     >
                       <Eye className="h-4 w-4" />
-                      {t('reports.viewAndExport')}
                     </Button>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+                  {/* Desktop: full button */}
+                  <Button 
+                    size="sm"
+                    className="gap-2 w-full mt-3 hidden sm:flex"
+                    onClick={() => openPreview(report.id)}
+                    disabled={report.count === 0}
+                  >
+                    <Eye className="h-4 w-4" />
+                    {t('reports.viewAndExport')}
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
 
-      {/* Summary Stats */}
-      {!isLoading && (
-        <Card className="bg-muted/30">
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-              <div>
-                <p className="text-2xl font-bold text-foreground">{filteredEquipment.length}</p>
-                <p className="text-sm text-muted-foreground">{t('reports.equipment')}</p>
+          {/* Summary Stats - Desktop */}
+          <Card className="bg-muted/30 hidden sm:block">
+            <CardContent className="pt-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div>
+                  <p className="text-2xl font-bold text-foreground">{filteredEquipment.length}</p>
+                  <p className="text-sm text-muted-foreground">{t('reports.equipment')}</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-foreground">{filteredInspections.length}</p>
+                  <p className="text-sm text-muted-foreground">{t('navigation.inspections')}</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-red-500">{expiringEquipment.length}</p>
+                  <p className="text-sm text-muted-foreground">{t('reports.expiringNow')}</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-orange-500">{nonConformities.length}</p>
+                  <p className="text-sm text-muted-foreground">{t('reports.nonCompliant')}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{filteredInspections.length}</p>
-                <p className="text-sm text-muted-foreground">{t('navigation.inspections')}</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-red-500">{expiringEquipment.length}</p>
-                <p className="text-sm text-muted-foreground">{t('reports.expiringNow')}</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-orange-500">{nonConformities.length}</p>
-                <p className="text-sm text-muted-foreground">{t('reports.nonCompliant')}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </>
       )}
 
       {/* Preview Dialog */}
