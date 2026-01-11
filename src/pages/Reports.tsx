@@ -1205,7 +1205,7 @@ export default function Reports() {
           </CollapsibleTrigger>
           <CollapsibleContent>
             <CardContent className="pt-0">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div className="space-y-2">
                   <Label>{t('reports.ship')}</Label>
                   <Select value={shipFilter} onValueChange={setShipFilter}>
