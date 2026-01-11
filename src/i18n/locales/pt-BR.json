@@ -248,6 +248,10 @@
     "byStatus": "Por Status",
     "upcomingInspections": "Próximas Inspeções",
     "expiringCertificates": "Certificados a Vencer",
+    "certificatesExpiring": "Certificados Vencendo",
+    "certificatesExpiringSubtitle": "Certificados do módulo que precisam de atenção",
+    "noCertificatesExpiring": "Nenhum certificado vencendo",
+    "allCertificatesValid": "Todos os certificados estão válidos nos próximos {{days}} dias",
     "maintenanceTrend": "Tendência de Manutenção",
     "inspectorPerformance": "Desempenho de Inspetores",
     "criticalEquipment": "Equipamentos Críticos",
@@ -1176,7 +1180,11 @@
     "darkMode": "Modo Escuro",
     "ships": "navios",
     "ship": "Navio",
-    "language": "Idioma"
+    "language": "Idioma",
+    "expiredCertificates": "Certificados Vencidos",
+    "expiredCertificatesMessage": "{{count}} certificado(s) vencido(s) requerem renovação.",
+    "expiringCertificates": "Certificados a Vencer",
+    "expiringCertificatesMessage": "{{count}} certificado(s) vencem nos próximos 30 dias."
   },
   "authPage": {
     "equipmentManagement": "Sistema de Gestão de Equipamentos",

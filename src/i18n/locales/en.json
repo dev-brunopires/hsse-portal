@@ -248,6 +248,10 @@
     "byStatus": "By Status",
     "upcomingInspections": "Upcoming Inspections",
     "expiringCertificates": "Expiring Certificates",
+    "certificatesExpiring": "Expiring Certificates",
+    "certificatesExpiringSubtitle": "Module certificates that need attention",
+    "noCertificatesExpiring": "No certificates expiring",
+    "allCertificatesValid": "All certificates are valid for the next {{days}} days",
     "maintenanceTrend": "Maintenance Trend",
     "inspectorPerformance": "Inspector Performance",
     "criticalEquipment": "Critical Equipment",
@@ -1176,7 +1180,11 @@
     "darkMode": "Dark Mode",
     "ships": "ships",
     "ship": "Ship",
-    "language": "Language"
+    "language": "Language",
+    "expiredCertificates": "Expired Certificates",
+    "expiredCertificatesMessage": "{{count}} certificate(s) have expired and require renewal.",
+    "expiringCertificates": "Certificates Expiring Soon",
+    "expiringCertificatesMessage": "{{count}} certificate(s) expire within the next 30 days."
   },
   "authPage": {
     "equipmentManagement": "Equipment Management System",

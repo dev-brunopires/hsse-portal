@@ -1,4 +1,4 @@
-export type SystemNotificationId = 'system-ship-filter' | 'system-high-priority';
+export type SystemNotificationId = 'system-ship-filter' | 'system-high-priority' | 'system-cert-expired' | 'system-cert-expiring';
 
 const STORAGE_KEY = 'system-notifications-read-v1';
 
