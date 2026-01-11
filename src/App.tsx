@@ -29,6 +29,7 @@ const Profile = lazyWithRetry(() => import("./pages/Profile"));
 const PendingRecommendations = lazyWithRetry(() => import("./pages/PendingRecommendations"));
 const AuditLog = lazyWithRetry(() => import("./pages/AuditLog"));
 const Maintenance = lazyWithRetry(() => import("./pages/Maintenance"));
+const Certificates = lazyWithRetry(() => import("./pages/Certificates"));
 const PlatformAdmin = lazyWithRetry(() => import("./pages/PlatformAdmin"));
 const OfflineData = lazyWithRetry(() => import("./pages/OfflineData"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
@@ -134,6 +135,16 @@ function App() {
                     <ProtectedRoute>
                       <AppLayout>
                         <Maintenance />
+                      </AppLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/certificates"
+                  element={
+                    <ProtectedRoute>
+                      <AppLayout>
+                        <Certificates />
                       </AppLayout>
                     </ProtectedRoute>
                   }
