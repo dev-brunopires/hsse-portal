@@ -441,7 +441,13 @@
     "download": "Baixar",
     "documentsAndFiles": "Documentos e Arquivos",
     "documentsDescription": "Certificados, manuais, notas fiscais e outros arquivos do equipamento.",
-    "noDocuments": "Nenhum documento anexado a este equipamento."
+    "noDocuments": "Nenhum documento anexado a este equipamento.",
+    "certificates": "Certificados",
+    "certificatesSection": "Certificados Vinculados",
+    "noCertificatesLinked": "Nenhum certificado vinculado",
+    "addCertificateMessage": "Adicione certificados no módulo de certificados.",
+    "viewAllCertificates": "Ver Todos os Certificados",
+    "addCertificate": "Adicionar Certificado"
   },
   "inspections": {
     "title": "Inspeções",
