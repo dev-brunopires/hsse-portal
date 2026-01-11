@@ -1,6 +1,7 @@
 import { Component, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, AlertTriangle } from 'lucide-react';
+import i18n from '@/i18n';
 
 interface Props {
   children: ReactNode;
@@ -39,6 +40,8 @@ export class ChunkErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
+      const t = i18n.t.bind(i18n);
+      
       return (
         <div className="min-h-screen flex items-center justify-center bg-background p-4">
           <div className="text-center max-w-md">
@@ -49,17 +52,17 @@ export class ChunkErrorBoundary extends Component<Props, State> {
             </div>
             <h2 className="text-xl font-semibold text-foreground mb-2">
               {this.state.isChunkError
-                ? 'Atualização Disponível'
-                : 'Algo deu errado'}
+                ? t('errorBoundary.updateAvailable')
+                : t('errorBoundary.somethingWentWrong')}
             </h2>
             <p className="text-muted-foreground mb-6">
               {this.state.isChunkError
-                ? 'Uma nova versão do aplicativo está disponível. Recarregue para continuar.'
-                : 'Ocorreu um erro inesperado. Tente recarregar a página.'}
+                ? t('errorBoundary.newVersionMessage')
+                : t('errorBoundary.unexpectedErrorMessage')}
             </p>
             <Button onClick={this.handleReload} className="gap-2">
               <RefreshCw className="h-4 w-4" />
-              Recarregar
+              {t('errorBoundary.reload')}
             </Button>
           </div>
         </div>
