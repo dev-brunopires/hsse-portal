@@ -15,7 +15,7 @@ export function useDashboardStats() {
       const thirtyDaysFromNow = addDays(today, 30);
       const todayStr = today.toISOString().split('T')[0];
 
-      // Fetch all equipment with categories
+      // Single optimized query for equipment with categories
       let equipmentQuery = supabase
         .from('equipment')
         .select(`
@@ -36,26 +36,7 @@ export function useDashboardStats() {
         equipmentQuery = equipmentQuery.eq('ship_id', selectedShipId);
       }
 
-      const { data: equipment, error: equipmentError } = await equipmentQuery;
-
-      if (equipmentError) throw equipmentError;
-
-      // Fetch pending inspections (next 30 days) with ship filter
-      let pendingQuery = supabase
-        .from('equipment')
-        .select('id, ship_id')
-        .not('next_inspection', 'is', null)
-        .lte('next_inspection', thirtyDaysFromNow.toISOString().split('T')[0]);
-      
-      if (isFilterEnabled && selectedShipId) {
-        pendingQuery = pendingQuery.eq('ship_id', selectedShipId);
-      }
-
-      const { data: pendingInspectionsData, error: inspectionsError } = await pendingQuery;
-
-      if (inspectionsError) throw inspectionsError;
-
-      // Fetch maintenance requests
+      // Fetch maintenance requests in parallel with equipment
       let maintenanceQuery = supabase
         .from('maintenance_requests')
         .select('id, status, due_date, type, priority, title, equipment_id, ship_id');
@@ -64,15 +45,35 @@ export function useDashboardStats() {
         maintenanceQuery = maintenanceQuery.eq('ship_id', selectedShipId);
       }
 
-      const { data: maintenanceData, error: maintenanceError } = await maintenanceQuery;
-      if (maintenanceError) throw maintenanceError;
+      // Execute both queries in parallel
+      const [equipmentResult, maintenanceResult] = await Promise.all([
+        equipmentQuery,
+        maintenanceQuery,
+      ]);
 
-      // Fetch equipment names for maintenance alerts
+      if (equipmentResult.error) throw equipmentResult.error;
+      if (maintenanceResult.error) throw maintenanceResult.error;
+
+      const equipment = equipmentResult.data;
+      const maintenanceData = maintenanceResult.data;
+
+      // Calculate pending inspections from loaded equipment data (no separate query needed)
+      const pendingInspectionsData = equipment?.filter(e => 
+        e.next_inspection && e.next_inspection <= thirtyDaysFromNow.toISOString().split('T')[0]
+      ) || [];
+
+      // Fetch equipment names for maintenance alerts (only if needed)
       const maintenanceEquipmentIds = [...new Set((maintenanceData || []).map(m => m.equipment_id))];
-      const { data: maintenanceEquipment } = maintenanceEquipmentIds.length > 0 
-        ? await supabase.from('equipment').select('id, name, internal_code').in('id', maintenanceEquipmentIds)
-        : { data: [] };
-      const maintenanceEquipmentMap = new Map((maintenanceEquipment || []).map(e => [e.id, e]));
+      let maintenanceEquipmentMap = new Map<string, { id: string; name: string; internal_code: string }>();
+      
+      if (maintenanceEquipmentIds.length > 0) {
+        const { data: maintenanceEquipment } = await supabase
+          .from('equipment')
+          .select('id, name, internal_code')
+          .in('id', maintenanceEquipmentIds);
+        
+        maintenanceEquipmentMap = new Map((maintenanceEquipment || []).map(e => [e.id, e]));
+      }
 
       const totalEquipment = equipment?.length || 0;
       
@@ -292,5 +293,7 @@ export function useDashboardStats() {
         inProgressMaintenance,
       };
     },
+    staleTime: 1000 * 60 * 2, // 2 minutes cache to reduce API calls
+    refetchOnWindowFocus: false, // Prevent refetch on tab switch
   });
 }
