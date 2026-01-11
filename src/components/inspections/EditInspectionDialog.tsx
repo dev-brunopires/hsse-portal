@@ -60,8 +60,9 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUpdateInspection, type InspectionWithDetails, type InspectionChecklistItem, type InspectionPhoto } from '@/hooks/useInspections';
-import { useUpdateChecklistItems, useAddInspectionPhoto, useDeleteInspectionPhoto } from '@/hooks/useInspectionEdit';
+import { useUpdateChecklistItems, useAddInspectionPhoto, useDeleteInspectionPhoto, useUpdateInspectionSignature } from '@/hooks/useInspectionEdit';
 import { supabase } from '@/integrations/supabase/client';
+import { SignaturePad } from './SignaturePad';
 
 type EditInspectionFormData = {
   status: 'compliant' | 'attention' | 'non-compliant';
@@ -95,6 +96,7 @@ export function EditInspectionDialog({
   const updateChecklistItems = useUpdateChecklistItems();
   const addPhoto = useAddInspectionPhoto();
   const deletePhoto = useDeleteInspectionPhoto();
+  const updateSignature = useUpdateInspectionSignature();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [checklistItems, setChecklistItems] = useState<EditableChecklistItem[]>([]);
@@ -103,6 +105,8 @@ export function EditInspectionDialog({
   const [loading, setLoading] = useState(false);
   const [pendingPhotos, setPendingPhotos] = useState<File[]>([]);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [currentSignature, setCurrentSignature] = useState<string | null>(null);
+  const [isEditingSignature, setIsEditingSignature] = useState(false);
   const [isDeletingPhoto, setIsDeletingPhoto] = useState<string | null>(null);
 
   const editInspectionSchema = z.object({
@@ -148,6 +152,8 @@ export function EditInspectionDialog({
         recommendations: inspection.recommendations || '',
         actions_taken: inspection.actions_taken || '',
       });
+      setCurrentSignature(inspection.signature_data || null);
+      setIsEditingSignature(false);
       fetchDetails();
     }
   }, [open, inspection, form]);
@@ -241,6 +247,21 @@ export function EditInspectionDialog({
       });
     } finally {
       setIsDeletingPhoto(null);
+    }
+  };
+
+  const handleSignatureSave = async (signatureData: string) => {
+    if (!inspection?.id) return;
+    
+    try {
+      await updateSignature.mutateAsync({
+        inspectionId: inspection.id,
+        signatureData,
+      });
+      setCurrentSignature(signatureData);
+      setIsEditingSignature(false);
+    } catch (error) {
+      console.error('Error updating signature:', error);
     }
   };
 
@@ -710,27 +731,69 @@ export function EditInspectionDialog({
             </div>
           </TabsContent>
 
-          {/* Tab: Signature (read-only) */}
+          {/* Tab: Signature (editable) */}
           <TabsContent value="signature" className="flex-1 overflow-y-auto mt-4 min-h-0">
             <div className="space-y-4 pb-4 px-1">
-              {inspection.signature_data ? (
+              {isEditingSignature ? (
                 <div className="space-y-4">
-                  <div className="flex items-center gap-2 text-status-success">
-                    <CheckCircle2 className="h-5 w-5" />
-                    <span className="font-medium">{t('inspectionForm.inspectionSigned')}</span>
+                  <SignaturePad
+                    onSave={handleSignatureSave}
+                    onCancel={() => setIsEditingSignature(false)}
+                    initialSignature={currentSignature || undefined}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsEditingSignature(false)}
+                    className="w-full"
+                  >
+                    {t('common.cancel')}
+                  </Button>
+                </div>
+              ) : currentSignature ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-status-success">
+                      <CheckCircle2 className="h-5 w-5" />
+                      <span className="font-medium">{t('inspectionForm.inspectionSigned')}</span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsEditingSignature(true)}
+                      className="gap-2"
+                    >
+                      <PenTool className="h-4 w-4" />
+                      {t('editInspection.editSignature')}
+                    </Button>
                   </div>
                   <div className="border border-border rounded-lg p-4 bg-white">
                     <img 
-                      src={inspection.signature_data} 
+                      src={currentSignature} 
                       alt={t('inspectionForm.inspectorSignature')} 
                       className="max-w-full h-auto max-h-32 mx-auto"
                     />
                   </div>
+                  {inspection.signed_at && (
+                    <p className="text-xs text-muted-foreground text-center">
+                      {t('inspectionForm.signedAt')}: {new Date(inspection.signed_at).toLocaleString()}
+                    </p>
+                  )}
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
                   <PenTool className="h-12 w-12 mb-2" />
-                  <p>{t('inspectionForm.notSigned')}</p>
+                  <p className="mb-4">{t('inspectionForm.notSigned')}</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsEditingSignature(true)}
+                    className="gap-2"
+                  >
+                    <PenTool className="h-4 w-4" />
+                    {t('editInspection.addSignature')}
+                  </Button>
                 </div>
               )}
             </div>

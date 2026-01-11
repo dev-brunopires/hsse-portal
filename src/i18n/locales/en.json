@@ -1512,7 +1512,9 @@
     "checklistProgress": "Checklist Progress",
     "itemNotes": "Item notes...",
     "addPhotos": "Add Photos",
-    "takePhoto": "Take Photo"
+    "takePhoto": "Take Photo",
+    "editSignature": "Edit Signature",
+    "addSignature": "Add Signature"
   },
   "inspectionCalendar": {
     "today": "Today",
@@ -1948,6 +1950,10 @@
       "addedDesc": "The photo was added to the inspection.",
       "deleted": "Photo Deleted",
       "deletedDesc": "The photo was removed from the inspection."
+    },
+    "signature": {
+      "updated": "Signature Updated",
+      "updatedDesc": "The inspection signature was updated successfully."
     },
     "ifsIntegration": {
       "configSaved": "Configuration saved",

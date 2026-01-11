@@ -1512,7 +1512,9 @@
     "checklistProgress": "Progresso do Checklist",
     "itemNotes": "Observações do item...",
     "addPhotos": "Adicionar Fotos",
-    "takePhoto": "Tirar Foto"
+    "takePhoto": "Tirar Foto",
+    "editSignature": "Editar Assinatura",
+    "addSignature": "Adicionar Assinatura"
   },
   "inspectionCalendar": {
     "today": "Hoje",
@@ -1949,6 +1951,10 @@
       "addedDesc": "A foto foi adicionada à inspeção.",
       "deleted": "Foto Excluída",
       "deletedDesc": "A foto foi removida da inspeção."
+    },
+    "signature": {
+      "updated": "Assinatura Atualizada",
+      "updatedDesc": "A assinatura da inspeção foi atualizada com sucesso."
     },
     "ifsIntegration": {
       "configSaved": "Configuração salva",

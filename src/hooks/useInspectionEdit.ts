@@ -192,3 +192,41 @@ export function useDeleteInspectionPhoto() {
     },
   });
 }
+
+// Update signature for an inspection
+export function useUpdateInspectionSignature() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: async ({ inspectionId, signatureData }: { inspectionId: string; signatureData: string }) => {
+      const { data, error } = await supabase
+        .from('inspections')
+        .update({ 
+          signature_data: signatureData,
+          signed_at: new Date().toISOString(),
+        })
+        .eq('id', inspectionId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inspections'] });
+      toast({
+        title: t('hooks.signature.updated'),
+        description: t('hooks.signature.updatedDesc'),
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: t('common.error'),
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+}
