@@ -251,7 +251,7 @@ export function useCreateCertificate() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['certificates'] });
       queryClient.invalidateQueries({ queryKey: ['certificate-stats'] });
-      toast.success(i18n.t('certificates.created'));
+      toast.success(i18n.t('certificates.createSuccess'));
     },
     onError: (error: Error) => {
       toast.error(i18n.t('certificates.createError'), {
@@ -322,7 +322,7 @@ export function useUpdateCertificate() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['certificates'] });
       queryClient.invalidateQueries({ queryKey: ['certificate-stats'] });
-      toast.success(i18n.t('certificates.updated'));
+      toast.success(i18n.t('certificates.updateSuccess'));
     },
     onError: (error: Error) => {
       toast.error(i18n.t('certificates.updateError'), {
@@ -417,7 +417,7 @@ export function useRenewCertificate() {
       queryClient.invalidateQueries({ queryKey: ['certificates'] });
       queryClient.invalidateQueries({ queryKey: ['certificate-stats'] });
       queryClient.invalidateQueries({ queryKey: ['certificate-renewals'] });
-      toast.success(i18n.t('certificates.renewed'));
+      toast.success(i18n.t('certificates.renewSuccess'));
     },
     onError: (error: Error) => {
       toast.error(i18n.t('certificates.renewError'), {
@@ -456,7 +456,7 @@ export function useDeleteCertificate() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['certificates'] });
       queryClient.invalidateQueries({ queryKey: ['certificate-stats'] });
-      toast.success(i18n.t('certificates.deleted'));
+      toast.success(i18n.t('certificates.deleteSuccess'));
     },
     onError: (error: Error) => {
       toast.error(i18n.t('certificates.deleteError'), {
