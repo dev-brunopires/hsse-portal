@@ -257,10 +257,20 @@ export function useCreateCertificate() {
         fileSize = file.size;
       }
 
+      // Convert empty strings to null for date fields
+      const sanitizedData = {
+        ...data,
+        issue_date: data.issue_date || null,
+        expiry_date: data.expiry_date || null,
+        certificate_number: data.certificate_number || null,
+        issuer: data.issuer || null,
+        notes: data.notes || null,
+      };
+
       const { data: certificate, error } = await supabase
         .from('certificates')
         .insert({
-          ...data,
+          ...sanitizedData,
           organization_id: organization?.id,
           file_path: filePath,
           file_name: fileName,
@@ -306,7 +316,15 @@ export function useUpdateCertificate() {
       data: Partial<CertificateFormData>;
       file?: File;
     }) => {
-      let updateData: Record<string, unknown> = { ...data };
+      // Convert empty strings to null for date fields
+      let updateData: Record<string, unknown> = {
+        ...data,
+        issue_date: data.issue_date || null,
+        expiry_date: data.expiry_date || null,
+        certificate_number: data.certificate_number || null,
+        issuer: data.issuer || null,
+        notes: data.notes || null,
+      };
 
       // Upload new file if provided
       if (file) {
