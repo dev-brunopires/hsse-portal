@@ -423,6 +423,8 @@ export default function Inspections() {
           </TabsTrigger>
           <TabsTrigger value="calendar" className="gap-1.5 px-2 md:px-4">
             <CalendarDays className="h-4 w-4" />
+            <span className="hidden sm:inline">{t('inspectionsPage.calendar')}</span>
+            <span className="sm:hidden">Cal.</span>
           </TabsTrigger>
         </TabsList>
 
