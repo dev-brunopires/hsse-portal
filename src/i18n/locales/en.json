@@ -2065,7 +2065,9 @@
     "statusMaintenance": "In Maintenance",
     "statusExpired": "Expired",
     "statusRejected": "Rejected",
-    "statusInactive": "Inactive"
+    "statusInactive": "Inactive",
+    "identificationSection": "Equipment Identification",
+    "datesSection": "Dates and Status"
   },
   "exportInspections": {
     "inspectionDate": "Inspection Date",

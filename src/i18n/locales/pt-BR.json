@@ -2066,7 +2066,9 @@
     "statusMaintenance": "Em Manutenção",
     "statusExpired": "Vencido",
     "statusRejected": "Reprovado",
-    "statusInactive": "Inativo"
+    "statusInactive": "Inativo",
+    "identificationSection": "Dados de Identificação",
+    "datesSection": "Datas e Status"
   },
   "exportInspections": {
     "inspectionDate": "Data Inspeção",

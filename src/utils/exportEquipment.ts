@@ -121,7 +121,57 @@ export async function exportToPDF(
 
   const alertLabels = getAlertLabels();
 
-  const tableData = equipment.map(item => {
+  // Table 1: Equipment Identification
+  addSectionHeader(doc, yPos, t('exportEquipment.identificationSection'));
+  yPos += 8;
+
+  const identificationData = equipment.map(item => [
+    item.internal_code,
+    item.name,
+    item.categories?.name || '—',
+    item.type || '—',
+    item.manufacturer || '—',
+    item.model || '—',
+    item.serial_number || '—',
+    item.capacity || '—',
+    item.location || '—',
+  ]);
+
+  autoTable(doc, {
+    startY: yPos,
+    head: [[
+      t('exportEquipment.code'),
+      t('exportEquipment.name'),
+      t('exportEquipment.category'),
+      t('exportEquipment.type'),
+      t('exportEquipment.manufacturer'),
+      t('exportEquipment.model'),
+      t('exportEquipment.serialNumber'),
+      t('exportEquipment.capacity'),
+      t('exportEquipment.location'),
+    ]],
+    body: identificationData,
+    styles: { fontSize: 7 },
+    headStyles: { fillColor: SBM_BLUE },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
+  });
+
+  // Get current Y position after first table
+  const firstTableFinalY = (doc as any).lastAutoTable?.finalY || yPos + 50;
+  yPos = firstTableFinalY + 10;
+
+  // Check if we need a new page for the second table
+  const pageHeight = doc.internal.pageSize.getHeight();
+  if (yPos > pageHeight - 60) {
+    doc.addPage();
+    yPos = 20;
+  }
+
+  // Table 2: Dates and Status
+  addSectionHeader(doc, yPos, t('exportEquipment.datesSection'));
+  yPos += 8;
+
+  const datesStatusData = equipment.map(item => {
     // Get status with alerts for PDF
     const statusWithAlerts = formatStatusWithAlerts(
       item.status,
@@ -137,14 +187,13 @@ export async function exportToPDF(
     
     return [
       item.internal_code,
-      item.name,
-      item.categories?.name || '—',
-      item.capacity || '—',
-      item.location,
       statusWithAlerts,
+      formatDate(item.manufacturing_date),
+      formatDate(item.acquisition_date),
+      formatDate(item.expiry_date),
+      formatDate(item.certificate_expiry),
       formatDate(item.last_inspection),
       formatDate(item.next_inspection),
-      formatDate(item.certificate_expiry),
     ];
   });
 
@@ -152,21 +201,20 @@ export async function exportToPDF(
     startY: yPos,
     head: [[
       t('exportEquipment.code'),
-      t('exportEquipment.name'),
-      t('exportEquipment.category'),
-      t('exportEquipment.capacity'),
-      t('exportEquipment.location'),
       t('exportEquipment.status'),
+      t('exportEquipment.manufacturingDate'),
+      t('exportEquipment.acquisitionDate'),
+      t('exportEquipment.expiryDate'),
+      t('exportEquipment.certificateExpiry'),
       t('exportEquipment.lastInsp'),
       t('exportEquipment.nextInsp'),
-      t('exportEquipment.certExpiry')
     ]],
-    body: tableData,
-    styles: { fontSize: 8 },
+    body: datesStatusData,
+    styles: { fontSize: 7 },
     headStyles: { fillColor: SBM_BLUE },
     alternateRowStyles: { fillColor: [248, 250, 252] },
     columnStyles: {
-      5: { cellWidth: 45 } // Status column wider to accommodate alerts
+      1: { cellWidth: 45 } // Status column wider to accommodate alerts
     }
   });
 
