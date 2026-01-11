@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import {
   Dialog,
   DialogContent,
@@ -51,6 +52,9 @@ import {
   File,
   ExternalLink,
   Eye,
+  Award,
+  ShieldCheck,
+  Plus,
 } from 'lucide-react';
 import { Equipment } from '@/types/equipment';
 import { StatusBadge } from './StatusBadge';
@@ -58,6 +62,7 @@ import { cn } from '@/lib/utils';
 import { formatDate } from '@/utils/dateFormat';
 import { useInspectionsByEquipment } from '@/hooks/useInspections';
 import { useEquipmentDocuments, useUploadDocument, useDeleteDocument, EquipmentDocument } from '@/hooks/useEquipmentDocuments';
+import { useCertificates, type Certificate } from '@/hooks/useCertificates';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -90,6 +95,7 @@ export function EquipmentDetailDialog({
   onNewInspection,
 }: EquipmentDetailDialogProps) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [uploadingFile, setUploadingFile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -102,6 +108,7 @@ export function EquipmentDetailDialog({
 
   const { data: inspections, isLoading: loadingInspections } = useInspectionsByEquipment(equipment?.id);
   const { data: documents, isLoading: loadingDocuments } = useEquipmentDocuments(equipment?.id);
+  const { data: certificates, isLoading: loadingCertificates } = useCertificates({ equipmentId: equipment?.id });
   const uploadDocument = useUploadDocument();
   const deleteDocument = useDeleteDocument();
 
@@ -311,6 +318,13 @@ export function EquipmentDetailDialog({
               >
                 <FileText className="h-4 w-4 mr-1.5" />
                 <span className="hidden xs:inline">{t('equipmentDetail.documents')}</span> ({documents?.length || 0})
+              </TabsTrigger>
+              <TabsTrigger 
+                value="certificates"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-3 sm:px-4 py-3 text-sm"
+              >
+                <Award className="h-4 w-4 mr-1.5" />
+                <span className="hidden xs:inline">{t('equipmentDetail.certificates')}</span> ({certificates?.length || 0})
               </TabsTrigger>
             </TabsList>
 
@@ -680,6 +694,120 @@ export function EquipmentDetailDialog({
                     >
                       <Upload className="h-4 w-4" />
                       {t('equipmentDetail.uploadFirstDocument')}
+                    </Button>
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* Certificates Tab */}
+              <TabsContent value="certificates" className="mt-0 p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <Award className="h-4 w-4 text-primary" />
+                      {t('equipmentDetail.certificatesSection')}
+                    </h3>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => {
+                      onOpenChange(false);
+                      navigate('/certificates');
+                    }}
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    {t('equipmentDetail.viewAllCertificates')}
+                  </Button>
+                </div>
+
+                {loadingCertificates ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <Skeleton key={i} className="h-16 w-full" />
+                    ))}
+                  </div>
+                ) : certificates && certificates.length > 0 ? (
+                  <div className="space-y-3">
+                    {certificates.map((cert) => {
+                      const daysLeft = cert.expiry_date ? getDaysUntilExpiry(cert.expiry_date) : null;
+                      return (
+                        <div 
+                          key={cert.id} 
+                          className={cn(
+                            "flex flex-col sm:flex-row sm:items-center gap-3 p-4 border rounded-lg transition-colors",
+                            cert.status === 'expired' ? 'border-status-danger/50 bg-status-danger/5' :
+                            cert.status === 'expiring_soon' ? 'border-status-warning/50 bg-status-warning/5' :
+                            'hover:bg-muted/50'
+                          )}
+                        >
+                          <div className={cn(
+                            "p-2 rounded shrink-0",
+                            cert.status === 'expired' ? 'bg-status-danger/10' :
+                            cert.status === 'expiring_soon' ? 'bg-status-warning/10' :
+                            'bg-green-500/10'
+                          )}>
+                            {cert.status === 'expired' ? (
+                              <XCircle className="h-5 w-5 text-status-danger" />
+                            ) : cert.status === 'expiring_soon' ? (
+                              <AlertTriangle className="h-5 w-5 text-status-warning" />
+                            ) : (
+                              <ShieldCheck className="h-5 w-5 text-green-600" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium truncate">{cert.name}</p>
+                            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                              {cert.certificate_number && (
+                                <span>Nº {cert.certificate_number}</span>
+                              )}
+                              {cert.issuer && (
+                                <>
+                                  <span className="hidden sm:inline">•</span>
+                                  <span>{cert.issuer}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end gap-1">
+                            <Badge className={cn(
+                              cert.status === 'expired' ? 'bg-red-500/10 text-red-600 border-red-500/20' :
+                              cert.status === 'expiring_soon' ? 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20' :
+                              'bg-green-500/10 text-green-600 border-green-500/20'
+                            )}>
+                              {cert.status === 'expired' ? t('certificates.status.expired') :
+                               cert.status === 'expiring_soon' ? t('certificates.status.expiringSoon') :
+                               t('certificates.status.valid')}
+                            </Badge>
+                            {cert.expiry_date && (
+                              <span className="text-xs text-muted-foreground">
+                                {formatDate(cert.expiry_date)}
+                                {daysLeft !== null && daysLeft > 0 && daysLeft <= 30 && (
+                                  <span className="text-yellow-600 ml-1">({daysLeft}d)</span>
+                                )}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <Award className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground mb-2">{t('equipmentDetail.noCertificatesLinked')}</p>
+                    <p className="text-sm text-muted-foreground mb-4">{t('equipmentDetail.addCertificateMessage')}</p>
+                    <Button 
+                      variant="outline" 
+                      className="gap-2"
+                      onClick={() => {
+                        onOpenChange(false);
+                        navigate('/certificates');
+                      }}
+                    >
+                      <Plus className="h-4 w-4" />
+                      {t('equipmentDetail.addCertificate')}
                     </Button>
                   </div>
                 )}

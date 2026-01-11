@@ -441,7 +441,13 @@
     "download": "Download",
     "documentsAndFiles": "Documents and Files",
     "documentsDescription": "Certificates, manuals, invoices and other equipment files.",
-    "noDocuments": "No documents attached to this equipment."
+    "noDocuments": "No documents attached to this equipment.",
+    "certificates": "Certificates",
+    "certificatesSection": "Linked Certificates",
+    "noCertificatesLinked": "No certificates linked",
+    "addCertificateMessage": "Add certificates in the certificates module.",
+    "viewAllCertificates": "View All Certificates",
+    "addCertificate": "Add Certificate"
   },
   "inspections": {
     "title": "Inspections",
