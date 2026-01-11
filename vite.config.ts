@@ -9,6 +9,12 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    strictPort: true,
+    hmr: {
+      // Lovable preview runs behind a secure proxy; force the client to use wss/443
+      protocol: "wss",
+      clientPort: 443,
+    },
   },
   plugins: [
     react(),
