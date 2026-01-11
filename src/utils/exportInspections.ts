@@ -203,11 +203,27 @@ export async function exportInspectionsToPDF(
       t('exportInspections.next')
     ]],
     body: tableData,
-    styles: { fontSize: 8 },
-    headStyles: { fillColor: SBM_BLUE },
+    styles: { 
+      fontSize: 9, 
+      cellPadding: 4,
+      minCellHeight: 10,
+    },
+    headStyles: { 
+      fillColor: SBM_BLUE,
+      fontSize: 9,
+      fontStyle: 'bold',
+      cellPadding: 4,
+    },
     alternateRowStyles: { fillColor: [248, 250, 252] },
     columnStyles: {
-      5: { cellWidth: 30 } // Alerts column
+      0: { cellWidth: 22 }, // Date
+      1: { cellWidth: 'auto' }, // Equipment
+      2: { cellWidth: 18 }, // Code
+      3: { cellWidth: 30 }, // Inspector
+      4: { cellWidth: 20 }, // Status
+      5: { cellWidth: 32 }, // Alerts column
+      6: { cellWidth: 40 }, // Observations
+      7: { cellWidth: 22 }, // Next
     }
   });
 
@@ -413,8 +429,9 @@ export async function exportSingleInspectionPDF(
   yPos = addSectionHeader(doc, yPos, t('exportInspections.signature'), SBM_BLUE);
   yPos += 4;
   
-  const sigBoxWidth = 80;
-  const sigBoxHeight = 30;
+  // Compact signature box (1/3 of page)
+  const sigBoxWidth = 70;
+  const sigBoxHeight = 25;
   
   doc.setDrawColor(...MEDIUM_GRAY);
   doc.setFillColor(255, 255, 255);
@@ -422,18 +439,18 @@ export async function exportSingleInspectionPDF(
   
   if (inspection.signature_data) {
     try {
-      doc.addImage(inspection.signature_data, 'PNG', 18, yPos + 2, 72, 26);
+      doc.addImage(inspection.signature_data, 'PNG', 17, yPos + 2, sigBoxWidth - 6, sigBoxHeight - 5);
     } catch (e) {
-      doc.setFontSize(9);
+      doc.setFontSize(8);
       doc.setFont('helvetica', 'italic');
       doc.setTextColor(...MEDIUM_GRAY);
-      doc.text(t('exportInspections.digitalSignatureRegistered'), 24, yPos + 16);
+      doc.text(t('exportInspections.digitalSignatureRegistered'), 22, yPos + 14);
     }
   } else {
-    doc.setFontSize(9);
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'italic');
     doc.setTextColor(...MEDIUM_GRAY);
-    doc.text(t('exportInspections.awaitingSignature'), 28, yPos + 16);
+    doc.text(t('exportInspections.awaitingSignature'), 26, yPos + 14);
   }
   
   // Signature line

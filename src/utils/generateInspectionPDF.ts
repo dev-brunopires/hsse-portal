@@ -436,9 +436,9 @@ export async function generateInspectionPDF(data: InspectionPDFData, options?: {
   yPos = addSectionHeader(doc, yPos, t('generateInspectionPDF.signatureSection'), SBM_BLUE, pageWidth - margin * 2);
   yPos += 5;
   
-  // Signature box
-  const sigBoxWidth = 80;
-  const sigBoxHeight = 35;
+  // Signature box - compact size (1/3 of page)
+  const sigBoxWidth = 70;
+  const sigBoxHeight = 25;
   
   doc.setDrawColor(...BORDER_GRAY);
   doc.setFillColor(255, 255, 255);
@@ -446,18 +446,18 @@ export async function generateInspectionPDF(data: InspectionPDFData, options?: {
   
   if (data.inspection.signature_data) {
     try {
-      doc.addImage(data.inspection.signature_data, 'PNG', margin + 5, yPos + 2, 70, 25);
+      doc.addImage(data.inspection.signature_data, 'PNG', margin + 3, yPos + 2, sigBoxWidth - 6, sigBoxHeight - 5);
     } catch (e) {
-      doc.setFontSize(9);
+      doc.setFontSize(8);
       doc.setFont('helvetica', 'italic');
       doc.setTextColor(...MEDIUM_GRAY);
-      doc.text(t('generateInspectionPDF.digitalSignatureRegistered'), margin + 10, yPos + 18);
+      doc.text(t('generateInspectionPDF.digitalSignatureRegistered'), margin + 8, yPos + 14);
     }
   } else {
-    doc.setFontSize(9);
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'italic');
     doc.setTextColor(...MEDIUM_GRAY);
-    doc.text(t('generateInspectionPDF.awaitingSignature'), margin + 15, yPos + 18);
+    doc.text(t('generateInspectionPDF.awaitingSignature'), margin + 12, yPos + 14);
   }
   
   // Signature line

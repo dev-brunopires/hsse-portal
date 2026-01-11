@@ -194,23 +194,26 @@ export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFDat
     headStyles: {
       fillColor: [0, 82, 147],
       textColor: [255, 255, 255],
-      fontSize: 8,
+      fontSize: 9,
       fontStyle: 'bold',
+      cellPadding: 4,
     },
     bodyStyles: {
-      fontSize: 7,
+      fontSize: 9,
       textColor: [33, 37, 41],
+      cellPadding: 4,
+      minCellHeight: 10,
     },
     alternateRowStyles: {
       fillColor: [248, 249, 250],
     },
     columnStyles: {
-      0: { cellWidth: 8, halign: 'center' },
-      1: { cellWidth: 22 },
+      0: { cellWidth: 10, halign: 'center' },
+      1: { cellWidth: 24 },
       2: { cellWidth: 'auto' },
-      3: { cellWidth: 20, halign: 'center' },
-      4: { cellWidth: 30 },
-      5: { cellWidth: 20, halign: 'center' },
+      3: { cellWidth: 22, halign: 'center' },
+      4: { cellWidth: 32 },
+      5: { cellWidth: 22, halign: 'center' },
       6: { cellWidth: 28, halign: 'center' },
     },
     didParseCell: (hookData) => {
@@ -264,9 +267,9 @@ export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFDat
   
   yPosition += 10;
 
-  // Signature box
-  const signatureBoxWidth = 80;
-  const signatureBoxHeight = 40;
+  // Signature box - compact size (1/3 of page)
+  const signatureBoxWidth = 70;
+  const signatureBoxHeight = 25;
   const signatureBoxX = margin;
   
   doc.setFillColor(252, 252, 252);
@@ -275,7 +278,7 @@ export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFDat
   
   if (data.signatureData) {
     try {
-      doc.addImage(data.signatureData, 'PNG', signatureBoxX + 5, yPosition + 3, signatureBoxWidth - 10, signatureBoxHeight - 10);
+      doc.addImage(data.signatureData, 'PNG', signatureBoxX + 3, yPosition + 2, signatureBoxWidth - 6, signatureBoxHeight - 5);
     } catch (e) {
       console.error('Error adding signature image:', e);
     }
