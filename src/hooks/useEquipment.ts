@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useShipFilter } from '@/contexts/ShipFilterContext';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { translateError } from '@/utils/errorTranslation';
 
 export type Equipment = Tables<'equipment'>;
 export type EquipmentInsert = TablesInsert<'equipment'>;
@@ -182,7 +183,7 @@ export function useCreateEquipment() {
     onError: (error: Error) => {
       toast({
         title: t('hooks.equipment.createError'),
-        description: error.message,
+        description: translateError(error),
         variant: 'destructive',
       });
     },
@@ -216,7 +217,7 @@ export function useUpdateEquipment() {
     onError: (error: Error) => {
       toast({
         title: t('hooks.equipment.updateError'),
-        description: error.message,
+        description: translateError(error),
         variant: 'destructive',
       });
     },
@@ -247,7 +248,7 @@ export function useDeleteEquipment() {
     onError: (error: Error) => {
       toast({
         title: t('hooks.equipment.deleteError'),
-        description: error.message,
+        description: translateError(error),
         variant: 'destructive',
       });
     },

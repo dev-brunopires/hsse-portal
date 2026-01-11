@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { useTranslation } from 'react-i18next';
+import { translateError } from '@/utils/errorTranslation';
 
 export interface Ship {
   id: string;
@@ -66,12 +68,13 @@ export function useShips() {
 export function useCreateShip() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const { organization } = useOrganization();
 
   return useMutation({
     mutationFn: async (data: CreateShipData) => {
       if (!organization?.id) {
-        throw new Error('Organização não encontrada');
+        throw new Error(t('errors.organizationNotFound'));
       }
 
       const { data: ship, error } = await supabase
@@ -91,14 +94,14 @@ export function useCreateShip() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ships'] });
       toast({
-        title: 'Navio Cadastrado',
-        description: 'O navio foi cadastrado com sucesso.',
+        title: t('hooks.ships.created'),
+        description: t('hooks.ships.createdDesc'),
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
-        title: 'Erro ao Cadastrar',
-        description: error.message || 'Erro ao cadastrar navio.',
+        title: t('hooks.ships.createError'),
+        description: translateError(error),
         variant: 'destructive',
       });
     },
@@ -108,6 +111,7 @@ export function useCreateShip() {
 export function useUpdateShip() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async (data: UpdateShipData) => {
@@ -125,14 +129,14 @@ export function useUpdateShip() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ships'] });
       toast({
-        title: 'Navio Atualizado',
-        description: 'Os dados do navio foram atualizados.',
+        title: t('hooks.ships.updated'),
+        description: t('hooks.ships.updatedDesc'),
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
-        title: 'Erro ao Atualizar',
-        description: error.message || 'Erro ao atualizar navio.',
+        title: t('hooks.ships.updateError'),
+        description: translateError(error),
         variant: 'destructive',
       });
     },
@@ -142,6 +146,7 @@ export function useUpdateShip() {
 export function useDeleteShip() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -155,14 +160,14 @@ export function useDeleteShip() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ships'] });
       toast({
-        title: 'Navio Removido',
-        description: 'O navio foi removido do sistema.',
+        title: t('hooks.ships.deleted'),
+        description: t('hooks.ships.deletedDesc'),
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
-        title: 'Erro ao Remover',
-        description: error.message || 'Erro ao remover navio.',
+        title: t('hooks.ships.deleteError'),
+        description: translateError(error),
         variant: 'destructive',
       });
     },
