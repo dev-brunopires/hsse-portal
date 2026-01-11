@@ -137,25 +137,28 @@ export async function exportMonthlyConsolidatedPDF(
     headStyles: {
       fillColor: SBM_BLUE,
       textColor: [255, 255, 255],
-      fontSize: 8,
+      fontSize: 9,
       fontStyle: 'bold',
+      cellPadding: 4,
     },
     bodyStyles: {
-      fontSize: 7,
+      fontSize: 9,
       textColor: [33, 37, 41],
+      cellPadding: 4,
+      minCellHeight: 10,
     },
     alternateRowStyles: {
       fillColor: [248, 249, 250],
     },
     columnStyles: {
-      0: { cellWidth: 22 },
+      0: { cellWidth: 24 },
       1: { cellWidth: 'auto' },
-      2: { cellWidth: 28 },
-      3: { cellWidth: 22 },
-      4: { cellWidth: 15, halign: 'center' },
-      5: { cellWidth: 20, halign: 'center' },
-      6: { cellWidth: 22 },
-      7: { cellWidth: 35 },
+      2: { cellWidth: 32 },
+      3: { cellWidth: 24 },
+      4: { cellWidth: 18, halign: 'center' },
+      5: { cellWidth: 24, halign: 'center' },
+      6: { cellWidth: 26 },
+      7: { cellWidth: 40 },
     },
     didParseCell: (hookData) => {
       if (hookData.section === 'body') {

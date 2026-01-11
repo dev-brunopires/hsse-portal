@@ -273,89 +273,90 @@ export function addSignatureSection(
   const margin = 14;
   
   // Check if we need a new page
-  if (yPos > pageHeight - 60) {
+  if (yPos > pageHeight - 50) {
     doc.addPage();
     yPos = 20;
   }
   
-  const signatureBoxWidth = 180;
+  // Reduced signature box width to ~1/3 of original (was 180, now 100)
+  const signatureBoxWidth = 100;
+  const signatureBoxHeight = 25; // Reduced height (was 35)
   const signatureBoxX = (pageWidth - signatureBoxWidth) / 2;
   
   const t = i18n.t;
   const dateLocale = getDateLocale();
   
   // Section header
-  yPos += 10;
+  yPos += 8;
   doc.setFillColor(...LIGHT_GRAY);
-  doc.rect(margin, yPos, pageWidth - margin * 2, 8, 'F');
+  doc.rect(margin, yPos, pageWidth - margin * 2, 7, 'F');
   doc.setFillColor(...SBM_BLUE);
-  doc.rect(margin, yPos, 4, 8, 'F');
+  doc.rect(margin, yPos, 3, 7, 'F');
   
   doc.setTextColor(...DARK_GRAY);
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
-  doc.text(t('pdfStyles.responsibleSignature'), margin + 10, yPos + 5.5);
+  doc.text(t('pdfStyles.responsibleSignature'), margin + 8, yPos + 4.5);
   
-  yPos += 15;
+  yPos += 12;
   
-  // Signature box
+  // Signature box - smaller
   doc.setDrawColor(...BORDER_GRAY);
-  doc.setLineWidth(0.5);
-  doc.rect(signatureBoxX, yPos, signatureBoxWidth, 35);
+  doc.setLineWidth(0.4);
+  doc.rect(signatureBoxX, yPos, signatureBoxWidth, signatureBoxHeight);
   
   // Add signature image if available
   if (signatureData) {
     try {
-      doc.addImage(signatureData, 'PNG', signatureBoxX + 10, yPos + 2, 160, 25);
+      // Scaled signature to fit smaller box
+      doc.addImage(signatureData, 'PNG', signatureBoxX + 5, yPos + 2, signatureBoxWidth - 10, signatureBoxHeight - 6);
     } catch (error) {
       console.error('Error adding signature to PDF:', error);
-      // Fallback: Show placeholder text
       doc.setTextColor(...MEDIUM_GRAY);
-      doc.setFontSize(9);
+      doc.setFontSize(8);
       doc.setFont('helvetica', 'italic');
-      doc.text(t('pdfStyles.digitalSignatureNotAvailable'), signatureBoxX + signatureBoxWidth / 2, yPos + 18, { align: 'center' });
+      doc.text(t('pdfStyles.digitalSignatureNotAvailable'), signatureBoxX + signatureBoxWidth / 2, yPos + signatureBoxHeight / 2 + 2, { align: 'center' });
     }
   } else {
-    // Placeholder for signature
     doc.setTextColor(...MEDIUM_GRAY);
-    doc.setFontSize(9);
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'italic');
-    doc.text(t('pdfStyles.digitalSignature'), signatureBoxX + signatureBoxWidth / 2, yPos + 18, { align: 'center' });
+    doc.text(t('pdfStyles.digitalSignature'), signatureBoxX + signatureBoxWidth / 2, yPos + signatureBoxHeight / 2 + 2, { align: 'center' });
   }
   
-  yPos += 38;
+  yPos += signatureBoxHeight + 3;
   
-  // Signature line
+  // Signature line - shorter
   doc.setDrawColor(...DARK_GRAY);
-  doc.setLineWidth(0.3);
-  doc.line(signatureBoxX + 20, yPos, signatureBoxX + signatureBoxWidth - 20, yPos);
+  doc.setLineWidth(0.2);
+  doc.line(signatureBoxX + 10, yPos, signatureBoxX + signatureBoxWidth - 10, yPos);
   
-  yPos += 5;
+  yPos += 4;
   
   // Signer name
   doc.setTextColor(...DARK_GRAY);
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
   doc.text(signerName, signatureBoxX + signatureBoxWidth / 2, yPos, { align: 'center' });
   
-  yPos += 5;
+  yPos += 4;
   
   // Signer position
   if (signerPosition) {
-    doc.setFontSize(9);
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...MEDIUM_GRAY);
     doc.text(signerPosition, signatureBoxX + signatureBoxWidth / 2, yPos, { align: 'center' });
-    yPos += 5;
+    yPos += 4;
   }
   
   // Date and time
-  yPos += 3;
-  doc.setFontSize(8);
+  yPos += 2;
+  doc.setFontSize(7);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...MEDIUM_GRAY);
   const dateStr = `${t('pdfStyles.documentGeneratedAt')}: ${format(new Date(), "dd/MM/yyyy HH:mm:ss", { locale: dateLocale })}`;
   doc.text(dateStr, signatureBoxX + signatureBoxWidth / 2, yPos, { align: 'center' });
   
-  return yPos + 10;
+  return yPos + 8;
 }
