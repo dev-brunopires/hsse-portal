@@ -1508,7 +1508,11 @@
     "statusCompliant": "Conforme",
     "statusAttention": "Atenção",
     "statusNonCompliant": "Não Conforme",
-    "checklistReadOnly": "O checklist não pode ser editado após a inspeção ser registrada."
+    "checklistReadOnly": "O checklist não pode ser editado após a inspeção ser registrada.",
+    "checklistProgress": "Progresso do Checklist",
+    "itemNotes": "Observações do item...",
+    "addPhotos": "Adicionar Fotos",
+    "takePhoto": "Tirar Foto"
   },
   "inspectionCalendar": {
     "today": "Hoje",
@@ -1935,6 +1939,16 @@
       "updateError": "Erro ao atualizar template de checklist",
       "deleted": "Template de checklist excluído!",
       "deleteError": "Erro ao excluir template de checklist"
+    },
+    "checklist": {
+      "updated": "Checklist Atualizado",
+      "updatedDesc": "Os itens do checklist foram atualizados com sucesso."
+    },
+    "photo": {
+      "added": "Foto Adicionada",
+      "addedDesc": "A foto foi adicionada à inspeção.",
+      "deleted": "Foto Excluída",
+      "deletedDesc": "A foto foi removida da inspeção."
     },
     "ifsIntegration": {
       "configSaved": "Configuração salva",
