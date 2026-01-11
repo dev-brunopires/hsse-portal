@@ -261,6 +261,7 @@ export function useCreateCertificate() {
       queryClient.invalidateQueries({ queryKey: ['certificates'] });
       queryClient.invalidateQueries({ queryKey: ['certificate-stats'] });
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast.success(i18n.t('certificates.createSuccess'));
     },
     onError: (error: Error) => {
@@ -342,6 +343,7 @@ export function useUpdateCertificate() {
       queryClient.invalidateQueries({ queryKey: ['certificates'] });
       queryClient.invalidateQueries({ queryKey: ['certificate-stats'] });
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast.success(i18n.t('certificates.updateSuccess'));
     },
     onError: (error: Error) => {
@@ -447,6 +449,7 @@ export function useRenewCertificate() {
       queryClient.invalidateQueries({ queryKey: ['certificate-stats'] });
       queryClient.invalidateQueries({ queryKey: ['certificate-renewals'] });
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast.success(i18n.t('certificates.renewSuccess'));
     },
     onError: (error: Error) => {
@@ -486,6 +489,8 @@ export function useDeleteCertificate() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['certificates'] });
       queryClient.invalidateQueries({ queryKey: ['certificate-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast.success(i18n.t('certificates.deleteSuccess'));
     },
     onError: (error: Error) => {
