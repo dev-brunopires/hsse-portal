@@ -334,71 +334,71 @@ export default function Inspections() {
       />
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card>
-          <CardHeader className="p-3 md:p-4 pb-1 md:pb-2">
-            <CardTitle className="flex items-center gap-1 md:gap-2 text-xs md:text-base">
-              <ClipboardCheck className="h-4 w-4 md:h-5 md:w-5 text-primary" />
-              <span className="truncate">{t('inspectionsPage.total')}</span>
+          <CardHeader className="p-3 sm:p-4 pb-1 sm:pb-2">
+            <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm lg:text-base">
+              <ClipboardCheck className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+              <span>{t('inspectionsPage.total')}</span>
             </CardTitle>
             <CardDescription className="text-xs hidden sm:block">{t('inspectionsPage.allInspections')}</CardDescription>
           </CardHeader>
-          <CardContent className="p-3 md:p-4 pt-1 md:pt-2">
+          <CardContent className="p-3 sm:p-4 pt-1 sm:pt-2">
             {isLoading ? (
-              <Skeleton className="h-7 md:h-9 w-12 md:w-16" />
+              <Skeleton className="h-7 sm:h-8 lg:h-9 w-12 sm:w-16" />
             ) : (
-              <p className="text-2xl md:text-3xl font-bold">{inspections.length}</p>
+              <p className="text-2xl sm:text-2xl lg:text-3xl font-bold">{inspections.length}</p>
             )}
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="p-3 md:p-4 pb-1 md:pb-2">
-            <CardTitle className="flex items-center gap-1 md:gap-2 text-xs md:text-base">
-              <Calendar className="h-4 w-4 md:h-5 md:w-5 text-status-warning" />
-              <span className="truncate">{t('inspectionsPage.pending')}</span>
+          <CardHeader className="p-3 sm:p-4 pb-1 sm:pb-2">
+            <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm lg:text-base">
+              <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-status-warning flex-shrink-0" />
+              <span>{t('inspectionsPage.pending')}</span>
             </CardTitle>
             <CardDescription className="text-xs hidden sm:block">{t('inspectionsPage.scheduledInspections')}</CardDescription>
           </CardHeader>
-          <CardContent className="p-3 md:p-4 pt-1 md:pt-2">
+          <CardContent className="p-3 sm:p-4 pt-1 sm:pt-2">
             {isLoading ? (
-              <Skeleton className="h-7 md:h-9 w-12 md:w-16" />
+              <Skeleton className="h-7 sm:h-8 lg:h-9 w-12 sm:w-16" />
             ) : (
-              <p className="text-2xl md:text-3xl font-bold">{pendingInspections}</p>
+              <p className="text-2xl sm:text-2xl lg:text-3xl font-bold">{pendingInspections}</p>
             )}
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="p-3 md:p-4 pb-1 md:pb-2">
-            <CardTitle className="flex items-center gap-1 md:gap-2 text-xs md:text-base">
-              <CheckCircle className="h-4 w-4 md:h-5 md:w-5 text-status-success" />
-              <span className="truncate">{t('inspectionsPage.completedMonth')}</span>
+          <CardHeader className="p-3 sm:p-4 pb-1 sm:pb-2">
+            <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm lg:text-base">
+              <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-status-success flex-shrink-0" />
+              <span>{t('inspectionsPage.completedMonth')}</span>
             </CardTitle>
             <CardDescription className="text-xs hidden sm:block">{t('inspectionsPage.completedInspections')}</CardDescription>
           </CardHeader>
-          <CardContent className="p-3 md:p-4 pt-1 md:pt-2">
+          <CardContent className="p-3 sm:p-4 pt-1 sm:pt-2">
             {isLoading ? (
-              <Skeleton className="h-7 md:h-9 w-12 md:w-16" />
+              <Skeleton className="h-7 sm:h-8 lg:h-9 w-12 sm:w-16" />
             ) : (
-              <p className="text-2xl md:text-3xl font-bold">{completedThisMonth}</p>
+              <p className="text-2xl sm:text-2xl lg:text-3xl font-bold">{completedThisMonth}</p>
             )}
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="p-3 md:p-4 pb-1 md:pb-2">
-            <CardTitle className="flex items-center gap-1 md:gap-2 text-xs md:text-base">
-              <AlertTriangle className="h-4 w-4 md:h-5 md:w-5 text-status-danger" />
-              <span className="truncate">{t('inspectionsPage.nonConformant')}</span>
+          <CardHeader className="p-3 sm:p-4 pb-1 sm:pb-2">
+            <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm lg:text-base">
+              <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-status-danger flex-shrink-0" />
+              <span>{t('inspectionsPage.nonConformant')}</span>
             </CardTitle>
             <CardDescription className="text-xs hidden sm:block">{t('inspectionsPage.requireAction')}</CardDescription>
           </CardHeader>
-          <CardContent className="p-3 md:p-4 pt-1 md:pt-2">
+          <CardContent className="p-3 sm:p-4 pt-1 sm:pt-2">
             {isLoading ? (
-              <Skeleton className="h-7 md:h-9 w-12 md:w-16" />
+              <Skeleton className="h-7 sm:h-8 lg:h-9 w-12 sm:w-16" />
             ) : (
-              <p className="text-2xl md:text-3xl font-bold">{nonConformant}</p>
+              <p className="text-2xl sm:text-2xl lg:text-3xl font-bold">{nonConformant}</p>
             )}
           </CardContent>
         </Card>
@@ -434,8 +434,9 @@ export default function Inspections() {
               <CardDescription>{t('inspectionsPage.historySubtitle')}</CardDescription>
             </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="relative flex-1">
+          {/* Filters - responsive grid for tablet */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-row gap-3 lg:gap-4">
+            <div className="relative sm:col-span-2 lg:flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder={t('inspectionsPage.searchPlaceholder')}
@@ -472,12 +473,12 @@ export default function Inspections() {
               </SelectContent>
             </Select>
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 sm:col-span-2 lg:col-span-1">
               <DatePicker
                 value={dateFrom}
                 onChange={setDateFrom}
                 placeholder={t('inspections.dateFrom')}
-                className="w-full lg:w-[160px]"
+                className="w-full lg:w-[140px]"
                 fromYear={new Date().getFullYear() - 10}
                 toYear={new Date().getFullYear() + 1}
               />
@@ -485,17 +486,16 @@ export default function Inspections() {
                 value={dateTo}
                 onChange={setDateTo}
                 placeholder={t('inspections.dateTo')}
-                className="w-full lg:w-[160px]"
+                className="w-full lg:w-[140px]"
                 fromYear={new Date().getFullYear() - 10}
                 toYear={new Date().getFullYear() + 1}
               />
+              {hasActiveFilters && (
+                <Button variant="ghost" size="icon" onClick={clearFilters} className="flex-shrink-0">
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
             </div>
-
-            {hasActiveFilters && (
-              <Button variant="ghost" size="icon" onClick={clearFilters}>
-                <X className="h-4 w-4" />
-              </Button>
-            )}
           </div>
 
           {hasActiveFilters && (
@@ -505,10 +505,10 @@ export default function Inspections() {
             </div>
           )}
 
-          {/* Mobile Card View with Pull to Refresh */}
+          {/* Mobile/Tablet Card View with Pull to Refresh */}
           <div 
             ref={isMobile ? containerRef : undefined}
-            className="md:hidden space-y-3 overflow-auto"
+            className="lg:hidden space-y-3 overflow-auto"
           >
             <PullToRefreshIndicator 
               pullDistance={pullDistance} 
@@ -597,8 +597,8 @@ export default function Inspections() {
             )}
           </div>
 
-          {/* Desktop Table */}
-          <div className="hidden md:block rounded-md border">
+          {/* Desktop Table - only on large screens */}
+          <div className="hidden lg:block rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>

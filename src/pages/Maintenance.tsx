@@ -55,7 +55,7 @@ import { formatMaintenanceId } from '@/utils/formatId';
 import { toast } from 'sonner';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { PullToRefreshIndicator } from '@/components/ui/PullToRefreshIndicator';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile, useIsTabletOrMobile } from '@/hooks/use-mobile';
 
 const getStatusConfig = (t: (key: string) => string) => ({
   pending: { label: t('maintenance.statusPending'), icon: Clock, color: 'text-amber-600', bgColor: 'bg-amber-50 dark:bg-amber-950/30' },
@@ -95,6 +95,7 @@ export default function Maintenance() {
   const { role } = useAuth();
   const branding = useOrganizationBranding();
   const isMobile = useIsMobile();
+  const isTabletOrMobile = useIsTabletOrMobile();
   const [isExporting, setIsExporting] = useState(false);
   
   const isSyncing = isFetching && !isLoading;
@@ -293,7 +294,7 @@ export default function Maintenance() {
         />
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <StatCard 
             title={t('maintenance.pending')} 
             value={stats.pending} 

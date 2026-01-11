@@ -59,7 +59,7 @@ import { useOrganizationBranding } from '@/hooks/useOrganizationBranding';
 import { addPDFHeader, addPDFFooter, SBM_BLUE, preloadLogo } from '@/utils/pdfStyles';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { PullToRefreshIndicator } from '@/components/ui/PullToRefreshIndicator';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile, useIsTabletOrMobile } from '@/hooks/use-mobile';
 
 interface PendingItem {
   equipment: EquipmentWithCategory;
@@ -81,6 +81,7 @@ export default function PendingRecommendations() {
   const navigate = useNavigate();
   const branding = useOrganizationBranding();
   const isMobile = useIsMobile();
+  const isTabletOrMobile = useIsTabletOrMobile();
   const { data: equipment = [], isLoading: equipmentLoading, refetch: refetchEquipment } = useEquipment();
   const { data: inspections = [], isLoading: inspectionsLoading, refetch: refetchInspections } = useInspections();
   const { data: categories = [], refetch: refetchCategories } = useCategories();
@@ -477,10 +478,10 @@ export default function PendingRecommendations() {
             </div>
           )}
 
-          {/* Mobile Card View with Pull to Refresh */}
+          {/* Mobile/Tablet Card View with Pull to Refresh */}
           <div 
             ref={isMobile ? containerRef : undefined}
-            className="md:hidden space-y-3 overflow-auto"
+            className="lg:hidden grid grid-cols-1 sm:grid-cols-2 gap-3 overflow-auto"
           >
             <PullToRefreshIndicator 
               pullDistance={pullDistance} 
@@ -618,8 +619,8 @@ export default function PendingRecommendations() {
             )}
           </div>
 
-          {/* Desktop Table */}
-          <div className="hidden md:block rounded-md border">
+          {/* Desktop Table - only on large screens */}
+          <div className="hidden lg:block rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>

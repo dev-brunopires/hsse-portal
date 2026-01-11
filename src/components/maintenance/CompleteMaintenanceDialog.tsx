@@ -2,13 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { ResponsiveDialog, ResponsiveDialogBody, ResponsiveDialogFooter } from '@/components/ui/responsive-dialog';
 import {
   Form,
   FormControl,
@@ -27,6 +21,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useCompleteMaintenance, type MaintenancePlan } from '@/hooks/useMaintenance';
+import { Wrench } from 'lucide-react';
 
 interface CompleteMaintenanceDialogProps {
   open: boolean;
@@ -66,17 +61,17 @@ export function CompleteMaintenanceDialog({ open, onOpenChange, plan }: Complete
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>{t('maintenance.registerExecution')}</DialogTitle>
-          <DialogDescription>
-            {t('maintenance.registerExecutionDesc')}: {plan.title}
-          </DialogDescription>
-        </DialogHeader>
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+    <ResponsiveDialog 
+      open={open} 
+      onOpenChange={onOpenChange}
+      title={t('maintenance.registerExecution')}
+      description={`${t('maintenance.registerExecutionDesc')}: ${plan.title}`}
+      titleIcon={<Wrench className="h-5 w-5 text-primary" />}
+      className="sm:max-w-[425px]"
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <ResponsiveDialogBody className="space-y-4">
             <FormField
               control={form.control}
               name="status"
@@ -118,18 +113,18 @@ export function CompleteMaintenanceDialog({ open, onOpenChange, plan }: Complete
                 </FormItem>
               )}
             />
+          </ResponsiveDialogBody>
 
-            <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                {t('common.cancel')}
-              </Button>
-              <Button type="submit" disabled={completeMaintenance.isPending}>
-                {completeMaintenance.isPending ? t('maintenance.saving') : t('maintenance.register')}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+          <ResponsiveDialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              {t('common.cancel')}
+            </Button>
+            <Button type="submit" disabled={completeMaintenance.isPending}>
+              {completeMaintenance.isPending ? t('maintenance.saving') : t('maintenance.register')}
+            </Button>
+          </ResponsiveDialogFooter>
+        </form>
+      </Form>
+    </ResponsiveDialog>
   );
 }
