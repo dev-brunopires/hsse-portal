@@ -1,6 +1,6 @@
 // Offline indicator component with sync status and debug panel
 import { useState } from 'react';
-import { WifiOff, Cloud, RefreshCw, ChevronUp, ChevronDown, ClipboardCheck, Wifi, Database, Trash2 } from 'lucide-react';
+import { WifiOff, Cloud, RefreshCw, ChevronUp, ChevronDown, ClipboardCheck, Wifi, Database, Trash2, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -24,9 +24,11 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 export function OfflineIndicator() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { 
     isOnline, 
     pendingCount, 
@@ -41,6 +43,10 @@ export function OfflineIndicator() {
   const [expanded, setExpanded] = useState(false);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
   const pendingInspections = getPendingInspections();
+
+  const handleViewCachedData = () => {
+    navigate('/offline');
+  };
 
   const handleForceSync = async () => {
     if (pendingCount > 0) {
@@ -62,7 +68,6 @@ export function OfflineIndicator() {
     toast.success(t('offline.pendingCleared'));
   };
 
-  // Always show a subtle indicator on mobile when online with no pending
   const showOnlineIndicator = isOnline && pendingCount === 0;
 
   return (
@@ -108,95 +113,89 @@ export function OfflineIndicator() {
                     {pendingCount}
                   </Badge>
                 )}
-                {pendingCount > 0 && (
+                {(pendingCount > 0 || !isOnline) && (
                   expanded ? <ChevronDown className="h-5 w-5" /> : <ChevronUp className="h-5 w-5" />
                 )}
               </button>
             </CollapsibleTrigger>
             
-            {pendingCount > 0 && (
-              <CollapsibleContent>
-                <div className="px-4 pb-4 space-y-3 border-t border-white/20 pt-3">
-                  <p className="text-xs font-medium opacity-80">{t('offline.inspectionsAwaitingSync')}</p>
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {pendingInspections.map((inspection) => (
-                      <div 
-                        key={inspection.id} 
-                        className="flex items-center gap-3 bg-white/10 rounded-lg px-3 py-2"
-                      >
-                        <ClipboardCheck className="h-4 w-4 flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">
-                            {inspection.equipment_name}
-                          </p>
-                          <p className="text-xs opacity-70">
-                            {t('offline.code')}: {inspection.equipment_code}
-                          </p>
+            <CollapsibleContent>
+              <div className="px-4 pb-4 space-y-3 border-t border-white/20 pt-3">
+                {/* View Cached Data Button */}
+                {!isOnline && (
+                  <Button 
+                    size="sm" 
+                    variant="secondary" 
+                    className="w-full"
+                    onClick={handleViewCachedData}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    {t('offline.viewCachedData')}
+                  </Button>
+                )}
+                
+                {pendingCount > 0 && (
+                  <>
+                    <p className="text-xs font-medium opacity-80">{t('offline.inspectionsAwaitingSync')}</p>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {pendingInspections.map((inspection) => (
+                        <div 
+                          key={inspection.id} 
+                          className="flex items-center gap-3 bg-white/10 rounded-lg px-3 py-2"
+                        >
+                          <ClipboardCheck className="h-4 w-4 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{inspection.equipment_name}</p>
+                            <p className="text-xs opacity-70">{t('offline.code')}: {inspection.equipment_code}</p>
+                          </div>
+                          <span className="text-xs opacity-70 flex-shrink-0">
+                            {format(new Date(inspection.timestamp), 'HH:mm')}
+                          </span>
                         </div>
-                        <span className="text-xs opacity-70 flex-shrink-0">
-                          {format(new Date(inspection.timestamp), 'HH:mm')}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    {isOnline && (
-                      <Button 
-                        size="sm" 
-                        variant="secondary" 
-                        className="flex-1"
-                        onClick={handleForceSync}
-                        disabled={isSyncing}
-                      >
-                        {isSyncing ? (
-                          <>
-                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                            {t('offline.syncing')}
-                          </>
-                        ) : (
-                          <>
-                            <RefreshCw className="h-4 w-4 mr-2" />
-                            {t('offline.syncNow')}
-                          </>
-                        )}
-                      </Button>
-                    )}
+                      ))}
+                    </div>
                     
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
+                    <div className="flex gap-2">
+                      {isOnline && (
                         <Button 
                           size="sm" 
-                          variant="destructive" 
-                          className="flex-shrink-0"
+                          variant="secondary" 
+                          className="flex-1"
+                          onClick={handleForceSync}
+                          disabled={isSyncing}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <RefreshCw className={cn("h-4 w-4 mr-2", isSyncing && "animate-spin")} />
+                          {isSyncing ? t('offline.syncing') : t('offline.syncNow')}
                         </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>{t('offline.clearPendingTitle')}</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            {t('offline.clearPendingDescription')}
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-                          <AlertDialogAction onClick={handleClearPending}>
-                            {t('common.confirm')}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </div>
-              </CollapsibleContent>
-            )}
+                      )}
+                      
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button size="sm" variant="destructive" className="flex-shrink-0">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>{t('offline.clearPendingTitle')}</AlertDialogTitle>
+                            <AlertDialogDescription>{t('offline.clearPendingDescription')}</AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleClearPending}>{t('common.confirm')}</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </>
+                )}
+              </div>
+            </CollapsibleContent>
           </Collapsible>
         </div>
       )}
 
-      {/* Mobile online status indicator with debug options */}
+      {/* Mobile online status indicator */}
       {showOnlineIndicator && (
         <div className="fixed bottom-20 right-4 lg:hidden z-40">
           <Collapsible open={showDebugPanel} onOpenChange={setShowDebugPanel}>
@@ -217,12 +216,7 @@ export function OfflineIndicator() {
                   )}
                 </div>
                 <div className="flex gap-2 pt-2">
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    className="flex-1 text-xs h-8"
-                    onClick={handleRefreshCache}
-                  >
+                  <Button size="sm" variant="outline" className="flex-1 text-xs h-8" onClick={handleRefreshCache}>
                     <Database className="h-3 w-3 mr-1" />
                     Cache
                   </Button>
