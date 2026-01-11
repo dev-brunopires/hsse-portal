@@ -94,6 +94,156 @@ export type Database = {
           },
         ]
       }
+      certificate_renewals: {
+        Row: {
+          certificate_id: string
+          created_at: string
+          id: string
+          new_expiry_date: string
+          new_file_path: string | null
+          notes: string | null
+          old_file_path: string | null
+          previous_expiry_date: string | null
+          renewed_at: string
+          renewed_by: string | null
+        }
+        Insert: {
+          certificate_id: string
+          created_at?: string
+          id?: string
+          new_expiry_date: string
+          new_file_path?: string | null
+          notes?: string | null
+          old_file_path?: string | null
+          previous_expiry_date?: string | null
+          renewed_at?: string
+          renewed_by?: string | null
+        }
+        Update: {
+          certificate_id?: string
+          created_at?: string
+          id?: string
+          new_expiry_date?: string
+          new_file_path?: string | null
+          notes?: string | null
+          old_file_path?: string | null
+          previous_expiry_date?: string | null
+          renewed_at?: string
+          renewed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificate_renewals_certificate_id_fkey"
+            columns: ["certificate_id"]
+            isOneToOne: false
+            referencedRelation: "certificates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      certificates: {
+        Row: {
+          certificate_number: string | null
+          created_at: string
+          created_by: string | null
+          equipment_id: string
+          expiry_date: string | null
+          file_name: string | null
+          file_path: string | null
+          file_size: number | null
+          file_type: string | null
+          id: string
+          issue_date: string | null
+          issuer: string | null
+          last_renewal_date: string | null
+          name: string
+          notes: string | null
+          organization_id: string | null
+          renewal_date: string | null
+          renewal_notes: string | null
+          renewal_status: string | null
+          renewed_by: string | null
+          ship_id: string | null
+          status: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          certificate_number?: string | null
+          created_at?: string
+          created_by?: string | null
+          equipment_id: string
+          expiry_date?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          issue_date?: string | null
+          issuer?: string | null
+          last_renewal_date?: string | null
+          name: string
+          notes?: string | null
+          organization_id?: string | null
+          renewal_date?: string | null
+          renewal_notes?: string | null
+          renewal_status?: string | null
+          renewed_by?: string | null
+          ship_id?: string | null
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          certificate_number?: string | null
+          created_at?: string
+          created_by?: string | null
+          equipment_id?: string
+          expiry_date?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          issue_date?: string | null
+          issuer?: string | null
+          last_renewal_date?: string | null
+          name?: string
+          notes?: string | null
+          organization_id?: string | null
+          renewal_date?: string | null
+          renewal_notes?: string | null
+          renewal_status?: string | null
+          renewed_by?: string | null
+          ship_id?: string | null
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificates_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificates_ship_id_fkey"
+            columns: ["ship_id"]
+            isOneToOne: false
+            referencedRelation: "ships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       checklist_template_items: {
         Row: {
           created_at: string
