@@ -43,6 +43,10 @@ import { useChecklistTemplates } from '@/hooks/useChecklistTemplates';
 import { CategoryFormDialog } from '@/components/categories/CategoryFormDialog';
 import { ChecklistTemplatesDialog } from '@/components/categories/ChecklistTemplatesDialog';
 import { getCategoryIcon } from '@/utils/categoryIcons';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { PullToRefreshIndicator } from '@/components/ui/PullToRefreshIndicator';
+import { useQueryClient } from '@tanstack/react-query';
 
 const frequencyColors: Record<string, string> = {
   monthly: 'bg-blue-500/10 text-blue-700 border-blue-500/20',
@@ -54,9 +58,11 @@ const frequencyColors: Record<string, string> = {
 
 export default function Categories() {
   const { t } = useTranslation();
-  const { data: categories, isLoading } = useCategories();
+  const { data: categories, isLoading, refetch } = useCategories();
   const { data: equipment } = useEquipment();
   const deleteCategory = useDeleteCategory();
+  const isMobile = useIsMobile();
+  const queryClient = useQueryClient();
   
   const { data: allTemplates } = useChecklistTemplates();
   
@@ -68,6 +74,15 @@ export default function Categories() {
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
   const [templatesDialogOpen, setTemplatesDialogOpen] = useState(false);
   const [categoryForTemplates, setCategoryForTemplates] = useState<Category | null>(null);
+
+  const handleRefresh = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['categories'] });
+    await refetch();
+  };
+
+  const { containerRef, pullDistance, isRefreshing } = usePullToRefresh({
+    onRefresh: handleRefresh,
+  });
 
   const frequencyLabels: Record<string, string> = {
     monthly: t('categories.frequencyMonthly'),
@@ -187,8 +202,15 @@ export default function Categories() {
             </div>
           ) : (
             <>
-              {/* Mobile Card View */}
-              <div className="md:hidden space-y-3">
+              {/* Mobile Card View with Pull to Refresh */}
+              <div 
+                ref={isMobile ? containerRef : undefined}
+                className="md:hidden space-y-3 overflow-auto"
+              >
+                <PullToRefreshIndicator 
+                  pullDistance={pullDistance} 
+                  isRefreshing={isRefreshing} 
+                />
                 {filteredCategories.map((category) => {
                   const IconComponent = getCategoryIcon(category.icon);
                   const equipmentCount = getEquipmentCount(category.id);
