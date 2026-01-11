@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { WifiOff, Package, Ship, Tag, ClipboardList, RefreshCw, Clock, Search, ChevronRight, Database } from 'lucide-react';
+import { WifiOff, Package, Ship, Tag, ClipboardList, RefreshCw, Clock, Search, ChevronRight, Database, Plus } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
+import { OfflineInspectionDialog } from './OfflineInspectionDialog';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -60,6 +61,8 @@ export function OfflinePage() {
   const { getOfflineData, isCacheAvailable, preCacheData, isOnline, getPendingInspections, pendingCount } = useOfflineSync();
   const [searchQuery, setSearchQuery] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [selectedEquipment, setSelectedEquipment] = useState<CachedEquipment | null>(null);
+  const [inspectionDialogOpen, setInspectionDialogOpen] = useState(false);
 
   const offlineData = getOfflineData<OfflineData>();
   const pendingInspections = getPendingInspections();
@@ -105,6 +108,16 @@ export function OfflinePage() {
     setIsRefreshing(true);
     await preCacheData();
     setIsRefreshing(false);
+  };
+
+  const handleStartInspection = (equipment: CachedEquipment) => {
+    setSelectedEquipment(equipment);
+    setInspectionDialogOpen(true);
+  };
+
+  const handleInspectionSuccess = () => {
+    setSelectedEquipment(null);
+    setInspectionDialogOpen(false);
   };
 
   if (!cacheAvailable && !isOnline) {
@@ -269,7 +282,8 @@ export function OfflinePage() {
                     filteredEquipment.map((item) => (
                       <div
                         key={item.id}
-                        className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                        className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer group"
+                        onClick={() => handleStartInspection(item)}
                       >
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
@@ -286,7 +300,21 @@ export function OfflinePage() {
                             <span>{getShipName(item.ship_id)}</span>
                           </div>
                         </div>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="opacity-0 group-hover:opacity-100 transition-opacity gap-1.5 text-primary"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleStartInspection(item);
+                            }}
+                          >
+                            <Plus className="h-4 w-4" />
+                            {t('offline.inspect')}
+                          </Button>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        </div>
                       </div>
                     ))
                   )}
@@ -410,6 +438,18 @@ export function OfflinePage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Offline Inspection Dialog */}
+      {selectedEquipment && (
+        <OfflineInspectionDialog
+          open={inspectionDialogOpen}
+          onOpenChange={setInspectionDialogOpen}
+          equipment={selectedEquipment}
+          categories={categories}
+          templates={templates}
+          onSuccess={handleInspectionSuccess}
+        />
+      )}
     </div>
   );
 }
