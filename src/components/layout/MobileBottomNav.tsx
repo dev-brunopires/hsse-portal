@@ -67,7 +67,7 @@ export function MobileBottomNav() {
                     isActive(item.path) 
                       ? "text-primary" 
                       : "text-muted-foreground hover:text-foreground active:text-foreground",
-                    item.tabletOnly && "hidden md:flex"
+                    item.tabletOnly && "hidden sm:flex"
                   )}
                 >
                   <item.icon className={cn(
@@ -91,7 +91,7 @@ export function MobileBottomNav() {
                     isActive(item.path) 
                       ? "text-primary" 
                       : "text-muted-foreground hover:text-foreground active:text-foreground",
-                    item.tabletOnly && "hidden md:flex"
+                    item.tabletOnly && "hidden sm:flex"
                   )}
                 >
                   <item.icon className={cn(
