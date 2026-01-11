@@ -41,10 +41,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import { useShips } from '@/hooks/useShips';
 import { useUserShips } from '@/hooks/useUserShips';
-import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { 
-  useNotifications, 
-  useUnreadNotifications, 
+  useNotifications,
   useMarkNotificationAsRead,
   useMarkAllNotificationsAsRead 
 } from '@/hooks/useNotifications';
@@ -70,9 +68,7 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
   const navigate = useNavigate();
   const { data: ships = [] } = useShips();
   const { data: userShips = [] } = useUserShips(user?.id);
-  const { data: stats } = useDashboardStats();
   const { data: allNotifications = [] } = useNotifications();
-  const unreadNotifications = useUnreadNotifications();
   const markAsRead = useMarkNotificationAsRead();
   const markAllAsRead = useMarkAllNotificationsAsRead();
 
@@ -112,8 +108,10 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
   // Check if user is admin (including admin_master which might come from database)
   const isAdmin = role === 'admin' || (role as string) === 'admin_master';
 
-  const highPriorityCount =
-    stats?.recentAlerts?.filter((a) => a.severity === 'high').length || 0;
+  const highPriorityCount = useMemo(
+    () => allNotifications.filter((n) => n.type === 'alert' && !n.is_read).length,
+    [allNotifications]
+  );
 
   // Combine system notifications with database notifications
   const combinedNotifications = useMemo(() => {

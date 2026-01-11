@@ -101,7 +101,9 @@ export function useMaintenanceRequests() {
     queryFn: async () => {
       let query = supabase
         .from('maintenance_requests')
-        .select('*')
+        .select(
+          'id,equipment_id,ship_id,type,priority,status,title,description,requested_at,requested_by,approved_by,completed_by,due_date,completed_at,created_at,work_performed'
+        )
         .order('created_at', { ascending: false });
 
       if (isFilterEnabled && selectedShipId) {
