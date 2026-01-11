@@ -10,6 +10,11 @@ import {
   AlertTriangle,
   Clock,
   Filter,
+  Eye,
+  Pencil,
+  RotateCw,
+  Trash2,
+  MoreHorizontal,
 } from 'lucide-react';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
@@ -44,7 +49,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 
-import { useCertificates, useCertificateStats, type Certificate } from '@/hooks/useCertificates';
+import { useCertificates, useCertificateStats, useDeleteCertificate, type Certificate } from '@/hooks/useCertificates';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { formatDate } from '@/utils/dateFormat';
 import { cn } from '@/lib/utils';
@@ -52,6 +57,16 @@ import { cn } from '@/lib/utils';
 import { CertificateFormDialog } from '@/components/certificates/CertificateFormDialog';
 import { CertificateDetailDialog } from '@/components/certificates/CertificateDetailDialog';
 import { RenewCertificateDialog } from '@/components/certificates/RenewCertificateDialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const CERTIFICATE_TYPES = [
   { value: 'all', label: 'certificates.types.all' },
@@ -83,6 +98,10 @@ export default function Certificates() {
   const [selectedCertificate, setSelectedCertificate] = useState<Certificate | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isRenewOpen, setIsRenewOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [certificateToDelete, setCertificateToDelete] = useState<Certificate | null>(null);
+
+  const deleteCertificate = useDeleteCertificate();
 
   const expiringDays = activeTab === 'expiring' ? 30 : undefined;
 
@@ -165,6 +184,19 @@ export default function Certificates() {
   const handleEdit = (certificate: Certificate) => {
     setSelectedCertificate(certificate);
     setIsFormOpen(true);
+  };
+
+  const handleDelete = (certificate: Certificate) => {
+    setCertificateToDelete(certificate);
+    setIsDeleteOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (certificateToDelete) {
+      await deleteCertificate.mutateAsync(certificateToDelete.id);
+      setIsDeleteOpen(false);
+      setCertificateToDelete(null);
+    }
   };
 
   const renderCertificateCard = (certificate: Certificate) => {
@@ -465,22 +497,32 @@ export default function Certificates() {
                           <TableCell className="text-right">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                <Button variant="ghost" size="sm">
-                                  •••
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <MoreHorizontal className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
+                              <DropdownMenuContent align="end" className="bg-background">
                                 <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleOpenDetail(certificate); }}>
-                                  {t('common.details')}
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  {t('common.viewDetails')}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEdit(certificate); }}>
+                                  <Pencil className="h-4 w-4 mr-2" />
                                   {t('common.edit')}
                                 </DropdownMenuItem>
                                 {(certificate.status === 'expired' || certificate.status === 'expiring_soon') && (
                                   <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleOpenRenew(certificate); }}>
+                                    <RotateCw className="h-4 w-4 mr-2" />
                                     {t('certificates.renew')}
                                   </DropdownMenuItem>
                                 )}
+                                <DropdownMenuItem 
+                                  onClick={(e) => { e.stopPropagation(); handleDelete(certificate); }}
+                                  className="text-red-600 focus:text-red-600"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  {t('common.delete')}
+                                </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </TableCell>
@@ -515,6 +557,27 @@ export default function Certificates() {
         onOpenChange={setIsRenewOpen}
         certificate={selectedCertificate}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('certificates.deleteConfirmTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('certificates.deleteConfirmDesc')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteCertificate.isPending ? t('common.loading') : t('common.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
