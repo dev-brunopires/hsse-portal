@@ -323,13 +323,17 @@
     "validity": "Validity",
     "lastInspection": "Last Inspection",
     "nextInspection": "Next Inspection",
+    "nextInspectionTitle": "Next Inspection",
     "certificateValidity": "Certificate Validity",
     "approved": "Approved",
     "pending": "Pending",
     "rejected": "Rejected",
     "inDays": "In {{days}} days",
     "expired": "Expired",
-    "daysRemaining": "{{days}} days remaining",
+    "overdue": "Overdue",
+    "today": "Today",
+    "expiresToday": "Expires today",
+    "daysRemaining": "days remaining",
     "certificateExpired": "Expired",
     "noInspectionRegistered": "No inspection registered",
     "noInspectionMessage": "This equipment has no inspections yet.",
@@ -359,7 +363,10 @@
     "addDocumentsMessage": "Add certificates, invoices, manuals and other documents.",
     "uploadFirstDocument": "Upload First Document",
     "view": "View",
-    "download": "Download"
+    "download": "Download",
+    "documentsAndFiles": "Documents and Files",
+    "documentsDescription": "Certificates, manuals, invoices and other equipment files.",
+    "noDocuments": "No documents attached to this equipment."
   },
   "inspections": {
     "title": "Inspections",
@@ -425,7 +432,22 @@
     "photos": "Photos",
     "checklistOk": "OK",
     "checklistFail": "Fail",
-    "checklistAttention": "Attention"
+    "checklistAttention": "Attention",
+    "neverInspected": "Never inspected",
+    "inspectorSignature": "Inspector Signature"
+  },
+  "inspectionForm": {
+    "recommendationsPlaceholder": "Describe recommendations for this equipment..."
+  },
+  "equipmentWarning": {
+    "equipmentRejected": "Equipment Rejected",
+    "equipmentExpiredStatus": "Equipment Status Expired",
+    "markedAs": "This equipment is marked as",
+    "verifyPendingIssues": "Please verify pending issues before proceeding."
+  },
+  "categoriesPage": {
+    "equipmentCategories": "Equipment Categories",
+    "manageFrequencies": "Manage categories and inspection frequencies"
   },
   "maintenance": {
     "title": "Maintenance",

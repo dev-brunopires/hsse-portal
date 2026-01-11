@@ -323,13 +323,17 @@
     "validity": "Validade",
     "lastInspection": "Última Inspeção",
     "nextInspection": "Próxima Inspeção",
+    "nextInspectionTitle": "Próxima Inspeção",
     "certificateValidity": "Validade Certificado",
     "approved": "Aprovado",
     "pending": "Pendente",
     "rejected": "Reprovado",
     "inDays": "Em {{days}} dias",
     "expired": "Vencida",
-    "daysRemaining": "{{days}} dias restantes",
+    "overdue": "Atrasada",
+    "today": "Hoje",
+    "expiresToday": "Vence hoje",
+    "daysRemaining": "dias restantes",
     "certificateExpired": "Vencido",
     "noInspectionRegistered": "Nenhuma inspeção registrada",
     "noInspectionMessage": "Este equipamento ainda não possui inspeções.",
@@ -359,7 +363,10 @@
     "addDocumentsMessage": "Adicione certificados, notas fiscais, manuais e outros documentos.",
     "uploadFirstDocument": "Enviar Primeiro Documento",
     "view": "Ver",
-    "download": "Baixar"
+    "download": "Baixar",
+    "documentsAndFiles": "Documentos e Arquivos",
+    "documentsDescription": "Certificados, manuais, notas fiscais e outros arquivos do equipamento.",
+    "noDocuments": "Nenhum documento anexado a este equipamento."
   },
   "inspections": {
     "title": "Inspeções",
@@ -425,7 +432,22 @@
     "photos": "Fotos",
     "checklistOk": "OK",
     "checklistFail": "Falha",
-    "checklistAttention": "Atenção"
+    "checklistAttention": "Atenção",
+    "neverInspected": "Nunca inspecionado",
+    "inspectorSignature": "Assinatura do Inspetor"
+  },
+  "inspectionForm": {
+    "recommendationsPlaceholder": "Descreva as recomendações para este equipamento..."
+  },
+  "equipmentWarning": {
+    "equipmentRejected": "Equipamento Reprovado",
+    "equipmentExpiredStatus": "Equipamento com Status Vencido",
+    "markedAs": "Este equipamento está marcado como",
+    "verifyPendingIssues": "Verifique se há pendências antes de prosseguir."
+  },
+  "categoriesPage": {
+    "equipmentCategories": "Categorias de Equipamentos",
+    "manageFrequencies": "Gerencie categorias e frequências de inspeção"
   },
   "maintenance": {
     "title": "Manutenção",
