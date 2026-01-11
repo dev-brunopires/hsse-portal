@@ -65,6 +65,7 @@ import { EquipmentDetailDialog } from './EquipmentDetailDialog';
 import { ImportEquipmentDialog } from './ImportEquipmentDialog';
 import { QRCodeDialog } from './QRCodeDialog';
 import { AdvancedFiltersDialog, type AdvancedFilters } from './AdvancedFiltersDialog';
+import { ExportFiltersDialog } from './ExportFiltersDialog';
 import { exportToExcel, exportToPDF } from '@/utils/exportEquipment';
 import { useOrganizationBranding } from '@/hooks/useOrganizationBranding';
 import { cn } from '@/lib/utils';
@@ -126,6 +127,7 @@ export function EquipmentTable({
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [qrCodeDialogOpen, setQRCodeDialogOpen] = useState(false);
   const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
+  const [exportFiltersOpen, setExportFiltersOpen] = useState(false);
   const [selectedEquipment, setSelectedEquipment] = useState<EquipmentWithCategory | null>(null);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
 
@@ -303,6 +305,10 @@ export function EquipmentTable({
     await exportToPDF(dataToExport, 'equipamentos', branding, { preview });
   };
 
+  const handleFilteredExport = async (filteredEquipment: EquipmentWithCategory[], preview: boolean) => {
+    await exportToPDF(filteredEquipment, 'equipamentos', branding, { preview });
+  };
+
 
   return (
     <>
@@ -380,6 +386,11 @@ export function EquipmentTable({
                 <DropdownMenuItem onClick={handleExportExcel} className="gap-2 cursor-pointer">
                   <FileSpreadsheet className="h-4 w-4" />
                   {t('equipmentTable.exportExcel')}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setExportFiltersOpen(true)} className="gap-2 cursor-pointer">
+                  <Filter className="h-4 w-4" />
+                  {t('equipmentTable.exportWithFilters')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleExportPDF(true)} className="gap-2 cursor-pointer">
                   <Eye className="h-4 w-4" />
@@ -879,6 +890,14 @@ export function EquipmentTable({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Export Filters Dialog */}
+      <ExportFiltersDialog
+        open={exportFiltersOpen}
+        onOpenChange={setExportFiltersOpen}
+        equipment={equipment}
+        onExport={handleFilteredExport}
+      />
     </>
   );
 }
