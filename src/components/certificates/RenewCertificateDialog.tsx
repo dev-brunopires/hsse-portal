@@ -1,13 +1,11 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { RefreshCw, Upload, X, FileText, Calendar } from 'lucide-react';
-import { addMonths, addYears, format } from 'date-fns';
+import { addMonths, format } from 'date-fns';
 
 import {
   ResponsiveDialog,
-  ResponsiveDialogContent,
-  ResponsiveDialogHeader,
-  ResponsiveDialogTitle,
+  ResponsiveDialogBody,
   ResponsiveDialogFooter,
 } from '@/components/ui/responsive-dialog';
 import { Button } from '@/components/ui/button';
@@ -40,7 +38,7 @@ export function RenewCertificateDialog({
   const { t } = useTranslation();
   const renewCertificate = useRenewCertificate();
 
-  const [newExpiryDate, setNewExpiryDate] = useState<Date | undefined>();
+  const [newExpiryDate, setNewExpiryDate] = useState<string>('');
   const [notes, setNotes] = useState('');
   const [file, setFile] = useState<File | null>(null);
 
@@ -50,7 +48,8 @@ export function RenewCertificateDialog({
     const baseDate = certificate.expiry_date
       ? new Date(certificate.expiry_date)
       : new Date();
-    setNewExpiryDate(addMonths(baseDate, months));
+    const newDate = addMonths(baseDate, months);
+    setNewExpiryDate(format(newDate, 'yyyy-MM-dd'));
   };
 
   const handleSubmit = async () => {
@@ -58,13 +57,13 @@ export function RenewCertificateDialog({
 
     await renewCertificate.mutateAsync({
       certificateId: certificate.id,
-      newExpiryDate: newExpiryDate.toISOString().split('T')[0],
+      newExpiryDate,
       notes: notes || undefined,
       file: file || undefined,
     });
 
     onOpenChange(false);
-    setNewExpiryDate(undefined);
+    setNewExpiryDate('');
     setNotes('');
     setFile(null);
   };
@@ -77,129 +76,126 @@ export function RenewCertificateDialog({
   };
 
   return (
-    <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
-      <ResponsiveDialogContent className="max-w-md">
-        <ResponsiveDialogHeader>
-          <ResponsiveDialogTitle className="flex items-center gap-2">
-            <RefreshCw className="h-5 w-5 text-primary" />
-            {t('certificates.renewTitle')}
-          </ResponsiveDialogTitle>
-        </ResponsiveDialogHeader>
-
-        <div className="space-y-4">
-          {/* Current Info */}
-          <div className="p-4 bg-muted/50 rounded-lg space-y-2">
-            <h4 className="font-medium">{certificate.name}</h4>
-            <p className="text-sm text-muted-foreground">
-              {certificate.equipment?.name} ({certificate.equipment?.internal_code})
-            </p>
-            <div className="flex items-center gap-2 text-sm">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">{t('certificates.currentExpiry')}:</span>
-              <Badge variant={certificate.status === 'expired' ? 'destructive' : 'outline'}>
-                {certificate.expiry_date ? formatDate(certificate.expiry_date) : '-'}
-              </Badge>
-            </div>
-          </div>
-
-          {/* Quick Options */}
-          <div>
-            <Label>{t('certificates.quickOptions')}</Label>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {QUICK_OPTIONS.map((option) => (
-                <Button
-                  key={option.label}
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleQuickOption(option.months)}
-                >
-                  {option.label}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          {/* New Expiry Date */}
-          <div>
-            <Label>{t('certificates.newExpiryDate')} *</Label>
-            <div className="mt-2">
-              <DatePicker
-                date={newExpiryDate}
-                onDateChange={setNewExpiryDate}
-              />
-            </div>
-            {newExpiryDate && (
-              <p className="text-sm text-green-600 mt-1">
-                {t('certificates.newExpirySelected')}: {format(newExpiryDate, 'dd/MM/yyyy')}
-              </p>
-            )}
-          </div>
-
-          {/* Notes */}
-          <div>
-            <Label>{t('certificates.renewalNotes')}</Label>
-            <Textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder={t('certificates.renewalNotesPlaceholder')}
-              rows={3}
-              className="mt-2"
-            />
-          </div>
-
-          {/* New File Upload */}
-          <div>
-            <Label>{t('certificates.newCertificateFile')}</Label>
-            {file ? (
-              <div className="mt-2 flex items-center gap-2 p-3 border rounded-lg bg-muted/50">
-                <FileText className="h-5 w-5 text-blue-500" />
-                <span className="flex-1 truncate text-sm">{file.name}</span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setFile(null)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ) : (
-              <div className="mt-2">
-                <label className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
-                  <Upload className="h-5 w-5 text-muted-foreground mb-1" />
-                  <span className="text-sm text-muted-foreground">
-                    {t('certificates.uploadNewFile')}
-                  </span>
-                  <input
-                    type="file"
-                    className="hidden"
-                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                    onChange={handleFileChange}
-                  />
-                </label>
-              </div>
-            )}
+    <ResponsiveDialog 
+      open={open} 
+      onOpenChange={onOpenChange}
+      title={t('certificates.renewTitle')}
+      titleIcon={<RefreshCw className="h-5 w-5 text-primary" />}
+      className="max-w-md"
+    >
+      <ResponsiveDialogBody className="space-y-4">
+        {/* Current Info */}
+        <div className="p-4 bg-muted/50 rounded-lg space-y-2">
+          <h4 className="font-medium">{certificate.name}</h4>
+          <p className="text-sm text-muted-foreground">
+            {certificate.equipment?.name} ({certificate.equipment?.internal_code})
+          </p>
+          <div className="flex items-center gap-2 text-sm">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <span className="text-muted-foreground">{t('certificates.currentExpiry')}:</span>
+            <Badge variant={certificate.status === 'expired' ? 'destructive' : 'outline'}>
+              {certificate.expiry_date ? formatDate(certificate.expiry_date) : '-'}
+            </Badge>
           </div>
         </div>
 
-        <ResponsiveDialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {t('common.cancel')}
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={!newExpiryDate || renewCertificate.isPending}
-          >
-            {renewCertificate.isPending ? (
-              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4 mr-2" />
-            )}
-            {t('certificates.confirmRenewal')}
-          </Button>
-        </ResponsiveDialogFooter>
-      </ResponsiveDialogContent>
+        {/* Quick Options */}
+        <div>
+          <Label>{t('certificates.quickOptions')}</Label>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {QUICK_OPTIONS.map((option) => (
+              <Button
+                key={option.label}
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handleQuickOption(option.months)}
+              >
+                {option.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* New Expiry Date */}
+        <div>
+          <Label>{t('certificates.newExpiryDate')} *</Label>
+          <div className="mt-2">
+            <DatePicker
+              value={newExpiryDate}
+              onChange={setNewExpiryDate}
+            />
+          </div>
+          {newExpiryDate && (
+            <p className="text-sm text-green-600 mt-1">
+              {t('certificates.newExpirySelected')}: {formatDate(newExpiryDate)}
+            </p>
+          )}
+        </div>
+
+        {/* Notes */}
+        <div>
+          <Label>{t('certificates.renewalNotes')}</Label>
+          <Textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder={t('certificates.renewalNotesPlaceholder')}
+            rows={3}
+            className="mt-2"
+          />
+        </div>
+
+        {/* New File Upload */}
+        <div>
+          <Label>{t('certificates.newCertificateFile')}</Label>
+          {file ? (
+            <div className="mt-2 flex items-center gap-2 p-3 border rounded-lg bg-muted/50">
+              <FileText className="h-5 w-5 text-blue-500" />
+              <span className="flex-1 truncate text-sm">{file.name}</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setFile(null)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <div className="mt-2">
+              <label className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                <Upload className="h-5 w-5 text-muted-foreground mb-1" />
+                <span className="text-sm text-muted-foreground">
+                  {t('certificates.uploadNewFile')}
+                </span>
+                <input
+                  type="file"
+                  className="hidden"
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                  onChange={handleFileChange}
+                />
+              </label>
+            </div>
+          )}
+        </div>
+      </ResponsiveDialogBody>
+
+      <ResponsiveDialogFooter>
+        <Button variant="outline" onClick={() => onOpenChange(false)}>
+          {t('common.cancel')}
+        </Button>
+        <Button
+          onClick={handleSubmit}
+          disabled={!newExpiryDate || renewCertificate.isPending}
+        >
+          {renewCertificate.isPending ? (
+            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <RefreshCw className="h-4 w-4 mr-2" />
+          )}
+          {t('certificates.confirmRenewal')}
+        </Button>
+      </ResponsiveDialogFooter>
     </ResponsiveDialog>
   );
 }
