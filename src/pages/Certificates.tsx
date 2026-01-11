@@ -415,7 +415,7 @@ export default function Certificates() {
                       <TableHead>{t('certificates.equipment')}</TableHead>
                       <TableHead>{t('certificates.issuer')}</TableHead>
                       <TableHead>{t('certificates.expiryDate')}</TableHead>
-                      <TableHead>{t('certificates.status')}</TableHead>
+                      <TableHead>{t('common.status')}</TableHead>
                       <TableHead className="text-right">{t('common.actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
