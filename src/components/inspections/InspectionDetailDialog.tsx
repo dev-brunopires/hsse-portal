@@ -47,6 +47,7 @@ import {
   ClipboardList,
   PenTool,
 } from 'lucide-react';
+import { PhotoGallery } from '@/components/ui/photo-gallery';
 import { cn } from '@/lib/utils';
 import { formatDate, formatDateLong } from '@/utils/dateFormat';
 import type { InspectionWithDetails, InspectionChecklistItem, InspectionPhoto } from '@/hooks/useInspections';
@@ -457,20 +458,16 @@ export function InspectionDetailDialog({
               ))}
             </div>
           ) : photos.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {photos.map((photo) => (
-                <div key={photo.id} className="relative group">
-                  {photoUrls[photo.id] ? (
-                    <img src={photoUrls[photo.id]} alt={photo.file_name} className="w-full h-32 object-cover rounded-lg border border-border" />
-                  ) : (
-                    <div className="w-full h-32 bg-muted rounded-lg flex items-center justify-center">
-                      <ImageIcon className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                  )}
-                  <p className="text-xs text-muted-foreground mt-1 truncate">{photo.file_name}</p>
-                </div>
-              ))}
-            </div>
+            <PhotoGallery
+              photos={photos.map(photo => ({
+                id: photo.id,
+                file_name: photo.file_name,
+                url: photoUrls[photo.id],
+              }))}
+              title={t('inspectionForm.photos')}
+              gridCols={3}
+              thumbnailHeight="h-32"
+            />
           ) : (
             <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
               <ImageIcon className="h-12 w-12 mb-2" />

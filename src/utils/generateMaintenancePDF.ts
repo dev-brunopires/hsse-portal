@@ -196,7 +196,7 @@ export async function generateMaintenancePDF(data: MaintenanceDetailData, option
     yPos = 20;
   }
 
-  // Photos section
+  // Photos section - LARGER photos for better visibility
   if (data.photos && data.photos.length > 0) {
     yPos += 5;
     yPos = addSectionHeader(doc, yPos, t('generateMaintenancePDF.photos'));
@@ -207,15 +207,16 @@ export async function generateMaintenancePDF(data: MaintenanceDetailData, option
     doc.text(t('generateMaintenancePDF.photosAttached', { count: data.photos.length }), 14, yPos);
     yPos += 8;
 
-    const photoWidth = 55;
-    const photoHeight = 40;
-    const photosPerRow = 3;
+    // Larger photo dimensions for better visibility
+    const photoWidth = 85;
+    const photoHeight = 65;
+    const photosPerRow = 2;
     let photoX = 14;
     let photoCount = 0;
 
     for (const photo of data.photos) {
       // Check if we need a new page
-      if (yPos > 240) {
+      if (yPos > 210) {
         doc.addPage();
         yPos = 20;
         photoX = 14;
@@ -232,7 +233,7 @@ export async function generateMaintenancePDF(data: MaintenanceDetailData, option
           doc.rect(photoX, yPos, photoWidth, photoHeight, 'FD');
           doc.setFontSize(8);
           doc.setTextColor(...MEDIUM_GRAY);
-          doc.text(t('generateMaintenancePDF.imageNotAvailable'), photoX + 5, yPos + 22);
+          doc.text(t('generateMaintenancePDF.imageNotAvailable'), photoX + 20, yPos + 32);
         }
       } catch {
         doc.setDrawColor(...MEDIUM_GRAY);
@@ -240,21 +241,21 @@ export async function generateMaintenancePDF(data: MaintenanceDetailData, option
         doc.rect(photoX, yPos, photoWidth, photoHeight, 'FD');
         doc.setFontSize(8);
         doc.setTextColor(...MEDIUM_GRAY);
-        doc.text(t('generateMaintenancePDF.imageNotAvailable'), photoX + 5, yPos + 22);
+        doc.text(t('generateMaintenancePDF.imageNotAvailable'), photoX + 20, yPos + 32);
       }
 
       photoCount++;
       if (photoCount % photosPerRow === 0) {
         photoX = 14;
-        yPos += photoHeight + 5;
+        yPos += photoHeight + 8;
       } else {
-        photoX += photoWidth + 5;
+        photoX += photoWidth + 8;
       }
     }
 
     // Move to next row if photos don't fill the row
     if (photoCount % photosPerRow !== 0) {
-      yPos += photoHeight + 5;
+      yPos += photoHeight + 8;
     }
   }
 
