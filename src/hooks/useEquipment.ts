@@ -50,10 +50,11 @@ const getCachedEquipment = (): EquipmentWithCategory[] | null => {
 };
 
 export function useEquipment() {
-  const { selectedShipId, isFilterEnabled } = useShipFilter();
+  const { selectedShipId, isFilterEnabled, isReady } = useShipFilter();
   
   const query = useQuery({
     queryKey: ['equipment', selectedShipId ?? 'all'],
+    enabled: isReady, // Wait for ship filter to be initialized
     queryFn: async () => {
       let queryBuilder = supabase
         .from('equipment')

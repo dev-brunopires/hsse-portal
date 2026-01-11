@@ -33,10 +33,11 @@ export interface InspectionWithDetails extends Inspection {
 }
 
 export function useInspections() {
-  const { selectedShipId, isFilterEnabled } = useShipFilter();
+  const { selectedShipId, isFilterEnabled, isReady } = useShipFilter();
   
   return useQuery({
     queryKey: ['inspections', selectedShipId],
+    enabled: isReady, // Wait for ship filter to be initialized
     queryFn: async () => {
       let query = supabase
         .from('inspections')
