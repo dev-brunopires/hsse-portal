@@ -52,7 +52,7 @@ export function useEquipment() {
   const { selectedShipId, isFilterEnabled } = useShipFilter();
   
   const query = useQuery({
-    queryKey: ['equipment', selectedShipId],
+    queryKey: ['equipment', selectedShipId ?? 'all'],
     queryFn: async () => {
       let queryBuilder = supabase
         .from('equipment')
