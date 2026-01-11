@@ -53,7 +53,7 @@ import {
   Package,
 } from 'lucide-react';
 import { SignaturePad } from '@/components/inspections/SignaturePad';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsTabletOrMobile } from '@/hooks/use-mobile';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -135,7 +135,7 @@ export function OfflineInspectionDialog({
 }: OfflineInspectionDialogProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const isMobile = useIsMobile();
+  const isTabletOrMobile = useIsTabletOrMobile();
   const { addPendingInspection } = useOfflineSync();
   
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
@@ -513,7 +513,8 @@ export function OfflineInspectionDialog({
     </Form>
   );
 
-  if (isMobile) {
+  // Use drawer for both mobile and tablet for better touch experience
+  if (isTabletOrMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className="max-h-[90vh] flex flex-col">

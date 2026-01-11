@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTranslation } from 'react-i18next';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile, useIsTabletOrMobile } from '@/hooks/use-mobile';
 import {
   Dialog,
   DialogContent,
@@ -123,6 +123,7 @@ export function InspectionFormDialog({
   const { toast } = useToast();
   const { user } = useAuth();
   const isMobile = useIsMobile();
+  const isTabletOrMobile = useIsTabletOrMobile();
   
   const { data: inspectors = [], isLoading: inspectorsLoading } = useTechniciansAndAdmins();
   const { data: userSignatureSettings } = useUserSignature();
@@ -877,7 +878,8 @@ export function InspectionFormDialog({
     </Form>
   );
 
-  if (isMobile) {
+  // Use drawer for both mobile and tablet for better touch experience
+  if (isTabletOrMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className="max-h-[95vh] flex flex-col">

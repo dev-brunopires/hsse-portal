@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile, useIsTabletOrMobile } from '@/hooks/use-mobile';
 import {
   Dialog,
   DialogContent,
@@ -71,6 +71,7 @@ export function InspectionDetailDialog({
 }: InspectionDetailDialogProps) {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
+  const isTabletOrMobile = useIsTabletOrMobile();
   const [checklistItems, setChecklistItems] = useState<InspectionChecklistItem[]>([]);
   const [photos, setPhotos] = useState<InspectionPhoto[]>([]);
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
@@ -512,7 +513,8 @@ export function InspectionDetailDialog({
     </Tabs>
   );
 
-  if (isMobile) {
+  // Use drawer for both mobile and tablet for better touch experience
+  if (isTabletOrMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className="max-h-[90vh] flex flex-col">
