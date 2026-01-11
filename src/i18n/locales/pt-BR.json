@@ -189,18 +189,28 @@
     "renewSuccess": "Certificado renovado com sucesso",
     "noCertificates": "Nenhum certificado encontrado",
     "noCertificatesDesc": "Adicione certificados para gerenciar a documentação dos equipamentos",
+    "searchPlaceholder": "Buscar por nome, equipamento, número...",
+    "filterType": "Filtrar por tipo",
+    "filterStatus": "Filtrar por status",
+    "tabs": {
+      "all": "Todos",
+      "expiring": "Vencendo",
+      "expired": "Vencidos"
+    },
     "stats": {
       "total": "Total",
       "valid": "Válidos",
-      "expiringSoon": "Vencendo em Breve",
+      "expiring30": "Vencendo em 30 dias",
       "expired": "Vencidos"
     },
     "status": {
+      "all": "Todos os Status",
       "valid": "Válido",
       "expiringSoon": "Vencendo em Breve",
       "expired": "Vencido"
     },
     "types": {
+      "all": "Todos os Tipos",
       "certificate": "Certificado",
       "document": "Documento",
       "license": "Licença",

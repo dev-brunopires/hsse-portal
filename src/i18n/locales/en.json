@@ -189,18 +189,28 @@
     "renewSuccess": "Certificate renewed successfully",
     "noCertificates": "No certificates found",
     "noCertificatesDesc": "Add certificates to manage equipment documentation",
+    "searchPlaceholder": "Search by name, equipment, number...",
+    "filterType": "Filter by type",
+    "filterStatus": "Filter by status",
+    "tabs": {
+      "all": "All",
+      "expiring": "Expiring",
+      "expired": "Expired"
+    },
     "stats": {
       "total": "Total",
       "valid": "Valid",
-      "expiringSoon": "Expiring Soon",
+      "expiring30": "Expiring in 30 days",
       "expired": "Expired"
     },
     "status": {
+      "all": "All Status",
       "valid": "Valid",
       "expiringSoon": "Expiring Soon",
       "expired": "Expired"
     },
     "types": {
+      "all": "All Types",
       "certificate": "Certificate",
       "document": "Document",
       "license": "License",
