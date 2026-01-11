@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -37,6 +37,9 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { 
   ClipboardCheck, 
   Loader2,
@@ -50,9 +53,14 @@ import {
   AlertTriangle,
   XCircle,
   Calendar,
+  Camera,
+  Trash2,
+  Upload,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUpdateInspection, type InspectionWithDetails, type InspectionChecklistItem, type InspectionPhoto } from '@/hooks/useInspections';
+import { useUpdateChecklistItems, useAddInspectionPhoto, useDeleteInspectionPhoto } from '@/hooks/useInspectionEdit';
 import { supabase } from '@/integrations/supabase/client';
 
 type EditInspectionFormData = {
@@ -63,6 +71,10 @@ type EditInspectionFormData = {
   recommendations?: string;
   actions_taken?: string;
 };
+
+interface EditableChecklistItem extends InspectionChecklistItem {
+  isModified?: boolean;
+}
 
 interface EditInspectionDialogProps {
   open: boolean;
@@ -80,11 +92,18 @@ export function EditInspectionDialog({
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   const updateInspection = useUpdateInspection();
+  const updateChecklistItems = useUpdateChecklistItems();
+  const addPhoto = useAddInspectionPhoto();
+  const deletePhoto = useDeleteInspectionPhoto();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const [checklistItems, setChecklistItems] = useState<InspectionChecklistItem[]>([]);
+  const [checklistItems, setChecklistItems] = useState<EditableChecklistItem[]>([]);
   const [photos, setPhotos] = useState<InspectionPhoto[]>([]);
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [pendingPhotos, setPendingPhotos] = useState<File[]>([]);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [isDeletingPhoto, setIsDeletingPhoto] = useState<string | null>(null);
 
   const editInspectionSchema = z.object({
     status: z.enum(['compliant', 'attention', 'non-compliant']),
@@ -101,11 +120,11 @@ export function EditInspectionDialog({
     { value: 'non-compliant', label: t('editInspection.statusNonCompliant'), icon: XCircle, color: 'text-status-danger' },
   ];
 
-  const checklistStatusLabels: Record<string, { label: string; color: string }> = {
-    ok: { label: t('inspections.checklistOk'), color: 'text-status-success bg-status-success/10' },
-    fail: { label: t('inspections.checklistFail'), color: 'text-status-danger bg-status-danger/10' },
-    attention: { label: t('inspections.checklistAttention'), color: 'text-status-warning bg-status-warning/10' },
-  };
+  const checklistStatusOptions = [
+    { value: 'ok', label: t('inspections.checklistOk'), icon: CheckCircle2, color: 'text-status-success' },
+    { value: 'attention', label: t('inspections.checklistAttention'), icon: AlertTriangle, color: 'text-status-warning' },
+    { value: 'fail', label: t('inspections.checklistFail'), icon: XCircle, color: 'text-status-danger' },
+  ];
 
   const form = useForm<EditInspectionFormData>({
     resolver: zodResolver(editInspectionSchema),
@@ -144,7 +163,7 @@ export function EditInspectionDialog({
         .eq('inspection_id', inspection.id)
         .order('created_at', { ascending: true });
       
-      setChecklistItems(items || []);
+      setChecklistItems((items || []).map(item => ({ ...item, isModified: false })));
 
       const { data: photoData } = await supabase
         .from('inspection_photos')
@@ -170,10 +189,66 @@ export function EditInspectionDialog({
     }
   };
 
+  const updateChecklistItem = (itemId: string, field: 'status' | 'notes', value: string) => {
+    setChecklistItems(prev => 
+      prev.map(item => 
+        item.id === itemId 
+          ? { ...item, [field]: value, isModified: true } 
+          : item
+      )
+    );
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || !inspection?.id) return;
+
+    setIsUploadingPhoto(true);
+    try {
+      for (const file of Array.from(files)) {
+        const result = await addPhoto.mutateAsync({
+          inspectionId: inspection.id,
+          file,
+        });
+        
+        if (result) {
+          setPhotos(prev => [...prev, result]);
+          if (result.signedUrl) {
+            setPhotoUrls(prev => ({ ...prev, [result.id]: result.signedUrl }));
+          }
+        }
+      }
+    } finally {
+      setIsUploadingPhoto(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleDeletePhoto = async (photo: InspectionPhoto) => {
+    setIsDeletingPhoto(photo.id);
+    try {
+      await deletePhoto.mutateAsync({
+        id: photo.id,
+        filePath: photo.file_path,
+      });
+      setPhotos(prev => prev.filter(p => p.id !== photo.id));
+      setPhotoUrls(prev => {
+        const newUrls = { ...prev };
+        delete newUrls[photo.id];
+        return newUrls;
+      });
+    } finally {
+      setIsDeletingPhoto(null);
+    }
+  };
+
   const onSubmit = async (data: EditInspectionFormData) => {
     if (!inspection) return;
     
     try {
+      // Update inspection data
       await updateInspection.mutateAsync({
         id: inspection.id,
         inspection: {
@@ -185,6 +260,18 @@ export function EditInspectionDialog({
           actions_taken: data.actions_taken || null,
         },
       });
+
+      // Update modified checklist items
+      const modifiedItems = checklistItems.filter(item => item.isModified);
+      if (modifiedItems.length > 0) {
+        await updateChecklistItems.mutateAsync(
+          modifiedItems.map(item => ({
+            id: item.id,
+            status: item.status,
+            notes: item.notes,
+          }))
+        );
+      }
       
       onOpenChange(false);
       onSuccess?.();
@@ -194,6 +281,22 @@ export function EditInspectionDialog({
   };
 
   if (!inspection) return null;
+
+  const getStatusCounts = () => {
+    const counts = { ok: 0, attention: 0, fail: 0 };
+    checklistItems.forEach(item => {
+      if (item.status === 'ok') counts.ok++;
+      else if (item.status === 'attention') counts.attention++;
+      else if (item.status === 'fail') counts.fail++;
+    });
+    return counts;
+  };
+
+  const statusCounts = getStatusCounts();
+  const completedCount = checklistItems.filter(i => i.status !== 'pending').length;
+  const progressPercentage = checklistItems.length > 0 
+    ? Math.round((completedCount / checklistItems.length) * 100) 
+    : 0;
 
   const headerContent = (
     <div className="flex items-center gap-3">
@@ -333,35 +436,113 @@ export function EditInspectionDialog({
             </div>
           </TabsContent>
 
-          {/* Tab: Checklist (read-only) */}
+          {/* Tab: Checklist (editable) */}
           <TabsContent value="checklist" className="flex-1 overflow-y-auto mt-4 min-h-0">
             <div className="space-y-4 pb-4 px-1">
-              <p className="text-sm text-muted-foreground mb-4">{t('editInspection.checklistReadOnly')}</p>
+              {/* Progress bar */}
+              {checklistItems.length > 0 && (
+                <div className="space-y-2 p-3 bg-muted/30 rounded-lg border border-border">
+                  <div className="flex justify-between text-sm">
+                    <span className="font-medium">{t('editInspection.checklistProgress')}</span>
+                    <span className="text-muted-foreground">
+                      {completedCount}/{checklistItems.length} ({progressPercentage}%)
+                    </span>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-primary transition-all duration-300"
+                      style={{ width: `${progressPercentage}%` }}
+                    />
+                  </div>
+                  <div className="flex gap-4 text-xs">
+                    <span className="flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3 text-status-success" /> {statusCounts.ok} OK
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3 text-status-warning" /> {statusCounts.attention} {t('inspections.checklistAttention')}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <XCircle className="h-3 w-3 text-status-danger" /> {statusCounts.fail} {t('inspections.checklistFail')}
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {loading ? (
                 <div className="space-y-2">
                   {[1, 2, 3].map(i => (
-                    <Skeleton key={i} className="h-16 w-full" />
+                    <Skeleton key={i} className="h-24 w-full" />
                   ))}
                 </div>
               ) : checklistItems.length > 0 ? (
-                <div className="space-y-2">
-                  {checklistItems.map((item) => {
-                    const statusConf = checklistStatusLabels[item.status] || checklistStatusLabels.attention;
-                    return (
-                      <div key={item.id} className="flex items-start gap-3 p-3 rounded-lg border border-border bg-muted/30">
-                        <span className={cn('text-xs font-medium px-2 py-1 rounded shrink-0', statusConf.color)}>
-                          {statusConf.label}
+                <div className="space-y-3">
+                  {checklistItems.map((item, index) => (
+                    <div 
+                      key={item.id} 
+                      className={cn(
+                        "p-4 rounded-lg border transition-all",
+                        item.isModified 
+                          ? "border-primary/50 bg-primary/5" 
+                          : "border-border bg-muted/30"
+                      )}
+                    >
+                      <div className="flex items-start gap-3 mb-3">
+                        <span className="text-sm font-medium text-muted-foreground shrink-0">
+                          #{index + 1}
                         </span>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium">{item.description}</p>
-                          {item.notes && <p className="text-sm text-muted-foreground mt-1">{item.notes}</p>}
-                        </div>
+                        <p className="font-medium flex-1">{item.description}</p>
                       </div>
-                    );
-                  })}
+                      
+                      {/* Status selection */}
+                      <div className="mb-3">
+                        <RadioGroup
+                          value={item.status}
+                          onValueChange={(value) => updateChecklistItem(item.id, 'status', value)}
+                          className="flex flex-wrap gap-2"
+                        >
+                          {checklistStatusOptions.map((option) => {
+                            const Icon = option.icon;
+                            return (
+                              <div key={option.value} className="flex items-center">
+                                <RadioGroupItem
+                                  value={option.value}
+                                  id={`${item.id}-${option.value}`}
+                                  className="peer sr-only"
+                                />
+                                <Label
+                                  htmlFor={`${item.id}-${option.value}`}
+                                  className={cn(
+                                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full border cursor-pointer transition-all text-sm",
+                                    item.status === option.value
+                                      ? option.value === 'ok' 
+                                        ? "bg-status-success/20 border-status-success text-status-success"
+                                        : option.value === 'attention'
+                                          ? "bg-status-warning/20 border-status-warning text-status-warning"
+                                          : "bg-status-danger/20 border-status-danger text-status-danger"
+                                      : "border-border hover:bg-muted"
+                                  )}
+                                >
+                                  <Icon className="h-3.5 w-3.5" />
+                                  {option.label}
+                                </Label>
+                              </div>
+                            );
+                          })}
+                        </RadioGroup>
+                      </div>
+                      
+                      {/* Notes input */}
+                      <Input
+                        placeholder={t('editInspection.itemNotes')}
+                        value={item.notes || ''}
+                        onChange={(e) => updateChecklistItem(item.id, 'notes', e.target.value)}
+                        className="text-sm"
+                      />
+                    </div>
+                  ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground">{t('inspections.noChecklistItems')}</p>
+                <p className="text-muted-foreground text-center py-8">{t('inspections.noChecklistItems')}</p>
               )}
             </div>
           </TabsContent>
@@ -381,7 +562,7 @@ export function EditInspectionDialog({
                     <FormControl>
                       <Textarea
                         placeholder={t('editInspection.actionsTakenPlaceholder')}
-                        className="min-h-[80px] resize-none"
+                        className="min-h-[100px] resize-none"
                         {...field}
                       />
                     </FormControl>
@@ -402,7 +583,7 @@ export function EditInspectionDialog({
                     <FormControl>
                       <Textarea
                         placeholder={t('editInspection.observationsPlaceholder')}
-                        className="min-h-[80px] resize-none"
+                        className="min-h-[100px] resize-none"
                         {...field}
                       />
                     </FormControl>
@@ -423,7 +604,7 @@ export function EditInspectionDialog({
                     <FormControl>
                       <Textarea
                         placeholder={t('editInspection.recommendationsPlaceholder')}
-                        className="min-h-[80px] resize-none"
+                        className="min-h-[100px] resize-none"
                         {...field}
                       />
                     </FormControl>
@@ -434,9 +615,53 @@ export function EditInspectionDialog({
             </div>
           </TabsContent>
 
-          {/* Tab: Photos (read-only) */}
+          {/* Tab: Photos (editable) */}
           <TabsContent value="photos" className="flex-1 overflow-y-auto mt-4 min-h-0">
             <div className="space-y-4 pb-4 px-1">
+              {/* Upload button */}
+              <div className="flex items-center gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handlePhotoUpload}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingPhoto}
+                  className="gap-2"
+                >
+                  {isUploadingPhoto ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Upload className="h-4 w-4" />
+                  )}
+                  {t('editInspection.addPhotos')}
+                </Button>
+                {isMobile && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      if (fileInputRef.current) {
+                        fileInputRef.current.setAttribute('capture', 'environment');
+                        fileInputRef.current.click();
+                        fileInputRef.current.removeAttribute('capture');
+                      }
+                    }}
+                    disabled={isUploadingPhoto}
+                    className="gap-2"
+                  >
+                    <Camera className="h-4 w-4" />
+                    {t('editInspection.takePhoto')}
+                  </Button>
+                )}
+              </div>
+
               {loading ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {[1, 2, 3].map(i => (
@@ -448,13 +673,31 @@ export function EditInspectionDialog({
                   {photos.map((photo) => (
                     <div key={photo.id} className="relative group">
                       {photoUrls[photo.id] ? (
-                        <img src={photoUrls[photo.id]} alt={photo.file_name} className="w-full h-32 object-cover rounded-lg border border-border" />
+                        <img 
+                          src={photoUrls[photo.id]} 
+                          alt={photo.file_name} 
+                          className="w-full h-32 object-cover rounded-lg border border-border" 
+                        />
                       ) : (
                         <div className="w-full h-32 bg-muted rounded-lg flex items-center justify-center">
                           <ImageIcon className="h-8 w-8 text-muted-foreground" />
                         </div>
                       )}
                       <p className="text-xs text-muted-foreground mt-1 truncate">{photo.file_name}</p>
+                      
+                      {/* Delete button overlay */}
+                      <button
+                        type="button"
+                        onClick={() => handleDeletePhoto(photo)}
+                        disabled={isDeletingPhoto === photo.id}
+                        className="absolute top-2 right-2 p-1.5 bg-destructive/90 text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive disabled:opacity-50"
+                      >
+                        {isDeletingPhoto === photo.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <X className="h-3.5 w-3.5" />
+                        )}
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -504,10 +747,10 @@ export function EditInspectionDialog({
           </Button>
           <Button
             type="submit"
-            disabled={updateInspection.isPending}
+            disabled={updateInspection.isPending || updateChecklistItems.isPending}
             className="gap-2"
           >
-            {updateInspection.isPending ? (
+            {(updateInspection.isPending || updateChecklistItems.isPending) ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <Save className="h-4 w-4" />
