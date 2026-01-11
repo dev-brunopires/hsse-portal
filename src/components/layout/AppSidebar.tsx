@@ -6,13 +6,11 @@ import {
   Package,
   ClipboardCheck,
   FileText,
-  Settings,
   Users,
   Bell,
   FolderOpen,
   ChevronLeft,
   ChevronRight,
-  User,
   AlertCircle,
   History,
   Wrench,
@@ -118,22 +116,18 @@ export function AppSidebar() {
         <NavItem to="/categories" icon={<FolderOpen size={20} />} label={t('navigation.categories')} collapsed={collapsed} />
       </nav>
 
-      {/* Bottom Section */}
-      <div className="border-t border-sidebar-border p-3 space-y-1">
-        <div data-tour="profile">
-          <NavItem to="/profile" icon={<User size={20} />} label={t('navigation.profile')} collapsed={collapsed} />
+      {/* Bottom Section - Admin only items */}
+      {isAdmin && (
+        <div className="border-t border-sidebar-border p-3 space-y-1">
+          <NavItem to="/users" icon={<Users size={20} />} label={t('navigation.users')} collapsed={collapsed} />
+          <NavItem to="/audit-log" icon={<History size={20} />} label={t('navigation.auditLog')} collapsed={collapsed} />
         </div>
-        {isAdmin && (
-          <>
-            <NavItem to="/users" icon={<Users size={20} />} label={t('navigation.users')} collapsed={collapsed} />
-            <NavItem to="/audit-log" icon={<History size={20} />} label={t('navigation.auditLog')} collapsed={collapsed} />
-            <NavItem to="/settings" icon={<Settings size={20} />} label={t('navigation.settings')} collapsed={collapsed} />
-          </>
-        )}
-        {isPlatformOwner && (
+      )}
+      {isPlatformOwner && (
+        <div className={!isAdmin ? "border-t border-sidebar-border p-3 space-y-1" : "px-3 pb-3"}>
           <NavItem to="/platform-admin" icon={<Building2 size={20} />} label={t('navigation.platformAdmin')} collapsed={collapsed} />
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Collapse Button */}
       <div className="border-t border-sidebar-border p-2">

@@ -254,7 +254,28 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
       </div>
 
       {/* Right Actions */}
-      <div className="flex items-center gap-2 lg:gap-4">
+      <div className="flex items-center gap-1 sm:gap-2 lg:gap-4">
+        {/* Mobile Quick Actions - Profile & Settings */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate('/profile')}
+          className="lg:hidden text-muted-foreground hover:text-foreground"
+          title={t('navigation.profile')}
+        >
+          <UserCircle className="h-5 w-5" />
+        </Button>
+        
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate('/settings')}
+          className="lg:hidden text-muted-foreground hover:text-foreground"
+          title={t('navigation.settings')}
+        >
+          <Settings className="h-5 w-5" />
+        </Button>
+
         {/* Ship Indicator - hidden on mobile */}
         {userShips.length > 0 && (
           <div className="hidden xl:flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-lg border border-primary/20">
