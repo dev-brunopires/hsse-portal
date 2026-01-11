@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { User, ClipboardList, Package, QrCode, Bell } from 'lucide-react';
+import { FileText, ClipboardList, Package, QrCode, Bell } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { QRCodeScannerDialog } from '@/components/equipment/QRCodeScannerDialog';
 import { hapticButton, hapticSuccess } from '@/utils/hapticFeedback';
@@ -13,7 +13,7 @@ interface NavItem {
 }
 
 const leftNavItems: NavItem[] = [
-  { icon: User, labelKey: 'common.profile', path: '/profile' },
+  { icon: FileText, labelKey: 'navigation.reports', path: '/reports' },
   { icon: ClipboardList, labelKey: 'navigation.inspections', path: '/inspections' },
 ];
 

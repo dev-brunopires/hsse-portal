@@ -298,17 +298,6 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
           {resolvedTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
         </Button>
 
-        {/* Mobile Quick Actions - Settings */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate('/settings')}
-          className="lg:hidden text-muted-foreground hover:text-foreground"
-          title={t('navigation.settings')}
-        >
-          <Settings className="h-5 w-5" />
-        </Button>
-
         {/* Ship Indicator - hidden on mobile */}
         {userShips.length > 0 && (
           <div className="hidden xl:flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-lg border border-primary/20">
