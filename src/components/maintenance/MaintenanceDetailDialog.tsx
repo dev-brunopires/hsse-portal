@@ -40,6 +40,7 @@ import {
   MapPin,
   Pencil,
 } from 'lucide-react';
+import { PhotoGallery } from '@/components/ui/photo-gallery';
 import { cn } from '@/lib/utils';
 import { formatDate } from '@/utils/dateFormat';
 import { 
@@ -326,28 +327,17 @@ export function MaintenanceDetailDialog({ open, onOpenChange, requestId }: Maint
                 {request.photos && request.photos.length > 0 && (
                   <>
                     <Separator />
-                    <div className="space-y-3">
-                      <h3 className="font-semibold flex items-center gap-2">
-                        <ImageIcon className="h-4 w-4 text-primary" />
-                        {t('maintenance.photos')} ({request.photos.length})
-                      </h3>
-                      <div className="pl-6 grid grid-cols-3 gap-3">
-                        {request.photos.map(photo => (
-                          <div key={photo.id} className="relative group">
-                            {photoUrls[photo.id] ? (
-                              <img
-                                src={photoUrls[photo.id]}
-                                alt={photo.file_name}
-                                className="w-full h-24 object-cover rounded-lg border"
-                              />
-                            ) : (
-                              <div className="w-full h-24 bg-muted rounded-lg flex items-center justify-center">
-                                <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
+                    <div className="pl-6">
+                      <PhotoGallery
+                        photos={request.photos.map(photo => ({
+                          id: photo.id,
+                          file_name: photo.file_name,
+                          url: photoUrls[photo.id],
+                        }))}
+                        title={t('maintenance.photos')}
+                        gridCols={3}
+                        thumbnailHeight="h-28"
+                      />
                     </div>
                   </>
                 )}
