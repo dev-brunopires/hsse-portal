@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTranslation } from 'react-i18next';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile, useIsTabletOrMobile } from '@/hooks/use-mobile';
 import {
   Dialog,
   DialogContent,
@@ -92,6 +92,7 @@ export function EditInspectionDialog({
 }: EditInspectionDialogProps) {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
+  const isTabletOrMobile = useIsTabletOrMobile();
   const updateInspection = useUpdateInspection();
   const updateChecklistItems = useUpdateChecklistItems();
   const addPhoto = useAddInspectionPhoto();
@@ -825,7 +826,8 @@ export function EditInspectionDialog({
     </Form>
   );
 
-  if (isMobile) {
+  // Use drawer for both mobile and tablet for better touch experience
+  if (isTabletOrMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className="max-h-[90vh] flex flex-col">

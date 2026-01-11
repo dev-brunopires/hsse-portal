@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsTabletOrMobile } from '@/hooks/use-mobile';
 import {
   Dialog,
   DialogContent,
@@ -37,9 +37,10 @@ export function ResponsiveDialog({
   className,
   drawerClassName,
 }: ResponsiveDialogProps) {
-  const isMobile = useIsMobile();
+  // Use tablet breakpoint for drawer pattern on both mobile and tablet
+  const isTabletOrMobile = useIsTabletOrMobile();
 
-  if (isMobile) {
+  if (isTabletOrMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className={cn('max-h-[90vh]', drawerClassName)}>
