@@ -420,121 +420,124 @@ export function EquipmentTable({
         </div>
 
         {/* Mobile Card View with Pull to Refresh */}
-        <div 
-          ref={isMobile ? containerRef : undefined}
-          className="md:hidden space-y-3 p-3 overflow-auto"
-        >
-          <PullToRefreshIndicator 
-            pullDistance={pullDistance} 
-            isRefreshing={isRefreshing} 
-          />
-          {filteredAndSortedEquipment.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              {t('equipmentTable.noEquipmentFound')}
-            </div>
-          ) : (
-            filteredAndSortedEquipment.map((item) => (
-              <div 
-                key={item.id}
-                className={cn(
-                  'bg-card border rounded-lg p-4 transition-colors',
-                  selectedRows.includes(item.id) && 'border-primary bg-primary/5'
-                )}
-              >
-                <div className="flex items-start gap-3">
-                  <Checkbox
-                    checked={selectedRows.includes(item.id)}
-                    onCheckedChange={() => toggleRow(item.id)}
-                    className="mt-1"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="font-mono text-sm font-medium text-primary truncate">
-                          {item.internal_code}
-                        </p>
-                        <p className="font-medium truncate">{item.name}</p>
-                        <p className="text-xs text-muted-foreground">{item.serial_number}</p>
+        {isMobile && (
+          <div 
+            ref={containerRef}
+            className="space-y-3 p-3 overflow-auto"
+          >
+            <PullToRefreshIndicator 
+              pullDistance={pullDistance} 
+              isRefreshing={isRefreshing} 
+            />
+            {filteredAndSortedEquipment.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                {t('equipmentTable.noEquipmentFound')}
+              </div>
+            ) : (
+              filteredAndSortedEquipment.map((item) => (
+                <div 
+                  key={item.id}
+                  className={cn(
+                    'bg-card border rounded-lg p-4 transition-colors',
+                    selectedRows.includes(item.id) && 'border-primary bg-primary/5'
+                  )}
+                >
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      checked={selectedRows.includes(item.id)}
+                      onCheckedChange={() => toggleRow(item.id)}
+                      className="mt-1"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-mono text-sm font-medium text-primary truncate">
+                            {item.internal_code}
+                          </p>
+                          <p className="font-medium truncate">{item.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{item.serial_number}</p>
+                        </div>
+                        <StatusBadge status={item.status as any} size="sm" equipment={item} />
                       </div>
-                      <StatusBadge status={item.status as any} size="sm" equipment={item} />
-                    </div>
-                    
-                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                      <span>{item.location}</span>
-                      {item.capacity && <span>• {item.capacity}</span>}
-                    </div>
+                      
+                      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                        <span className="truncate">{item.location}</span>
+                        {item.capacity && <span className="truncate">• {item.capacity}</span>}
+                      </div>
 
-                    <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
-                      <div>
-                        <span className="text-muted-foreground">{t('equipmentTable.lastInsp')}:</span>
-                        <span className="ml-1 font-medium">{formatDate(item.last_inspection) || '—'}</span>
+                      <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <span className="text-muted-foreground">{t('equipmentTable.lastInsp')}:</span>
+                          <span className="ml-1 font-medium">{formatDate(item.last_inspection) || '—'}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">{t('equipmentTable.nextInsp')}:</span>
+                          <span className="ml-1 font-medium">{formatDate(item.next_inspection) || '—'}</span>
+                        </div>
+                        <div className="col-span-2">
+                          <span className="text-muted-foreground">{t('equipmentTable.certExpiry')}:</span>
+                          <span className="ml-1 font-medium">{formatDate(item.certificate_expiry) || '—'}</span>
+                        </div>
                       </div>
-                      <div>
-                        <span className="text-muted-foreground">{t('equipmentTable.nextInsp')}:</span>
-                        <span className="ml-1 font-medium">{formatDate(item.next_inspection) || '—'}</span>
-                      </div>
-                      <div className="col-span-2">
-                        <span className="text-muted-foreground">{t('equipmentTable.certExpiry')}:</span>
-                        <span className="ml-1 font-medium">{formatDate(item.certificate_expiry) || '—'}</span>
-                      </div>
-                    </div>
 
-                    <div className="mt-3 flex items-center gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="flex-1 min-w-0"
-                        onClick={() => openDetailDialog(item)}
-                      >
-                        <Eye className="h-4 w-4 shrink-0" />
-                        <span className="ml-1 truncate">{t('equipmentTable.view')}</span>
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        className="flex-1 min-w-0"
-                        onClick={() => openInspectionForm(item)}
-                      >
-                        <ClipboardCheck className="h-4 w-4 shrink-0" />
-                        <span className="ml-1 truncate">{t('common.inspect')}</span>
-                      </Button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="icon" className="h-8 w-8 shrink-0">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-popover border border-border shadow-lg z-50 min-w-[180px]">
-                          <DropdownMenuItem 
-                            className="gap-2 cursor-pointer py-2.5"
-                            onClick={() => openEditForm(item)}
-                          >
-                            <Edit className="h-4 w-4" /> {t('equipmentTable.edit')}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            className="gap-2 cursor-pointer py-2.5"
-                            onClick={() => openQRCodeDialog(item)}
-                          >
-                            <QrCode className="h-4 w-4" /> {t('equipmentTable.generateQRCode')}
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem 
-                            className="gap-2 text-destructive cursor-pointer py-2.5"
-                            onClick={() => openDeleteDialog(item)}
-                          >
-                            <Trash2 className="h-4 w-4" /> {t('common.delete')}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <div className="mt-3 flex items-center gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1 min-w-0"
+                          onClick={() => openDetailDialog(item)}
+                        >
+                          <Eye className="h-4 w-4 shrink-0" />
+                          <span className="ml-1 truncate">{t('equipmentTable.view')}</span>
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          className="flex-1 min-w-0"
+                          onClick={() => openInspectionForm(item)}
+                        >
+                          <ClipboardCheck className="h-4 w-4 shrink-0" />
+                          <span className="ml-1 truncate">{t('common.inspect')}</span>
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="icon" className="h-8 w-8 shrink-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="bg-popover border border-border shadow-lg z-50 min-w-[180px]">
+                            <DropdownMenuItem 
+                              className="gap-2 cursor-pointer py-2.5"
+                              onClick={() => openEditForm(item)}
+                            >
+                              <Edit className="h-4 w-4" /> {t('equipmentTable.edit')}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              className="gap-2 cursor-pointer py-2.5"
+                              onClick={() => openQRCodeDialog(item)}
+                            >
+                              <QrCode className="h-4 w-4" /> {t('equipmentTable.generateQRCode')}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              className="gap-2 text-destructive cursor-pointer py-2.5"
+                              onClick={() => openDeleteDialog(item)}
+                            >
+                              <Trash2 className="h-4 w-4" /> {t('common.delete')}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))
-          )}
-        </div>
+              ))
+            )}
+          </div>
+        )}
 
         {/* Desktop Table */}
-        <div className="hidden md:block overflow-x-auto">
+        {!isMobile && (
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
@@ -717,7 +720,8 @@ export function EquipmentTable({
               )}
             </TableBody>
           </Table>
-        </div>
+          </div>
+        )}
 
         {/* Footer */}
         <div className="p-4 border-t border-border flex items-center justify-between">
