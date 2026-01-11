@@ -8,12 +8,12 @@ import {
   Trash2, 
   Search,
   User,
-  
   Crown,
   UserCheck,
   Plus,
   Ship,
   Anchor,
+  MoreVertical,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -55,6 +55,7 @@ import { Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
 import i18n from '@/i18n';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const getRoleConfig = (t: (key: string) => string) => ({
   admin_master: { label: t('roles.admin_master'), variant: 'destructive' as const, icon: Crown, order: 0 },
@@ -68,6 +69,7 @@ export default function Users() {
   const { t } = useTranslation();
   const roleConfig = getRoleConfig(t);
   const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
+  const isMobile = useIsMobile();
   
   const { data: profiles, isLoading } = useProfiles();
   const { data: ships, isLoading: shipsLoading } = useShips();
@@ -194,16 +196,20 @@ export default function Users() {
       />
 
       <Tabs defaultValue="users" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="users" className="gap-2">
-            <UsersIcon className="h-4 w-4" />
-            {t('usersPage.usersTab')}
-          </TabsTrigger>
-          <TabsTrigger value="ships" className="gap-2">
-            <Ship className="h-4 w-4" />
-            {t('usersPage.shipsTab')}
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+          <TabsList className="w-max md:w-auto">
+            <TabsTrigger value="users" className="gap-2">
+              <UsersIcon className="h-4 w-4" />
+              <span className="hidden sm:inline">{t('usersPage.usersTab')}</span>
+              <span className="sm:hidden">{t('usersPage.usersTab')}</span>
+            </TabsTrigger>
+            <TabsTrigger value="ships" className="gap-2">
+              <Ship className="h-4 w-4" />
+              <span className="hidden sm:inline">{t('usersPage.shipsTab')}</span>
+              <span className="sm:hidden">{t('usersPage.shipsTab')}</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* Users Tab */}
         <TabsContent value="users" className="space-y-6">
@@ -304,24 +310,13 @@ export default function Users() {
               </div>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t('users.userName')}</TableHead>
-                    <TableHead>{t('users.userEmail')}</TableHead>
-                    <TableHead>{t('users.role')}</TableHead>
-                    <TableHead>{t('usersPage.shipsTab')}</TableHead>
-                    <TableHead>{t('usersPage.registration')}</TableHead>
-                    <TableHead className="w-24 text-right">{t('common.actions')}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              {/* Mobile Card View */}
+              {isMobile ? (
+                <div className="space-y-3">
                   {filteredUsers.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                        {searchTerm ? t('usersPage.noUserFound') : t('usersPage.noUserRegistered')}
-                      </TableCell>
-                    </TableRow>
+                    <div className="text-center py-8 text-muted-foreground">
+                      {searchTerm ? t('usersPage.noUserFound') : t('usersPage.noUserRegistered')}
+                    </div>
                   ) : (
                     filteredUsers.map((user) => {
                       const role = getUserRole(user);
@@ -331,59 +326,29 @@ export default function Users() {
                       const userShipsNames = getUserShipsNames(user.user_id);
                       
                       return (
-                        <TableRow key={user.id}>
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <Avatar className="h-9 w-9">
+                        <div key={user.id} className="border rounded-lg p-4 bg-card">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <Avatar className="h-10 w-10 shrink-0">
                                 <AvatarImage src={user.avatar_url || undefined} alt={user.full_name} />
-                                <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
+                                <AvatarFallback className="bg-primary/10 text-primary font-medium">
                                   {user.full_name.charAt(0).toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>
-                              <div>
-                                <p className="font-medium">{user.full_name}</p>
-                                {isCurrentUser && (
-                                  <span className="text-xs text-muted-foreground">({t('usersPage.you')})</span>
-                                )}
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2">
+                                  <p className="font-medium truncate">{user.full_name}</p>
+                                  {isCurrentUser && (
+                                    <span className="text-xs text-muted-foreground">({t('usersPage.you')})</span>
+                                  )}
+                                </div>
+                                <p className="text-sm text-muted-foreground truncate">{user.email}</p>
                               </div>
                             </div>
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">{user.email}</TableCell>
-                          <TableCell>
-                            <Badge variant={config.variant} className="gap-1">
-                              <config.icon className="h-3 w-3" />
-                              {config.label}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {isAdmin ? (
-                              <span className="text-xs text-muted-foreground italic">{t('usersPage.allShipsAccess')}</span>
-                            ) : userShipsNames.length > 0 ? (
-                              <div className="flex flex-wrap gap-1">
-                                {userShipsNames.slice(0, 2).map((name, i) => (
-                                  <Badge key={i} variant="outline" className="text-xs">
-                                    <Ship className="h-3 w-3 mr-1" />
-                                    {name}
-                                  </Badge>
-                                ))}
-                                {userShipsNames.length > 2 && (
-                                  <Badge variant="outline" className="text-xs">
-                                    +{userShipsNames.length - 2}
-                                  </Badge>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">{t('common.none')}</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {format(new Date(user.created_at), "dd/MM/yyyy", { locale: dateLocale })}
-                          </TableCell>
-                          <TableCell className="text-right">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <Edit className="h-4 w-4" />
+                                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                                  <MoreVertical className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
@@ -415,13 +380,163 @@ export default function Users() {
                                 )}
                               </DropdownMenuContent>
                             </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
+                          </div>
+                          
+                          <div className="flex flex-wrap gap-2 mt-3">
+                            <Badge variant={config.variant} className="gap-1">
+                              <config.icon className="h-3 w-3" />
+                              {config.label}
+                            </Badge>
+                            {isAdmin ? (
+                              <Badge variant="outline" className="text-xs">
+                                {t('usersPage.allShipsAccess')}
+                              </Badge>
+                            ) : userShipsNames.length > 0 ? (
+                              <>
+                                {userShipsNames.slice(0, 1).map((name, i) => (
+                                  <Badge key={i} variant="outline" className="text-xs gap-1">
+                                    <Ship className="h-3 w-3" />
+                                    {name}
+                                  </Badge>
+                                ))}
+                                {userShipsNames.length > 1 && (
+                                  <Badge variant="outline" className="text-xs">
+                                    +{userShipsNames.length - 1}
+                                  </Badge>
+                                )}
+                              </>
+                            ) : null}
+                          </div>
+                          
+                          <p className="text-xs text-muted-foreground mt-2">
+                            {t('usersPage.registration')}: {format(new Date(user.created_at), "dd/MM/yyyy", { locale: dateLocale })}
+                          </p>
+                        </div>
                       );
                     })
                   )}
-                </TableBody>
-              </Table>
+                </div>
+              ) : (
+                /* Desktop Table View */
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t('users.userName')}</TableHead>
+                      <TableHead>{t('users.userEmail')}</TableHead>
+                      <TableHead>{t('users.role')}</TableHead>
+                      <TableHead>{t('usersPage.shipsTab')}</TableHead>
+                      <TableHead>{t('usersPage.registration')}</TableHead>
+                      <TableHead className="w-24 text-right">{t('common.actions')}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredUsers.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                          {searchTerm ? t('usersPage.noUserFound') : t('usersPage.noUserRegistered')}
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredUsers.map((user) => {
+                        const role = getUserRole(user);
+                        const config = roleConfig[role] || roleConfig.viewer;
+                        const isCurrentUser = user.user_id === currentUser?.id;
+                        const isAdmin = (role as string) === 'admin' || (role as string) === 'admin_master';
+                        const userShipsNames = getUserShipsNames(user.user_id);
+                        
+                        return (
+                          <TableRow key={user.id}>
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <Avatar className="h-9 w-9">
+                                  <AvatarImage src={user.avatar_url || undefined} alt={user.full_name} />
+                                  <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
+                                    {user.full_name.charAt(0).toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <p className="font-medium">{user.full_name}</p>
+                                  {isCurrentUser && (
+                                    <span className="text-xs text-muted-foreground">({t('usersPage.you')})</span>
+                                  )}
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">{user.email}</TableCell>
+                            <TableCell>
+                              <Badge variant={config.variant} className="gap-1">
+                                <config.icon className="h-3 w-3" />
+                                {config.label}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {isAdmin ? (
+                                <span className="text-xs text-muted-foreground italic">{t('usersPage.allShipsAccess')}</span>
+                              ) : userShipsNames.length > 0 ? (
+                                <div className="flex flex-wrap gap-1">
+                                  {userShipsNames.slice(0, 2).map((name, i) => (
+                                    <Badge key={i} variant="outline" className="text-xs">
+                                      <Ship className="h-3 w-3 mr-1" />
+                                      {name}
+                                    </Badge>
+                                  ))}
+                                  {userShipsNames.length > 2 && (
+                                    <Badge variant="outline" className="text-xs">
+                                      +{userShipsNames.length - 2}
+                                    </Badge>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">{t('common.none')}</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {format(new Date(user.created_at), "dd/MM/yyyy", { locale: dateLocale })}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel>{t('common.actions')}</DropdownMenuLabel>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => handleEdit(user)}>
+                                    <Edit className="h-4 w-4 mr-2" />
+                                    {t('usersPage.editData')}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleRoleChange(user)}>
+                                    <Shield className="h-4 w-4 mr-2" />
+                                    {t('usersPage.changeProfile')}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleManageShips(user)}>
+                                    <Anchor className="h-4 w-4 mr-2" />
+                                    {t('usersPage.manageShips')}
+                                  </DropdownMenuItem>
+                                  {!isCurrentUser && (
+                                    <>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem 
+                                        onClick={() => handleDelete(user)}
+                                        className="text-destructive focus:text-destructive"
+                                      >
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        {t('usersPage.removeUser')}
+                                      </DropdownMenuItem>
+                                    </>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -473,7 +588,70 @@ export default function Users() {
                     {t('ships.newShip')}
                   </Button>
                 </div>
+              ) : isMobile ? (
+                /* Mobile Card View for Ships */
+                <div className="space-y-3">
+                  {filteredShips.map((ship) => {
+                    const usersCount = allUserShips?.filter(us => us.ship_id === ship.id).length || 0;
+                    
+                    return (
+                      <div key={ship.id} className="border rounded-lg p-4 bg-card">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                              <Ship className="h-5 w-5 text-primary" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium truncate">{ship.name}</p>
+                              {ship.code && (
+                                <p className="text-sm text-muted-foreground">{ship.code}</p>
+                              )}
+                            </div>
+                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>{t('common.actions')}</DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleEditShip(ship)}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                {t('dialogs.editShip')}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                onClick={() => handleDeleteShip(ship)}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                {t('dialogs.removeShip')}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                        
+                        {ship.description && (
+                          <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{ship.description}</p>
+                        )}
+                        
+                        <div className="flex flex-wrap items-center gap-2 mt-3">
+                          <Badge variant="secondary">
+                            <UsersIcon className="h-3 w-3 mr-1" />
+                            {usersCount} {t('dialogs.user').toLowerCase()}{usersCount !== 1 ? 's' : ''}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {format(new Date(ship.created_at), "dd/MM/yyyy", { locale: dateLocale })}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               ) : (
+                /* Desktop Table View for Ships */
                 <Table>
                   <TableHeader>
                     <TableRow>
