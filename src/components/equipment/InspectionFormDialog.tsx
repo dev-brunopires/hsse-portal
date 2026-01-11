@@ -441,7 +441,7 @@ export function InspectionFormDialog({
   const formContent = (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-hidden flex flex-col min-h-0">
-        <Tabs defaultValue="info" className="flex-1 flex flex-col overflow-hidden min-h-0">
+        <Tabs defaultValue="info" className="flex-1 flex flex-col overflow-hidden min-h-0 w-full">
           <TabsList className="grid w-full grid-cols-5 flex-shrink-0">
             <TabsTrigger value="info" className="flex items-center gap-1 px-1 sm:px-3 sm:gap-2">
               <Info className="h-4 w-4" />
@@ -593,8 +593,8 @@ export function InspectionFormDialog({
           </TabsContent>
 
           {/* Tab: Checklist */}
-          <TabsContent value="checklist" className="flex-1 overflow-y-auto mt-4 min-h-0">
-            <div className="space-y-4 pb-4 px-1">
+          <TabsContent value="checklist" className="flex-1 overflow-y-auto overflow-x-hidden mt-4 min-h-0">
+            <div className="space-y-4 pb-4 px-1 max-w-full">
               <div className="flex flex-col gap-2 sticky top-0 bg-card py-2 z-10">
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold">{t('inspectionForm.verificationItems')}</h3>
@@ -663,7 +663,7 @@ export function InspectionFormDialog({
                         <RadioGroup
                           value={item.status}
                           onValueChange={(value) => updateChecklistItem(item.id, 'status', value)}
-                          className="flex flex-wrap items-center gap-4"
+                          className="flex flex-wrap items-center gap-2 sm:gap-4"
                         >
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="ok" id={`${item.id}-ok`} />
@@ -900,7 +900,7 @@ export function InspectionFormDialog({
         <DialogHeader className="pb-4 border-b border-border flex-shrink-0">
           <DialogTitle>{headerContent}</DialogTitle>
         </DialogHeader>
-        <div className="flex-1 overflow-hidden min-h-0">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
           {formContent}
         </div>
       </DialogContent>
