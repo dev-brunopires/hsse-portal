@@ -2760,6 +2760,64 @@
     "signature": {
       "updated": "Signature Updated",
       "updatedDesc": "The signature has been updated successfully"
+    },
+    "ships": {
+      "created": "Unit Created",
+      "createdDesc": "The unit has been created successfully.",
+      "createError": "Error Creating",
+      "updated": "Unit Updated",
+      "updatedDesc": "The unit data has been updated.",
+      "updateError": "Error Updating",
+      "deleted": "Unit Removed",
+      "deletedDesc": "The unit has been removed from the system.",
+      "deleteError": "Error Removing"
     }
+  },
+  "errors": {
+    "errorTitle": "Error",
+    "genericError": "An error occurred. Please try again.",
+    "unknownError": "An unknown error occurred.",
+    "databaseError": "Error accessing data. Please try again in a moment.",
+    
+    "duplicateEquipmentCode": "Equipment with this internal code already exists. Please use a different code.",
+    "duplicateSerialNumber": "Equipment with this serial number already exists. Check if the equipment is already registered.",
+    "duplicateShortCode": "Short code already in use. A new one will be generated automatically.",
+    "duplicateCategoryName": "A category with this name already exists. Please choose a different name.",
+    "duplicateShipName": "A unit with this name already exists. Please choose a different name.",
+    "duplicateShipCode": "A unit with this code already exists. Please choose a different code.",
+    "duplicateUserShip": "This user is already assigned to this unit.",
+    "duplicateEmail": "This email is already in use by another user.",
+    "duplicateRecord": "This record already exists in the system. Please check the data provided.",
+    
+    "equipmentInUse": "This equipment has linked records (inspections, maintenance, etc). Remove them first.",
+    "categoryInUse": "This category has linked equipment. Move or delete the equipment first.",
+    "shipInUse": "This unit has linked equipment or users. Remove them first.",
+    "userInUse": "This user has linked records in the system.",
+    "recordInUse": "This record is being used by other data in the system.",
+    
+    "accessDenied": "You don't have permission to perform this action.",
+    "recordNotFound": "The requested record was not found.",
+    
+    "invalidCredentials": "Invalid email or password. Please check your credentials.",
+    "emailNotConfirmed": "Email not confirmed. Please check your inbox.",
+    "userNotFound": "User not found.",
+    "sessionExpired": "Your session has expired. Please log in again.",
+    "invalidSession": "Invalid session. Please log in again.",
+    
+    "requiredFieldMissing": "Please fill in all required fields.",
+    
+    "networkError": "Connection error. Check your internet and try again.",
+    "noInternet": "No internet connection. Connect and try again.",
+    
+    "fileTooLarge": "The file is too large. Maximum allowed size is 10MB.",
+    "invalidFile": "Invalid file. Check the format and try again.",
+    "uploadFailed": "Failed to upload file. Please try again.",
+    
+    "timeout": "The operation took too long. Please try again.",
+    "serverError": "Server error. Please try again in a few moments.",
+    "serviceUnavailable": "Service temporarily unavailable. Please try again later.",
+    
+    "organizationNotFound": "Organization not found. Please log in again.",
+    "invalidData": "The data provided is invalid. Please check and try again."
   }
 }

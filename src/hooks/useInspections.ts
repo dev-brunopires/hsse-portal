@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useShipFilter } from '@/contexts/ShipFilterContext';
 import { useTranslation } from 'react-i18next';
 import { getCurrentOrganizationId, generateInspectionPhotoPath } from '@/utils/storageHelpers';
+import { translateError } from '@/utils/errorTranslation';
 
 export type Inspection = Tables<'inspections'>;
 export type InspectionInsert = TablesInsert<'inspections'>;
@@ -278,7 +279,7 @@ export function useCreateInspection() {
     onError: (error: Error) => {
       toast({
         title: t('hooks.inspection.createError'),
-        description: error.message,
+        description: translateError(error),
         variant: 'destructive',
       });
     },
@@ -333,7 +334,7 @@ export function useUpdateInspection() {
     onError: (error: Error) => {
       toast({
         title: t('hooks.inspection.updateError'),
-        description: error.message,
+        description: translateError(error),
         variant: 'destructive',
       });
     },
@@ -409,7 +410,7 @@ export function useDeleteInspection() {
     onError: (error: Error) => {
       toast({
         title: t('hooks.inspection.deleteError'),
-        description: error.message,
+        description: translateError(error),
         variant: 'destructive',
       });
     },

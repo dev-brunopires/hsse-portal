@@ -4,6 +4,7 @@ import type { Tables, TablesInsert } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { translateError } from '@/utils/errorTranslation';
 
 export type Category = Tables<'categories'>;
 export type CategoryInsert = TablesInsert<'categories'>;
@@ -79,7 +80,7 @@ export function useCreateCategory() {
     onError: (error: Error) => {
       toast({
         title: t('hooks.category.createError'),
-        description: error.message,
+        description: translateError(error),
         variant: 'destructive',
       });
     },
@@ -115,7 +116,7 @@ export function useUpdateCategory() {
     onError: (error: Error) => {
       toast({
         title: t('hooks.category.updateError'),
-        description: error.message,
+        description: translateError(error),
         variant: 'destructive',
       });
     },
@@ -146,7 +147,7 @@ export function useDeleteCategory() {
     onError: (error: Error) => {
       toast({
         title: t('hooks.category.deleteError'),
-        description: error.message,
+        description: translateError(error),
         variant: 'destructive',
       });
     },

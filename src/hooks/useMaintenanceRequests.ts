@@ -5,6 +5,7 @@ import { useShipFilter } from '@/contexts/ShipFilterContext';
 import { useTranslation } from 'react-i18next';
 import i18n from '@/i18n';
 import { getCurrentOrganizationId, generateMaintenancePhotoPath } from '@/utils/storageHelpers';
+import { translateError } from '@/utils/errorTranslation';
 
 export type MaintenanceType = 'preventive' | 'corrective';
 export type MaintenanceStatus = 'pending' | 'approved' | 'in_progress' | 'completed' | 'rejected';
@@ -243,7 +244,7 @@ export function useCreateMaintenanceRequest() {
     onError: (error: Error) => {
       toast({
         title: i18n.t('hooks.maintenanceRequest.createError'),
-        description: error.message,
+        description: translateError(error),
         variant: 'destructive',
       });
     },
@@ -313,7 +314,7 @@ export function useUpdateMaintenanceStatus() {
     onError: (error: Error) => {
       toast({
         title: i18n.t('hooks.maintenanceRequest.statusUpdateError'),
-        description: error.message,
+        description: translateError(error),
         variant: 'destructive',
       });
     },
@@ -344,7 +345,7 @@ export function useDeleteMaintenanceRequest() {
     onError: (error: Error) => {
       toast({
         title: i18n.t('hooks.maintenanceRequest.deleteError'),
-        description: error.message,
+        description: translateError(error),
         variant: 'destructive',
       });
     },

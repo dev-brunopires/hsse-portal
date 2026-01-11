@@ -2761,6 +2761,64 @@
     "signature": {
       "updated": "Assinatura Atualizada",
       "updatedDesc": "A assinatura foi atualizada com sucesso"
+    },
+    "ships": {
+      "created": "Unidade Cadastrada",
+      "createdDesc": "A unidade foi cadastrada com sucesso.",
+      "createError": "Erro ao Cadastrar",
+      "updated": "Unidade Atualizada",
+      "updatedDesc": "Os dados da unidade foram atualizados.",
+      "updateError": "Erro ao Atualizar",
+      "deleted": "Unidade Removida",
+      "deletedDesc": "A unidade foi removida do sistema.",
+      "deleteError": "Erro ao Remover"
     }
+  },
+  "errors": {
+    "errorTitle": "Erro",
+    "genericError": "Ocorreu um erro. Por favor, tente novamente.",
+    "unknownError": "Ocorreu um erro desconhecido.",
+    "databaseError": "Erro ao acessar os dados. Tente novamente em instantes.",
+    
+    "duplicateEquipmentCode": "Já existe um equipamento cadastrado com este código interno. Use um código diferente.",
+    "duplicateSerialNumber": "Já existe um equipamento com este número de série. Verifique se o equipamento já está cadastrado.",
+    "duplicateShortCode": "Código curto já em uso. Um novo será gerado automaticamente.",
+    "duplicateCategoryName": "Já existe uma categoria com este nome. Escolha um nome diferente.",
+    "duplicateShipName": "Já existe uma unidade com este nome. Escolha um nome diferente.",
+    "duplicateShipCode": "Já existe uma unidade com este código. Escolha um código diferente.",
+    "duplicateUserShip": "Este usuário já está atribuído a esta unidade.",
+    "duplicateEmail": "Este email já está em uso por outro usuário.",
+    "duplicateRecord": "Este registro já existe no sistema. Verifique os dados informados.",
+    
+    "equipmentInUse": "Este equipamento possui registros vinculados (inspeções, manutenções, etc). Remova-os antes de excluir.",
+    "categoryInUse": "Esta categoria possui equipamentos vinculados. Mova ou exclua os equipamentos antes.",
+    "shipInUse": "Esta unidade possui equipamentos ou usuários vinculados. Remova-os antes de excluir.",
+    "userInUse": "Este usuário possui registros vinculados no sistema.",
+    "recordInUse": "Este registro está sendo utilizado por outros dados do sistema.",
+    
+    "accessDenied": "Você não tem permissão para realizar esta ação.",
+    "recordNotFound": "O registro solicitado não foi encontrado.",
+    
+    "invalidCredentials": "Email ou senha incorretos. Verifique seus dados.",
+    "emailNotConfirmed": "Email não confirmado. Verifique sua caixa de entrada.",
+    "userNotFound": "Usuário não encontrado.",
+    "sessionExpired": "Sua sessão expirou. Faça login novamente.",
+    "invalidSession": "Sessão inválida. Faça login novamente.",
+    
+    "requiredFieldMissing": "Preencha todos os campos obrigatórios.",
+    
+    "networkError": "Erro de conexão. Verifique sua internet e tente novamente.",
+    "noInternet": "Sem conexão com a internet. Conecte-se e tente novamente.",
+    
+    "fileTooLarge": "O arquivo é muito grande. O tamanho máximo permitido é 10MB.",
+    "invalidFile": "Arquivo inválido. Verifique o formato e tente novamente.",
+    "uploadFailed": "Falha ao enviar o arquivo. Tente novamente.",
+    
+    "timeout": "A operação demorou muito. Tente novamente.",
+    "serverError": "Erro no servidor. Tente novamente em alguns instantes.",
+    "serviceUnavailable": "Serviço temporariamente indisponível. Tente novamente mais tarde.",
+    
+    "organizationNotFound": "Organização não encontrada. Faça login novamente.",
+    "invalidData": "Os dados informados são inválidos. Verifique e tente novamente."
   }
 }
