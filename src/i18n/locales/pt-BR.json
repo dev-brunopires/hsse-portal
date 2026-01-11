@@ -395,6 +395,8 @@
     "notIdentified": "Não identificado",
     "notFound": "Não encontrado",
     "noChecklistItems": "Nenhum item de checklist registrado.",
+    "noPhotos": "Nenhuma foto registrada",
+    "noObservations": "Nenhuma observação registrada",
     "photos": "Fotos",
     "checklistOk": "OK",
     "checklistFail": "Falha",
@@ -1482,7 +1484,12 @@
     "actionsTakenHint": "Registre aqui o que foi feito para resolver pendências de inspeções anteriores",
     "observationsPlaceholderFull": "Descreva observações relevantes sobre a inspeção...",
     "recommendationsPlaceholder": "Inclua recomendações ou ações corretivas necessárias...",
-    "quickInspection": "Inspeção rápida - Todos os itens conformes"
+    "quickInspection": "Inspeção rápida - Todos os itens conformes",
+    "summary": "Resumo",
+    "inspectionSigned": "Inspeção Assinada",
+    "notSigned": "Inspeção não assinada",
+    "signedAt": "Assinado em",
+    "inspectorSignature": "Assinatura do Inspetor"
   },
   "editInspection": {
     "title": "Editar Inspeção",
@@ -1500,7 +1507,8 @@
     "select": "Selecione",
     "statusCompliant": "Conforme",
     "statusAttention": "Atenção",
-    "statusNonCompliant": "Não Conforme"
+    "statusNonCompliant": "Não Conforme",
+    "checklistReadOnly": "O checklist não pode ser editado após a inspeção ser registrada."
   },
   "inspectionCalendar": {
     "today": "Hoje",
