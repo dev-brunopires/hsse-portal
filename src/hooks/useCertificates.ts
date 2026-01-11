@@ -68,6 +68,31 @@ export interface CertificateFormData {
   notes?: string;
 }
 
+async function recomputeEquipmentCertificateExpiry(equipmentId: string) {
+  const { data, error } = await supabase
+    .from('certificates')
+    .select('expiry_date')
+    .eq('equipment_id', equipmentId)
+    .not('expiry_date', 'is', null);
+
+  if (error) throw error;
+
+  const minExpiry = (data || [])
+    .map((c) => c.expiry_date)
+    .filter((d): d is string => typeof d === 'string')
+    .sort()[0];
+
+  // If there are no certificates with expiry_date, keep equipment.certificate_expiry as-is
+  if (!minExpiry) return;
+
+  const { error: updateError } = await supabase
+    .from('equipment')
+    .update({ certificate_expiry: minExpiry })
+    .eq('id', equipmentId);
+
+  if (updateError) throw updateError;
+}
+
 export function useCertificates(filters?: {
   equipmentId?: string;
   status?: string;
@@ -248,13 +273,8 @@ export function useCreateCertificate() {
 
       if (error) throw error;
 
-      // Sync certificate_expiry to equipment if expiry_date provided
-      if (data.expiry_date && certificate.equipment_id) {
-        await supabase
-          .from('equipment')
-          .update({ certificate_expiry: data.expiry_date })
-          .eq('id', certificate.equipment_id);
-      }
+      // Keep equipment.certificate_expiry in sync (use the earliest certificate expiry)
+      await recomputeEquipmentCertificateExpiry(certificate.equipment_id);
 
       return certificate;
     },
@@ -330,13 +350,8 @@ export function useUpdateCertificate() {
 
       if (error) throw error;
 
-      // Sync certificate_expiry to equipment if expiry_date changed
-      if (data.expiry_date && certificate.equipment_id) {
-        await supabase
-          .from('equipment')
-          .update({ certificate_expiry: data.expiry_date })
-          .eq('id', certificate.equipment_id);
-      }
+      // Keep equipment.certificate_expiry in sync (use the earliest certificate expiry)
+      await recomputeEquipmentCertificateExpiry(certificate.equipment_id);
 
       return certificate;
     },
@@ -435,13 +450,8 @@ export function useRenewCertificate() {
 
       if (updateError) throw updateError;
 
-      // Sync certificate_expiry to equipment
-      if (current.equipment_id) {
-        await supabase
-          .from('equipment')
-          .update({ certificate_expiry: newExpiryDate })
-          .eq('id', current.equipment_id);
-      }
+      // Keep equipment.certificate_expiry in sync (use the earliest certificate expiry)
+      await recomputeEquipmentCertificateExpiry(current.equipment_id);
 
       return updated;
     },
@@ -466,12 +476,14 @@ export function useDeleteCertificate() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      // Get certificate to delete file
-      const { data: certificate } = await supabase
+      // Get certificate to delete file + equipment_id for sync
+      const { data: certificate, error: fetchError } = await supabase
         .from('certificates')
-        .select('file_path')
+        .select('file_path, equipment_id')
         .eq('id', id)
         .single();
+
+      if (fetchError) throw fetchError;
 
       // Delete file if exists
       if (certificate?.file_path) {
@@ -486,6 +498,11 @@ export function useDeleteCertificate() {
         .eq('id', id);
 
       if (error) throw error;
+
+      // Recompute equipment certificate expiry after deletion
+      if (certificate?.equipment_id) {
+        await recomputeEquipmentCertificateExpiry(certificate.equipment_id);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['certificates'] });
