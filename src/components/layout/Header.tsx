@@ -327,7 +327,7 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
             <DropdownMenuContent align="end" className="w-64 bg-popover border border-border shadow-lg z-50">
               <DropdownMenuLabel>{t('header.filterByUnit')}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <ScrollArea className="max-h-64">
+              <ScrollArea className="max-h-80">
                 <DropdownMenuItem 
                   onClick={() => setSelectedShipId(null)}
                   className="gap-2"

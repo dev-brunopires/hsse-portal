@@ -3,13 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Upload, X, FileText } from 'lucide-react';
+import { Upload, X, FileText, Award } from 'lucide-react';
+import { format } from 'date-fns';
 
 import {
   ResponsiveDialog,
-  ResponsiveDialogContent,
-  ResponsiveDialogHeader,
-  ResponsiveDialogTitle,
+  ResponsiveDialogBody,
   ResponsiveDialogFooter,
 } from '@/components/ui/responsive-dialog';
 import { Button } from '@/components/ui/button';
@@ -47,8 +46,8 @@ const formSchema = z.object({
   type: z.string().min(1, 'Type is required'),
   certificate_number: z.string().optional(),
   issuer: z.string().optional(),
-  issue_date: z.date().optional(),
-  expiry_date: z.date().optional(),
+  issue_date: z.string().optional(),
+  expiry_date: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -103,8 +102,8 @@ export function CertificateFormDialog({
         type: certificate.type,
         certificate_number: certificate.certificate_number || '',
         issuer: certificate.issuer || '',
-        issue_date: certificate.issue_date ? new Date(certificate.issue_date) : undefined,
-        expiry_date: certificate.expiry_date ? new Date(certificate.expiry_date) : undefined,
+        issue_date: certificate.issue_date || '',
+        expiry_date: certificate.expiry_date || '',
         notes: certificate.notes || '',
       });
     } else if (open) {
@@ -130,8 +129,8 @@ export function CertificateFormDialog({
       type: data.type,
       certificate_number: data.certificate_number,
       issuer: data.issuer,
-      issue_date: data.issue_date?.toISOString().split('T')[0],
-      expiry_date: data.expiry_date?.toISOString().split('T')[0],
+      issue_date: data.issue_date,
+      expiry_date: data.expiry_date,
       notes: data.notes,
     };
 
@@ -163,16 +162,16 @@ export function CertificateFormDialog({
   };
 
   return (
-    <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
-      <ResponsiveDialogContent className="max-w-lg">
-        <ResponsiveDialogHeader>
-          <ResponsiveDialogTitle>
-            {isEditing ? t('certificates.edit') : t('certificates.add')}
-          </ResponsiveDialogTitle>
-        </ResponsiveDialogHeader>
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+    <ResponsiveDialog 
+      open={open} 
+      onOpenChange={onOpenChange}
+      title={isEditing ? t('certificates.edit') : t('certificates.add')}
+      titleIcon={<Award className="h-5 w-5 text-primary" />}
+      className="max-w-lg"
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <ResponsiveDialogBody>
             <FormField
               control={form.control}
               name="equipment_id"
@@ -277,8 +276,8 @@ export function CertificateFormDialog({
                   <FormItem>
                     <FormLabel>{t('certificates.issueDate')}</FormLabel>
                     <DatePicker
-                      date={field.value}
-                      onDateChange={field.onChange}
+                      value={field.value}
+                      onChange={field.onChange}
                     />
                     <FormMessage />
                   </FormItem>
@@ -292,8 +291,8 @@ export function CertificateFormDialog({
                   <FormItem>
                     <FormLabel>{t('certificates.expiryDate')}</FormLabel>
                     <DatePicker
-                      date={field.value}
-                      onDateChange={field.onChange}
+                      value={field.value}
+                      onChange={field.onChange}
                     />
                     <FormMessage />
                   </FormItem>
@@ -354,18 +353,18 @@ export function CertificateFormDialog({
                 </div>
               )}
             </div>
+          </ResponsiveDialogBody>
 
-            <ResponsiveDialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                {t('common.cancel')}
-              </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? t('common.saving') : t('common.save')}
-              </Button>
-            </ResponsiveDialogFooter>
-          </form>
-        </Form>
-      </ResponsiveDialogContent>
+          <ResponsiveDialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              {t('common.cancel')}
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? t('common.saving') : t('common.save')}
+            </Button>
+          </ResponsiveDialogFooter>
+        </form>
+      </Form>
     </ResponsiveDialog>
   );
 }
