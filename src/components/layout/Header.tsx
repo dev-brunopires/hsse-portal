@@ -255,17 +255,50 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
 
       {/* Right Actions */}
       <div className="flex items-center gap-1 sm:gap-2 lg:gap-4">
-        {/* Mobile Quick Actions - Profile & Settings */}
+        {/* Mobile Quick Actions - Language Toggle */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden text-muted-foreground hover:text-foreground"
+              title={t('header.language')}
+            >
+              <Languages className="h-5 w-5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40 bg-popover border border-border shadow-lg z-50">
+            <DropdownMenuLabel>{t('header.language')}</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => setLanguage('pt-BR')}
+              className="gap-2"
+            >
+              {language === 'pt-BR' && <Check className="h-4 w-4 text-primary" />}
+              <span className={language === 'pt-BR' ? 'font-medium' : ''}>Português</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => setLanguage('en')}
+              className="gap-2"
+            >
+              {language === 'en' && <Check className="h-4 w-4 text-primary" />}
+              <span className={language === 'en' ? 'font-medium' : ''}>English</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Mobile Quick Actions - Theme Toggle */}
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => navigate('/profile')}
+          onClick={toggleTheme}
           className="lg:hidden text-muted-foreground hover:text-foreground"
-          title={t('navigation.profile')}
+          title={resolvedTheme === 'dark' ? t('header.lightMode') : t('header.darkMode')}
         >
-          <UserCircle className="h-5 w-5" />
+          {resolvedTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
         </Button>
-        
+
+        {/* Mobile Quick Actions - Settings */}
         <Button
           variant="ghost"
           size="icon"
@@ -431,13 +464,13 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Language Selector */}
+        {/* Language Selector - Desktop only */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
-              className="text-muted-foreground hover:text-foreground"
+              className="hidden lg:flex text-muted-foreground hover:text-foreground"
               title={t('header.language')}
             >
               <Languages className="h-5 w-5" />
@@ -463,12 +496,12 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Theme Toggle */}
+        {/* Theme Toggle - Desktop only */}
         <Button
           variant="ghost"
           size="icon"
           onClick={toggleTheme}
-          className="text-muted-foreground hover:text-foreground"
+          className="hidden lg:flex text-muted-foreground hover:text-foreground"
           title={resolvedTheme === 'dark' ? t('header.lightMode') : t('header.darkMode')}
         >
           {resolvedTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
