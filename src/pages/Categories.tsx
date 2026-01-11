@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
   FolderOpen, 
@@ -38,7 +38,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useCategories, useDeleteCategory, type Category } from '@/hooks/useCategories';
-import { useEquipment } from '@/hooks/useEquipment';
+import { useEquipmentCountsByCategory } from '@/hooks/useEquipmentCounts';
 import { useChecklistTemplates } from '@/hooks/useChecklistTemplates';
 import { CategoryFormDialog } from '@/components/categories/CategoryFormDialog';
 import { ChecklistTemplatesDialog } from '@/components/categories/ChecklistTemplatesDialog';
@@ -59,7 +59,7 @@ const frequencyColors: Record<string, string> = {
 export default function Categories() {
   const { t } = useTranslation();
   const { data: categories, isLoading, refetch } = useCategories();
-  const { data: equipment } = useEquipment();
+  const { data: equipmentCounts = {} } = useEquipmentCountsByCategory();
   const deleteCategory = useDeleteCategory();
   const isMobile = useIsMobile();
   const isTabletOrMobile = useIsTabletOrMobile();
@@ -76,36 +76,40 @@ export default function Categories() {
   const [templatesDialogOpen, setTemplatesDialogOpen] = useState(false);
   const [categoryForTemplates, setCategoryForTemplates] = useState<Category | null>(null);
 
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: ['categories'] });
+    await queryClient.invalidateQueries({ queryKey: ['equipment-counts-by-category'] });
     await refetch();
-  };
+  }, [queryClient, refetch]);
 
   const { containerRef, pullDistance, isRefreshing } = usePullToRefresh({
     onRefresh: handleRefresh,
   });
 
-  const frequencyLabels: Record<string, string> = {
+  const frequencyLabels: Record<string, string> = useMemo(() => ({
     monthly: t('categories.frequencyMonthly'),
     quarterly: t('categories.frequencyQuarterly'),
     semiannual: t('categories.frequencySemiannual'),
     annual: t('categories.frequencyAnnual'),
     custom: t('common.optional'),
-  };
+  }), [t]);
 
-  const filteredCategories = categories?.filter(cat =>
-    cat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    cat.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  const filteredCategories = useMemo(() => 
+    categories?.filter(cat =>
+      cat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      cat.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    ) || [],
+    [categories, searchTerm]
+  );
 
-  const getEquipmentCount = (categoryId: string) => {
-    return equipment?.filter(e => e.category_id === categoryId).length || 0;
-  };
+  const getEquipmentCount = useCallback((categoryId: string) => {
+    return equipmentCounts[categoryId] || 0;
+  }, [equipmentCounts]);
 
-  const getChecklistItemsCount = (categoryId: string) => {
+  const getChecklistItemsCount = useCallback((categoryId: string) => {
     const template = allTemplates?.find(t => t.category_id === categoryId && t.is_default);
     return template?.items?.length || 0;
-  };
+  }, [allTemplates]);
 
   const handleOpenTemplates = (category: Category) => {
     setCategoryForTemplates(category);
