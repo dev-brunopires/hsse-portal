@@ -560,6 +560,7 @@
     "advancedFilters": "Advanced Filters",
     "configureFilters": "Configure filters to generate custom reports",
     "activeFilters": "active",
+    "filtersActive": "Active Filters",
     "ship": "Ship",
     "allShips": "All ships",
     "allCategories": "All categories",

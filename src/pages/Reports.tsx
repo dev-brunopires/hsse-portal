@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FileText, Download, Calendar, Filter, AlertTriangle, Loader2, BarChart3, Wrench, ClipboardCheck, Eye, FileSpreadsheet } from 'lucide-react';
+import { FileText, Download, Calendar, Filter, AlertTriangle, Loader2, BarChart3, Wrench, ClipboardCheck, Eye, FileSpreadsheet, X } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +9,8 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useEquipment } from '@/hooks/useEquipment';
 import { useInspections } from '@/hooks/useInspections';
 import { useCategories } from '@/hooks/useCategories';
@@ -35,6 +37,7 @@ type ReportType = 'inspections' | 'maintenance' | 'category' | 'expiry' | 'non-c
 
 export default function Reports() {
   const { t, i18n } = useTranslation();
+  const isMobile = useIsMobile();
   const dateLocale = i18n.language === 'en' ? enUS : ptBR;
 
   const statusLabels: Record<string, string> = {
@@ -98,6 +101,7 @@ export default function Reports() {
   const [startDateStr, setStartDateStr] = useState<string>('');
   const [endDateStr, setEndDateStr] = useState<string>('');
   const [monthFilter, setMonthFilter] = useState<string>('all');
+  const [filtersOpen, setFiltersOpen] = useState(!isMobile);
 
   // Preview dialog state
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -1110,123 +1114,151 @@ export default function Reports() {
       />
 
       {/* Filters Section */}
-      <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Filter className="h-4 w-4" />
-            {t('reports.globalFilters')}
-          </CardTitle>
-          <CardDescription>
-            {t('reports.applyFiltersToAllReports')}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <Label>{t('reports.ship')}</Label>
-              <Select value={shipFilter} onValueChange={setShipFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t('reports.allShips')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('reports.allShips')}</SelectItem>
-                  {ships.map(ship => (
-                    <SelectItem key={ship.id} value={ship.id}>
-                      {ship.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+      <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
+        <Card>
+          <CollapsibleTrigger asChild>
+            <CardHeader className="pb-4 cursor-pointer hover:bg-muted/50 transition-colors">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Filter className="h-4 w-4" />
+                    {t('reports.globalFilters')}
+                    {hasFilters && (
+                      <Badge variant="secondary" className="ml-2">
+                        {t('reports.filtersActive')}
+                      </Badge>
+                    )}
+                  </CardTitle>
+                  <CardDescription className="mt-1">
+                    {t('reports.applyFiltersToAllReports')}
+                  </CardDescription>
+                </div>
+                <Button variant="ghost" size="icon" className="shrink-0">
+                  <X className={`h-4 w-4 transition-transform ${filtersOpen ? 'rotate-0' : 'rotate-45'}`} />
+                </Button>
+              </div>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="pt-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <Label>{t('reports.ship')}</Label>
+                  <Select value={shipFilter} onValueChange={setShipFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('reports.allShips')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t('reports.allShips')}</SelectItem>
+                      {ships.map(ship => (
+                        <SelectItem key={ship.id} value={ship.id}>
+                          {ship.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <div className="space-y-2">
-              <Label>{t('reports.category')}</Label>
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t('reports.allCategories')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('reports.allCategories')}</SelectItem>
-                  {categories.map(cat => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                <div className="space-y-2">
+                  <Label>{t('reports.category')}</Label>
+                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('reports.allCategories')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t('reports.allCategories')}</SelectItem>
+                      {categories.map(cat => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <MonthQuickFilter
-              value={monthFilter}
-              onChange={handleMonthChange}
-              onDateRangeChange={handleMonthDateRangeChange}
-            />
+                <MonthQuickFilter
+                  value={monthFilter}
+                  onChange={handleMonthChange}
+                  onDateRangeChange={handleMonthDateRangeChange}
+                />
 
-            <div className="space-y-2">
-              <Label>{t('reports.startDate')}</Label>
-              <DatePicker
-                value={startDateStr}
-                onChange={(val) => {
-                  setStartDateStr(val);
-                  if (val) setMonthFilter('all');
-                }}
-                placeholder={t('common.select')}
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label>{t('reports.startDate')}</Label>
+                  <DatePicker
+                    value={startDateStr}
+                    onChange={(val) => {
+                      setStartDateStr(val);
+                      if (val) setMonthFilter('all');
+                    }}
+                    placeholder={t('common.select')}
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label>{t('reports.endDate')}</Label>
-              <DatePicker
-                value={endDateStr}
-                onChange={(val) => {
-                  setEndDateStr(val);
-                  if (val) setMonthFilter('all');
-                }}
-                placeholder={t('common.select')}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+                <div className="space-y-2">
+                  <Label>{t('reports.endDate')}</Label>
+                  <DatePicker
+                    value={endDateStr}
+                    onChange={(val) => {
+                      setEndDateStr(val);
+                      if (val) setMonthFilter('all');
+                    }}
+                    placeholder={t('common.select')}
+                  />
+                </div>
+              </div>
+              
+              {hasFilters && (
+                <div className="mt-4 flex justify-end">
+                  <Button variant="outline" size="sm" onClick={clearFilters}>
+                    <X className="h-4 w-4 mr-2" />
+                    {t('reports.clearFilters')}
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
       {/* Monthly Consolidated Quick Export */}
       {monthlyConsolidatedData && (
         <Card className="border-indigo-200 bg-indigo-50/50 dark:border-indigo-800 dark:bg-indigo-950/20">
-          <CardContent className="pt-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <CardContent className="pt-4 sm:pt-6">
+            <div className="flex flex-col gap-3">
               <div>
-                <h3 className="font-semibold text-indigo-900 dark:text-indigo-100">
+                <h3 className="font-semibold text-indigo-900 dark:text-indigo-100 text-sm sm:text-base">
                   {t('reports.monthlyConsolidatedReport')}
                 </h3>
-                <p className="text-sm text-indigo-700 dark:text-indigo-300">
+                <p className="text-xs sm:text-sm text-indigo-700 dark:text-indigo-300">
                   {monthlyConsolidatedData.category.name} - {monthlyConsolidatedData.equipment.length} {t('reports.equipmentPlural')} - {monthlyConsolidatedData.inspections.length} {t('reports.inspectionsPerformed')}
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button 
                   variant="outline" 
                   size="sm" 
                   onClick={() => openPreview('monthly-consolidated')}
-                  className="border-indigo-300 text-indigo-700 hover:bg-indigo-100 dark:border-indigo-700 dark:text-indigo-300"
+                  className="flex-1 sm:flex-none border-indigo-300 text-indigo-700 hover:bg-indigo-100 dark:border-indigo-700 dark:text-indigo-300"
                 >
-                  <Eye className="h-4 w-4 mr-2" />
-                  {t('reports.preview')}
+                  <Eye className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">{t('reports.preview')}</span>
+                  <span className="sm:hidden">Preview</span>
                 </Button>
                 <Button 
                   size="sm" 
                   onClick={() => handleMonthlyConsolidatedPDF()}
-                  className="bg-indigo-600 hover:bg-indigo-700"
+                  className="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700"
                 >
-                  <Download className="h-4 w-4 mr-2" />
+                  <Download className="h-4 w-4 mr-1 sm:mr-2" />
                   PDF
                 </Button>
                 <Button 
                   size="sm" 
                   variant="outline"
                   onClick={handleMonthlyConsolidatedExcel}
-                  className="border-indigo-300 text-indigo-700 hover:bg-indigo-100 dark:border-indigo-700 dark:text-indigo-300"
+                  className="flex-1 sm:flex-none border-indigo-300 text-indigo-700 hover:bg-indigo-100 dark:border-indigo-700 dark:text-indigo-300"
                 >
-                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  <FileSpreadsheet className="h-4 w-4 mr-1 sm:mr-2" />
                   Excel
                 </Button>
               </div>
@@ -1241,36 +1273,34 @@ export default function Reports() {
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : (
-        /* Reports Grid */
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        /* Reports Grid - Responsive: single column on mobile */
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {reportTypes.map((report) => (
             <Card key={report.id} className="hover:border-primary/50 transition-colors">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2.5 rounded-lg ${report.bgColor}`}>
-                      <report.icon className={`h-5 w-5 ${report.iconColor}`} />
-                    </div>
-                    <div>
-                      <CardTitle className="text-base">{report.title}</CardTitle>
-                      <CardDescription className="mt-1">{report.description}</CardDescription>
-                    </div>
+              <CardContent className="pt-4">
+                <div className="flex items-start gap-3">
+                  <div className={`p-2 sm:p-2.5 rounded-lg shrink-0 ${report.bgColor}`}>
+                    <report.icon className={`h-4 w-4 sm:h-5 sm:w-5 ${report.iconColor}`} />
                   </div>
-                  <Badge variant="secondary" className="ml-2">
-                    {report.count} {report.count === 1 ? t('reports.item') : t('reports.items')}
-                  </Badge>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="font-medium text-sm sm:text-base truncate">{report.title}</h3>
+                      <Badge variant="secondary" className="shrink-0 text-xs">
+                        {report.count}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{report.description}</p>
+                    <Button 
+                      size="sm"
+                      className="gap-2 w-full mt-3"
+                      onClick={() => openPreview(report.id)}
+                      disabled={report.count === 0}
+                    >
+                      <Eye className="h-4 w-4" />
+                      {t('reports.viewAndExport')}
+                    </Button>
+                  </div>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <Separator className="mb-4" />
-                <Button 
-                  className="gap-2 w-full"
-                  onClick={() => openPreview(report.id)}
-                  disabled={report.count === 0}
-                >
-                  <Eye className="h-4 w-4" />
-                  {t('reports.viewAndExport')}
-                </Button>
               </CardContent>
             </Card>
           ))}
