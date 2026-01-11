@@ -246,11 +246,21 @@ export function useCreateCertificate() {
         .single();
 
       if (error) throw error;
+
+      // Sync certificate_expiry to equipment if expiry_date provided
+      if (data.expiry_date && certificate.equipment_id) {
+        await supabase
+          .from('equipment')
+          .update({ certificate_expiry: data.expiry_date })
+          .eq('id', certificate.equipment_id);
+      }
+
       return certificate;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['certificates'] });
       queryClient.invalidateQueries({ queryKey: ['certificate-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment'] });
       toast.success(i18n.t('certificates.createSuccess'));
     },
     onError: (error: Error) => {
@@ -317,11 +327,21 @@ export function useUpdateCertificate() {
         .single();
 
       if (error) throw error;
+
+      // Sync certificate_expiry to equipment if expiry_date changed
+      if (data.expiry_date && certificate.equipment_id) {
+        await supabase
+          .from('equipment')
+          .update({ certificate_expiry: data.expiry_date })
+          .eq('id', certificate.equipment_id);
+      }
+
       return certificate;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['certificates'] });
       queryClient.invalidateQueries({ queryKey: ['certificate-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment'] });
       toast.success(i18n.t('certificates.updateSuccess'));
     },
     onError: (error: Error) => {
@@ -411,12 +431,22 @@ export function useRenewCertificate() {
         .single();
 
       if (updateError) throw updateError;
+
+      // Sync certificate_expiry to equipment
+      if (current.equipment_id) {
+        await supabase
+          .from('equipment')
+          .update({ certificate_expiry: newExpiryDate })
+          .eq('id', current.equipment_id);
+      }
+
       return updated;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['certificates'] });
       queryClient.invalidateQueries({ queryKey: ['certificate-stats'] });
       queryClient.invalidateQueries({ queryKey: ['certificate-renewals'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment'] });
       toast.success(i18n.t('certificates.renewSuccess'));
     },
     onError: (error: Error) => {
