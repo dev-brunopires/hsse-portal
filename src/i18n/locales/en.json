@@ -1198,7 +1198,8 @@
     "frequency": "Frequency",
     "equipmentCount": "Equipment",
     "checklistItems": "Checklist",
-    "manageChecklist": "Manage inspection checklist"
+    "manageChecklist": "Manage inspection checklist",
+    "cannotDeleteWithEquipment": "Cannot delete: {{count}} equipment(s) linked"
   },
   "categoryForm": {
     "newCategory": "New Category",

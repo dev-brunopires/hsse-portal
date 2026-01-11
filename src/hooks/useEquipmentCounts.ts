@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useShipFilter } from '@/contexts/ShipFilterContext';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
 interface CategoryCount {
   category_id: string;
@@ -40,6 +41,38 @@ export function useEquipmentCountsByCategory() {
       
       return counts;
     },
+    staleTime: 1000 * 60 * 5, // 5 minutes cache
+  });
+}
+
+/**
+ * Get total equipment counts per category (ignores ship filter)
+ * Used for category management to determine if a category can be deleted
+ */
+export function useTotalEquipmentCountsByCategory() {
+  const { organization, isPlatformOwnerWithoutOrg, isLoading: isOrgLoading } = useOrganization();
+  
+  return useQuery({
+    queryKey: ['equipment-counts-by-category-total', organization?.id, isPlatformOwnerWithoutOrg],
+    queryFn: async () => {
+      // Fetch all equipment category_ids (RLS will filter by organization)
+      const { data, error } = await supabase
+        .from('equipment')
+        .select('category_id');
+      
+      if (error) throw error;
+      
+      // Aggregate counts client-side from minimal data
+      const counts: Record<string, number> = {};
+      data?.forEach(item => {
+        if (item.category_id) {
+          counts[item.category_id] = (counts[item.category_id] || 0) + 1;
+        }
+      });
+      
+      return counts;
+    },
+    enabled: !isOrgLoading && (!!organization?.id || isPlatformOwnerWithoutOrg),
     staleTime: 1000 * 60 * 5, // 5 minutes cache
   });
 }
