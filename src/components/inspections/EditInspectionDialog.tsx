@@ -99,6 +99,7 @@ export function EditInspectionDialog({
   const deletePhoto = useDeleteInspectionPhoto();
   const updateSignature = useUpdateInspectionSignature();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const detailsFetchIdRef = useRef(0);
   
   const [checklistItems, setChecklistItems] = useState<EditableChecklistItem[]>([]);
   const [photos, setPhotos] = useState<InspectionPhoto[]>([]);
@@ -161,7 +162,10 @@ export function EditInspectionDialog({
 
   const fetchDetails = async () => {
     if (!inspection?.id) return;
-    
+
+    // Prevent race conditions (e.g., user uploads photos while the initial fetch is still running)
+    const fetchId = ++detailsFetchIdRef.current;
+
     setLoading(true);
     try {
       const { data: items } = await supabase
@@ -169,14 +173,16 @@ export function EditInspectionDialog({
         .select('*')
         .eq('inspection_id', inspection.id)
         .order('created_at', { ascending: true });
-      
+
+      if (fetchId !== detailsFetchIdRef.current) return;
       setChecklistItems((items || []).map(item => ({ ...item, isModified: false })));
 
       const { data: photoData } = await supabase
         .from('inspection_photos')
         .select('*')
         .eq('inspection_id', inspection.id);
-      
+
+      if (fetchId !== detailsFetchIdRef.current) return;
       setPhotos(photoData || []);
 
       if (photoData && photoData.length > 0) {
@@ -189,10 +195,16 @@ export function EditInspectionDialog({
             urls[photo.id] = data.signedUrl;
           }
         }
+
+        if (fetchId !== detailsFetchIdRef.current) return;
         setPhotoUrls(urls);
+      } else {
+        setPhotoUrls({});
       }
     } finally {
-      setLoading(false);
+      if (fetchId === detailsFetchIdRef.current) {
+        setLoading(false);
+      }
     }
   };
 
@@ -210,6 +222,9 @@ export function EditInspectionDialog({
     const files = e.target.files;
     if (!files || !inspection?.id) return;
 
+    // Cancel any in-flight details fetch that could overwrite local state
+    detailsFetchIdRef.current += 1;
+
     setIsUploadingPhoto(true);
     try {
       for (const file of Array.from(files)) {
@@ -217,7 +232,7 @@ export function EditInspectionDialog({
           inspectionId: inspection.id,
           file,
         });
-        
+
         if (result) {
           setPhotos(prev => [...prev, result]);
           if (result.signedUrl) {
@@ -225,6 +240,9 @@ export function EditInspectionDialog({
           }
         }
       }
+
+      // Ensure state reflects what's persisted
+      await fetchDetails();
     } finally {
       setIsUploadingPhoto(false);
       if (fileInputRef.current) {
