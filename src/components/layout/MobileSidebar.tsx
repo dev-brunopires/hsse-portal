@@ -17,7 +17,6 @@ import {
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetHeader } from '@/components/ui/sheet';
 import { useAuth } from '@/contexts/AuthContext';
-import { useOrganization } from '@/contexts/OrganizationContext';
 import { SystemLogo } from '@/components/ui/SystemLogo';
 
 interface MobileNavItemProps {
@@ -57,9 +56,6 @@ interface MobileSidebarProps {
 export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
   const { t } = useTranslation();
   const { isAdmin, isPlatformOwner } = useAuth();
-  const { organization, logoWhiteUrl } = useOrganization();
-
-  const organizationName = organization?.name || 'SafeShip';
 
   const handleNavClick = () => {
     onOpenChange(false);
@@ -72,24 +68,7 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
         className="w-72 p-0 bg-sidebar border-sidebar-border"
       >
         <SheetHeader className="h-16 flex flex-row items-center justify-between border-b border-sidebar-border px-4">
-          <div className="flex items-center gap-3">
-            {logoWhiteUrl ? (
-              <img 
-                src={logoWhiteUrl} 
-                alt={organizationName} 
-                className="h-10 w-auto max-w-[150px] object-contain"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                  if (e.currentTarget.nextElementSibling) {
-                    (e.currentTarget.nextElementSibling as HTMLElement).classList.remove('hidden');
-                  }
-                }}
-              />
-            ) : null}
-            <div className={logoWhiteUrl ? 'hidden' : ''}>
-              <SystemLogo variant="white" />
-            </div>
-          </div>
+          <SystemLogo variant="white" />
         </SheetHeader>
 
         {/* Navigation - Main items only */}
