@@ -38,7 +38,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useCategories, useDeleteCategory, type Category } from '@/hooks/useCategories';
-import { useEquipmentCountsByCategory } from '@/hooks/useEquipmentCounts';
+import { useTotalEquipmentCountsByCategory } from '@/hooks/useEquipmentCounts';
 import { useChecklistTemplates } from '@/hooks/useChecklistTemplates';
 import { CategoryFormDialog } from '@/components/categories/CategoryFormDialog';
 import { ChecklistTemplatesDialog } from '@/components/categories/ChecklistTemplatesDialog';
@@ -59,7 +59,7 @@ const frequencyColors: Record<string, string> = {
 export default function Categories() {
   const { t } = useTranslation();
   const { data: categories, isLoading, refetch } = useCategories();
-  const { data: equipmentCounts = {} } = useEquipmentCountsByCategory();
+  const { data: equipmentCounts = {} } = useTotalEquipmentCountsByCategory();
   const deleteCategory = useDeleteCategory();
   const isMobile = useIsMobile();
   const isTabletOrMobile = useIsTabletOrMobile();
@@ -359,15 +359,27 @@ export default function Categories() {
                               >
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-destructive hover:text-destructive"
-                                onClick={() => handleDeleteClick(category)}
-                                disabled={equipmentCount > 0}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="text-destructive hover:text-destructive"
+                                      onClick={() => handleDeleteClick(category)}
+                                      disabled={equipmentCount > 0}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {equipmentCount > 0 
+                                    ? t('categoriesPage.cannotDeleteWithEquipment', { count: equipmentCount })
+                                    : t('common.delete')
+                                  }
+                                </TooltipContent>
+                              </Tooltip>
                             </div>
                           </TableCell>
                         </TableRow>
