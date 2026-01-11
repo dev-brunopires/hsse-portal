@@ -54,6 +54,7 @@ import { formatDate } from '@/utils/dateFormat';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { useOrganizationBranding } from '@/hooks/useOrganizationBranding';
 
 interface CategoryInspectionResult {
   equipment: EquipmentWithCategory;
@@ -64,6 +65,7 @@ export function CategoryInspectionTab() {
   const { t } = useTranslation();
   const { user, isAdmin, isAdminMaster } = useAuth();
   const { selectedShipId } = useShipFilter();
+  const branding = useOrganizationBranding();
   const { toast } = useToast();
   
   // Fetch full profile with position
@@ -300,6 +302,7 @@ export function CategoryInspectionTab() {
       },
       signatureData: signatureData || undefined,
       inspectionDate: new Date().toISOString().split('T')[0],
+      branding,
     });
 
     toast({
