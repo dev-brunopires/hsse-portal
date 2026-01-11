@@ -11,6 +11,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AppLayout } from "./components/layout/AppLayout";
 import { OnboardingProvider } from "./components/onboarding/OnboardingProvider";
 import { PageLoadingFallback } from "@/components/ui/PageLoadingFallback";
+import { ChunkErrorBoundary } from "@/components/ui/ChunkErrorBoundary";
 import { Suspense, lazy } from "react";
 
 // Lazy load pages for better performance (code splitting)
@@ -53,6 +54,7 @@ function App() {
                 <OrganizationProvider>
                 <ShipFilterProvider>
                   <OnboardingProvider />
+                  <ChunkErrorBoundary>
                   <Suspense fallback={<PageLoadingFallback />}>
               <Routes>
                 {/* Public Route */}
@@ -187,6 +189,7 @@ function App() {
                 <Route path="*" element={<NotFound />} />
               </Routes>
                   </Suspense>
+                  </ChunkErrorBoundary>
               </ShipFilterProvider>
                 </OrganizationProvider>
               </LanguageProvider>
