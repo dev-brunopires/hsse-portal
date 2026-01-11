@@ -362,24 +362,30 @@ export default function Maintenance() {
 
         {/* Tabs & List */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
-            <TabsTrigger value="all" className="gap-2">
-              {t('maintenance.all')}
-              <Badge variant="secondary" className="ml-1">{requests.length}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="pending" className="gap-2">
-              {t('maintenance.pending')}
-              <Badge variant="secondary" className="ml-1">{stats.pending + stats.approved}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="in_progress" className="gap-2">
-              {t('maintenance.inProgress')}
-              <Badge variant="secondary" className="ml-1">{stats.inProgress}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="completed" className="gap-2">
-              {t('maintenance.completed')}
-              <Badge variant="secondary" className="ml-1">{stats.completed}</Badge>
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+            <TabsList className="w-max md:w-auto">
+              <TabsTrigger value="all" className="gap-1.5">
+                <span className="hidden sm:inline">{t('maintenance.all')}</span>
+                <span className="sm:hidden">Todas</span>
+                <Badge variant="secondary" className="text-xs">{requests.length}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="pending" className="gap-1.5">
+                <span className="hidden sm:inline">{t('maintenance.pending')}</span>
+                <span className="sm:hidden">Pend.</span>
+                <Badge variant="secondary" className="text-xs">{stats.pending + stats.approved}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="in_progress" className="gap-1.5">
+                <span className="hidden sm:inline">{t('maintenance.inProgress')}</span>
+                <span className="sm:hidden">Exec.</span>
+                <Badge variant="secondary" className="text-xs">{stats.inProgress}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="completed" className="gap-1.5">
+                <span className="hidden sm:inline">{t('maintenance.completed')}</span>
+                <span className="sm:hidden">Conc.</span>
+                <Badge variant="secondary" className="text-xs">{stats.completed}</Badge>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value={activeTab} className="mt-4">
             <div 

@@ -404,24 +404,28 @@ export default function Inspections() {
 
       {/* View Mode Tabs */}
       <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'list' | 'calendar' | 'timeline' | 'category')}>
-        <TabsList>
-          <TabsTrigger value="list" className="gap-2">
-            <List className="h-4 w-4" />
-            {t('inspectionsPage.list')}
-          </TabsTrigger>
-          <TabsTrigger value="category" className="gap-2">
-            <Layers className="h-4 w-4" />
-            {t('inspectionsPage.byCategory')}
-          </TabsTrigger>
-          <TabsTrigger value="timeline" className="gap-2">
-            <GitCommitHorizontal className="h-4 w-4" />
-            {t('inspectionsPage.timeline')}
-          </TabsTrigger>
-          <TabsTrigger value="calendar" className="gap-2">
-            <CalendarDays className="h-4 w-4" />
-            {t('inspectionsPage.calendar')}
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+          <TabsList className="w-max md:w-auto">
+            <TabsTrigger value="list" className="gap-2">
+              <List className="h-4 w-4" />
+              <span className="hidden sm:inline">{t('inspectionsPage.list')}</span>
+              <span className="sm:hidden">{t('inspectionsPage.list')}</span>
+            </TabsTrigger>
+            <TabsTrigger value="category" className="gap-2">
+              <Layers className="h-4 w-4" />
+              <span className="hidden sm:inline">{t('inspectionsPage.byCategory')}</span>
+              <span className="sm:hidden">Cat.</span>
+            </TabsTrigger>
+            <TabsTrigger value="timeline" className="gap-2">
+              <GitCommitHorizontal className="h-4 w-4" />
+              <span className="hidden sm:inline">{t('inspectionsPage.timeline')}</span>
+              <span className="sm:hidden">Timeline</span>
+            </TabsTrigger>
+            <TabsTrigger value="calendar" className="gap-2">
+              <CalendarDays className="h-4 w-4" />
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* List View */}
         <TabsContent value="list" className="mt-6">
