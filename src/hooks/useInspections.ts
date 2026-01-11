@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 import { useShipFilter } from '@/contexts/ShipFilterContext';
-import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n';
 import { getCurrentOrganizationId, generateInspectionPhotoPath } from '@/utils/storageHelpers';
 import { translateError } from '@/utils/errorTranslation';
 
@@ -176,7 +176,6 @@ function mapInspectionToEquipmentStatus(inspectionStatus: string): string {
 export function useCreateInspection() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ inspection, checklistItems, photos }: CreateInspectionData) => {
@@ -273,13 +272,13 @@ export function useCreateInspection() {
       queryClient.invalidateQueries({ queryKey: ['inspections'] });
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
       toast({
-        title: t('hooks.inspection.created'),
-        description: t('hooks.inspection.createdDesc'),
+        title: i18n.t('hooks.inspection.created'),
+        description: i18n.t('hooks.inspection.createdDesc'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: t('hooks.inspection.createError'),
+        title: i18n.t('hooks.inspection.createError'),
         description: translateError(error),
         variant: 'destructive',
       });
@@ -295,7 +294,6 @@ interface UpdateInspectionData {
 export function useUpdateInspection() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ id, inspection }: UpdateInspectionData) => {
@@ -328,13 +326,13 @@ export function useUpdateInspection() {
       queryClient.invalidateQueries({ queryKey: ['inspections'] });
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
       toast({
-        title: t('hooks.inspection.updated'),
-        description: t('hooks.inspection.updatedDesc'),
+        title: i18n.t('hooks.inspection.updated'),
+        description: i18n.t('hooks.inspection.updatedDesc'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: t('hooks.inspection.updateError'),
+        title: i18n.t('hooks.inspection.updateError'),
         description: translateError(error),
         variant: 'destructive',
       });
@@ -345,7 +343,6 @@ export function useUpdateInspection() {
 export function useDeleteInspection() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -404,13 +401,13 @@ export function useDeleteInspection() {
       queryClient.invalidateQueries({ queryKey: ['inspections'] });
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
       toast({
-        title: t('hooks.inspection.deleted'),
-        description: t('hooks.inspection.deletedDesc'),
+        title: i18n.t('hooks.inspection.deleted'),
+        description: i18n.t('hooks.inspection.deletedDesc'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: t('hooks.inspection.deleteError'),
+        title: i18n.t('hooks.inspection.deleteError'),
         description: translateError(error),
         variant: 'destructive',
       });

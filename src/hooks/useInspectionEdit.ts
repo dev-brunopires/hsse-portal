@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n';
 import { getCurrentOrganizationId, generateInspectionPhotoPath } from '@/utils/storageHelpers';
 import type { InspectionChecklistItem, InspectionPhoto } from './useInspections';
 
@@ -25,7 +25,6 @@ interface DeletePhotoData {
 export function useUpdateChecklistItem() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ id, status, notes }: UpdateChecklistItemData) => {
@@ -44,7 +43,7 @@ export function useUpdateChecklistItem() {
     },
     onError: (error: Error) => {
       toast({
-        title: t('common.error'),
+        title: i18n.t('common.error'),
         description: error.message,
         variant: 'destructive',
       });
@@ -56,7 +55,6 @@ export function useUpdateChecklistItem() {
 export function useUpdateChecklistItems() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async (items: UpdateChecklistItemData[]) => {
@@ -78,13 +76,13 @@ export function useUpdateChecklistItems() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inspections'] });
       toast({
-        title: t('hooks.checklist.updated'),
-        description: t('hooks.checklist.updatedDesc'),
+        title: i18n.t('hooks.checklist.updated'),
+        description: i18n.t('hooks.checklist.updatedDesc'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: t('common.error'),
+        title: i18n.t('common.error'),
         description: error.message,
         variant: 'destructive',
       });
@@ -96,7 +94,6 @@ export function useUpdateChecklistItems() {
 export function useAddInspectionPhoto() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ inspectionId, file }: AddPhotoData) => {
@@ -135,13 +132,13 @@ export function useAddInspectionPhoto() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inspections'] });
       toast({
-        title: t('hooks.photo.added'),
-        description: t('hooks.photo.addedDesc'),
+        title: i18n.t('hooks.photo.added'),
+        description: i18n.t('hooks.photo.addedDesc'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: t('common.error'),
+        title: i18n.t('common.error'),
         description: error.message,
         variant: 'destructive',
       });
@@ -153,7 +150,6 @@ export function useAddInspectionPhoto() {
 export function useDeleteInspectionPhoto() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ id, filePath }: DeletePhotoData) => {
@@ -179,13 +175,13 @@ export function useDeleteInspectionPhoto() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inspections'] });
       toast({
-        title: t('hooks.photo.deleted'),
-        description: t('hooks.photo.deletedDesc'),
+        title: i18n.t('hooks.photo.deleted'),
+        description: i18n.t('hooks.photo.deletedDesc'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: t('common.error'),
+        title: i18n.t('common.error'),
         description: error.message,
         variant: 'destructive',
       });
@@ -197,7 +193,6 @@ export function useDeleteInspectionPhoto() {
 export function useUpdateInspectionSignature() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ inspectionId, signatureData }: { inspectionId: string; signatureData: string }) => {
@@ -217,13 +212,13 @@ export function useUpdateInspectionSignature() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inspections'] });
       toast({
-        title: t('hooks.signature.updated'),
-        description: t('hooks.signature.updatedDesc'),
+        title: i18n.t('hooks.signature.updated'),
+        description: i18n.t('hooks.signature.updatedDesc'),
       });
     },
     onError: (error: Error) => {
       toast({
-        title: t('common.error'),
+        title: i18n.t('common.error'),
         description: error.message,
         variant: 'destructive',
       });
