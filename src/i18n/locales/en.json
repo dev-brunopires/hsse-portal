@@ -261,6 +261,7 @@
     "export": "Export",
     "exportExcel": "Export Excel",
     "exportPDF": "Export PDF",
+    "exportWithFilters": "PDF with Filters",
     "previewPDF": "Preview PDF",
     "import": "Import",
     "newEquipment": "New Equipment",
@@ -2068,6 +2069,21 @@
     "statusInactive": "Inactive",
     "identificationSection": "Equipment Identification",
     "datesSection": "Dates and Status"
+  },
+  "exportFilters": {
+    "title": "Export Filters",
+    "description": "Select filters to generate the equipment PDF report",
+    "category": "Category",
+    "ship": "Ship/Unit",
+    "status": "Status",
+    "allCategories": "All Categories",
+    "allShips": "All Ships",
+    "allStatuses": "All Statuses",
+    "activeFilters": "Active filters",
+    "clearAll": "Clear all",
+    "equipmentToExport": "equipment will be exported",
+    "preview": "Preview",
+    "exportPDF": "Export PDF"
   },
   "exportInspections": {
     "inspectionDate": "Inspection Date",
