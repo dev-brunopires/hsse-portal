@@ -395,6 +395,8 @@
     "notIdentified": "Not identified",
     "notFound": "Not found",
     "noChecklistItems": "No checklist items registered.",
+    "noPhotos": "No photos registered",
+    "noObservations": "No observations registered",
     "photos": "Photos",
     "checklistOk": "OK",
     "checklistFail": "Fail",
@@ -1482,7 +1484,12 @@
     "actionsTakenHint": "Record here what was done to resolve pending items from previous inspections",
     "observationsPlaceholderFull": "Describe relevant observations about the inspection...",
     "recommendationsPlaceholder": "Include recommendations or necessary corrective actions...",
-    "quickInspection": "Quick inspection - All items compliant"
+    "quickInspection": "Quick inspection - All items compliant",
+    "summary": "Summary",
+    "inspectionSigned": "Inspection Signed",
+    "notSigned": "Inspection not signed",
+    "signedAt": "Signed at",
+    "inspectorSignature": "Inspector Signature"
   },
   "editInspection": {
     "title": "Edit Inspection",
@@ -1500,7 +1507,8 @@
     "select": "Select",
     "statusCompliant": "Compliant",
     "statusAttention": "Attention",
-    "statusNonCompliant": "Non-Compliant"
+    "statusNonCompliant": "Non-Compliant",
+    "checklistReadOnly": "The checklist cannot be edited after the inspection is registered."
   },
   "inspectionCalendar": {
     "today": "Today",
