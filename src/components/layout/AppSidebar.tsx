@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, forwardRef } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -29,33 +29,37 @@ interface NavItemProps {
   collapsed: boolean;
 }
 
-const NavItem = ({ to, icon, label, collapsed }: NavItemProps) => {
-  const location = useLocation();
-  const isActive = location.pathname === to;
+const NavItem = forwardRef<HTMLAnchorElement, NavItemProps>(
+  ({ to, icon, label, collapsed }, ref) => {
+    const location = useLocation();
+    const isActive = location.pathname === to;
 
-  return (
-    <NavLink to={to}>
-      <div
-        className={cn(
-          'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group',
-          'hover:bg-sidebar-accent text-sidebar-foreground',
-          isActive && 'bg-sidebar-primary/20 text-sidebar-primary font-medium border-l-2 border-sidebar-primary',
-          collapsed && 'justify-center px-2'
-        )}
-      >
-        <span className={cn(
-          'flex-shrink-0 transition-transform duration-200 group-hover:scale-110', 
-          isActive && 'text-sidebar-primary'
-        )}>
-          {icon}
-        </span>
-        {!collapsed && (
-          <span className="text-sm truncate">{label}</span>
-        )}
-      </div>
-    </NavLink>
-  );
-};
+    return (
+      <NavLink to={to} ref={ref}>
+        <div
+          className={cn(
+            'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group',
+            'hover:bg-sidebar-accent text-sidebar-foreground',
+            isActive && 'bg-sidebar-primary/20 text-sidebar-primary font-medium border-l-2 border-sidebar-primary',
+            collapsed && 'justify-center px-2'
+          )}
+        >
+          <span className={cn(
+            'flex-shrink-0 transition-transform duration-200 group-hover:scale-110', 
+            isActive && 'text-sidebar-primary'
+          )}>
+            {icon}
+          </span>
+          {!collapsed && (
+            <span className="text-sm truncate">{label}</span>
+          )}
+        </div>
+      </NavLink>
+    );
+  }
+);
+
+NavItem.displayName = 'NavItem';
 
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
