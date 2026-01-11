@@ -22,6 +22,7 @@ import { EquipmentStatusByCategoryChart } from '@/components/dashboard/Equipment
 import { EquipmentComplianceChart } from '@/components/dashboard/EquipmentComplianceChart';
 import { UpcomingInspectionsCard } from '@/components/dashboard/UpcomingInspectionsCard';
 import { ExpiringCertificatesCard } from '@/components/dashboard/ExpiringCertificatesCard';
+import { CertificatesExpiringCard } from '@/components/dashboard/CertificatesExpiringCard';
 import { DashboardFilters, type DashboardFiltersState } from '@/components/dashboard/DashboardFilters';
 import { UpcomingMaintenanceCard } from '@/components/maintenance/UpcomingMaintenanceCard';
 import { InspectorPerformanceCard } from '@/components/dashboard/InspectorPerformanceCard';
@@ -265,8 +266,11 @@ export default function Dashboard() {
       {/* Equipment Compliance Chart */}
       <EquipmentComplianceChart />
 
-      {/* Expiring Certificates */}
+      {/* Expiring Certificates (Equipment field) */}
       <ExpiringCertificatesCard />
+
+      {/* Certificates Module Expiring */}
+      <CertificatesExpiringCard />
 
       {/* Maintenance Trend Chart */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

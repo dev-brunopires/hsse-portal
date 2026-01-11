@@ -20,7 +20,8 @@ import {
   Menu,
   Moon,
   Sun,
-  Languages
+  Languages,
+  FileCheck
 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { Button } from '@/components/ui/button';
@@ -46,7 +47,8 @@ import {
   useMarkNotificationAsRead,
   useMarkAllNotificationsAsRead 
 } from '@/hooks/useNotifications';
-import { format } from 'date-fns';
+import { useCertificates } from '@/hooks/useCertificates';
+import { format, differenceInDays, parseISO } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
 import {
   markSystemNotificationRead,
@@ -69,8 +71,27 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
   const { data: ships = [] } = useShips();
   const { data: userShips = [] } = useUserShips(user?.id);
   const { data: allNotifications = [] } = useNotifications();
+  const { data: allCertificates = [] } = useCertificates();
   const markAsRead = useMarkNotificationAsRead();
   const markAllAsRead = useMarkAllNotificationsAsRead();
+
+  // Calculate expiring certificates count (within 30 days)
+  const expiringCertificatesCount = useMemo(() => {
+    const today = new Date();
+    return allCertificates.filter(cert => {
+      if (!cert.expiry_date) return false;
+      const daysUntil = differenceInDays(parseISO(cert.expiry_date), today);
+      return daysUntil >= 0 && daysUntil <= 30;
+    }).length;
+  }, [allCertificates]);
+
+  const expiredCertificatesCount = useMemo(() => {
+    const today = new Date();
+    return allCertificates.filter(cert => {
+      if (!cert.expiry_date) return false;
+      return parseISO(cert.expiry_date) < today;
+    }).length;
+  }, [allCertificates]);
 
   const dateLocale = i18n.language === 'en' ? enUS : ptBR;
 
@@ -173,8 +194,40 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
       });
     }
 
+    // Add alert for expired certificates
+    if (expiredCertificatesCount > 0) {
+      const savedCount = parseInt(systemRead['system-cert-expired'] || '0', 10);
+      const isRead = savedCount >= expiredCertificatesCount;
+
+      notifs.unshift({
+        id: 'system-cert-expired',
+        type: 'alert',
+        title: t('header.expiredCertificates'),
+        message: t('header.expiredCertificatesMessage', { count: expiredCertificatesCount }),
+        isRead,
+        isSystem: true,
+        canMarkRead: true,
+      });
+    }
+
+    // Add warning for expiring certificates (within 30 days)
+    if (expiringCertificatesCount > 0) {
+      const savedCount = parseInt(systemRead['system-cert-expiring'] || '0', 10);
+      const isRead = savedCount >= expiringCertificatesCount;
+
+      notifs.unshift({
+        id: 'system-cert-expiring',
+        type: 'warning',
+        title: t('header.expiringCertificates'),
+        message: t('header.expiringCertificatesMessage', { count: expiringCertificatesCount }),
+        isRead,
+        isSystem: true,
+        canMarkRead: true,
+      });
+    }
+
     return notifs;
-  }, [allNotifications, userShips, highPriorityCount, isAdmin, systemRead, t]);
+  }, [allNotifications, userShips, highPriorityCount, expiringCertificatesCount, expiredCertificatesCount, isAdmin, systemRead, t]);
 
   const unreadCount = combinedNotifications.filter((n) => !n.isRead).length;
 
@@ -187,11 +240,17 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
         if (notificationId === 'system-high-priority') {
           markSystemRead('system-high-priority', String(highPriorityCount));
         }
+        if (notificationId === 'system-cert-expired') {
+          markSystemRead('system-cert-expired', String(expiredCertificatesCount));
+        }
+        if (notificationId === 'system-cert-expiring') {
+          markSystemRead('system-cert-expiring', String(expiringCertificatesCount));
+        }
         return;
       }
       markAsRead.mutate(notificationId);
     },
-    [markAsRead, markSystemRead, highPriorityCount]
+    [markAsRead, markSystemRead, highPriorityCount, expiringCertificatesCount, expiredCertificatesCount]
   );
 
   const handleMarkAllAsRead = useCallback(() => {
@@ -199,8 +258,14 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
     if (highPriorityCount > 0) {
       markSystemRead('system-high-priority', String(highPriorityCount));
     }
+    if (expiredCertificatesCount > 0) {
+      markSystemRead('system-cert-expired', String(expiredCertificatesCount));
+    }
+    if (expiringCertificatesCount > 0) {
+      markSystemRead('system-cert-expiring', String(expiringCertificatesCount));
+    }
     markAllAsRead.mutate();
-  }, [markAllAsRead, markSystemRead, highPriorityCount]);
+  }, [markAllAsRead, markSystemRead, highPriorityCount, expiringCertificatesCount, expiredCertificatesCount]);
 
   const handleSignOut = async () => {
     await signOut();
