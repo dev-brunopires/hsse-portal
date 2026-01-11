@@ -2769,33 +2769,6 @@
     "duplicate": "Duplicate template",
     "copy": "Copy"
   },
-  "hooks": {
-    "checklist": {
-      "updated": "Checklist Updated",
-      "updatedDesc": "Checklist items have been updated successfully"
-    },
-    "photo": {
-      "added": "Photo Added",
-      "addedDesc": "The photo has been uploaded successfully",
-      "deleted": "Photo Removed",
-      "deletedDesc": "The photo has been removed successfully"
-    },
-    "signature": {
-      "updated": "Signature Updated",
-      "updatedDesc": "The signature has been updated successfully"
-    },
-    "ships": {
-      "created": "Unit Created",
-      "createdDesc": "The unit has been created successfully.",
-      "createError": "Error Creating",
-      "updated": "Unit Updated",
-      "updatedDesc": "The unit data has been updated.",
-      "updateError": "Error Updating",
-      "deleted": "Unit Removed",
-      "deletedDesc": "The unit has been removed from the system.",
-      "deleteError": "Error Removing"
-    }
-  },
   "errors": {
     "errorTitle": "Error",
     "genericError": "An error occurred. Please try again.",
