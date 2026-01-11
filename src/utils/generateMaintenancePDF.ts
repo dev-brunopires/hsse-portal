@@ -356,8 +356,9 @@ export async function generateMaintenancePDF(data: MaintenanceDetailData, option
     });
   }
 
-  // Add footer
-  addPDFFooter(doc, t('generateMaintenancePDF.footerTitle'), t('generateMaintenancePDF.footerSubtitle'));
+  // Add footer with organization name
+  const companyName = data.branding?.name || 'SafeShip';
+  addPDFFooter(doc, `${companyName} - ${t('generateMaintenancePDF.footerSubtitle')}`, formatMaintenanceId(data.id));
 
   // Save or Preview
   const fileName = `${t('generateMaintenancePDF.filePrefix')}_${formatMaintenanceId(data.id).replace('-', '_')}_${format(new Date(), 'yyyyMMdd')}.pdf`;
