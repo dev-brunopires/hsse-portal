@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 
 const STORAGE_KEY = 'selected_ship_id';
@@ -7,22 +7,43 @@ interface ShipFilterContextType {
   selectedShipId: string | null; // null = all ships
   setSelectedShipId: (shipId: string | null) => void;
   isFilterEnabled: boolean; // true for admin/admin_master
+  isReady: boolean; // true when auth is loaded and filter state is initialized
 }
 
 const ShipFilterContext = createContext<ShipFilterContextType | undefined>(undefined);
 
 export function ShipFilterProvider({ children }: { children: ReactNode }) {
-  const { role, isPlatformOwner, user } = useAuth();
-
-  // Initialize from localStorage if available
-  const [selectedShipId, setSelectedShipIdState] = useState<string | null>(() => {
-    if (typeof window === 'undefined') return null;
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored || null;
-  });
+  const { role, isPlatformOwner, user, loading: authLoading } = useAuth();
+  const [initialized, setInitialized] = useState(false);
+  const [selectedShipId, setSelectedShipIdState] = useState<string | null>(null);
 
   // Admin, admin_master, and platform owners can use global ship filter
   const isFilterEnabled = role === 'admin' || role === 'admin_master' || isPlatformOwner;
+
+  // Initialize from localStorage only AFTER auth is loaded
+  useEffect(() => {
+    if (authLoading) return;
+    
+    if (!user) {
+      // User logged out - clear state
+      setSelectedShipIdState(null);
+      localStorage.removeItem(STORAGE_KEY);
+      setInitialized(true);
+      return;
+    }
+
+    if (isFilterEnabled) {
+      // Restore from localStorage for authorized users
+      const stored = localStorage.getItem(STORAGE_KEY);
+      setSelectedShipIdState(stored || null);
+    } else {
+      // Non-admin users don't use ship filter
+      setSelectedShipIdState(null);
+      localStorage.removeItem(STORAGE_KEY);
+    }
+    
+    setInitialized(true);
+  }, [authLoading, user, isFilterEnabled]);
 
   // Wrapped setter that also persists to localStorage
   const setSelectedShipId = useCallback((shipId: string | null) => {
@@ -34,21 +55,10 @@ export function ShipFilterProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Reset filter when role changes or user logs out
-  useEffect(() => {
-    if (!isFilterEnabled) {
-      setSelectedShipIdState(null);
-      localStorage.removeItem(STORAGE_KEY);
-    }
-  }, [isFilterEnabled]);
-
-  // Clear cache on logout
-  useEffect(() => {
-    if (!user) {
-      localStorage.removeItem(STORAGE_KEY);
-      setSelectedShipIdState(null);
-    }
-  }, [user]);
+  // Only consider ready when auth has loaded and we've initialized the state
+  const isReady = useMemo(() => {
+    return !authLoading && initialized;
+  }, [authLoading, initialized]);
 
   return (
     <ShipFilterContext.Provider
@@ -56,6 +66,7 @@ export function ShipFilterProvider({ children }: { children: ReactNode }) {
         selectedShipId,
         setSelectedShipId,
         isFilterEnabled,
+        isReady,
       }}
     >
       {children}

@@ -6,10 +6,11 @@ import { getEffectiveEquipmentStatus } from '@/utils/equipmentStatus';
 import { useShipFilter } from '@/contexts/ShipFilterContext';
 
 export function useDashboardStats() {
-  const { selectedShipId, isFilterEnabled } = useShipFilter();
+  const { selectedShipId, isFilterEnabled, isReady } = useShipFilter();
   
   return useQuery({
     queryKey: ['dashboard-stats', selectedShipId],
+    enabled: isReady, // Wait for ship filter to be initialized
     queryFn: async (): Promise<DashboardStats> => {
       const today = new Date();
       const thirtyDaysFromNow = addDays(today, 30);
