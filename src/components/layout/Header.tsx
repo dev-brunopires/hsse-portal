@@ -2,7 +2,6 @@ import { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
   Bell, 
-  Search, 
   User, 
   ChevronDown, 
   LogOut, 
@@ -25,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { Button } from '@/components/ui/button';
+import { GlobalSearchTrigger } from '@/components/global-search/GlobalSearchTrigger';
 import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
@@ -360,6 +360,12 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
         >
           {resolvedTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
         </Button>
+
+        {/* Global Search */}
+        <div className="hidden md:block">
+          <GlobalSearchTrigger />
+        </div>
+        <GlobalSearchTrigger variant="compact" className="md:hidden" />
 
         {/* Ship Indicator - hidden on mobile */}
         {userShips.length > 0 && (

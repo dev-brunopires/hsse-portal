@@ -64,6 +64,7 @@ import { CertificateFormDialog } from '@/components/certificates/CertificateForm
 import { CertificateDetailDialog } from '@/components/certificates/CertificateDetailDialog';
 import { RenewCertificateDialog } from '@/components/certificates/RenewCertificateDialog';
 import { StatCard } from '@/components/ui/stat-card';
+import { CertificateExpiryChart } from '@/components/dashboard/CertificateExpiryChart';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -336,6 +337,8 @@ export default function Certificates() {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Expiry Chart */}
+      <CertificateExpiryChart />
       <PageHeader
         icon={FileText}
         title={t('certificates.title')}
