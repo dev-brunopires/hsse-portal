@@ -56,6 +56,7 @@ export interface PDFHeaderOptions {
 
 /**
  * Adds standardized header to PDF with organization logo
+ * Features a modern diagonal design with logo on the right
  */
 export async function addPDFHeader(
   doc: jsPDF, 
@@ -67,12 +68,70 @@ export async function addPDFHeader(
   const pageWidth = doc.internal.pageSize.getWidth();
   const branding = options?.branding;
   const primaryColor = branding?.primaryColor || SBM_BLUE;
+  const headerHeight = 32;
   
-  // Header section with organization's primary color
+  // Calculate a lighter shade for the diagonal section
+  const lightColor: [number, number, number] = [
+    Math.min(255, primaryColor[0] + 40),
+    Math.min(255, primaryColor[1] + 50),
+    Math.min(255, primaryColor[2] + 60),
+  ];
+  
+  // Draw the lighter left diagonal section first
+  doc.setFillColor(...lightColor);
+  doc.triangle(
+    0, 0,                      // Top-left corner
+    pageWidth * 0.55, 0,       // Top point of diagonal
+    0, headerHeight,           // Bottom-left corner
+    'F'
+  );
+  
+  // Draw the main dark section (right side with diagonal cut)
   doc.setFillColor(...primaryColor);
-  doc.rect(0, 0, pageWidth, 32, 'F');
+  // Create a polygon for the main section with diagonal
+  const points = [
+    pageWidth * 0.45, 0,       // Start of diagonal at top
+    pageWidth, 0,              // Top-right corner
+    pageWidth, headerHeight,   // Bottom-right corner
+    0, headerHeight,           // Bottom-left corner
+  ];
   
-  // Try to add the organization logo
+  // Draw using lines since jsPDF doesn't have a direct polygon fill
+  doc.setFillColor(...primaryColor);
+  doc.rect(0, 0, pageWidth, headerHeight, 'F'); // Fill entire header first
+  
+  // Now draw the lighter diagonal overlay on top-left
+  doc.setFillColor(...lightColor);
+  doc.triangle(
+    0, 0,                      // Top-left corner
+    pageWidth * 0.50, 0,       // Top point of diagonal (50% of width)
+    0, headerHeight,           // Bottom-left corner
+    'F'
+  );
+  
+  // Report title - positioned on the left side
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text(title, 14, 13);
+  
+  // Subtitle (date) - below title on left
+  if (subtitle) {
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text(subtitle, 14, 21);
+  }
+  
+  // Additional info below subtitle
+  if (rightText && rightText.length > 0) {
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    rightText.forEach((text, index) => {
+      doc.text(text, 14, 27 + (index * 5));
+    });
+  }
+  
+  // Try to add the organization logo on the RIGHT side
   let logoAdded = false;
   
   const logoUrl = branding?.logoWhiteUrl || branding?.logoUrl;
@@ -83,7 +142,12 @@ export async function addPDFHeader(
         // Detect image type from base64
         const imageType = logoBase64.includes('image/png') ? 'PNG' : 
                           logoBase64.includes('image/svg') ? 'SVG' : 'JPEG';
-        doc.addImage(logoBase64, imageType, 14, 6, 32, 20);
+        // Position logo on the right side
+        const logoWidth = 35;
+        const logoHeight = 18;
+        const logoX = pageWidth - logoWidth - 10;
+        const logoY = (headerHeight - logoHeight) / 2;
+        doc.addImage(logoBase64, imageType, logoX, logoY, logoWidth, logoHeight);
         logoAdded = true;
       } catch (error) {
         console.error('Error adding organization logo to PDF:', error);
@@ -91,38 +155,31 @@ export async function addPDFHeader(
     }
   }
   
-  // Fallback to text logo with organization name
+  // Fallback to text logo with organization name (on the right)
   if (!logoAdded) {
-    addTextLogo(doc, branding?.name);
-  }
-  
-  // Report title
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.text(title, pageWidth / 2, 14, { align: 'center' });
-  
-  // Subtitle (date)
-  if (subtitle) {
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.text(subtitle, pageWidth / 2, 22, { align: 'center' });
-  }
-  
-  // Right side text (filters, document info)
-  if (rightText && rightText.length > 0) {
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    rightText.forEach((text, index) => {
-      doc.text(text, pageWidth - 14, 14 + (index * 7), { align: 'right' });
-    });
+    addTextLogoRight(doc, pageWidth, headerHeight, branding?.name);
   }
   
   return 40; // Return the Y position after header
 }
 
 /**
- * Fallback text logo when image fails - uses organization name
+ * Fallback text logo when image fails - uses organization name (positioned on right)
+ */
+function addTextLogoRight(doc: jsPDF, pageWidth: number, headerHeight: number, organizationName?: string) {
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  
+  // Use organization name or default
+  const name = organizationName || 'SafeShip';
+  // Truncate if too long
+  const displayName = name.length > 18 ? name.substring(0, 18) + '...' : name;
+  doc.text(displayName, pageWidth - 14, headerHeight / 2 + 3, { align: 'right' });
+}
+
+/**
+ * Fallback text logo when image fails - uses organization name (legacy left position)
  */
 function addTextLogo(doc: jsPDF, organizationName?: string) {
   doc.setTextColor(255, 255, 255);
@@ -139,6 +196,7 @@ function addTextLogo(doc: jsPDF, organizationName?: string) {
 /**
  * Synchronous version for backwards compatibility - uses cached logo
  * Note: For organization-specific logos, use the async addPDFHeader instead
+ * Features the same modern diagonal design with logo on the right
  */
 export function addPDFHeaderSync(
   doc: jsPDF, 
@@ -150,12 +208,51 @@ export function addPDFHeaderSync(
   const pageWidth = doc.internal.pageSize.getWidth();
   const branding = options?.branding;
   const primaryColor = branding?.primaryColor || SBM_BLUE;
+  const headerHeight = 32;
   
-  // Header section with organization's primary color
+  // Calculate a lighter shade for the diagonal section
+  const lightColor: [number, number, number] = [
+    Math.min(255, primaryColor[0] + 40),
+    Math.min(255, primaryColor[1] + 50),
+    Math.min(255, primaryColor[2] + 60),
+  ];
+  
+  // Fill entire header with primary color first
   doc.setFillColor(...primaryColor);
-  doc.rect(0, 0, pageWidth, 32, 'F');
+  doc.rect(0, 0, pageWidth, headerHeight, 'F');
   
-  // Try to use cached logo
+  // Draw the lighter diagonal overlay on top-left
+  doc.setFillColor(...lightColor);
+  doc.triangle(
+    0, 0,                      // Top-left corner
+    pageWidth * 0.50, 0,       // Top point of diagonal (50% of width)
+    0, headerHeight,           // Bottom-left corner
+    'F'
+  );
+  
+  // Report title - positioned on the left side
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text(title, 14, 13);
+  
+  // Subtitle (date) - below title on left
+  if (subtitle) {
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text(subtitle, 14, 21);
+  }
+  
+  // Additional info below subtitle
+  if (rightText && rightText.length > 0) {
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    rightText.forEach((text, index) => {
+      doc.text(text, 14, 27 + (index * 5));
+    });
+  }
+  
+  // Try to use cached logo on the RIGHT side
   let logoAdded = false;
   const logoUrl = branding?.logoWhiteUrl || branding?.logoUrl;
   if (logoUrl && logoCache.has(logoUrl)) {
@@ -164,7 +261,12 @@ export function addPDFHeaderSync(
       try {
         const imageType = cachedLogo.includes('image/png') ? 'PNG' : 
                           cachedLogo.includes('image/svg') ? 'SVG' : 'JPEG';
-        doc.addImage(cachedLogo, imageType, 14, 6, 32, 20);
+        // Position logo on the right side
+        const logoWidth = 35;
+        const logoHeight = 18;
+        const logoX = pageWidth - logoWidth - 10;
+        const logoY = (headerHeight - logoHeight) / 2;
+        doc.addImage(cachedLogo, imageType, logoX, logoY, logoWidth, logoHeight);
         logoAdded = true;
       } catch (error) {
         // Fallback to text
@@ -173,29 +275,7 @@ export function addPDFHeaderSync(
   }
   
   if (!logoAdded) {
-    addTextLogo(doc, branding?.name);
-  }
-  
-  // Report title
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.text(title, pageWidth / 2, 14, { align: 'center' });
-  
-  // Subtitle
-  if (subtitle) {
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.text(subtitle, pageWidth / 2, 22, { align: 'center' });
-  }
-  
-  // Right side text
-  if (rightText && rightText.length > 0) {
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    rightText.forEach((text, index) => {
-      doc.text(text, pageWidth - 14, 14 + (index * 7), { align: 'right' });
-    });
+    addTextLogoRight(doc, pageWidth, headerHeight, branding?.name);
   }
   
   return 40;
