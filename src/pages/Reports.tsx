@@ -232,9 +232,18 @@ export default function Reports() {
       startY: startY,
       head: [[t('reports.category'), t('reports.total'), t('reports.active'), t('reports.maintenance'), t('reports.statusExpired'), t('reports.statusRejected'), t('reports.compliance')]],
       body: groupedByCategory,
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: [22, 85, 154] },
+      styles: { fontSize: 9, cellPadding: 4 },
+      headStyles: { fillColor: [22, 85, 154], fontStyle: 'bold' },
       alternateRowStyles: { fillColor: [248, 250, 252] },
+      columnStyles: {
+        0: { cellWidth: 'auto' }, // Category
+        1: { cellWidth: 22, halign: 'center' }, // Total
+        2: { cellWidth: 22, halign: 'center' }, // Active
+        3: { cellWidth: 30, halign: 'center' }, // Maintenance
+        4: { cellWidth: 26, halign: 'center' }, // Expired
+        5: { cellWidth: 28, halign: 'center' }, // Rejected
+        6: { cellWidth: 32, halign: 'center' }, // Compliance
+      },
     });
 
     // Add signature
@@ -478,12 +487,18 @@ export default function Reports() {
       startY: startY,
       head: [[t('reports.date'), t('reports.equipment'), t('reports.code'), t('reports.inspector'), t('reports.status'), t('reports.equipmentAlerts'), t('reports.observations')]],
       body: tableData,
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [234, 88, 12] },
+      styles: { fontSize: 8, cellPadding: 3 },
+      headStyles: { fillColor: [234, 88, 12], fontStyle: 'bold' },
       alternateRowStyles: { fillColor: [255, 247, 237] },
       columnStyles: {
-        5: { cellWidth: 35 } // Alerts column
-      }
+        0: { cellWidth: 24 }, // Date
+        1: { cellWidth: 'auto' }, // Equipment
+        2: { cellWidth: 22 }, // Code
+        3: { cellWidth: 32 }, // Inspector
+        4: { cellWidth: 28 }, // Status
+        5: { cellWidth: 38 }, // Alerts column
+        6: { cellWidth: 38 }, // Observations
+      },
     });
 
     const finalY = (doc as any).lastAutoTable?.finalY || startY + 50;

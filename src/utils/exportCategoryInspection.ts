@@ -209,12 +209,12 @@ export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFDat
     },
     columnStyles: {
       0: { cellWidth: 10, halign: 'center' },
-      1: { cellWidth: 24 },
+      1: { cellWidth: 26 },
       2: { cellWidth: 'auto' },
-      3: { cellWidth: 22, halign: 'center' },
-      4: { cellWidth: 32 },
-      5: { cellWidth: 22, halign: 'center' },
-      6: { cellWidth: 28, halign: 'center' },
+      3: { cellWidth: 24, halign: 'center' },
+      4: { cellWidth: 34 },
+      5: { cellWidth: 26, halign: 'center' },
+      6: { cellWidth: 30, halign: 'center' },
     },
     didParseCell: (hookData) => {
       if (hookData.section === 'body') {
