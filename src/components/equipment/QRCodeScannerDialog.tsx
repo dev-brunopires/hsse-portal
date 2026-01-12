@@ -21,6 +21,41 @@ interface QRCodeScannerDialogProps {
 
 type ScannerState = 'initializing' | 'scanning' | 'success' | 'error' | 'permission-denied';
 
+// Check if camera permission was already granted
+const checkCameraPermission = async (): Promise<'granted' | 'denied' | 'prompt'> => {
+  try {
+    // First check if we have a cached permission state
+    const cachedPermission = localStorage.getItem('camera_permission_state');
+    if (cachedPermission === 'granted') {
+      return 'granted';
+    }
+
+    // Use Permissions API if available
+    if (navigator.permissions && navigator.permissions.query) {
+      const result = await navigator.permissions.query({ name: 'camera' as PermissionName });
+      localStorage.setItem('camera_permission_state', result.state);
+      return result.state as 'granted' | 'denied' | 'prompt';
+    }
+
+    // Fallback: check if we've successfully used camera before
+    return cachedPermission === 'denied' ? 'denied' : 'prompt';
+  } catch {
+    // Permissions API not supported, check localStorage
+    const cachedPermission = localStorage.getItem('camera_permission_state');
+    return cachedPermission as 'granted' | 'denied' | 'prompt' || 'prompt';
+  }
+};
+
+// Mark camera permission as granted after successful access
+const markCameraPermissionGranted = () => {
+  localStorage.setItem('camera_permission_state', 'granted');
+};
+
+// Mark camera permission as denied
+const markCameraPermissionDenied = () => {
+  localStorage.setItem('camera_permission_state', 'denied');
+};
+
 export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScannerDialogProps) {
   const { t } = useTranslation();
   const [scannerState, setScannerState] = useState<ScannerState>('initializing');
@@ -29,6 +64,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
   const [scanProgress, setScanProgress] = useState(0);
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
   const [isSwitchingCamera, setIsSwitchingCamera] = useState(false);
+  const [permissionChecked, setPermissionChecked] = useState(false);
 
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const isMountedRef = useRef(true);
@@ -167,6 +203,10 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
         }
       );
 
+      // Camera access was successful, mark permission as granted
+      markCameraPermissionGranted();
+      setPermissionChecked(true);
+
       if (isMountedRef.current) {
         setScannerState('scanning');
         setScanProgress(0);
@@ -185,6 +225,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
         setIsSwitchingCamera(false);
         const errStr = String(err);
         if (errStr.includes('Permission') || errStr.includes('NotAllowedError')) {
+          markCameraPermissionDenied();
           setScannerState('permission-denied');
           setErrorMessage(t('qrScanner.permissionDeniedError'));
         } else if (errStr.includes('NotFoundError') || errStr.includes('NotFound')) {
@@ -219,7 +260,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
     }, 100);
   }, [facingMode, isSwitchingCamera, scannerState, cleanupScanner, startScanning]);
 
-  // Handle dialog open/close
+  // Handle dialog open/close - check permission first
   useEffect(() => {
     if (open) {
       isMountedRef.current = true;
@@ -229,8 +270,18 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       setFacingMode('environment');
       setIsSwitchingCamera(false);
       setContainerId(`qr-reader-${Date.now()}`);
+      
+      // Pre-check camera permission to avoid repeated prompts
+      checkCameraPermission().then((permission) => {
+        if (permission === 'denied') {
+          setScannerState('permission-denied');
+          setErrorMessage(t('qrScanner.permissionDeniedError'));
+        }
+        setPermissionChecked(true);
+      });
     } else {
       cleanupScanner();
+      setPermissionChecked(false);
     }
     
     return () => {
@@ -238,18 +289,19 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
         cleanupScanner();
       }
     };
-  }, [open, cleanupScanner]);
+  }, [open, cleanupScanner, t]);
 
-  // Start scanning when the containerId is rendered
+  // Start scanning when the containerId is rendered and permission is not denied
   useEffect(() => {
-    if (!open || isSwitchingCamera) return;
+    if (!open || isSwitchingCamera || !permissionChecked) return;
+    if (scannerState === 'permission-denied') return;
 
-    const t = window.setTimeout(() => {
+    const timeout = window.setTimeout(() => {
       if (isMountedRef.current) startScanning();
     }, 50);
 
-    return () => window.clearTimeout(t);
-  }, [open, containerId, startScanning, isSwitchingCamera]);
+    return () => window.clearTimeout(timeout);
+  }, [open, containerId, startScanning, isSwitchingCamera, permissionChecked, scannerState]);
 
   // Cleanup on unmount and page visibility changes
   useEffect(() => {
@@ -275,8 +327,11 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
   }, [cleanupScanner]);
 
   const handleRetry = () => {
+    // Clear permission denied state from localStorage to allow re-prompting
+    localStorage.removeItem('camera_permission_state');
     setErrorMessage(null);
     setScannerState('initializing');
+    setPermissionChecked(true);
     startScanning();
   };
 
