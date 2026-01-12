@@ -13,10 +13,11 @@ export async function ensureCertificateForEquipment(
   equipmentName: string,
   certificateExpiry: string | null,
   shipId: string | null,
-  organizationId: string | null
-) {
+  organizationId: string | null,
+  showToast: boolean = true
+): Promise<'created' | 'updated' | 'unchanged' | null> {
   // If no certificate_expiry, nothing to sync
-  if (!certificateExpiry) return;
+  if (!certificateExpiry) return null;
 
   // If organizationId is not provided, fetch it from the equipment's ship
   let orgId = organizationId;
@@ -56,7 +57,7 @@ export async function ensureCertificateForEquipment(
     const matchingCert = existingCerts.find(c => c.expiry_date === certificateExpiry);
     if (matchingCert) {
       // Certificate already exists with correct expiry, nothing to do
-      return;
+      return 'unchanged';
     }
     // Update the first certificate's expiry date
     const { error: updateError } = await supabase
@@ -65,7 +66,14 @@ export async function ensureCertificateForEquipment(
       .eq('id', existingCerts[0].id);
     
     if (updateError) throw updateError;
-    return;
+    
+    if (showToast) {
+      toast.info(i18n.t('certificates.autoSyncUpdated'), {
+        description: equipmentName,
+        icon: '🔄',
+      });
+    }
+    return 'updated';
   }
 
   // No certificate exists, create one
@@ -85,6 +93,14 @@ export async function ensureCertificateForEquipment(
     });
 
   if (insertError) throw insertError;
+
+  if (showToast) {
+    toast.success(i18n.t('certificates.autoSyncCreated'), {
+      description: equipmentName,
+      icon: '✅',
+    });
+  }
+  return 'created';
 }
 
 /**

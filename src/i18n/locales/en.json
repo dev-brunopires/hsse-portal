@@ -194,6 +194,8 @@
     "syncSuccess": "{{count}} certificate(s) synced successfully",
     "syncNoNew": "All equipment already have certificates",
     "syncError": "Error syncing certificates",
+    "autoSyncCreated": "Certificate automatically created",
+    "autoSyncUpdated": "Certificate expiry updated",
     "syncFromEquipment": "Sync Equipment",
     "syncTooltip": "Creates certificates for equipment with expiry dates",
     "noCertificates": "No certificates found",
