@@ -56,8 +56,8 @@ export interface PDFHeaderOptions {
 
 /**
  * Adds standardized header to PDF with organization logo
- * Features a modern diagonal design with logo on the right
- * Design: Lighter section on left with diagonal edge, dark section on right with logo
+ * Features a modern design with rounded rectangle on left and logo on right
+ * Design: Steel blue rounded rectangle on left, dark navy on right with logo
  */
 export async function addPDFHeader(
   doc: jsPDF, 
@@ -71,39 +71,41 @@ export async function addPDFHeader(
   const primaryColor = branding?.primaryColor || SBM_BLUE;
   const headerHeight = 32;
   
-  // Calculate a lighter shade for the left diagonal section (steel blue/gray tone)
-  const lightColor: [number, number, number] = [
-    Math.min(255, Math.round(primaryColor[0] * 1.3 + 30)),
-    Math.min(255, Math.round(primaryColor[1] * 1.2 + 40)),
-    Math.min(255, Math.round(primaryColor[2] * 1.1 + 30)),
+  // Calculate a lighter steel blue shade for the left rectangle
+  const steelBlue: [number, number, number] = [
+    Math.min(255, Math.round(primaryColor[0] * 1.4 + 20)),
+    Math.min(255, Math.round(primaryColor[1] * 1.3 + 30)),
+    Math.min(255, Math.round(primaryColor[2] * 1.15 + 20)),
   ];
   
-  // Fill entire header with primary color first (dark blue - right side)
+  // Fill entire header with primary color first (dark navy - background)
   doc.setFillColor(...primaryColor);
   doc.rect(0, 0, pageWidth, headerHeight, 'F');
   
-  // Draw the lighter left section with diagonal edge
-  // The diagonal goes from ~55% at top to ~35% at bottom, creating the angled effect
-  doc.setFillColor(...lightColor);
+  // Draw the steel blue rounded rectangle on the left
+  // Width covers about 55% of the page, with rounded corners on the right side
+  const leftRectWidth = pageWidth * 0.52;
+  const cornerRadius = 16; // ~50px equivalent in PDF units (mm)
   
-  // Use a polygon-like approach with triangle to create the diagonal
-  // Points: top-left, top at 55% width, bottom at 35% width, bottom-left
-  const topDiagonalX = pageWidth * 0.52;
-  const bottomDiagonalX = pageWidth * 0.32;
+  doc.setFillColor(...steelBlue);
   
-  // Draw as two shapes: rectangle + triangle to create the diagonal effect
-  // First, fill the rectangular part (left portion that's fully light)
-  doc.rect(0, 0, bottomDiagonalX, headerHeight, 'F');
+  // Draw rounded rectangle - jsPDF roundedRect(x, y, width, height, radiusX, radiusY, style)
+  // We need to simulate a pill shape that only rounds on the right
+  // First draw a regular rectangle for most of the shape
+  doc.rect(0, 0, leftRectWidth - cornerRadius, headerHeight, 'F');
   
-  // Then draw the triangular part for the diagonal
-  doc.triangle(
-    bottomDiagonalX, 0,           // Top of rectangle edge
-    topDiagonalX, 0,              // Top point of diagonal
-    bottomDiagonalX, headerHeight, // Bottom of rectangle edge
+  // Then draw a rounded rectangle that overlaps to create the rounded right edge
+  doc.roundedRect(
+    leftRectWidth - cornerRadius * 2, // Start before the corner
+    0, 
+    cornerRadius * 2, 
+    headerHeight, 
+    cornerRadius, 
+    cornerRadius, 
     'F'
   );
   
-  // Report title - positioned on the left side (in the light section)
+  // Report title - positioned on the left side (in the steel blue section)
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
@@ -187,7 +189,7 @@ function addTextLogo(doc: jsPDF, organizationName?: string) {
 /**
  * Synchronous version for backwards compatibility - uses cached logo
  * Note: For organization-specific logos, use the async addPDFHeader instead
- * Features the same modern diagonal design with logo on the right
+ * Features the same modern design with rounded rectangle on left
  */
 export function addPDFHeaderSync(
   doc: jsPDF, 
@@ -201,34 +203,38 @@ export function addPDFHeaderSync(
   const primaryColor = branding?.primaryColor || SBM_BLUE;
   const headerHeight = 32;
   
-  // Calculate a lighter shade for the left diagonal section (steel blue/gray tone)
-  const lightColor: [number, number, number] = [
-    Math.min(255, Math.round(primaryColor[0] * 1.3 + 30)),
-    Math.min(255, Math.round(primaryColor[1] * 1.2 + 40)),
-    Math.min(255, Math.round(primaryColor[2] * 1.1 + 30)),
+  // Calculate a lighter steel blue shade for the left rectangle
+  const steelBlue: [number, number, number] = [
+    Math.min(255, Math.round(primaryColor[0] * 1.4 + 20)),
+    Math.min(255, Math.round(primaryColor[1] * 1.3 + 30)),
+    Math.min(255, Math.round(primaryColor[2] * 1.15 + 20)),
   ];
   
-  // Fill entire header with primary color first (dark blue - right side)
+  // Fill entire header with primary color first (dark navy - background)
   doc.setFillColor(...primaryColor);
   doc.rect(0, 0, pageWidth, headerHeight, 'F');
   
-  // Draw the lighter left section with diagonal edge
-  const topDiagonalX = pageWidth * 0.52;
-  const bottomDiagonalX = pageWidth * 0.32;
+  // Draw the steel blue rounded rectangle on the left
+  const leftRectWidth = pageWidth * 0.52;
+  const cornerRadius = 16;
   
-  // Fill the rectangular part (left portion that's fully light)
-  doc.setFillColor(...lightColor);
-  doc.rect(0, 0, bottomDiagonalX, headerHeight, 'F');
+  doc.setFillColor(...steelBlue);
   
-  // Draw the triangular part for the diagonal
-  doc.triangle(
-    bottomDiagonalX, 0,           // Top of rectangle edge
-    topDiagonalX, 0,              // Top point of diagonal
-    bottomDiagonalX, headerHeight, // Bottom of rectangle edge
+  // Draw rectangle for most of the shape
+  doc.rect(0, 0, leftRectWidth - cornerRadius, headerHeight, 'F');
+  
+  // Draw rounded rectangle that overlaps to create the rounded right edge
+  doc.roundedRect(
+    leftRectWidth - cornerRadius * 2,
+    0, 
+    cornerRadius * 2, 
+    headerHeight, 
+    cornerRadius, 
+    cornerRadius, 
     'F'
   );
   
-  // Report title - positioned on the left side (in the light section)
+  // Report title - positioned on the left side (in the steel blue section)
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
