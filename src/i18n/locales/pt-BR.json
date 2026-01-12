@@ -240,7 +240,18 @@
     "renewSelected": "Renovar Selecionados",
     "bulkRenewTitle": "Renovar Certificados em Lote",
     "bulkRenewDesc": "Você está prestes a renovar {{count}} certificado(s) por mais 12 meses. Deseja continuar?",
-    "confirmRenew": "Confirmar Renovação"
+    "confirmRenew": "Confirmar Renovação",
+    "expiryChart": {
+      "title": "Vencimentos por Mês",
+      "description": "Certificados com vencimento nos próximos 12 meses",
+      "certificates": "certificados",
+      "expiringSoon": "{{count}} vencem em 3 meses",
+      "thisMonth": "Este mês",
+      "next3Months": "Próximos 3 meses",
+      "later": "Posterior",
+      "showChart": "Mostrar gráfico",
+      "hideChart": "Ocultar gráfico"
+    }
   },
   "dashboard": {
     "title": "Dashboard",
@@ -2997,17 +3008,6 @@
     "maintenance": "Manutenções",
     "unknownEquipment": "Equipamento não identificado",
     "searchTip": "Busque por nome, código, INS-XXXXXX ou MNT-XXXXXX"
-  },
-  "certificates": {
-    "expiryChart": {
-      "title": "Vencimentos por Mês",
-      "description": "Certificados com vencimento nos próximos 12 meses",
-      "certificates": "certificados",
-      "expiringSoon": "{{count}} vencem em 3 meses",
-      "thisMonth": "Este mês",
-      "next3Months": "Próximos 3 meses",
-      "later": "Posterior"
-    }
   },
   "complianceReport": {
     "title": "Relatório de Conformidade",
