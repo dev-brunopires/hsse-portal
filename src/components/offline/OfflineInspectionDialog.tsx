@@ -51,6 +51,7 @@ import {
   WifiOff,
   Zap,
   Package,
+  Camera,
 } from 'lucide-react';
 import { SignaturePad } from '@/components/inspections/SignaturePad';
 import { useIsTabletOrMobile } from '@/hooks/use-mobile';
@@ -58,6 +59,8 @@ import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { OfflinePhotoCapture } from './OfflinePhotoCapture';
+import { type PendingPhoto, removePhotosByInspection } from '@/utils/offlineStorage';
 
 interface CachedEquipment {
   id: string;
@@ -141,6 +144,10 @@ export function OfflineInspectionDialog({
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
   const [signatureData, setSignatureData] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [offlinePhotos, setOfflinePhotos] = useState<PendingPhoto[]>([]);
+  
+  // Generate a stable inspection ID for photos before submission
+  const [pendingInspectionId] = useState(() => crypto.randomUUID());
 
   const inspectionSchema = createInspectionSchema(t);
   
@@ -185,6 +192,7 @@ export function OfflineInspectionDialog({
         recommendations: '',
       });
       setSignatureData(null);
+      setOfflinePhotos([]);
     }
   }, [open, equipment, templates, form, t]);
 
@@ -223,6 +231,7 @@ export function OfflineInspectionDialog({
     
     try {
       addPendingInspection({
+        id: pendingInspectionId, // Use the same ID as photos for association
         equipment_id: equipment.id,
         equipment_name: equipment.name,
         equipment_code: equipment.internal_code,
@@ -237,6 +246,7 @@ export function OfflineInspectionDialog({
         signature_data: signatureData,
         inspector_id: user?.id || '',
         ship_id: equipment.ship_id,
+        photos: offlinePhotos.map(p => p.id),
       });
       
       toast.success(t('inspectionForm.inspectionSavedOffline'), {
@@ -247,6 +257,7 @@ export function OfflineInspectionDialog({
       form.reset();
       setChecklist([]);
       setSignatureData(null);
+      setOfflinePhotos([]);
       onSuccess?.();
     } catch (error) {
       console.error('Error saving offline inspection:', error);
@@ -268,6 +279,7 @@ export function OfflineInspectionDialog({
       }));
 
       addPendingInspection({
+        id: pendingInspectionId, // Use the same ID as photos for association
         equipment_id: equipment.id,
         equipment_name: equipment.name,
         equipment_code: equipment.internal_code,
@@ -278,6 +290,7 @@ export function OfflineInspectionDialog({
         signature_data: signatureData,
         inspector_id: user?.id || '',
         ship_id: equipment.ship_id,
+        photos: offlinePhotos.map(p => p.id),
       });
 
       toast.success(t('inspectionForm.inspectionSavedOffline'), {
@@ -288,6 +301,7 @@ export function OfflineInspectionDialog({
       form.reset();
       setChecklist([]);
       setSignatureData(null);
+      setOfflinePhotos([]);
       onSuccess?.();
     } catch (error) {
       console.error('Error creating quick inspection:', error);
@@ -326,13 +340,22 @@ export function OfflineInspectionDialog({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-hidden flex flex-col min-h-0">
         <Tabs defaultValue="checklist" className="flex-1 flex flex-col overflow-hidden min-h-0">
-          <TabsList className="grid w-full grid-cols-3 flex-shrink-0">
+          <TabsList className="grid w-full grid-cols-4 flex-shrink-0">
             <TabsTrigger value="checklist" className="flex items-center gap-1 px-1 sm:px-3 sm:gap-2">
               <ClipboardList className="h-4 w-4" />
               <span className="hidden sm:inline">{t('inspectionForm.checklist')}</span>
               {statusCounts.pending > 0 && (
                 <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
                   {statusCounts.pending}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="photos" className="flex items-center gap-1 px-1 sm:px-3 sm:gap-2">
+              <Camera className="h-4 w-4" />
+              <span className="hidden sm:inline">{t('inspectionForm.photos')}</span>
+              {offlinePhotos.length > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                  {offlinePhotos.length}
                 </Badge>
               )}
             </TabsTrigger>
@@ -429,6 +452,22 @@ export function OfflineInspectionDialog({
                   </div>
                 ))}
               </div>
+            </div>
+          </TabsContent>
+
+          {/* Tab: Photos */}
+          <TabsContent value="photos" className="flex-1 overflow-y-auto mt-4 min-h-0">
+            <div className="space-y-4 pb-4 px-1">
+              <p className="text-sm text-muted-foreground">
+                {t('offline.photosInstructions')}
+              </p>
+              <OfflinePhotoCapture
+                inspectionId={pendingInspectionId}
+                photos={offlinePhotos}
+                onPhotosChange={setOfflinePhotos}
+                maxPhotos={5}
+                disabled={isSubmitting}
+              />
             </div>
           </TabsContent>
 

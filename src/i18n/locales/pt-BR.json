@@ -2528,7 +2528,21 @@
     "noPendingDesc": "Nenhuma inspeção pendente para sincronizar",
     "viewCachedData": "Ver Dados em Cache",
     "inspect": "Inspecionar",
-    "offlineInspection": "Inspeção Offline"
+    "offlineInspection": "Inspeção Offline",
+    "photosInstructions": "Capture fotos do equipamento. As fotos serão comprimidas automaticamente para otimizar o armazenamento offline.",
+    "camera": "Câmera",
+    "gallery": "Galeria",
+    "photosCount": "{{current}}/{{max}} fotos",
+    "total": "total",
+    "maxPhotosReached": "Limite de {{count}} fotos atingido",
+    "invalidFileType": "Apenas arquivos de imagem são permitidos",
+    "photosAdded": "{{count}} foto(s) adicionada(s)",
+    "photoProcessError": "Erro ao processar foto",
+    "photoRemoved": "Foto removida",
+    "photoRemoveError": "Erro ao remover foto",
+    "photoPreview": "Visualizar Foto",
+    "photosWillSync": "As fotos serão enviadas quando a conexão for restaurada",
+    "pendingPhotos": "{{count}} foto(s) pendente(s)"
   },
   "pwa": {
     "installTitle": "Instalar SafeShip",

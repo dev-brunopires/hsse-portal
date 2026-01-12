@@ -427,12 +427,13 @@ export function useOfflineSync() {
   }, [t, refreshStats]);
 
   // Add pending inspection (convenience method)
+  // If the inspection already has an id (e.g., for photo association), use it
   const addPendingInspection = useCallback(async (
-    inspection: Omit<offlineDB.PendingInspection, 'id' | 'timestamp'>
+    inspection: Omit<offlineDB.PendingInspection, 'id' | 'timestamp'> & { id?: string }
   ): Promise<string> => {
     const pendingInspection: offlineDB.PendingInspection = {
       ...inspection,
-      id: crypto.randomUUID(),
+      id: inspection.id || crypto.randomUUID(),
       timestamp: Date.now(),
     };
     
