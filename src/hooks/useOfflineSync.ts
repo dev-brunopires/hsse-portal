@@ -70,6 +70,7 @@ export function useOfflineSync() {
   const [cacheStats, setCacheStats] = useState<offlineDB.StorageStats | null>(null);
   const queryClient = useQueryClient();
   const syncInProgressRef = useRef(false);
+  const cacheInProgressRef = useRef(false);
 
   // Load initial pending count
   useEffect(() => {
@@ -97,7 +98,9 @@ export function useOfflineSync() {
 
   // Pre-cache critical data for offline use with pagination for large datasets
   const preCacheData = useCallback(async () => {
-    if (!isOnline) return;
+    if (!isOnline || cacheInProgressRef.current) return;
+    
+    cacheInProgressRef.current = true;
 
     try {
       console.log('Starting offline data caching...');
@@ -218,6 +221,8 @@ export function useOfflineSync() {
     } catch (error) {
       console.error('Error pre-caching data:', error);
       toast.error(t('offline.cacheError'));
+    } finally {
+      cacheInProgressRef.current = false;
     }
   }, [isOnline, t, refreshStats]);
 
