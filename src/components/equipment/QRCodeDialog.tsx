@@ -32,8 +32,8 @@ interface QRCodeDialogProps {
   } | null;
 }
 
-// Primary brand color - can be customized per organization in the future
-const BRAND_COLOR = '#F36F27';
+// Primary brand color - navy blue matching the app theme
+const BRAND_COLOR = '#003366';
 
 export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProps) {
   const { t } = useTranslation();
@@ -377,8 +377,8 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
     
     // Generate logo HTML based on organization
     const logoHtml = logoBase64 
-      ? `<img src="${logoBase64}" style="height: 40px; width: auto;" alt="${organizationName}" />`
-      : `<span style="color: white; font-weight: bold; font-size: 18px;">${organizationName}</span>`;
+      ? `<img src="${logoBase64}" style="height: 28px; width: auto;" alt="${organizationName}" />`
+      : `<span style="color: white; font-weight: bold; font-size: 14px;">${organizationName}</span>`;
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -396,55 +396,60 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
               font-family: Arial, sans-serif;
               -webkit-print-color-adjust: exact;
               print-color-adjust: exact;
+              background: #f5f5f5;
             }
             .container { 
               text-align: center;
-              padding: 0;
-              border: 3px dashed ${BRAND_COLOR};
-              border-radius: 16px;
+              border: 2px dashed ${BRAND_COLOR};
+              border-radius: 12px;
               overflow: hidden;
-              width: 320px;
+              width: 280px;
+              background: white;
             }
             .header {
               background: ${BRAND_COLOR};
-              padding: 16px;
+              padding: 10px 16px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              min-height: 48px;
             }
             .header img {
-              height: 40px;
+              height: 28px;
               width: auto;
             }
             .body {
-              padding: 24px;
+              padding: 16px 20px;
+              background: white;
             }
             .internal-code { 
-              font-size: 14px; 
-              margin-bottom: 4px;
+              font-size: 13px; 
               color: #666;
+              margin-bottom: 2px;
             }
             .name { 
-              font-size: 16px; 
+              font-size: 15px; 
               color: #333; 
-              margin-bottom: 16px;
+              margin-bottom: 8px;
               font-weight: 500;
             }
             .location { 
-              font-size: 12px; 
+              font-size: 11px; 
               color: #666; 
-              margin-bottom: 8px;
+              margin-bottom: 12px;
             }
             .qr-wrapper {
               position: relative;
               display: inline-block;
-              margin: 16px 0;
-              padding: 16px;
+              padding: 12px;
               background: white;
-              border: 2px solid #eee;
-              border-radius: 12px;
+              border: 1px solid #e5e5e5;
+              border-radius: 8px;
             }
             .qr-wrapper svg { 
               display: block;
-              width: 260px;
-              height: 260px;
+              width: 200px;
+              height: 200px;
             }
             .qr-center-code {
               position: absolute;
@@ -452,19 +457,19 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
               left: 50%;
               transform: translate(-50%, -50%);
               background: white;
-              padding: 6px 12px;
-              border-radius: 6px;
+              padding: 4px 10px;
+              border-radius: 4px;
               font-family: monospace;
               font-weight: bold;
-              font-size: 18px;
-              border: 1px solid #eee;
+              font-size: 14px;
+              border: 1px solid #e5e5e5;
             }
             .footer {
               background: ${BRAND_COLOR};
-              padding: 12px;
+              padding: 10px;
               color: white;
               font-weight: bold;
-              font-size: 14px;
+              font-size: 12px;
             }
           </style>
         </head>
