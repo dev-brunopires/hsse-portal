@@ -6,6 +6,7 @@ import { useShipFilter } from '@/contexts/ShipFilterContext';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { translateError } from '@/utils/errorTranslation';
+import { ensureCertificateForEquipment } from './useSyncEquipmentCertificates';
 
 export type Equipment = Tables<'equipment'>;
 export type EquipmentInsert = TablesInsert<'equipment'>;
@@ -172,10 +173,28 @@ export function useCreateEquipment() {
         .single();
       
       if (error) throw error;
+
+      // Auto-sync certificate if equipment has certificate_expiry
+      if (data.certificate_expiry) {
+        try {
+          await ensureCertificateForEquipment(
+            data.id,
+            data.name,
+            data.certificate_expiry,
+            data.ship_id,
+            null // Will be fetched inside the function
+          );
+        } catch (certError) {
+          console.error('Error auto-syncing certificate:', certError);
+        }
+      }
+
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
+      queryClient.invalidateQueries({ queryKey: ['certificates'] });
+      queryClient.invalidateQueries({ queryKey: ['certificate-stats'] });
       toast({
         title: t('hooks.equipment.created'),
         description: t('hooks.equipment.createdDesc'),
@@ -206,10 +225,28 @@ export function useUpdateEquipment() {
         .single();
       
       if (error) throw error;
+
+      // Auto-sync certificate if equipment has certificate_expiry
+      if (data.certificate_expiry) {
+        try {
+          await ensureCertificateForEquipment(
+            data.id,
+            data.name,
+            data.certificate_expiry,
+            data.ship_id,
+            null
+          );
+        } catch (certError) {
+          console.error('Error auto-syncing certificate:', certError);
+        }
+      }
+
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
+      queryClient.invalidateQueries({ queryKey: ['certificates'] });
+      queryClient.invalidateQueries({ queryKey: ['certificate-stats'] });
       toast({
         title: t('hooks.equipment.updated'),
         description: t('hooks.equipment.updatedDesc'),

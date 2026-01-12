@@ -29,9 +29,11 @@ import { InspectorPerformanceCard } from '@/components/dashboard/InspectorPerfor
 import { InspectionHeatmapCard } from '@/components/dashboard/InspectionHeatmapCard';
 import { MaintenanceTrendChart } from '@/components/dashboard/MaintenanceTrendChart';
 import { CriticalEquipmentCard } from '@/components/dashboard/CriticalEquipmentCard';
+import { ActivityComparisonChart } from '@/components/dashboard/ActivityComparisonChart';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useShips } from '@/hooks/useShips';
 import { useCategories } from '@/hooks/useCategories';
+import { useRoutePrefetch } from '@/hooks/useRoutePrefetch';
 
 import { CardSkeleton, ChartSkeleton, ListSkeleton } from '@/components/ui/table-skeleton';
 import { Button } from '@/components/ui/button';
@@ -50,7 +52,8 @@ export default function Dashboard() {
   const { data: categories = [] } = useCategories();
   const branding = useOrganizationBranding();
   
-  
+  // Prefetch data for common routes
+  useRoutePrefetch();
   const [filters, setFilters] = useState<DashboardFiltersState>({
     shipId: 'all',
     categoryId: 'all',
@@ -265,6 +268,12 @@ export default function Dashboard() {
 
       {/* Equipment Compliance Chart */}
       <EquipmentComplianceChart />
+
+      {/* Activity Comparison Chart - NEW */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <ActivityComparisonChart />
+        <UpcomingInspectionsCard />
+      </div>
 
       {/* Expiring Certificates (Equipment field) */}
       <ExpiringCertificatesCard />

@@ -225,7 +225,11 @@
     "filters": {
       "allTypes": "Todos os Tipos",
       "allStatus": "Todos os Status"
-    }
+    },
+    "bulkRenewSuccess": "{{count}} certificado(s) renovado(s) com sucesso",
+    "bulkRenewError": "Erro ao renovar certificados em lote",
+    "bulkRenew": "Renovar Selecionados",
+    "selectedCount": "{{count}} selecionado(s)"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -290,6 +294,8 @@
     "inspectionTrend": "Tendência de Inspeções",
     "last6Months": "Últimos 6 meses",
     "totalPeriod": "Total período",
+    "activityComparison": "Comparativo de Atividades",
+    "activityComparisonDesc": "Evolução mensal de inspeções, manutenções e certificados",
     "statusActive": "Ativo",
     "statusMaintenance": "Em Manutenção",
     "statusExpired": "Vencido",
@@ -645,7 +651,14 @@
     "selectEquipmentValidation": "Selecione um equipamento",
     "titleRequired": "Título é obrigatório",
     "dateRequired": "Data é obrigatória",
-    "createPlan": "Criar Plano"
+    "createPlan": "Criar Plano",
+    "bulkApproveSuccess": "{{count}} solicitação(ões) aprovada(s) com sucesso",
+    "bulkApproveError": "Erro ao aprovar solicitações em lote",
+    "bulkCompleteSuccess": "{{count}} solicitação(ões) concluída(s) com sucesso",
+    "bulkCompleteError": "Erro ao concluir solicitações em lote",
+    "bulkApprove": "Aprovar Selecionadas",
+    "bulkComplete": "Concluir Selecionadas",
+    "selectedCount": "{{count}} selecionada(s)"
   },
   "reports": {
     "title": "Relatórios",

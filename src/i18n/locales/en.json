@@ -225,7 +225,11 @@
     "filters": {
       "allTypes": "All Types",
       "allStatus": "All Status"
-    }
+    },
+    "bulkRenewSuccess": "{{count}} certificate(s) renewed successfully",
+    "bulkRenewError": "Error renewing certificates in bulk",
+    "bulkRenew": "Renew Selected",
+    "selectedCount": "{{count}} selected"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -290,6 +294,8 @@
     "inspectionTrend": "Inspection Trend",
     "last6Months": "Last 6 months",
     "totalPeriod": "Total period",
+    "activityComparison": "Activity Comparison",
+    "activityComparisonDesc": "Monthly evolution of inspections, maintenance and certificates",
     "statusActive": "Active",
     "statusMaintenance": "In Maintenance",
     "statusExpired": "Expired",
@@ -645,7 +651,14 @@
     "selectEquipmentValidation": "Select an equipment",
     "titleRequired": "Title is required",
     "dateRequired": "Date is required",
-    "createPlan": "Create Plan"
+    "createPlan": "Create Plan",
+    "bulkApproveSuccess": "{{count}} request(s) approved successfully",
+    "bulkApproveError": "Error approving requests in bulk",
+    "bulkCompleteSuccess": "{{count}} request(s) completed successfully",
+    "bulkCompleteError": "Error completing requests in bulk",
+    "bulkApprove": "Approve Selected",
+    "bulkComplete": "Complete Selected",
+    "selectedCount": "{{count}} selected"
   },
   "reports": {
     "title": "Reports",
