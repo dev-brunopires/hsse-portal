@@ -1,17 +1,32 @@
 import { useState, useEffect } from 'react';
-import { RefreshCw, Check, AlertCircle, Cloud, CloudOff } from 'lucide-react';
+import { RefreshCw, Check, AlertCircle, Cloud, CloudOff, Image } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { Progress } from '@/components/ui/progress';
+import { getPhotosCount } from '@/utils/offlineStorage';
 
 export function SyncProgressIndicator() {
   const { t } = useTranslation();
-  const { isOnline, isSyncing, pendingCount, lastSyncTime } = useOfflineSync();
+  const { isOnline, isSyncing, pendingCount, lastSyncTime, cacheStats } = useOfflineSync();
   const [showIndicator, setShowIndicator] = useState(false);
   const [syncProgress, setSyncProgress] = useState(0);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
   const [initialPendingCount, setInitialPendingCount] = useState(0);
+  const [pendingPhotosCount, setPendingPhotosCount] = useState(0);
+
+  // Load pending photos count
+  useEffect(() => {
+    const loadPhotosCount = async () => {
+      try {
+        const count = await getPhotosCount();
+        setPendingPhotosCount(count);
+      } catch (error) {
+        console.error('Error loading photos count:', error);
+      }
+    };
+    loadPhotosCount();
+  }, [pendingCount, cacheStats]);
 
   // Show indicator when syncing or when there's a status change
   useEffect(() => {
@@ -140,6 +155,14 @@ export function SyncProgressIndicator() {
                 </span>
               )}
             </div>
+          </div>
+        )}
+        
+        {/* Pending photos indicator */}
+        {syncStatus === 'idle' && pendingPhotosCount > 0 && (
+          <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+            <Image className="h-3 w-3" />
+            <span>{t('offline.pendingPhotosCount', { count: pendingPhotosCount })}</span>
           </div>
         )}
         

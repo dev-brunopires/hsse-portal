@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { WifiOff, Package, Ship, Tag, ClipboardList, RefreshCw, Clock, Search, ChevronRight, Database, Plus, HardDrive, Image } from 'lucide-react';
+import { WifiOff, Package, Ship, Tag, ClipboardList, RefreshCw, Clock, Search, ChevronRight, Database, Plus, HardDrive, Image, Eye } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
 import { useOfflineSync, CachedEquipment, CachedCategory, CachedShip, CachedTemplate, PendingInspection, StorageStats } from '@/hooks/useOfflineSync';
 import { OfflineInspectionDialog } from './OfflineInspectionDialog';
+import { OfflinePhotoPreview } from './OfflinePhotoPreview';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -468,40 +469,49 @@ export function OfflinePage() {
                   {pendingInspections.map((inspection) => (
                     <div
                       key={inspection.id}
-                      className="flex items-center justify-between p-4 rounded-lg border bg-status-warning/5 border-status-warning/20"
+                      className="p-4 rounded-lg border bg-status-warning/5 border-status-warning/20"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-status-warning/20">
-                          <ClipboardList className="h-5 w-5 text-status-warning" />
-                        </div>
-                        <div>
-                          <p className="font-medium">{inspection.equipment_name}</p>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span>{inspection.equipment_code}</span>
-                            <span>•</span>
-                            <span>{format(new Date(inspection.timestamp), 'dd/MM HH:mm')}</span>
-                            {inspection.photos && inspection.photos.length > 0 && (
-                              <>
-                                <span>•</span>
-                                <span className="flex items-center gap-1">
-                                  <Image className="h-3 w-3" />
-                                  {inspection.photos.length}
-                                </span>
-                              </>
-                            )}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-lg bg-status-warning/20">
+                            <ClipboardList className="h-5 w-5 text-status-warning" />
+                          </div>
+                          <div>
+                            <p className="font-medium">{inspection.equipment_name}</p>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <span>{inspection.equipment_code}</span>
+                              <span>•</span>
+                              <span>{format(new Date(inspection.timestamp), 'dd/MM HH:mm')}</span>
+                            </div>
                           </div>
                         </div>
+                        <Badge variant="outline" className={cn(
+                          "text-xs",
+                          inspection.status === 'compliant' 
+                            ? "bg-status-success/20 text-status-success border-status-success/30"
+                            : inspection.status === 'attention'
+                              ? "bg-status-warning/20 text-status-warning border-status-warning/30"
+                              : "bg-status-danger/20 text-status-danger border-status-danger/30"
+                        )}>
+                          {inspection.status}
+                        </Badge>
                       </div>
-                      <Badge variant="outline" className={cn(
-                        "text-xs",
-                        inspection.status === 'compliant' 
-                          ? "bg-status-success/20 text-status-success border-status-success/30"
-                          : inspection.status === 'attention'
-                            ? "bg-status-warning/20 text-status-warning border-status-warning/30"
-                            : "bg-status-danger/20 text-status-danger border-status-danger/30"
-                      )}>
-                        {inspection.status}
-                      </Badge>
+                      
+                      {/* Photo preview section */}
+                      {inspection.photos && inspection.photos.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-status-warning/20">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Image className="h-4 w-4" />
+                              <span>{t('offline.pendingPhotos')} ({inspection.photos.length})</span>
+                            </div>
+                            <OfflinePhotoPreview 
+                              inspectionId={inspection.id} 
+                              photoIds={inspection.photos}
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
