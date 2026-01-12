@@ -63,6 +63,7 @@ import { cn } from '@/lib/utils';
 import { CertificateFormDialog } from '@/components/certificates/CertificateFormDialog';
 import { CertificateDetailDialog } from '@/components/certificates/CertificateDetailDialog';
 import { RenewCertificateDialog } from '@/components/certificates/RenewCertificateDialog';
+import { StatCard } from '@/components/ui/stat-card';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -374,54 +375,31 @@ export default function Certificates() {
       />
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <Card className="border-l-4 border-l-blue-500">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">{t('certificates.stats.total')}</p>
-                <p className="text-2xl font-bold">{stats?.total || 0}</p>
-              </div>
-              <FileText className="h-8 w-8 text-blue-500/20" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-l-green-500">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">{t('certificates.stats.valid')}</p>
-                <p className="text-2xl font-bold text-green-600">{stats?.valid || 0}</p>
-              </div>
-              <ShieldCheck className="h-8 w-8 text-green-500/20" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-l-yellow-500">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">{t('certificates.stats.expiring30')}</p>
-                <p className="text-2xl font-bold text-yellow-600">{stats?.expiring30 || 0}</p>
-              </div>
-              <Clock className="h-8 w-8 text-yellow-500/20" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-l-red-500">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">{t('certificates.stats.expired')}</p>
-                <p className="text-2xl font-bold text-red-600">{stats?.expired || 0}</p>
-              </div>
-              <AlertTriangle className="h-8 w-8 text-red-500/20" />
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <StatCard
+          title={t('certificates.stats.total')}
+          value={stats?.total || 0}
+          icon={FileText}
+          variant="default"
+        />
+        <StatCard
+          title={t('certificates.stats.valid')}
+          value={stats?.valid || 0}
+          icon={ShieldCheck}
+          variant="success"
+        />
+        <StatCard
+          title={t('certificates.stats.expiring30')}
+          value={stats?.expiring30 || 0}
+          icon={Clock}
+          variant="warning"
+        />
+        <StatCard
+          title={t('certificates.stats.expired')}
+          value={stats?.expired || 0}
+          icon={AlertTriangle}
+          variant="danger"
+        />
       </div>
 
       {/* Tabs */}

@@ -39,6 +39,7 @@ import {
   Loader2,
   RefreshCw,
 } from 'lucide-react';
+import { StatCard } from '@/components/ui/stat-card';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { cn } from '@/lib/utils';
 import { formatDate } from '@/utils/dateFormat';
@@ -205,28 +206,6 @@ export default function Maintenance() {
     setDetailDialogOpen(true);
   };
 
-  const StatCard = ({ title, value, icon: Icon, color, description }: { 
-    title: string; 
-    value: number; 
-    icon: typeof Wrench; 
-    color: string;
-    description?: string;
-  }) => (
-    <Card>
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground">{title}</p>
-            <p className={cn("text-2xl font-bold", color)}>{value}</p>
-            {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
-          </div>
-          <div className={cn("p-3 rounded-full", color.replace('text-', 'bg-') + '/10')}>
-            <Icon className={cn("h-5 w-5", color)} />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -299,26 +278,26 @@ export default function Maintenance() {
             title={t('maintenance.pending')} 
             value={stats.pending} 
             icon={Clock} 
-            color="text-amber-600"
+            variant="warning"
             description={t('maintenance.awaitingApproval')}
           />
           <StatCard 
             title={t('maintenance.inProgress')} 
             value={stats.inProgress} 
             icon={Play} 
-            color="text-primary"
+            variant="info"
           />
           <StatCard 
             title={t('maintenance.completed')} 
             value={stats.completed} 
             icon={CheckCircle2} 
-            color="text-green-600"
+            variant="success"
           />
           <StatCard 
             title={t('maintenance.critical')} 
             value={stats.critical} 
             icon={AlertTriangle} 
-            color="text-red-600"
+            variant="danger"
             description={t('maintenance.highPriority')}
           />
         </div>
