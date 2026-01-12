@@ -5,7 +5,7 @@
  */
 
 const DB_NAME = 'safeship_offline';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // Incremented to add maintenance_plans store
 
 // Store names
 const STORES = {
@@ -131,25 +131,87 @@ interface StorageMetadata {
 
 // Open/create database
 let dbInstance: IDBDatabase | null = null;
+let isOpening = false;
+let openPromise: Promise<IDBDatabase> | null = null;
 
-export const openDatabase = (): Promise<IDBDatabase> => {
-  return new Promise((resolve, reject) => {
-    if (dbInstance) {
-      resolve(dbInstance);
-      return;
+// Reset database instance (useful when upgrading)
+export const resetDatabaseInstance = () => {
+  if (dbInstance) {
+    try {
+      dbInstance.close();
+    } catch (e) {
+      console.warn('Error closing database:', e);
     }
+  }
+  dbInstance = null;
+  isOpening = false;
+  openPromise = null;
+};
 
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-
+// Delete and recreate database (for critical errors)
+export const deleteDatabase = (): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    resetDatabaseInstance();
+    const request = indexedDB.deleteDatabase(DB_NAME);
+    request.onsuccess = () => {
+      console.log('IndexedDB deleted successfully');
+      resolve();
+    };
     request.onerror = () => {
-      console.error('IndexedDB error:', request.error);
+      console.error('Error deleting IndexedDB:', request.error);
       reject(request.error);
     };
-
-    request.onsuccess = () => {
-      dbInstance = request.result;
-      resolve(dbInstance);
+    request.onblocked = () => {
+      console.warn('Database deletion blocked - other tabs may be using it');
+      // Still resolve as the delete will happen when tabs close
+      resolve();
     };
+  });
+};
+
+export const openDatabase = (): Promise<IDBDatabase> => {
+  // Return existing instance
+  if (dbInstance && dbInstance.objectStoreNames.length > 0) {
+    return Promise.resolve(dbInstance);
+  }
+
+  // Return existing promise if already opening
+  if (isOpening && openPromise) {
+    return openPromise;
+  }
+
+  isOpening = true;
+  openPromise = new Promise((resolve, reject) => {
+    try {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+      request.onerror = () => {
+        console.error('IndexedDB error:', request.error);
+        isOpening = false;
+        openPromise = null;
+        reject(request.error);
+      };
+
+      request.onsuccess = () => {
+        dbInstance = request.result;
+        
+        // Handle connection closed unexpectedly
+        dbInstance.onclose = () => {
+          console.warn('IndexedDB connection closed');
+          resetDatabaseInstance();
+        };
+        
+        dbInstance.onerror = (event) => {
+          console.error('IndexedDB error event:', event);
+        };
+        
+        isOpening = false;
+        resolve(dbInstance);
+      };
+
+      request.onblocked = () => {
+        console.warn('Database upgrade blocked - other tabs may need to close');
+      };
 
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
@@ -196,8 +258,23 @@ export const openDatabase = (): Promise<IDBDatabase> => {
       if (!db.objectStoreNames.contains(STORES.METADATA)) {
         db.createObjectStore(STORES.METADATA, { keyPath: 'key' });
       }
+
+      // Maintenance plans store (added in version 2)
+      if (!db.objectStoreNames.contains(STORES.MAINTENANCE_PLANS)) {
+        const maintenanceStore = db.createObjectStore(STORES.MAINTENANCE_PLANS, { keyPath: 'id' });
+        maintenanceStore.createIndex('equipment_id', 'equipment_id', { unique: false });
+        maintenanceStore.createIndex('ship_id', 'ship_id', { unique: false });
+      }
     };
+    } catch (error) {
+      console.error('Failed to open IndexedDB:', error);
+      isOpening = false;
+      openPromise = null;
+      reject(error);
+    }
   });
+
+  return openPromise;
 };
 
 // Generic CRUD operations
