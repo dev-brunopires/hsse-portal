@@ -822,7 +822,20 @@
     "eqStatus": "Status Equip.",
     "inspCount": "Qtd. Insp.",
     "inspStatus": "Status Insp.",
-    "equipmentPlural": "equipamentos"
+    "equipmentPlural": "equipamentos",
+    "certificatesPlural": "certificados",
+    "complianceReport": "Relatório de Conformidade",
+    "complianceReportDesc": "Visão geral da conformidade de equipamentos e certificados",
+    "previewCompliance": "Pré-visualização: Relatório de Conformidade",
+    "complianceExportedPDF": "Relatório de conformidade exportado em PDF",
+    "complianceExportedExcel": "Relatório de conformidade exportado em Excel",
+    "certExpiry": "Validade Cert.",
+    "nextInspection": "Próx. Inspeção",
+    "expiredCertificate": "Certificado Vencido",
+    "certificateExpiringSoon": "Certificado a Vencer",
+    "inspectionOverdue": "Inspeção Atrasada",
+    "expiredCertificates": "Certificados Vencidos",
+    "rejected": "Reprovados"
   },
   "importEquipment": {
     "title": "Importar Equipamentos",

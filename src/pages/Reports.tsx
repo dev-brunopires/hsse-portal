@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FileText, Download, Calendar, Filter, AlertTriangle, Loader2, BarChart3, Wrench, ClipboardCheck, Eye, FileSpreadsheet, X, RefreshCw } from 'lucide-react';
+import { FileText, Download, Calendar, Filter, AlertTriangle, Loader2, BarChart3, Wrench, ClipboardCheck, Eye, FileSpreadsheet, X, RefreshCw, ShieldCheck } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +18,7 @@ import { useInspections } from '@/hooks/useInspections';
 import { useCategories } from '@/hooks/useCategories';
 import { useShips } from '@/hooks/useShips';
 import { useMaintenanceRequests } from '@/hooks/useMaintenanceRequests';
+import { useCertificates } from '@/hooks/useCertificates';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useUserSignature } from '@/hooks/useUserSignature';
@@ -26,6 +27,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { exportInspectionsToExcel, exportInspectionsToPDF } from '@/utils/exportInspections';
 import { exportCategoryInspectionPDF } from '@/utils/exportCategoryInspection';
 import { exportMonthlyConsolidatedPDF, exportMonthlyConsolidatedExcel } from '@/utils/exportMonthlyConsolidated';
+import { exportComplianceReportPDF, exportComplianceReportExcel } from '@/utils/exportComplianceReport';
 import { addPDFHeader, addPDFFooter, addSignatureSection, preloadLogo } from '@/utils/pdfStyles';
 import { ReportPreviewDialog } from '@/components/reports/ReportPreviewDialog';
 import { MonthQuickFilter } from '@/components/reports/MonthQuickFilter';
@@ -37,7 +39,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
-type ReportType = 'inspections' | 'maintenance' | 'category' | 'expiry' | 'non-conformities' | 'category-inspection' | 'monthly-consolidated' | null;
+type ReportType = 'inspections' | 'maintenance' | 'category' | 'expiry' | 'non-conformities' | 'category-inspection' | 'monthly-consolidated' | 'compliance' | null;
 
 export default function Reports() {
   const { t, i18n } = useTranslation();
@@ -86,6 +88,7 @@ export default function Reports() {
   const { data: categories = [], refetch: refetchCategories } = useCategories();
   const { data: ships = [], refetch: refetchShips } = useShips();
   const { data: maintenanceRequests = [], isLoading: maintenanceLoading, refetch: refetchMaintenance } = useMaintenanceRequests();
+  const { data: certificates = [], isLoading: certificatesLoading, refetch: refetchCertificates } = useCertificates();
   const { data: signatureData } = useUserSignature();
   const signature = signatureData?.default_signature;
   const branding = useOrganizationBranding();
@@ -99,9 +102,10 @@ export default function Reports() {
       refetchCategories(),
       refetchShips(),
       refetchMaintenance(),
+      refetchCertificates(),
     ]);
     toast.success(t('common.dataRefreshed'));
-  }, [refetchEquipment, refetchInspections, refetchCategories, refetchShips, refetchMaintenance, t]);
+  }, [refetchEquipment, refetchInspections, refetchCategories, refetchShips, refetchMaintenance, refetchCertificates, t]);
 
   const { pullDistance, isRefreshing, containerRef, pullIndicatorStyle } = usePullToRefresh({
     onRefresh: handleRefresh,
@@ -129,7 +133,7 @@ export default function Reports() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewReport, setPreviewReport] = useState<ReportType>(null);
 
-  const isLoading = equipmentLoading || inspectionsLoading || maintenanceLoading;
+  const isLoading = equipmentLoading || inspectionsLoading || maintenanceLoading || certificatesLoading;
 
   // Filtered data based on global filters
   const filteredEquipment = useMemo(() => {
@@ -825,6 +829,27 @@ export default function Reports() {
     toast.success(t('reports.monthlyExportedExcel'));
   };
 
+  // Compliance Report handlers
+  const handleComplianceReportPDF = async (preview = false) => {
+    if (filteredEquipment.length === 0) {
+      toast.error(t('reports.noEquipmentFound'));
+      return;
+    }
+    const shipName = shipFilter !== 'all' ? ships.find(s => s.id === shipFilter)?.name : undefined;
+    await exportComplianceReportPDF(filteredEquipment, certificates, branding, { preview, shipName });
+    toast.success(preview ? t('common.pdfPreviewOpened') : t('reports.complianceExportedPDF'));
+  };
+
+  const handleComplianceReportExcel = () => {
+    if (filteredEquipment.length === 0) {
+      toast.error(t('reports.noEquipmentFound'));
+      return;
+    }
+    const shipName = shipFilter !== 'all' ? ships.find(s => s.id === shipFilter)?.name : undefined;
+    exportComplianceReportExcel(filteredEquipment, certificates, { shipName });
+    toast.success(t('reports.complianceExportedExcel'));
+  };
+
   // Preview data configurations
   const getPreviewData = () => {
     switch (previewReport) {
@@ -1058,6 +1083,62 @@ export default function Reports() {
             { label: t('reports.notInspected'), value: monthlyConsolidatedData.equipment.length - monthlyConsolidatedData.inspections.length, color: 'bg-slate-100 text-slate-700' },
           ],
         };
+      case 'compliance':
+        const complianceData = filteredEquipment.map(e => {
+          const equipCerts = certificates.filter(c => c.equipment_id === e.id);
+          const today = new Date();
+          let complianceStatus = '✅ ' + t('reports.compliant');
+          
+          if (e.status === 'rejected') {
+            complianceStatus = '❌ ' + t('reports.nonCompliant');
+          } else if (e.certificate_expiry) {
+            const days = Math.ceil((new Date(e.certificate_expiry).getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+            if (days < 0) complianceStatus = '❌ ' + t('reports.expiredCertificate');
+            else if (days <= 30) complianceStatus = '⚠️ ' + t('reports.certificateExpiringSoon');
+          } else if (e.next_inspection) {
+            const days = Math.ceil((new Date(e.next_inspection).getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+            if (days < 0) complianceStatus = '⚠️ ' + t('reports.inspectionOverdue');
+          }
+          
+          return {
+            code: e.internal_code,
+            name: e.name,
+            category: e.categories?.name || '-',
+            status: statusLabels[e.status] || e.status,
+            certExpiry: e.certificate_expiry ? format(new Date(e.certificate_expiry), 'dd/MM/yyyy', { locale: dateLocale }) : '-',
+            nextInsp: e.next_inspection ? format(new Date(e.next_inspection), 'dd/MM/yyyy', { locale: dateLocale }) : '-',
+            compliance: complianceStatus,
+          };
+        });
+        
+        const activeCount = filteredEquipment.filter(e => e.status === 'active').length;
+        const rejectedCount = filteredEquipment.filter(e => e.status === 'rejected').length;
+        const expiredCertsCount = filteredEquipment.filter(e => {
+          if (!e.certificate_expiry) return false;
+          return new Date(e.certificate_expiry) < new Date();
+        }).length;
+        
+        return {
+          title: t('reports.previewCompliance'),
+          description: `${filteredEquipment.length} ${t('reports.equipmentPlural')} - ${certificates.length} ${t('reports.certificatesPlural')}`,
+          data: complianceData,
+          columns: [
+            { key: 'code', label: t('reports.code') },
+            { key: 'name', label: t('reports.equipment') },
+            { key: 'category', label: t('reports.category') },
+            { key: 'status', label: t('reports.status') },
+            { key: 'certExpiry', label: t('reports.certExpiry') },
+            { key: 'nextInsp', label: t('reports.nextInspection') },
+            { key: 'compliance', label: t('reports.compliance') },
+          ],
+          onExportPDF: handleComplianceReportPDF,
+          onExportExcel: handleComplianceReportExcel,
+          summary: [
+            { label: t('reports.active'), value: activeCount, color: 'bg-emerald-100 text-emerald-700' },
+            { label: t('reports.rejected'), value: rejectedCount, color: 'bg-red-100 text-red-700' },
+            { label: t('reports.expiredCertificates'), value: expiredCertsCount, color: 'bg-amber-100 text-amber-700' },
+          ],
+        };
       default:
         return null;
     }
@@ -1134,6 +1215,15 @@ export default function Reports() {
       iconColor: 'text-white',
       bgColor: 'bg-indigo-600',
       requiresFilter: true,
+    },
+    {
+      id: 'compliance' as ReportType,
+      title: t('reports.complianceReport'),
+      description: t('reports.complianceReportDesc'),
+      icon: ShieldCheck,
+      count: filteredEquipment.length,
+      iconColor: 'text-white',
+      bgColor: 'bg-cyan-600',
     },
   ];
 

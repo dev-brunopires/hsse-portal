@@ -822,7 +822,20 @@
     "eqStatus": "Equip. Status",
     "inspCount": "Insp. Count",
     "inspStatus": "Insp. Status",
-    "equipmentPlural": "equipment"
+    "equipmentPlural": "equipment",
+    "certificatesPlural": "certificates",
+    "complianceReport": "Compliance Report",
+    "complianceReportDesc": "Overview of equipment and certificate compliance",
+    "previewCompliance": "Preview: Compliance Report",
+    "complianceExportedPDF": "Compliance report exported to PDF",
+    "complianceExportedExcel": "Compliance report exported to Excel",
+    "certExpiry": "Cert. Expiry",
+    "nextInspection": "Next Insp.",
+    "expiredCertificate": "Expired Certificate",
+    "certificateExpiringSoon": "Certificate Expiring Soon",
+    "inspectionOverdue": "Inspection Overdue",
+    "expiredCertificates": "Expired Certificates",
+    "rejected": "Rejected"
   },
   "importEquipment": {
     "title": "Import Equipment",
