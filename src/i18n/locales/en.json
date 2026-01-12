@@ -2544,7 +2544,9 @@
     "pendingPhotos": "Pending Photos",
     "pendingPhotosCount": "{{count}} pending photo(s)",
     "noPhotos": "No photos",
-    "viewPhotos": "View Photos"
+    "viewPhotos": "View Photos",
+    "cacheExpired": "Offline Cache Outdated",
+    "cacheExpiredDesc": "Offline data is {{hours}}h outdated. Refreshing automatically..."
   },
   "pwa": {
     "installTitle": "Install SafeShip",
