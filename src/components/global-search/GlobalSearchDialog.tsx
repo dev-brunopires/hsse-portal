@@ -11,6 +11,7 @@ import {
   CommandSeparator,
 } from '@/components/ui/command';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Package,
   FileText,
@@ -21,7 +22,8 @@ import {
   Calendar,
   MapPin,
   User,
-  Ship,
+  AlertCircle,
+  Loader2,
 } from 'lucide-react';
 import { useEquipment } from '@/hooks/useEquipment';
 import { useCertificates } from '@/hooks/useCertificates';
@@ -30,6 +32,7 @@ import { useMaintenanceRequests } from '@/hooks/useMaintenanceRequests';
 import { useDebounce } from '@/hooks/useDebounce';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { formatInspectionId, formatMaintenanceId } from '@/utils/formatId';
 
 interface GlobalSearchDialogProps {
   open: boolean;
@@ -42,10 +45,13 @@ export function GlobalSearchDialog({ open, onOpenChange }: GlobalSearchDialogPro
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 200);
 
-  const { data: equipment = [] } = useEquipment();
-  const { data: certificates = [] } = useCertificates();
-  const { data: inspections = [] } = useInspections();
-  const { data: maintenance = [] } = useMaintenanceRequests();
+  const { data: equipment = [], isLoading: equipmentLoading, isError: equipmentError } = useEquipment();
+  const { data: certificates = [], isLoading: certificatesLoading, isError: certificatesError } = useCertificates();
+  const { data: inspections = [], isLoading: inspectionsLoading, isError: inspectionsError } = useInspections();
+  const { data: maintenance = [], isLoading: maintenanceLoading, isError: maintenanceError } = useMaintenanceRequests();
+
+  const isLoading = equipmentLoading || certificatesLoading || inspectionsLoading || maintenanceLoading;
+  const hasError = equipmentError || certificatesError || inspectionsError || maintenanceError;
 
   // Reset search when dialog closes
   useEffect(() => {
@@ -69,44 +75,87 @@ export function GlobalSearchDialog({ open, onOpenChange }: GlobalSearchDialogPro
   const filteredResults = useMemo(() => {
     if (!debouncedSearch.trim()) return { equipment: [], certificates: [], inspections: [], maintenance: [] };
 
-    const searchLower = debouncedSearch.toLowerCase();
+    const searchLower = debouncedSearch.toLowerCase().trim();
     const maxResults = 5;
 
+    // Check if searching by formatted ID (INS-, MNT-)
+    const isInspectionIdSearch = searchLower.startsWith('ins-') || searchLower.startsWith('ins');
+    const isMaintenanceIdSearch = searchLower.startsWith('mnt-') || searchLower.startsWith('mnt');
+
     const filteredEquipment = equipment
-      .filter(e => 
-        e.name.toLowerCase().includes(searchLower) ||
-        e.internal_code.toLowerCase().includes(searchLower) ||
-        e.serial_number?.toLowerCase().includes(searchLower) ||
-        e.location?.toLowerCase().includes(searchLower) ||
-        (e as any).short_code?.toLowerCase().includes(searchLower)
-      )
+      .filter(e => {
+        const name = (e.name || '').toLowerCase();
+        const internalCode = (e.internal_code || '').toLowerCase();
+        const serialNumber = (e.serial_number || '').toLowerCase();
+        const location = (e.location || '').toLowerCase();
+        const shortCode = ((e as any).short_code || '').toLowerCase();
+        
+        return name.includes(searchLower) ||
+          internalCode.includes(searchLower) ||
+          serialNumber.includes(searchLower) ||
+          location.includes(searchLower) ||
+          shortCode.includes(searchLower);
+      })
       .slice(0, maxResults);
 
     const filteredCertificates = certificates
-      .filter(c => 
-        c.name.toLowerCase().includes(searchLower) ||
-        c.certificate_number?.toLowerCase().includes(searchLower) ||
-        c.equipment?.name.toLowerCase().includes(searchLower) ||
-        c.equipment?.internal_code.toLowerCase().includes(searchLower)
-      )
+      .filter(c => {
+        const name = (c.name || '').toLowerCase();
+        const certNumber = (c.certificate_number || '').toLowerCase();
+        const equipName = (c.equipment?.name || '').toLowerCase();
+        const equipCode = (c.equipment?.internal_code || '').toLowerCase();
+        
+        return name.includes(searchLower) ||
+          certNumber.includes(searchLower) ||
+          equipName.includes(searchLower) ||
+          equipCode.includes(searchLower);
+      })
       .slice(0, maxResults);
 
     const filteredInspections = inspections
-      .filter(i => 
-        i.equipment?.name.toLowerCase().includes(searchLower) ||
-        i.equipment?.internal_code.toLowerCase().includes(searchLower) ||
-        i.profiles?.full_name.toLowerCase().includes(searchLower) ||
-        i.observations?.toLowerCase().includes(searchLower)
-      )
+      .filter(i => {
+        const equipName = (i.equipment?.name || '').toLowerCase();
+        const equipCode = (i.equipment?.internal_code || '').toLowerCase();
+        const inspectorName = (i.profiles?.full_name || '').toLowerCase();
+        const observations = (i.observations || '').toLowerCase();
+        const formattedId = formatInspectionId(i.id).toLowerCase();
+        const shortId = i.id.substring(0, 6).toLowerCase();
+        
+        // If searching by INS- prefix, prioritize ID matching
+        if (isInspectionIdSearch) {
+          return formattedId.includes(searchLower) || shortId.includes(searchLower.replace('ins-', '').replace('ins', ''));
+        }
+        
+        return equipName.includes(searchLower) ||
+          equipCode.includes(searchLower) ||
+          inspectorName.includes(searchLower) ||
+          observations.includes(searchLower) ||
+          formattedId.includes(searchLower) ||
+          shortId.includes(searchLower);
+      })
       .slice(0, maxResults);
 
     const filteredMaintenance = maintenance
-      .filter(m => 
-        m.title.toLowerCase().includes(searchLower) ||
-        m.description?.toLowerCase().includes(searchLower) ||
-        m.equipment?.name.toLowerCase().includes(searchLower) ||
-        m.equipment?.internal_code.toLowerCase().includes(searchLower)
-      )
+      .filter(m => {
+        const title = (m.title || '').toLowerCase();
+        const description = (m.description || '').toLowerCase();
+        const equipName = (m.equipment?.name || '').toLowerCase();
+        const equipCode = (m.equipment?.internal_code || '').toLowerCase();
+        const formattedId = formatMaintenanceId(m.id).toLowerCase();
+        const shortId = m.id.substring(0, 6).toLowerCase();
+        
+        // If searching by MNT- prefix, prioritize ID matching
+        if (isMaintenanceIdSearch) {
+          return formattedId.includes(searchLower) || shortId.includes(searchLower.replace('mnt-', '').replace('mnt', ''));
+        }
+        
+        return title.includes(searchLower) ||
+          description.includes(searchLower) ||
+          equipName.includes(searchLower) ||
+          equipCode.includes(searchLower) ||
+          formattedId.includes(searchLower) ||
+          shortId.includes(searchLower);
+      })
       .slice(0, maxResults);
 
     return {
@@ -150,6 +199,9 @@ export function GlobalSearchDialog({ open, onOpenChange }: GlobalSearchDialogPro
       inactive: { label: t('status.inactive'), className: 'bg-muted text-muted-foreground' },
       maintenance: { label: t('status.maintenance'), className: 'bg-status-warning/20 text-status-warning' },
       rejected: { label: t('status.rejected'), className: 'bg-status-danger/20 text-status-danger' },
+      compliant: { label: t('status.compliant'), className: 'bg-status-success/20 text-status-success' },
+      attention: { label: t('status.attention'), className: 'bg-status-warning/20 text-status-warning' },
+      non_compliant: { label: t('status.nonCompliant'), className: 'bg-status-danger/20 text-status-danger' },
       valid: { label: t('certificates.status.valid'), className: 'bg-status-success/20 text-status-success' },
       expired: { label: t('certificates.status.expired'), className: 'bg-status-danger/20 text-status-danger' },
       expiring_soon: { label: t('certificates.status.expiringSoon'), className: 'bg-status-warning/20 text-status-warning' },
@@ -170,170 +222,212 @@ export function GlobalSearchDialog({ open, onOpenChange }: GlobalSearchDialogPro
         onValueChange={setSearch}
       />
       <CommandList>
-        {!debouncedSearch.trim() && (
+        {/* Loading state */}
+        {isLoading && debouncedSearch.trim() && (
+          <div className="flex items-center justify-center gap-2 py-6">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">{t('globalSearch.loading', 'Buscando...')}</span>
+          </div>
+        )}
+
+        {/* Error state */}
+        {hasError && !isLoading && (
+          <div className="flex flex-col items-center justify-center gap-2 py-6">
+            <AlertCircle className="h-8 w-8 text-status-danger" />
+            <p className="text-sm text-muted-foreground">{t('globalSearch.error', 'Erro ao carregar dados. Tente novamente.')}</p>
+          </div>
+        )}
+
+        {/* Empty state - no search */}
+        {!debouncedSearch.trim() && !isLoading && (
           <CommandEmpty className="py-6 text-center">
             <Search className="mx-auto h-10 w-10 text-muted-foreground/50 mb-2" />
             <p className="text-sm text-muted-foreground">{t('globalSearch.hint')}</p>
             <p className="text-xs text-muted-foreground/70 mt-1">{t('globalSearch.shortcut')}</p>
+            <p className="text-xs text-muted-foreground/50 mt-2">
+              {t('globalSearch.searchTip', 'Busque por nome, código, INS-XXXXXX ou MNT-XXXXXX')}
+            </p>
           </CommandEmpty>
         )}
 
-        {debouncedSearch.trim() && !hasResults && (
+        {/* No results */}
+        {debouncedSearch.trim() && !hasResults && !isLoading && !hasError && (
           <CommandEmpty>{t('globalSearch.noResults')}</CommandEmpty>
         )}
 
-        {filteredResults.equipment.length > 0 && (
+        {/* Results */}
+        {!isLoading && !hasError && (
           <>
-            <CommandGroup heading={t('globalSearch.equipment')}>
-              {filteredResults.equipment.map((item) => (
-                <CommandItem
-                  key={item.id}
-                  value={`equipment-${item.id}`}
-                  onSelect={() => handleSelect('equipment', item.id)}
-                  className="flex items-center justify-between gap-2 py-3"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-                      <Package className="h-4 w-4 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-medium">{item.name}</p>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>{item.internal_code}</span>
-                        {item.location && (
-                          <>
-                            <span>•</span>
-                            <MapPin className="h-3 w-3" />
-                            <span>{item.location}</span>
-                          </>
-                        )}
+            {filteredResults.equipment.length > 0 && (
+              <>
+                <CommandGroup heading={t('globalSearch.equipment')}>
+                  {filteredResults.equipment.map((item) => (
+                    <CommandItem
+                      key={item.id}
+                      value={`equipment-${item.id}`}
+                      onSelect={() => handleSelect('equipment', item.id)}
+                      className="flex items-center justify-between gap-2 py-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+                          <Package className="h-4 w-4 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{item.name}</p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span>{item.internal_code}</span>
+                            {(item as any).short_code && (
+                              <>
+                                <span>•</span>
+                                <span className="font-mono">{(item as any).short_code}</span>
+                              </>
+                            )}
+                            {item.location && (
+                              <>
+                                <span>•</span>
+                                <MapPin className="h-3 w-3" />
+                                <span>{item.location}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {getStatusBadge(item.status)}
-                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-            <CommandSeparator />
-          </>
-        )}
+                      <div className="flex items-center gap-2">
+                        {getStatusBadge(item.status)}
+                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+                <CommandSeparator />
+              </>
+            )}
 
-        {filteredResults.certificates.length > 0 && (
-          <>
-            <CommandGroup heading={t('globalSearch.certificates')}>
-              {filteredResults.certificates.map((item) => (
-                <CommandItem
-                  key={item.id}
-                  value={`certificate-${item.id}`}
-                  onSelect={() => handleSelect('certificate', item.id)}
-                  className="flex items-center justify-between gap-2 py-3"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/10">
-                      <FileText className="h-4 w-4 text-blue-500" />
-                    </div>
-                    <div>
-                      <p className="font-medium">{item.name}</p>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>{item.equipment?.name || '-'}</span>
-                        {item.expiry_date && (
-                          <>
-                            <span>•</span>
+            {filteredResults.certificates.length > 0 && (
+              <>
+                <CommandGroup heading={t('globalSearch.certificates')}>
+                  {filteredResults.certificates.map((item) => (
+                    <CommandItem
+                      key={item.id}
+                      value={`certificate-${item.id}`}
+                      onSelect={() => handleSelect('certificate', item.id)}
+                      className="flex items-center justify-between gap-2 py-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/10">
+                          <FileText className="h-4 w-4 text-blue-500" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{item.name}</p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span>{item.equipment?.name || '-'}</span>
+                            {item.expiry_date && (
+                              <>
+                                <span>•</span>
+                                <Calendar className="h-3 w-3" />
+                                <span>{format(new Date(item.expiry_date), 'dd/MM/yyyy')}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {getStatusBadge(item.status)}
+                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+                <CommandSeparator />
+              </>
+            )}
+
+            {filteredResults.inspections.length > 0 && (
+              <>
+                <CommandGroup heading={t('globalSearch.inspections')}>
+                  {filteredResults.inspections.map((item) => (
+                    <CommandItem
+                      key={item.id}
+                      value={`inspection-${item.id}`}
+                      onSelect={() => handleSelect('inspection', item.id)}
+                      className="flex items-center justify-between gap-2 py-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-500/10">
+                          <ClipboardCheck className="h-4 w-4 text-green-500" />
+                        </div>
+                        <div>
+                          <p className="font-medium">
+                            {item.equipment?.name || t('globalSearch.unknownEquipment')}
+                            <span className="ml-2 font-mono text-xs text-muted-foreground">
+                              {formatInspectionId(item.id)}
+                            </span>
+                          </p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Calendar className="h-3 w-3" />
-                            <span>{format(new Date(item.expiry_date), 'dd/MM/yyyy')}</span>
-                          </>
-                        )}
+                            <span>{format(new Date(item.inspection_date), 'dd/MM/yyyy')}</span>
+                            {item.profiles?.full_name && (
+                              <>
+                                <span>•</span>
+                                <User className="h-3 w-3" />
+                                <span>{item.profiles.full_name}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {getStatusBadge(item.status)}
+                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+                <CommandSeparator />
+              </>
+            )}
+
+            {filteredResults.maintenance.length > 0 && (
+              <CommandGroup heading={t('globalSearch.maintenance')}>
+                {filteredResults.maintenance.map((item) => (
+                  <CommandItem
+                    key={item.id}
+                    value={`maintenance-${item.id}`}
+                    onSelect={() => handleSelect('maintenance', item.id)}
+                    className="flex items-center justify-between gap-2 py-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-500/10">
+                        <Wrench className="h-4 w-4 text-orange-500" />
+                      </div>
+                      <div>
+                        <p className="font-medium">
+                          {item.title}
+                          <span className="ml-2 font-mono text-xs text-muted-foreground">
+                            {formatMaintenanceId(item.id)}
+                          </span>
+                        </p>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span>{item.equipment?.name || '-'}</span>
+                          {item.requested_at && (
+                            <>
+                              <span>•</span>
+                              <Calendar className="h-3 w-3" />
+                              <span>{format(new Date(item.requested_at), 'dd/MM/yyyy')}</span>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {getStatusBadge(item.status)}
-                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-            <CommandSeparator />
+                    <div className="flex items-center gap-2">
+                      {getStatusBadge(item.status)}
+                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
           </>
-        )}
-
-        {filteredResults.inspections.length > 0 && (
-          <>
-            <CommandGroup heading={t('globalSearch.inspections')}>
-              {filteredResults.inspections.map((item) => (
-                <CommandItem
-                  key={item.id}
-                  value={`inspection-${item.id}`}
-                  onSelect={() => handleSelect('inspection', item.id)}
-                  className="flex items-center justify-between gap-2 py-3"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-500/10">
-                      <ClipboardCheck className="h-4 w-4 text-green-500" />
-                    </div>
-                    <div>
-                      <p className="font-medium">{item.equipment?.name || t('globalSearch.unknownEquipment')}</p>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Calendar className="h-3 w-3" />
-                        <span>{format(new Date(item.inspection_date), 'dd/MM/yyyy')}</span>
-                        {item.profiles?.full_name && (
-                          <>
-                            <span>•</span>
-                            <User className="h-3 w-3" />
-                            <span>{item.profiles.full_name}</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {getStatusBadge(item.status)}
-                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-            <CommandSeparator />
-          </>
-        )}
-
-        {filteredResults.maintenance.length > 0 && (
-          <CommandGroup heading={t('globalSearch.maintenance')}>
-            {filteredResults.maintenance.map((item) => (
-              <CommandItem
-                key={item.id}
-                value={`maintenance-${item.id}`}
-                onSelect={() => handleSelect('maintenance', item.id)}
-                className="flex items-center justify-between gap-2 py-3"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-500/10">
-                    <Wrench className="h-4 w-4 text-orange-500" />
-                  </div>
-                  <div>
-                    <p className="font-medium">{item.title}</p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span>{item.equipment?.name || '-'}</span>
-                      {item.requested_at && (
-                        <>
-                          <span>•</span>
-                          <Calendar className="h-3 w-3" />
-                          <span>{format(new Date(item.requested_at), 'dd/MM/yyyy')}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {getStatusBadge(item.status)}
-                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                </div>
-              </CommandItem>
-            ))}
-          </CommandGroup>
         )}
       </CommandList>
     </CommandDialog>
