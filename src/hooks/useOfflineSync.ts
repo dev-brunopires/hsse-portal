@@ -51,6 +51,8 @@ export type {
 const MAX_RETRY_COUNT = 3;
 const CACHE_MAX_AGE = 1000 * 60 * 60 * 24; // 24 hours
 const EQUIPMENT_BATCH_SIZE = 500; // Fetch in batches for large datasets
+const MIN_CACHE_CHECK_INTERVAL = 1000 * 60 * 5; // 5 minutes between cache checks
+const SESSION_CACHE_KEY = 'offline_cache_checked_this_session';
 
 // Safe initialization of state
 const getInitialOnlineState = () => {
@@ -71,6 +73,7 @@ export function useOfflineSync() {
   const queryClient = useQueryClient();
   const syncInProgressRef = useRef(false);
   const cacheInProgressRef = useRef(false);
+  const lastCacheCheckRef = useRef<number>(0);
 
   // Load initial pending count
   useEffect(() => {
@@ -215,9 +218,13 @@ export function useOfflineSync() {
       await refreshStats();
 
       console.log('Offline data cached successfully');
-      toast.success(t('offline.cacheUpdated'), {
-        description: t('offline.cacheUpdatedDesc', { count: allEquipment.length }),
-      });
+      // Only show toast if this is a manual refresh or first cache (not auto-refresh)
+      const isFirstCache = !sessionStorage.getItem(SESSION_CACHE_KEY);
+      if (isFirstCache) {
+        toast.success(t('offline.cacheUpdated'), {
+          description: t('offline.cacheUpdatedDesc', { count: allEquipment.length }),
+        });
+      }
     } catch (error) {
       console.error('Error pre-caching data:', error);
       toast.error(t('offline.cacheError'));
@@ -226,27 +233,26 @@ export function useOfflineSync() {
     }
   }, [isOnline, t, refreshStats]);
 
-  // Check if cache is stale and notify/refresh
-  const checkAndRefreshCache = useCallback(async () => {
+  // Check if cache is stale and notify/refresh (with throttling)
+  const checkAndRefreshCache = useCallback(async (force = false) => {
+    // Throttle: skip if checked recently (unless forced)
+    const now = Date.now();
+    if (!force && now - lastCacheCheckRef.current < MIN_CACHE_CHECK_INTERVAL) {
+      return;
+    }
+    lastCacheCheckRef.current = now;
+
+    // Skip if already checked this session (for initial mount)
+    const sessionChecked = sessionStorage.getItem(SESSION_CACHE_KEY);
+    if (!force && sessionChecked) {
+      return;
+    }
+
     const cacheTimestamp = await offlineDB.getCacheTimestamp();
     const isValid = await offlineDB.isCacheValid(CACHE_MAX_AGE);
     
     if (!isValid && cacheTimestamp) {
-      // Cache is stale - notify user
-      const hoursSinceUpdate = Math.round((Date.now() - cacheTimestamp) / (1000 * 60 * 60));
-      
-      toast.warning(t('offline.cacheExpired'), {
-        description: t('offline.cacheExpiredDesc', { hours: hoursSinceUpdate }),
-        duration: 8000,
-      });
-      
-      // Show push notification for cache expiry
-      showSyncPushNotification(
-        t('offline.cacheExpired'),
-        t('offline.cacheExpiredDesc', { hours: hoursSinceUpdate }),
-        'cache-expired'
-      );
-      
+      // Cache is stale - refresh silently without notification spam
       if (isOnline) {
         await preCacheData();
       }
@@ -254,7 +260,10 @@ export function useOfflineSync() {
       // No cache exists, create one
       await preCacheData();
     }
-  }, [preCacheData, isOnline, t]);
+
+    // Mark as checked this session
+    sessionStorage.setItem(SESSION_CACHE_KEY, 'true');
+  }, [preCacheData, isOnline]);
 
   // Upload pending photos for an inspection
   const uploadPendingPhotos = useCallback(async (
