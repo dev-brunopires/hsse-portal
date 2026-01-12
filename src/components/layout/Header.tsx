@@ -385,7 +385,9 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
                   onClick={() => setSelectedShipId(null)}
                   className="gap-2"
                 >
-                  {selectedShipId === null && <Check className="h-4 w-4 text-primary" />}
+                  <span className="w-4 flex-shrink-0">
+                    {selectedShipId === null && <Check className="h-4 w-4 text-primary" />}
+                  </span>
                   <span className={selectedShipId === null ? 'font-medium' : ''}>
                     {t('header.allUnits')}
                   </span>
@@ -397,7 +399,9 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
                     onClick={() => setSelectedShipId(ship.id)}
                     className="gap-2"
                   >
-                    {selectedShipId === ship.id && <Check className="h-4 w-4 text-primary" />}
+                    <span className="w-4 flex-shrink-0">
+                      {selectedShipId === ship.id && <Check className="h-4 w-4 text-primary" />}
+                    </span>
                     <span className={selectedShipId === ship.id ? 'font-medium' : ''}>
                       {ship.name}
                     </span>
