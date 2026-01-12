@@ -345,13 +345,22 @@ export async function generateMaintenancePDF(data: MaintenanceDetailData, option
         fillColor: SBM_BLUE,
         textColor: [255, 255, 255],
         fontSize: 9,
+        fontStyle: 'bold',
+        cellPadding: 4,
       },
       bodyStyles: { 
         fontSize: 8,
         textColor: DARK_GRAY,
+        cellPadding: 3,
       },
       alternateRowStyles: { 
         fillColor: [248, 250, 252] 
+      },
+      columnStyles: {
+        0: { cellWidth: 30 }, // Type
+        1: { cellWidth: 28 }, // Status
+        2: { cellWidth: 'auto' }, // Title
+        3: { cellWidth: 28 }, // Completion Date
       },
       margin: { left: 14, right: 14 },
     });

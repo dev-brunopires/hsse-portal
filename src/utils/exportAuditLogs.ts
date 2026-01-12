@@ -81,20 +81,22 @@ export async function exportAuditLogsPDF(
       textColor: [255, 255, 255],
       fontStyle: 'bold',
       fontSize: 9,
+      cellPadding: 4,
     },
     bodyStyles: {
       fontSize: 8,
       textColor: DARK_GRAY,
+      cellPadding: 3,
     },
     alternateRowStyles: {
       fillColor: [248, 250, 252],
     },
     columnStyles: {
-      0: { cellWidth: 30 },
-      1: { cellWidth: 25 },
-      2: { cellWidth: 25 },
-      3: { cellWidth: 35 },
-      4: { cellWidth: 'auto' },
+      0: { cellWidth: 32 }, // DateTime
+      1: { cellWidth: 28 }, // Type
+      2: { cellWidth: 24 }, // Action
+      3: { cellWidth: 38 }, // User
+      4: { cellWidth: 'auto' }, // Summary
     },
     margin: { left: margin, right: margin },
   });
