@@ -2547,7 +2547,18 @@
     "noPhotos": "Nenhuma foto",
     "viewPhotos": "Ver Fotos",
     "cacheExpired": "Cache Offline Desatualizado",
-    "cacheExpiredDesc": "Os dados offline estão desatualizados há {{hours}}h. Atualizando automaticamente..."
+    "cacheExpiredDesc": "Os dados offline estão desatualizados há {{hours}}h. Atualizando automaticamente...",
+    "offlineMaintenance": "Manutenção Offline",
+    "maintenanceSavedOffline": "Manutenção salva localmente",
+    "maintenanceSyncCompleted": "Manutenções Sincronizadas",
+    "maintenanceSyncCompletedDesc": "{{count}} manutenção(ões) sincronizada(s) com sucesso.",
+    "pendingMaintenance": "Manutenções Pendentes",
+    "pendingMaintenanceDesc": "Manutenções aguardando sincronização",
+    "maintenancePlans": "Planos de Manutenção",
+    "cachedMaintenancePlans": "Planos de Manutenção em Cache",
+    "cachedMaintenancePlansDesc": "Manutenções disponíveis para registro offline",
+    "willSyncWhenOnline": "Será sincronizado quando a conexão for restaurada",
+    "errorSaving": "Erro ao salvar localmente"
   },
   "pwa": {
     "installTitle": "Instalar SafeShip",
