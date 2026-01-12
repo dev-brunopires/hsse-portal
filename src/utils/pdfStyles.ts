@@ -57,6 +57,7 @@ export interface PDFHeaderOptions {
 /**
  * Adds standardized header to PDF with organization logo
  * Features a modern diagonal design with logo on the right
+ * Design: Lighter section on left with diagonal edge, dark section on right with logo
  */
 export async function addPDFHeader(
   doc: jsPDF, 
@@ -70,68 +71,58 @@ export async function addPDFHeader(
   const primaryColor = branding?.primaryColor || SBM_BLUE;
   const headerHeight = 32;
   
-  // Calculate a lighter shade for the diagonal section
+  // Calculate a lighter shade for the left diagonal section (steel blue/gray tone)
   const lightColor: [number, number, number] = [
-    Math.min(255, primaryColor[0] + 40),
-    Math.min(255, primaryColor[1] + 50),
-    Math.min(255, primaryColor[2] + 60),
+    Math.min(255, Math.round(primaryColor[0] * 1.3 + 30)),
+    Math.min(255, Math.round(primaryColor[1] * 1.2 + 40)),
+    Math.min(255, Math.round(primaryColor[2] * 1.1 + 30)),
   ];
   
-  // Draw the lighter left diagonal section first
+  // Fill entire header with primary color first (dark blue - right side)
+  doc.setFillColor(...primaryColor);
+  doc.rect(0, 0, pageWidth, headerHeight, 'F');
+  
+  // Draw the lighter left section with diagonal edge
+  // The diagonal goes from ~55% at top to ~35% at bottom, creating the angled effect
   doc.setFillColor(...lightColor);
+  
+  // Use a polygon-like approach with triangle to create the diagonal
+  // Points: top-left, top at 55% width, bottom at 35% width, bottom-left
+  const topDiagonalX = pageWidth * 0.52;
+  const bottomDiagonalX = pageWidth * 0.32;
+  
+  // Draw as two shapes: rectangle + triangle to create the diagonal effect
+  // First, fill the rectangular part (left portion that's fully light)
+  doc.rect(0, 0, bottomDiagonalX, headerHeight, 'F');
+  
+  // Then draw the triangular part for the diagonal
   doc.triangle(
-    0, 0,                      // Top-left corner
-    pageWidth * 0.55, 0,       // Top point of diagonal
-    0, headerHeight,           // Bottom-left corner
+    bottomDiagonalX, 0,           // Top of rectangle edge
+    topDiagonalX, 0,              // Top point of diagonal
+    bottomDiagonalX, headerHeight, // Bottom of rectangle edge
     'F'
   );
   
-  // Draw the main dark section (right side with diagonal cut)
-  doc.setFillColor(...primaryColor);
-  // Create a polygon for the main section with diagonal
-  const points = [
-    pageWidth * 0.45, 0,       // Start of diagonal at top
-    pageWidth, 0,              // Top-right corner
-    pageWidth, headerHeight,   // Bottom-right corner
-    0, headerHeight,           // Bottom-left corner
-  ];
-  
-  // Draw using lines since jsPDF doesn't have a direct polygon fill
-  doc.setFillColor(...primaryColor);
-  doc.rect(0, 0, pageWidth, headerHeight, 'F'); // Fill entire header first
-  
-  // Now draw the lighter diagonal overlay on top-left
-  doc.setFillColor(...lightColor);
-  doc.triangle(
-    0, 0,                      // Top-left corner
-    pageWidth * 0.50, 0,       // Top point of diagonal (50% of width)
-    0, headerHeight,           // Bottom-left corner
-    'F'
-  );
-  
-  // Report title - positioned on the left side
+  // Report title - positioned on the left side (in the light section)
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  doc.text(title, 14, 13);
+  doc.text(title, 10, 12);
   
-  // Subtitle (date) - below title on left
-  if (subtitle) {
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.text(subtitle, 14, 21);
-  }
-  
-  // Additional info below subtitle
+  // Subtitle info - below title on left
   if (rightText && rightText.length > 0) {
-    doc.setFontSize(8);
+    doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
     rightText.forEach((text, index) => {
-      doc.text(text, 14, 27 + (index * 5));
+      doc.text(text, 10, 19 + (index * 5));
     });
+  } else if (subtitle) {
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.text(subtitle, 10, 19);
   }
   
-  // Try to add the organization logo on the RIGHT side
+  // Try to add the organization logo on the RIGHT side (in the dark section)
   let logoAdded = false;
   
   const logoUrl = branding?.logoWhiteUrl || branding?.logoUrl;
@@ -142,10 +133,10 @@ export async function addPDFHeader(
         // Detect image type from base64
         const imageType = logoBase64.includes('image/png') ? 'PNG' : 
                           logoBase64.includes('image/svg') ? 'SVG' : 'JPEG';
-        // Position logo on the right side
-        const logoWidth = 35;
-        const logoHeight = 18;
-        const logoX = pageWidth - logoWidth - 10;
+        // Position logo on the right side, vertically centered
+        const logoWidth = 32;
+        const logoHeight = 16;
+        const logoX = pageWidth - logoWidth - 8;
         const logoY = (headerHeight - logoHeight) / 2;
         doc.addImage(logoBase64, imageType, logoX, logoY, logoWidth, logoHeight);
         logoAdded = true;
@@ -210,46 +201,50 @@ export function addPDFHeaderSync(
   const primaryColor = branding?.primaryColor || SBM_BLUE;
   const headerHeight = 32;
   
-  // Calculate a lighter shade for the diagonal section
+  // Calculate a lighter shade for the left diagonal section (steel blue/gray tone)
   const lightColor: [number, number, number] = [
-    Math.min(255, primaryColor[0] + 40),
-    Math.min(255, primaryColor[1] + 50),
-    Math.min(255, primaryColor[2] + 60),
+    Math.min(255, Math.round(primaryColor[0] * 1.3 + 30)),
+    Math.min(255, Math.round(primaryColor[1] * 1.2 + 40)),
+    Math.min(255, Math.round(primaryColor[2] * 1.1 + 30)),
   ];
   
-  // Fill entire header with primary color first
+  // Fill entire header with primary color first (dark blue - right side)
   doc.setFillColor(...primaryColor);
   doc.rect(0, 0, pageWidth, headerHeight, 'F');
   
-  // Draw the lighter diagonal overlay on top-left
+  // Draw the lighter left section with diagonal edge
+  const topDiagonalX = pageWidth * 0.52;
+  const bottomDiagonalX = pageWidth * 0.32;
+  
+  // Fill the rectangular part (left portion that's fully light)
   doc.setFillColor(...lightColor);
+  doc.rect(0, 0, bottomDiagonalX, headerHeight, 'F');
+  
+  // Draw the triangular part for the diagonal
   doc.triangle(
-    0, 0,                      // Top-left corner
-    pageWidth * 0.50, 0,       // Top point of diagonal (50% of width)
-    0, headerHeight,           // Bottom-left corner
+    bottomDiagonalX, 0,           // Top of rectangle edge
+    topDiagonalX, 0,              // Top point of diagonal
+    bottomDiagonalX, headerHeight, // Bottom of rectangle edge
     'F'
   );
   
-  // Report title - positioned on the left side
+  // Report title - positioned on the left side (in the light section)
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  doc.text(title, 14, 13);
+  doc.text(title, 10, 12);
   
-  // Subtitle (date) - below title on left
-  if (subtitle) {
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.text(subtitle, 14, 21);
-  }
-  
-  // Additional info below subtitle
+  // Subtitle info - below title on left
   if (rightText && rightText.length > 0) {
-    doc.setFontSize(8);
+    doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
     rightText.forEach((text, index) => {
-      doc.text(text, 14, 27 + (index * 5));
+      doc.text(text, 10, 19 + (index * 5));
     });
+  } else if (subtitle) {
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.text(subtitle, 10, 19);
   }
   
   // Try to use cached logo on the RIGHT side
@@ -261,10 +256,10 @@ export function addPDFHeaderSync(
       try {
         const imageType = cachedLogo.includes('image/png') ? 'PNG' : 
                           cachedLogo.includes('image/svg') ? 'SVG' : 'JPEG';
-        // Position logo on the right side
-        const logoWidth = 35;
-        const logoHeight = 18;
-        const logoX = pageWidth - logoWidth - 10;
+        // Position logo on the right side, vertically centered
+        const logoWidth = 32;
+        const logoHeight = 16;
+        const logoX = pageWidth - logoWidth - 8;
         const logoY = (headerHeight - logoHeight) / 2;
         doc.addImage(cachedLogo, imageType, logoX, logoY, logoWidth, logoHeight);
         logoAdded = true;
