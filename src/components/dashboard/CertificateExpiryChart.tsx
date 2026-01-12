@@ -1,16 +1,19 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { useCertificates } from '@/hooks/useCertificates';
 import { format, addMonths, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
-import { CalendarDays, TrendingUp } from 'lucide-react';
+import { CalendarDays, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 
 export function CertificateExpiryChart() {
   const { t, i18n } = useTranslation();
   const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
+  const [isOpen, setIsOpen] = useState(false);
   const { data: certificates = [], isLoading } = useCertificates();
 
   const chartData = useMemo(() => {
@@ -64,75 +67,93 @@ export function CertificateExpiryChart() {
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <CalendarDays className="h-5 w-5 text-primary" />
-              {t('certificates.expiryChart.title')}
-            </CardTitle>
-            <CardDescription>
-              {t('certificates.expiryChart.description')}
-            </CardDescription>
-          </div>
-          {totalExpiring > 0 && (
-            <div className="flex items-center gap-1.5 rounded-full bg-destructive/10 px-3 py-1 text-destructive">
-              <TrendingUp className="h-4 w-4" />
-              <span className="text-sm font-medium">
-                {t('certificates.expiryChart.expiringSoon', { count: totalExpiring })}
-              </span>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <CalendarDays className="h-5 w-5 text-primary" />
+                {t('certificates.expiryChart.title')}
+              </CardTitle>
+              <CardDescription>
+                {t('certificates.expiryChart.description')}
+              </CardDescription>
             </div>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent>
-        <ResponsiveContainer width="100%" height={250}>
-          <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-            <XAxis 
-              dataKey="month" 
-              tick={{ fontSize: 12 }} 
-              tickLine={false}
-              axisLine={false}
-            />
-            <YAxis 
-              tick={{ fontSize: 12 }} 
-              tickLine={false}
-              axisLine={false}
-              allowDecimals={false}
-            />
-            <Tooltip 
-              contentStyle={{ 
-                backgroundColor: 'hsl(var(--popover))',
-                border: '1px solid hsl(var(--border))',
-                borderRadius: '8px',
-              }}
-              labelStyle={{ fontWeight: 600 }}
-              formatter={(value: number) => [value, t('certificates.expiryChart.certificates')]}
-            />
-            <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-              {chartData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={getBarColor(entry.monthIndex)} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-        <div className="flex items-center justify-center gap-4 mt-4 text-xs text-muted-foreground">
-          <div className="flex items-center gap-1.5">
-            <div className="h-3 w-3 rounded-sm bg-destructive" />
-            <span>{t('certificates.expiryChart.thisMonth')}</span>
+            <div className="flex items-center gap-2">
+              {totalExpiring > 0 && (
+                <div className="flex items-center gap-1.5 rounded-full bg-destructive/10 px-3 py-1 text-destructive">
+                  <TrendingUp className="h-4 w-4" />
+                  <span className="text-sm font-medium">
+                    {t('certificates.expiryChart.expiringSoon', { count: totalExpiring })}
+                  </span>
+                </div>
+              )}
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  {isOpen ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                  <span className="sr-only">
+                    {isOpen ? t('certificates.expiryChart.hideChart') : t('certificates.expiryChart.showChart')}
+                  </span>
+                </Button>
+              </CollapsibleTrigger>
+            </div>
           </div>
-          <div className="flex items-center gap-1.5">
-            <div className="h-3 w-3 rounded-sm bg-warning" />
-            <span>{t('certificates.expiryChart.next3Months')}</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="h-3 w-3 rounded-sm bg-primary" />
-            <span>{t('certificates.expiryChart.later')}</span>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardHeader>
+        <CollapsibleContent>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis 
+                  dataKey="month" 
+                  tick={{ fontSize: 12 }} 
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis 
+                  tick={{ fontSize: 12 }} 
+                  tickLine={false}
+                  axisLine={false}
+                  allowDecimals={false}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'hsl(var(--popover))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                  }}
+                  labelStyle={{ fontWeight: 600 }}
+                  formatter={(value: number) => [value, t('certificates.expiryChart.certificates')]}
+                />
+                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                  {chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={getBarColor(entry.monthIndex)} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+            <div className="flex items-center justify-center gap-4 mt-4 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1.5">
+                <div className="h-3 w-3 rounded-sm bg-destructive" />
+                <span>{t('certificates.expiryChart.thisMonth')}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="h-3 w-3 rounded-sm bg-warning" />
+                <span>{t('certificates.expiryChart.next3Months')}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="h-3 w-3 rounded-sm bg-primary" />
+                <span>{t('certificates.expiryChart.later')}</span>
+              </div>
+            </div>
+          </CardContent>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
   );
 }

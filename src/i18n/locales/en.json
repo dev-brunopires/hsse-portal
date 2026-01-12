@@ -240,7 +240,18 @@
     "renewSelected": "Renew Selected",
     "bulkRenewTitle": "Bulk Renew Certificates",
     "bulkRenewDesc": "You are about to renew {{count}} certificate(s) for 12 more months. Do you want to continue?",
-    "confirmRenew": "Confirm Renewal"
+    "confirmRenew": "Confirm Renewal",
+    "expiryChart": {
+      "title": "Expiries by Month",
+      "description": "Certificates expiring in the next 12 months",
+      "certificates": "certificates",
+      "expiringSoon": "{{count}} expire in 3 months",
+      "thisMonth": "This month",
+      "next3Months": "Next 3 months",
+      "later": "Later",
+      "showChart": "Show chart",
+      "hideChart": "Hide chart"
+    }
   },
   "dashboard": {
     "title": "Dashboard",
@@ -2996,17 +3007,6 @@
     "maintenance": "Maintenance",
     "unknownEquipment": "Unidentified equipment",
     "searchTip": "Search by name, code, INS-XXXXXX or MNT-XXXXXX"
-  },
-  "certificates": {
-    "expiryChart": {
-      "title": "Expiries by Month",
-      "description": "Certificates expiring in the next 12 months",
-      "certificates": "certificates",
-      "expiringSoon": "{{count}} expire in 3 months",
-      "thisMonth": "This month",
-      "next3Months": "Next 3 months",
-      "later": "Later"
-    }
   },
   "complianceReport": {
     "title": "Compliance Report",
