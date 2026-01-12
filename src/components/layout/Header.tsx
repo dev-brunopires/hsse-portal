@@ -23,6 +23,7 @@ import {
   FileCheck
 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { GlobalSearchTrigger } from '@/components/global-search/GlobalSearchTrigger';
 import { Input } from '@/components/ui/input';
@@ -34,6 +35,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from '@/components/ui/drawer';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/contexts/AuthContext';
@@ -361,10 +370,10 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
           {resolvedTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
         </Button>
 
-        {/* Mobile Ship Selector - Only for Admin/Admin Master */}
+        {/* Mobile Ship Selector - Only for Admin/Admin Master - Uses Drawer */}
         {isFilterEnabled && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+          <Drawer>
+            <DrawerTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
@@ -376,40 +385,57 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
                   <span className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-primary rounded-full" />
                 )}
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64 bg-popover border border-border shadow-lg z-50">
-              <DropdownMenuLabel>{t('header.filterByUnit')}</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <ScrollArea className="max-h-80">
-                <DropdownMenuItem 
-                  onClick={() => setSelectedShipId(null)}
-                  className="gap-2"
-                >
-                  <span className="w-4 flex-shrink-0">
-                    {selectedShipId === null && <Check className="h-4 w-4 text-primary" />}
-                  </span>
-                  <span className={selectedShipId === null ? 'font-medium' : ''}>
-                    {t('header.allUnits')}
-                  </span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                {ships.map((ship) => (
-                  <DropdownMenuItem 
-                    key={ship.id}
-                    onClick={() => setSelectedShipId(ship.id)}
-                    className="gap-2"
+            </DrawerTrigger>
+            <DrawerContent>
+              <DrawerHeader className="text-left">
+                <DrawerTitle className="flex items-center gap-2">
+                  <Ship className="h-5 w-5 text-primary" />
+                  {t('header.filterByUnit')}
+                </DrawerTitle>
+              </DrawerHeader>
+              <div className="px-4 pb-6 space-y-1">
+                <DrawerClose asChild>
+                  <button
+                    onClick={() => setSelectedShipId(null)}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors",
+                      selectedShipId === null 
+                        ? "bg-primary/10 text-primary font-medium" 
+                        : "hover:bg-muted"
+                    )}
                   >
-                    <span className="w-4 flex-shrink-0">
-                      {selectedShipId === ship.id && <Check className="h-4 w-4 text-primary" />}
+                    <span className="w-5 flex-shrink-0">
+                      {selectedShipId === null && <Check className="h-5 w-5 text-primary" />}
                     </span>
-                    <span className={selectedShipId === ship.id ? 'font-medium' : ''}>
-                      {ship.name}
-                    </span>
-                  </DropdownMenuItem>
-                ))}
-              </ScrollArea>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                    <span>{t('header.allUnits')}</span>
+                  </button>
+                </DrawerClose>
+                <div className="h-px bg-border my-2" />
+                <ScrollArea className="max-h-[50vh]">
+                  <div className="space-y-1">
+                    {ships.map((ship) => (
+                      <DrawerClose key={ship.id} asChild>
+                        <button
+                          onClick={() => setSelectedShipId(ship.id)}
+                          className={cn(
+                            "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors",
+                            selectedShipId === ship.id 
+                              ? "bg-primary/10 text-primary font-medium" 
+                              : "hover:bg-muted"
+                          )}
+                        >
+                          <span className="w-5 flex-shrink-0">
+                            {selectedShipId === ship.id && <Check className="h-5 w-5 text-primary" />}
+                          </span>
+                          <span>{ship.name}</span>
+                        </button>
+                      </DrawerClose>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            </DrawerContent>
+          </Drawer>
         )}
 
         {/* Global Search */}
