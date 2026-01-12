@@ -361,6 +361,53 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
           {resolvedTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
         </Button>
 
+        {/* Mobile Ship Selector - Only for Admin/Admin Master */}
+        {isFilterEnabled && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="lg:hidden text-muted-foreground hover:text-foreground relative"
+                title={t('header.filterByUnit')}
+              >
+                <Ship className="h-5 w-5" />
+                {selectedShipId && (
+                  <span className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-primary rounded-full" />
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64 bg-popover border border-border shadow-lg z-50">
+              <DropdownMenuLabel>{t('header.filterByUnit')}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <ScrollArea className="max-h-80">
+                <DropdownMenuItem 
+                  onClick={() => setSelectedShipId(null)}
+                  className="gap-2"
+                >
+                  {selectedShipId === null && <Check className="h-4 w-4 text-primary" />}
+                  <span className={selectedShipId === null ? 'font-medium' : ''}>
+                    {t('header.allUnits')}
+                  </span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                {ships.map((ship) => (
+                  <DropdownMenuItem 
+                    key={ship.id}
+                    onClick={() => setSelectedShipId(ship.id)}
+                    className="gap-2"
+                  >
+                    {selectedShipId === ship.id && <Check className="h-4 w-4 text-primary" />}
+                    <span className={selectedShipId === ship.id ? 'font-medium' : ''}>
+                      {ship.name}
+                    </span>
+                  </DropdownMenuItem>
+                ))}
+              </ScrollArea>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+
         {/* Global Search */}
         <div className="hidden md:block">
           <GlobalSearchTrigger />
