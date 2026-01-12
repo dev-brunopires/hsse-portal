@@ -15,6 +15,7 @@ import {
   RotateCw,
   Trash2,
   MoreHorizontal,
+  Zap,
 } from 'lucide-react';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
@@ -50,6 +51,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 
 import { useCertificates, useCertificateStats, useDeleteCertificate, type Certificate } from '@/hooks/useCertificates';
+import { useSyncAllCertificates } from '@/hooks/useSyncEquipmentCertificates';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { formatDate } from '@/utils/dateFormat';
 import { cn } from '@/lib/utils';
@@ -102,6 +104,7 @@ export default function Certificates() {
   const [certificateToDelete, setCertificateToDelete] = useState<Certificate | null>(null);
 
   const deleteCertificate = useDeleteCertificate();
+  const syncCertificates = useSyncAllCertificates();
 
   const expiringDays = activeTab === 'expiring' ? 30 : undefined;
 
@@ -274,6 +277,16 @@ export default function Certificates() {
         subtitle={t('certificates.subtitle')}
         actions={
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => syncCertificates.mutate()}
+              disabled={syncCertificates.isPending}
+              title={t('certificates.syncTooltip')}
+            >
+              <Zap className={cn('h-4 w-4', syncCertificates.isPending && 'animate-pulse')} />
+              <span className="hidden sm:inline ml-2">{t('certificates.syncFromEquipment')}</span>
+            </Button>
             <Button
               variant="outline"
               size="sm"
