@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -23,17 +23,22 @@ import { supabase } from '@/integrations/supabase/client';
 import { SystemLogo } from '@/components/ui/SystemLogo';
 import { getOrganizationUrl } from '@/utils/organizationUrl';
 import loginBg from '@/assets/login-bg.jpg';
+
 const REMEMBER_EMAIL_KEY = 'safeship_remembered_email';
 
 export default function Auth() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
   const { signIn, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { organization, logoUrl, subdomain } = useOrganization();
+  const formInitialized = useRef(false);
+  
+  const currentLanguage = i18n.language;
   
   // Use organization logo or system default logo
   const hasOrgLogo = organization && logoUrl;
@@ -54,20 +59,35 @@ export default function Auth() {
     },
   });
 
-  // Load remembered email on mount
+  // Load remembered email on mount (only once)
   useEffect(() => {
+    if (formInitialized.current) return;
+    formInitialized.current = true;
+    
     const rememberedEmail = localStorage.getItem(REMEMBER_EMAIL_KEY);
     if (rememberedEmail) {
       loginForm.setValue('email', rememberedEmail);
       setRememberMe(true);
     }
-  }, [loginForm]);
+  }, []);
 
   useEffect(() => {
     if (user) {
       navigate('/');
     }
   }, [user, navigate]);
+
+  const toggleLanguage = () => {
+    setIsAnimating(true);
+    const newLang = currentLanguage === 'pt-BR' ? 'en' : 'pt-BR';
+    
+    // Small delay for animation
+    setTimeout(() => {
+      i18n.changeLanguage(newLang);
+      localStorage.setItem('language', newLang);
+      setTimeout(() => setIsAnimating(false), 200);
+    }, 150);
+  };
 
   const handleLogin = async (data: LoginFormData) => {
     setIsLoading(true);
@@ -147,25 +167,18 @@ export default function Auth() {
     navigate('/');
   };
 
-  const { i18n } = useTranslation();
-  const currentLanguage = i18n.language;
-
-  const toggleLanguage = () => {
-    const newLang = currentLanguage === 'pt-BR' ? 'en' : 'pt-BR';
-    i18n.changeLanguage(newLang);
-    localStorage.setItem('language', newLang);
-  };
-
   return (
     <div className="min-h-screen flex relative">
       {/* Language Toggle - Top Right */}
       <button
         type="button"
         onClick={toggleLanguage}
-        className="absolute top-4 right-4 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/80 backdrop-blur-sm border border-border/50 text-sm text-muted-foreground hover:text-foreground hover:bg-background transition-colors"
+        className="absolute top-4 right-4 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/80 backdrop-blur-sm border border-border/50 text-sm text-muted-foreground hover:text-foreground hover:bg-background transition-all duration-200 hover:scale-105 active:scale-95"
       >
-        <Globe className="h-3.5 w-3.5" />
-        <span className="font-medium">{currentLanguage === 'pt-BR' ? 'PT' : 'EN'}</span>
+        <Globe className={`h-3.5 w-3.5 transition-transform duration-300 ${isAnimating ? 'rotate-180' : ''}`} />
+        <span className={`font-medium transition-opacity duration-150 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}>
+          {currentLanguage === 'pt-BR' ? 'PT' : 'EN'}
+        </span>
       </button>
 
       {/* Left Side - Form */}
