@@ -295,13 +295,39 @@ export function addPDFFooter(
     doc.setFillColor(...SBM_BLUE);
     doc.rect(0, pageHeight - 10, pageWidth, 2, 'F');
     
-    // Footer text
+    // Footer text - left text takes max 45% of width, center text right-aligned before page number
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...MEDIUM_GRAY);
-    doc.text(leftText, 14, pageHeight - 4);
-    doc.text(centerText, pageWidth / 2, pageHeight - 4, { align: 'center' });
-    doc.text(`${t('pdfStyles.page')} ${i} ${t('pdfStyles.of')} ${pageCount}`, pageWidth - 14, pageHeight - 4, { align: 'right' });
+    
+    // Truncate left text if too long to prevent overlap
+    const maxLeftWidth = pageWidth * 0.40;
+    let displayLeftText = leftText;
+    while (doc.getTextWidth(displayLeftText) > maxLeftWidth && displayLeftText.length > 10) {
+      displayLeftText = displayLeftText.slice(0, -4) + '...';
+    }
+    
+    // Left text
+    doc.text(displayLeftText, 14, pageHeight - 4);
+    
+    // Page number on right
+    const pageText = `${t('pdfStyles.page')} ${i} ${t('pdfStyles.of')} ${pageCount}`;
+    doc.text(pageText, pageWidth - 14, pageHeight - 4, { align: 'right' });
+    
+    // Center text - positioned between left and right, but right-aligned to avoid overlap
+    const rightTextWidth = doc.getTextWidth(pageText) + 20;
+    const leftTextWidth = doc.getTextWidth(displayLeftText) + 20;
+    const availableCenterWidth = pageWidth - leftTextWidth - rightTextWidth;
+    
+    if (availableCenterWidth > 40) {
+      // Truncate center text if needed
+      let displayCenterText = centerText;
+      while (doc.getTextWidth(displayCenterText) > availableCenterWidth && displayCenterText.length > 10) {
+        displayCenterText = displayCenterText.slice(0, -4) + '...';
+      }
+      const centerX = 14 + leftTextWidth + (availableCenterWidth / 2);
+      doc.text(displayCenterText, centerX, pageHeight - 4, { align: 'center' });
+    }
   }
 }
 

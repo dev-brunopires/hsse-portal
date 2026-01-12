@@ -8,6 +8,7 @@ import {
   Loader2,
   Search,
   ListChecks,
+  QrCode,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,7 @@ import { useTotalEquipmentCountsByCategory } from '@/hooks/useEquipmentCounts';
 import { useChecklistTemplates } from '@/hooks/useChecklistTemplates';
 import { CategoryFormDialog } from '@/components/categories/CategoryFormDialog';
 import { ChecklistTemplatesDialog } from '@/components/categories/ChecklistTemplatesDialog';
+import { PrintCategoryQRDialog } from '@/components/categories/PrintCategoryQRDialog';
 import { getCategoryIcon } from '@/utils/categoryIcons';
 import { useIsMobile, useIsTabletOrMobile } from '@/hooks/use-mobile';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
@@ -75,6 +77,13 @@ export default function Categories() {
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
   const [templatesDialogOpen, setTemplatesDialogOpen] = useState(false);
   const [categoryForTemplates, setCategoryForTemplates] = useState<Category | null>(null);
+  const [printQRDialogOpen, setPrintQRDialogOpen] = useState(false);
+  const [categoryForPrintQR, setCategoryForPrintQR] = useState<Category | null>(null);
+
+  const handleOpenPrintQR = (category: Category) => {
+    setCategoryForPrintQR(category);
+    setPrintQRDialogOpen(true);
+  };
 
   const handleRefresh = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: ['categories'] });
@@ -266,6 +275,19 @@ export default function Categories() {
                           <ListChecks className="h-4 w-4 mr-2" />
                           Checklist
                         </Button>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => handleOpenPrintQR(category)}
+                              disabled={equipmentCount === 0}
+                            >
+                              <QrCode className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>{t('qrCode.printMultiple')}</TooltipContent>
+                        </Tooltip>
                         <Button
                           variant="outline"
                           size="icon"
@@ -352,6 +374,19 @@ export default function Categories() {
                                 </TooltipTrigger>
                                 <TooltipContent>{t('categoriesPage.manageChecklist')}</TooltipContent>
                               </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleOpenPrintQR(category)}
+                                    disabled={equipmentCount === 0}
+                                  >
+                                    <QrCode className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>{t('qrCode.printMultiple')}</TooltipContent>
+                              </Tooltip>
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -409,6 +444,13 @@ export default function Categories() {
           category={categoryForTemplates}
         />
       )}
+
+      {/* Print Category QR Codes Dialog */}
+      <PrintCategoryQRDialog
+        open={printQRDialogOpen}
+        onOpenChange={setPrintQRDialogOpen}
+        category={categoryForPrintQR}
+      />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
