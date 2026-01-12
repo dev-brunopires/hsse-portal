@@ -71,12 +71,8 @@ export async function addPDFHeader(
   const primaryColor = branding?.primaryColor || SBM_BLUE;
   const headerHeight = 32;
   
-  // Calculate a lighter steel blue shade for the left rectangle
-  const steelBlue: [number, number, number] = [
-    Math.min(255, Math.round(primaryColor[0] * 1.4 + 20)),
-    Math.min(255, Math.round(primaryColor[1] * 1.3 + 30)),
-    Math.min(255, Math.round(primaryColor[2] * 1.15 + 20)),
-  ];
+  // Fixed steel blue color for the left rectangle: #004080
+  const steelBlue: [number, number, number] = [0, 64, 128];
   
   // Fill entire header with primary color first (dark navy - background)
   doc.setFillColor(...primaryColor);
@@ -203,12 +199,8 @@ export function addPDFHeaderSync(
   const primaryColor = branding?.primaryColor || SBM_BLUE;
   const headerHeight = 32;
   
-  // Calculate a lighter steel blue shade for the left rectangle
-  const steelBlue: [number, number, number] = [
-    Math.min(255, Math.round(primaryColor[0] * 1.4 + 20)),
-    Math.min(255, Math.round(primaryColor[1] * 1.3 + 30)),
-    Math.min(255, Math.round(primaryColor[2] * 1.15 + 20)),
-  ];
+  // Fixed steel blue color for the left rectangle: #004080
+  const steelBlue: [number, number, number] = [0, 64, 128];
   
   // Fill entire header with primary color first (dark navy - background)
   doc.setFillColor(...primaryColor);
