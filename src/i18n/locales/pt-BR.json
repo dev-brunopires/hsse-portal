@@ -107,6 +107,8 @@
     "inspect": "Inspecionar",
     "new": "Novo",
     "selectAll": "Selecionar todos",
+    "deselectAll": "Desmarcar todos",
+    "selected": "selecionado(s)",
     "select": "Selecionar"
   },
   "auth": {
@@ -1335,7 +1337,8 @@
     "equipmentCount": "Equipamentos",
     "checklistItems": "Checklist",
     "manageChecklist": "Gerenciar checklist de inspeção",
-    "cannotDeleteWithEquipment": "Não é possível excluir: {{count}} equipamento(s) vinculado(s)"
+    "cannotDeleteWithEquipment": "Não é possível excluir: {{count}} equipamento(s) vinculado(s)",
+    "noEquipmentInCategory": "Nenhum equipamento nesta categoria"
   },
   "categoryForm": {
     "newCategory": "Nova Categoria",
@@ -1899,6 +1902,7 @@
     "download": "Baixar",
     "printLabel": "Imprimir Etiqueta",
     "printFull": "Imprimir Completo",
+    "printMultiple": "Imprimir Múltiplas Etiquetas",
     "copyLink": "Copiar Link",
     "downloadStarted": "Download iniciado",
     "labelDownloaded": "Etiqueta do equipamento {{code}} baixada.",

@@ -107,6 +107,8 @@
     "inspect": "Inspect",
     "new": "New",
     "selectAll": "Select all",
+    "deselectAll": "Deselect all",
+    "selected": "selected",
     "select": "Select"
   },
   "auth": {
@@ -1335,7 +1337,8 @@
     "equipmentCount": "Equipment",
     "checklistItems": "Checklist",
     "manageChecklist": "Manage inspection checklist",
-    "cannotDeleteWithEquipment": "Cannot delete: {{count}} equipment(s) linked"
+    "cannotDeleteWithEquipment": "Cannot delete: {{count}} equipment(s) linked",
+    "noEquipmentInCategory": "No equipment in this category"
   },
   "categoryForm": {
     "newCategory": "New Category",
@@ -1899,6 +1902,7 @@
     "download": "Download",
     "printLabel": "Print Label",
     "printFull": "Print Full",
+    "printMultiple": "Print Multiple Labels",
     "copyLink": "Copy Link",
     "downloadStarted": "Download started",
     "labelDownloaded": "Label for equipment {{code}} downloaded.",
