@@ -2527,7 +2527,21 @@
     "noPendingDesc": "No pending inspections to sync",
     "viewCachedData": "View Cached Data",
     "inspect": "Inspect",
-    "offlineInspection": "Offline Inspection"
+    "offlineInspection": "Offline Inspection",
+    "photosInstructions": "Capture photos of the equipment. Photos will be automatically compressed to optimize offline storage.",
+    "camera": "Camera",
+    "gallery": "Gallery",
+    "photosCount": "{{current}}/{{max}} photos",
+    "total": "total",
+    "maxPhotosReached": "Limit of {{count}} photos reached",
+    "invalidFileType": "Only image files are allowed",
+    "photosAdded": "{{count}} photo(s) added",
+    "photoProcessError": "Error processing photo",
+    "photoRemoved": "Photo removed",
+    "photoRemoveError": "Error removing photo",
+    "photoPreview": "Photo Preview",
+    "photosWillSync": "Photos will be uploaded when connection is restored",
+    "pendingPhotos": "{{count}} pending photo(s)"
   },
   "pwa": {
     "installTitle": "Install SafeShip",
