@@ -89,9 +89,20 @@ export async function exportMaintenanceToPDF(
       t('exportMaintenance.completedDate'),
     ]],
     body: tableData,
-    styles: { fontSize: 8 },
-    headStyles: { fillColor: [22, 85, 154] },
+    styles: { fontSize: 8, cellPadding: 3 },
+    headStyles: { fillColor: [22, 85, 154], fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [248, 250, 252] },
+    columnStyles: {
+      0: { cellWidth: 24 }, // Date
+      1: { cellWidth: 'auto' }, // Title
+      2: { cellWidth: 38 }, // Equipment
+      3: { cellWidth: 24 }, // Code
+      4: { cellWidth: 24 }, // Type
+      5: { cellWidth: 22 }, // Priority
+      6: { cellWidth: 24 }, // Status
+      7: { cellWidth: 24 }, // Due Date
+      8: { cellWidth: 26 }, // Completed Date
+    },
   });
 
   const companyName = branding?.name || 'SafeShip';

@@ -151,9 +151,20 @@ export async function exportToPDF(
       t('exportEquipment.location'),
     ]],
     body: identificationData,
-    styles: { fontSize: 7 },
-    headStyles: { fillColor: SBM_BLUE },
+    styles: { fontSize: 7, cellPadding: 3 },
+    headStyles: { fillColor: SBM_BLUE, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [248, 250, 252] },
+    columnStyles: {
+      0: { cellWidth: 26 }, // Code
+      1: { cellWidth: 'auto' }, // Name
+      2: { cellWidth: 28 }, // Category
+      3: { cellWidth: 24 }, // Type
+      4: { cellWidth: 28 }, // Manufacturer
+      5: { cellWidth: 24 }, // Model
+      6: { cellWidth: 28 }, // Serial
+      7: { cellWidth: 22 }, // Capacity
+      8: { cellWidth: 28 }, // Location
+    },
   });
 
   // Get current Y position after first table
@@ -210,12 +221,19 @@ export async function exportToPDF(
       t('exportEquipment.nextInsp'),
     ]],
     body: datesStatusData,
-    styles: { fontSize: 7 },
-    headStyles: { fillColor: SBM_BLUE },
+    styles: { fontSize: 7, cellPadding: 3 },
+    headStyles: { fillColor: SBM_BLUE, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [248, 250, 252] },
     columnStyles: {
-      1: { cellWidth: 45 } // Status column wider to accommodate alerts
-    }
+      0: { cellWidth: 26 }, // Code
+      1: { cellWidth: 48 }, // Status with alerts
+      2: { cellWidth: 28 }, // Manufacturing
+      3: { cellWidth: 28 }, // Acquisition
+      4: { cellWidth: 28 }, // Expiry
+      5: { cellWidth: 28 }, // Certificate
+      6: { cellWidth: 26 }, // Last Insp
+      7: { cellWidth: 26 }, // Next Insp
+    },
   });
 
   // Add standardized footer with organization name
