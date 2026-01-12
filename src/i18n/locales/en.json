@@ -197,7 +197,7 @@
     "autoSyncCreated": "Certificate automatically created",
     "autoSyncUpdated": "Certificate expiry updated",
     "syncFromEquipment": "Sync Equipment",
-    "syncTooltip": "Creates certificates for equipment with expiry dates",
+    "syncTooltip": "Automatically creates certificates for equipment that has an expiry date registered",
     "noCertificates": "No certificates found",
     "noCertificatesDesc": "Add certificates to manage equipment documentation",
     "searchPlaceholder": "Search by name, equipment, number...",
@@ -1956,7 +1956,7 @@
     "permissionInstructions": "Click the lock icon in the address bar and allow camera access."
   },
   "statusBadge": {
-    "autoRejected": "Automatically rejected"
+    "autoRejected": "Automatically rejected due to expiration"
   },
   "signaturePad": {
     "title": "Inspector Signature",
@@ -2188,14 +2188,14 @@
     "serialNumber": "Serial Number"
   },
   "validation": {
-    "required": "Required field",
+    "required": "This field is required",
     "nameMinLength": "Name must have at least 2 characters",
-    "selectIcon": "Select an icon",
-    "selectFrequency": "Select frequency",
-    "selectStatus": "Select a status",
-    "selectDate": "Select a date",
-    "invalidEmail": "Invalid email",
-    "passwordMinLength": "Password must have at least 6 characters"
+    "selectIcon": "Choose an icon for the category",
+    "selectFrequency": "Choose how often inspections should occur",
+    "selectStatus": "Select the item status",
+    "selectDate": "Select a date from the calendar",
+    "invalidEmail": "Please enter a valid email address",
+    "passwordMinLength": "Password must be at least 6 characters long"
   },
   "exportEquipment": {
     "internalCode": "Internal Code",
@@ -2922,18 +2922,18 @@
   },
   "checklistTemplates": {
     "title": "Checklist Templates",
-    "description": "Manage verification templates for the {{category}} category",
+    "description": "Create and manage verification checklists for the {{category}} category",
     "templates": "Templates",
     "items": "items",
     "templateName": "Template Name",
     "templateNamePlaceholder": "E.g.: Full Visual Inspection",
-    "noTemplates": "No templates created",
-    "selectOrCreate": "Select a template or create a new one",
-    "setAsDefault": "Set as default",
+    "noTemplates": "No templates created yet",
+    "selectOrCreate": "Select an existing template or create a new one",
+    "setAsDefault": "Use as default for new inspections",
     "confirmDelete": "Delete Template",
-    "confirmDeleteDescription": "Are you sure you want to delete the template \"{{name}}\"?",
+    "confirmDeleteDescription": "Are you sure you want to delete the template \"{{name}}\"? Existing inspections will not be affected.",
     "defaultTemplateName": "Default Checklist",
-    "duplicate": "Duplicate template",
+    "duplicate": "Create a copy of this template",
     "copy": "Copy"
   },
   "errors": {
@@ -2984,17 +2984,18 @@
     "invalidData": "Some of the information provided is incorrect. Please check and try again."
   },
   "globalSearch": {
-    "placeholder": "Search equipment, certificates...",
+    "placeholder": "Search equipment, certificates, inspections...",
     "search": "Search",
     "open": "Open global search",
-    "hint": "Type to search across all entities",
-    "shortcut": "Tip: Use Ctrl+K to open quickly",
-    "noResults": "No results found",
+    "hint": "Type to search across the entire system",
+    "shortcut": "Tip: Press Ctrl+K to quickly open search",
+    "noResults": "No results found for your search",
     "equipment": "Equipment",
     "certificates": "Certificates",
     "inspections": "Inspections",
     "maintenance": "Maintenance",
-    "unknownEquipment": "Unknown equipment"
+    "unknownEquipment": "Unidentified equipment",
+    "searchTip": "Search by name, code, INS-XXXXXX or MNT-XXXXXX"
   },
   "certificates": {
     "expiryChart": {

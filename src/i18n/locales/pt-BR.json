@@ -197,7 +197,7 @@
     "autoSyncCreated": "Certificado criado automaticamente",
     "autoSyncUpdated": "Validade do certificado atualizada",
     "syncFromEquipment": "Sincronizar Equipamentos",
-    "syncTooltip": "Cria certificados para equipamentos com data de validade",
+    "syncTooltip": "Cria certificados automaticamente para equipamentos que têm data de validade cadastrada",
     "noCertificates": "Nenhum certificado encontrado",
     "noCertificatesDesc": "Adicione certificados para gerenciar a documentação dos equipamentos",
     "searchPlaceholder": "Buscar por nome, equipamento, número...",
@@ -1956,7 +1956,7 @@
     "permissionInstructions": "Clique no ícone de cadeado na barra de endereços e permita o acesso à câmera."
   },
   "statusBadge": {
-    "autoRejected": "Reprovado automaticamente"
+    "autoRejected": "Reprovado automaticamente devido a vencimento"
   },
   "signaturePad": {
     "title": "Assinatura do Inspetor",
@@ -2189,14 +2189,14 @@
     "serialNumber": "Número de Série"
   },
   "validation": {
-    "required": "Campo obrigatório",
-    "nameMinLength": "Nome deve ter pelo menos 2 caracteres",
-    "selectIcon": "Selecione um ícone",
-    "selectFrequency": "Selecione a frequência",
-    "selectStatus": "Selecione um status",
-    "selectDate": "Selecione uma data",
-    "invalidEmail": "E-mail inválido",
-    "passwordMinLength": "Senha deve ter pelo menos 6 caracteres"
+    "required": "Este campo é obrigatório",
+    "nameMinLength": "O nome precisa ter pelo menos 2 caracteres",
+    "selectIcon": "Escolha um ícone para a categoria",
+    "selectFrequency": "Escolha com que frequência as inspeções devem ocorrer",
+    "selectStatus": "Selecione o status do item",
+    "selectDate": "Selecione uma data no calendário",
+    "invalidEmail": "Digite um endereço de e-mail válido",
+    "passwordMinLength": "A senha precisa ter no mínimo 6 caracteres"
   },
   "exportEquipment": {
     "internalCode": "Código Interno",
@@ -2922,19 +2922,19 @@
     "noItemsYet": "Nenhum item de verificação adicionado"
   },
   "checklistTemplates": {
-    "title": "Templates de Checklist",
-    "description": "Gerencie templates de verificação para a categoria {{category}}",
-    "templates": "Templates",
+    "title": "Modelos de Checklist",
+    "description": "Crie e gerencie listas de verificação para a categoria {{category}}",
+    "templates": "Modelos",
     "items": "itens",
-    "templateName": "Nome do Template",
+    "templateName": "Nome do Modelo",
     "templateNamePlaceholder": "Ex: Inspeção Visual Completa",
-    "noTemplates": "Nenhum template criado",
-    "selectOrCreate": "Selecione um template ou crie um novo",
-    "setAsDefault": "Definir como padrão",
-    "confirmDelete": "Excluir Template",
-    "confirmDeleteDescription": "Tem certeza que deseja excluir o template \"{{name}}\"?",
+    "noTemplates": "Nenhum modelo criado ainda",
+    "selectOrCreate": "Selecione um modelo existente ou crie um novo",
+    "setAsDefault": "Usar como padrão para novas inspeções",
+    "confirmDelete": "Excluir Modelo",
+    "confirmDeleteDescription": "Tem certeza que deseja excluir o modelo \"{{name}}\"? As inspeções já realizadas não serão afetadas.",
     "defaultTemplateName": "Checklist Padrão",
-    "duplicate": "Duplicar template",
+    "duplicate": "Criar cópia deste modelo",
     "copy": "Cópia"
   },
   "errors": {
@@ -2985,17 +2985,18 @@
     "invalidData": "Alguns dados informados estão incorretos. Verifique e tente novamente."
   },
   "globalSearch": {
-    "placeholder": "Buscar equipamentos, certificados...",
+    "placeholder": "Buscar equipamentos, certificados, inspeções...",
     "search": "Buscar",
     "open": "Abrir busca global",
-    "hint": "Digite para buscar em todas as entidades",
-    "shortcut": "Dica: Use Ctrl+K para abrir rapidamente",
-    "noResults": "Nenhum resultado encontrado",
+    "hint": "Digite para buscar em todo o sistema",
+    "shortcut": "Dica: Use Ctrl+K para abrir rapidamente a busca",
+    "noResults": "Nenhum resultado encontrado para sua busca",
     "equipment": "Equipamentos",
     "certificates": "Certificados",
     "inspections": "Inspeções",
     "maintenance": "Manutenções",
-    "unknownEquipment": "Equipamento desconhecido"
+    "unknownEquipment": "Equipamento não identificado",
+    "searchTip": "Busque por nome, código, INS-XXXXXX ou MNT-XXXXXX"
   },
   "certificates": {
     "expiryChart": {
