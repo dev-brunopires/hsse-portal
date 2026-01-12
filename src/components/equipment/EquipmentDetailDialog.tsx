@@ -296,8 +296,8 @@ export function EquipmentDetailDialog({
         );
 
         const mainContent = (
-          <Tabs defaultValue="details" className="flex-1 flex flex-col overflow-hidden">
-            <TabsList className="w-full justify-start border-b border-border rounded-none bg-transparent h-auto p-0 overflow-x-auto">
+          <Tabs defaultValue="details" className="flex flex-col h-full">
+            <TabsList className="w-full justify-start border-b border-border rounded-none bg-transparent h-auto p-0 overflow-x-auto shrink-0">
               <TabsTrigger 
                 value="details"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-3 sm:px-4 py-3 text-sm"
@@ -328,7 +328,7 @@ export function EquipmentDetailDialog({
               </TabsTrigger>
             </TabsList>
 
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1">
               {/* Details Tab */}
               <TabsContent value="details" className="mt-0 p-4 sm:p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -819,12 +819,12 @@ export function EquipmentDetailDialog({
         if (isMobile) {
           return (
             <Drawer open={open} onOpenChange={onOpenChange}>
-              <DrawerContent className="max-h-[90vh] flex flex-col">
-                <DrawerHeader className="text-left pb-2 border-b border-border">
+              <DrawerContent className="max-h-[85vh] flex flex-col">
+                <DrawerHeader className="text-left pb-2 border-b border-border shrink-0">
                   <DrawerTitle className="sr-only">{equipment.name}</DrawerTitle>
                   {headerContent}
                 </DrawerHeader>
-                <div className="flex-1 overflow-hidden">
+                <div className="flex-1 min-h-0 overflow-y-auto">
                   {mainContent}
                 </div>
               </DrawerContent>
@@ -834,12 +834,14 @@ export function EquipmentDetailDialog({
 
         return (
           <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col bg-card border border-border" hideCloseButton>
-              <DialogHeader className="pb-4 border-b border-border">
+            <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col bg-card border border-border p-0" hideCloseButton>
+              <DialogHeader className="p-6 pb-4 border-b border-border shrink-0">
                 <DialogTitle className="sr-only">{equipment.name}</DialogTitle>
                 {headerContent}
               </DialogHeader>
-              {mainContent}
+              <div className="flex-1 min-h-0 overflow-y-auto">
+                {mainContent}
+              </div>
             </DialogContent>
           </Dialog>
         );
