@@ -55,6 +55,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useCertificates, useCertificateStats, useDeleteCertificate, type Certificate } from '@/hooks/useCertificates';
 import { useSyncAllCertificates } from '@/hooks/useSyncEquipmentCertificates';
 import { useBulkRenewCertificates } from '@/hooks/useBulkActions';
+import { useCategories } from '@/hooks/useCategories';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { formatDate } from '@/utils/dateFormat';
 import { cn } from '@/lib/utils';
@@ -97,6 +98,7 @@ export default function Certificates() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [activeTab, setActiveTab] = useState('all');
 
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -111,6 +113,7 @@ export default function Certificates() {
   const deleteCertificate = useDeleteCertificate();
   const syncCertificates = useSyncAllCertificates();
   const bulkRenew = useBulkRenewCertificates();
+  const { data: categories = [] } = useCategories();
 
   const expiringDays = activeTab === 'expiring' ? 30 : undefined;
 
@@ -123,25 +126,35 @@ export default function Certificates() {
   const { data: stats } = useCertificateStats();
 
   const filteredCertificates = useMemo(() => {
-    if (!search.trim()) return certificates;
-    const searchLower = search.toLowerCase();
+    let result = certificates;
 
-    return certificates.filter((cert) => {
-      const name = (cert.name ?? '').toLowerCase();
-      const equipmentName = (cert.equipment?.name ?? '').toLowerCase();
-      const equipmentCode = (cert.equipment?.internal_code ?? '').toLowerCase();
-      const certNumber = (cert.certificate_number ?? '').toLowerCase();
-      const issuer = (cert.issuer ?? '').toLowerCase();
+    // Filter by category (equipment type)
+    if (categoryFilter !== 'all') {
+      result = result.filter((cert) => cert.equipment?.category_id === categoryFilter);
+    }
 
-      return (
-        name.includes(searchLower) ||
-        equipmentName.includes(searchLower) ||
-        equipmentCode.includes(searchLower) ||
-        certNumber.includes(searchLower) ||
-        issuer.includes(searchLower)
-      );
-    });
-  }, [certificates, search]);
+    // Filter by search term
+    if (search.trim()) {
+      const searchLower = search.toLowerCase();
+      result = result.filter((cert) => {
+        const name = (cert.name ?? '').toLowerCase();
+        const equipmentName = (cert.equipment?.name ?? '').toLowerCase();
+        const equipmentCode = (cert.equipment?.internal_code ?? '').toLowerCase();
+        const certNumber = (cert.certificate_number ?? '').toLowerCase();
+        const issuer = (cert.issuer ?? '').toLowerCase();
+
+        return (
+          name.includes(searchLower) ||
+          equipmentName.includes(searchLower) ||
+          equipmentCode.includes(searchLower) ||
+          certNumber.includes(searchLower) ||
+          issuer.includes(searchLower)
+        );
+      });
+    }
+
+    return result;
+  }, [certificates, search, categoryFilter]);
 
   const toggleSelectCertificate = (id: string) => {
     setSelectedIds((prev) => {
@@ -352,15 +365,6 @@ export default function Certificates() {
               <Zap className={cn('h-4 w-4', syncCertificates.isPending && 'animate-pulse')} />
               <span className="hidden sm:inline ml-2">{t('certificates.syncFromEquipment')}</span>
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => refetch()}
-              disabled={isFetching}
-            >
-              <RefreshCw className={cn('h-4 w-4', isFetching && 'animate-spin')} />
-              <span className="hidden sm:inline ml-2">{t('common.refresh')}</span>
-            </Button>
             <Button onClick={() => { setSelectedCertificate(null); setIsFormOpen(true); }}>
               <Plus className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">{t('certificates.add')}</span>
@@ -441,44 +445,81 @@ export default function Certificates() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value={activeTab} className="mt-4">
-          {/* Filters */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder={t('certificates.searchPlaceholder')}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10"
-              />
+        <TabsContent value={activeTab} className="mt-4 space-y-4">
+          {/* Filters Container */}
+          <div className="bg-card rounded-xl border border-border overflow-hidden">
+            <div className="p-3 sm:p-4 border-b border-border space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                {/* Search - Full width on mobile */}
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder={t('certificates.searchPlaceholder')}
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                
+                {/* Filters row */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Category/Equipment Type Filter */}
+                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <SelectValue placeholder={t('certificates.filterCategory')} />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover border border-border shadow-lg z-50">
+                      <SelectItem value="all">{t('common.all')}</SelectItem>
+                      {categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {/* Certificate Type Filter */}
+                  <Select value={typeFilter} onValueChange={setTypeFilter}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <SelectValue placeholder={t('certificates.filterType')} />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover border border-border shadow-lg z-50">
+                      {CERTIFICATE_TYPES.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {t(type.label)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {/* Status Filter - only on 'all' tab */}
+                  {activeTab === 'all' && (
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger className="w-full sm:w-[180px]">
+                        <SelectValue placeholder={t('certificates.filterStatus')} />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover border border-border shadow-lg z-50">
+                        {STATUS_OPTIONS.map((status) => (
+                          <SelectItem key={status.value} value={status.value}>
+                            {t(status.label)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => refetch()}
+                    disabled={isFetching}
+                    title={t('common.refresh')}
+                  >
+                    <RefreshCw className={cn('h-4 w-4', isFetching && 'animate-spin')} />
+                  </Button>
+                </div>
+              </div>
             </div>
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder={t('certificates.filterType')} />
-              </SelectTrigger>
-              <SelectContent>
-                {CERTIFICATE_TYPES.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {t(type.label)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {activeTab === 'all' && (
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-[180px]">
-                  <SelectValue placeholder={t('certificates.filterStatus')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUS_OPTIONS.map((status) => (
-                    <SelectItem key={status.value} value={status.value}>
-                      {t(status.label)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
           </div>
 
           {/* Content */}

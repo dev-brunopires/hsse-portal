@@ -197,8 +197,9 @@
     "noCertificates": "No certificates found",
     "noCertificatesDesc": "Add certificates to manage equipment documentation",
     "searchPlaceholder": "Search by name, equipment, number...",
-    "filterType": "Filter by type",
-    "filterStatus": "Filter by status",
+    "filterType": "Certificate Type",
+    "filterStatus": "Status",
+    "filterCategory": "Equipment Type",
     "tabs": {
       "all": "All",
       "expiring": "Expiring",
