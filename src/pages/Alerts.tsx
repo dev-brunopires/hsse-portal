@@ -6,6 +6,7 @@ import {
   TrendingUp, ShieldAlert, Package
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { StatCard } from '@/components/ui/stat-card';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -160,49 +161,6 @@ function AlertCard({ alert, onViewDetails }: AlertCardProps) {
   );
 }
 
-function StatCard({ 
-  title, 
-  value, 
-  icon: Icon, 
-  color, 
-  bgColor,
-  trend 
-}: { 
-  title: string; 
-  value: number; 
-  icon: React.ElementType;
-  color: string;
-  bgColor: string;
-  trend?: string;
-}) {
-  return (
-    <Card className="overflow-hidden">
-      <CardContent className="p-0">
-        <div className="flex items-stretch">
-          <div className={cn('w-1.5', bgColor)} />
-          <div className="flex-1 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">{title}</p>
-                <p className={cn('text-3xl font-bold mt-1', color)}>{value}</p>
-                {trend && (
-                  <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                    <TrendingUp className="h-3 w-3" />
-                    {trend}
-                  </p>
-                )}
-              </div>
-              <div className={cn('p-3 rounded-xl', bgColor)}>
-                <Icon className="h-6 w-6 text-white" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
 export default function Alerts() {
   const { t } = useTranslation();
   const { toast } = useToast();
@@ -330,29 +288,25 @@ export default function Alerts() {
           title={t('alerts.totalAlerts')}
           value={alerts.length}
           icon={Bell}
-          color="text-foreground"
-          bgColor="bg-primary"
+          variant="default"
         />
         <StatCard
           title={t('alerts.highPriority')}
           value={highCount}
           icon={AlertTriangle}
-          color="text-status-danger"
-          bgColor="bg-status-danger"
+          variant="danger"
         />
         <StatCard
           title={t('alerts.mediumPriority')}
           value={mediumCount}
           icon={Clock}
-          color="text-status-warning"
-          bgColor="bg-status-warning"
+          variant="warning"
         />
         <StatCard
           title={t('alerts.lowPriority')}
           value={lowCount}
           icon={Package}
-          color="text-accent"
-          bgColor="bg-accent"
+          variant="success"
         />
       </div>
 

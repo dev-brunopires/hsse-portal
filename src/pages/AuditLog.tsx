@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
 import i18n from '@/i18n';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { StatCard } from '@/components/ui/stat-card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -363,30 +364,30 @@ export default function AuditLogPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold">{stats.total}</div>
-            <p className="text-sm text-muted-foreground">{t('auditLogPage.totalRecords')}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-primary">{stats.today}</div>
-            <p className="text-sm text-muted-foreground">{t('auditLogPage.changestoday')}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold">{stats.equipment}</div>
-            <p className="text-sm text-muted-foreground">{t('auditLogPage.inEquipment')}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold">{stats.inspections}</div>
-            <p className="text-sm text-muted-foreground">{t('auditLogPage.inInspections')}</p>
-          </CardContent>
-        </Card>
+        <StatCard
+          title={t('auditLogPage.totalRecords')}
+          value={stats.total}
+          icon={History}
+          variant="default"
+        />
+        <StatCard
+          title={t('auditLogPage.changestoday')}
+          value={stats.today}
+          icon={Calendar}
+          variant="info"
+        />
+        <StatCard
+          title={t('auditLogPage.inEquipment')}
+          value={stats.equipment}
+          icon={Package}
+          variant="success"
+        />
+        <StatCard
+          title={t('auditLogPage.inInspections')}
+          value={stats.inspections}
+          icon={ClipboardCheck}
+          variant="warning"
+        />
       </div>
 
       {/* Filters */}

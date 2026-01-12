@@ -26,6 +26,7 @@ import {
   Trash2,
   Layers,
 } from 'lucide-react';
+import { StatCard } from '@/components/ui/stat-card';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -335,73 +336,38 @@ export default function Inspections() {
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <Card>
-          <CardHeader className="p-3 sm:p-4 pb-1 sm:pb-2">
-            <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm lg:text-base">
-              <ClipboardCheck className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
-              <span>{t('inspectionsPage.total')}</span>
-            </CardTitle>
-            <CardDescription className="text-xs hidden sm:block">{t('inspectionsPage.allInspections')}</CardDescription>
-          </CardHeader>
-          <CardContent className="p-3 sm:p-4 pt-1 sm:pt-2">
-            {isLoading ? (
-              <Skeleton className="h-7 sm:h-8 lg:h-9 w-12 sm:w-16" />
-            ) : (
-              <p className="text-2xl sm:text-2xl lg:text-3xl font-bold">{inspections.length}</p>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="p-3 sm:p-4 pb-1 sm:pb-2">
-            <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm lg:text-base">
-              <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-status-warning flex-shrink-0" />
-              <span>{t('inspectionsPage.pending')}</span>
-            </CardTitle>
-            <CardDescription className="text-xs hidden sm:block">{t('inspectionsPage.scheduledInspections')}</CardDescription>
-          </CardHeader>
-          <CardContent className="p-3 sm:p-4 pt-1 sm:pt-2">
-            {isLoading ? (
-              <Skeleton className="h-7 sm:h-8 lg:h-9 w-12 sm:w-16" />
-            ) : (
-              <p className="text-2xl sm:text-2xl lg:text-3xl font-bold">{pendingInspections}</p>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="p-3 sm:p-4 pb-1 sm:pb-2">
-            <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm lg:text-base">
-              <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-status-success flex-shrink-0" />
-              <span>{t('inspectionsPage.completedMonth')}</span>
-            </CardTitle>
-            <CardDescription className="text-xs hidden sm:block">{t('inspectionsPage.completedInspections')}</CardDescription>
-          </CardHeader>
-          <CardContent className="p-3 sm:p-4 pt-1 sm:pt-2">
-            {isLoading ? (
-              <Skeleton className="h-7 sm:h-8 lg:h-9 w-12 sm:w-16" />
-            ) : (
-              <p className="text-2xl sm:text-2xl lg:text-3xl font-bold">{completedThisMonth}</p>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="p-3 sm:p-4 pb-1 sm:pb-2">
-            <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm lg:text-base">
-              <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-status-danger flex-shrink-0" />
-              <span>{t('inspectionsPage.nonConformant')}</span>
-            </CardTitle>
-            <CardDescription className="text-xs hidden sm:block">{t('inspectionsPage.requireAction')}</CardDescription>
-          </CardHeader>
-          <CardContent className="p-3 sm:p-4 pt-1 sm:pt-2">
-            {isLoading ? (
-              <Skeleton className="h-7 sm:h-8 lg:h-9 w-12 sm:w-16" />
-            ) : (
-              <p className="text-2xl sm:text-2xl lg:text-3xl font-bold">{nonConformant}</p>
-            )}
-          </CardContent>
-        </Card>
+        <StatCard
+          title={t('inspectionsPage.total')}
+          value={inspections.length}
+          description={t('inspectionsPage.allInspections')}
+          icon={ClipboardCheck}
+          variant="default"
+          isLoading={isLoading}
+        />
+        <StatCard
+          title={t('inspectionsPage.pending')}
+          value={pendingInspections}
+          description={t('inspectionsPage.scheduledInspections')}
+          icon={Calendar}
+          variant="warning"
+          isLoading={isLoading}
+        />
+        <StatCard
+          title={t('inspectionsPage.completedMonth')}
+          value={completedThisMonth}
+          description={t('inspectionsPage.completedInspections')}
+          icon={CheckCircle}
+          variant="success"
+          isLoading={isLoading}
+        />
+        <StatCard
+          title={t('inspectionsPage.nonConformant')}
+          value={nonConformant}
+          description={t('inspectionsPage.requireAction')}
+          icon={AlertTriangle}
+          variant="danger"
+          isLoading={isLoading}
+        />
       </div>
 
       {/* View Mode Tabs */}
