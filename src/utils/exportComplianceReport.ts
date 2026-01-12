@@ -191,23 +191,25 @@ export async function exportComplianceReportPDF(
       textColor: [255, 255, 255],
       fontStyle: 'bold',
       fontSize: 8,
+      cellPadding: 4,
     },
     bodyStyles: {
       fontSize: 7,
       textColor: DARK_GRAY,
+      cellPadding: 3,
     },
     alternateRowStyles: {
       fillColor: [248, 250, 252],
     },
     columnStyles: {
-      0: { cellWidth: 25 },
-      1: { cellWidth: 38 },
-      2: { cellWidth: 28 },
-      3: { cellWidth: 28 },
-      4: { cellWidth: 24 },
-      5: { cellWidth: 26 },
-      6: { cellWidth: 26 },
-      7: { cellWidth: 'auto' },
+      0: { cellWidth: 25 }, // Code
+      1: { cellWidth: 38 }, // Equipment
+      2: { cellWidth: 28 }, // Category
+      3: { cellWidth: 28 }, // Ship
+      4: { cellWidth: 24 }, // Status
+      5: { cellWidth: 26 }, // Cert Expiry
+      6: { cellWidth: 26 }, // Next Insp
+      7: { cellWidth: 'auto' }, // Compliance
     },
     margin: { left: margin, right: margin },
   });
