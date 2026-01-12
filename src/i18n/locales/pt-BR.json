@@ -2558,7 +2558,10 @@
     "cachedMaintenancePlans": "Planos de Manutenção em Cache",
     "cachedMaintenancePlansDesc": "Manutenções disponíveis para registro offline",
     "willSyncWhenOnline": "Será sincronizado quando a conexão for restaurada",
-    "errorSaving": "Erro ao salvar localmente"
+    "errorSaving": "Erro ao salvar localmente",
+    "cacheUpdated": "Cache Offline Atualizado",
+    "cacheUpdatedDesc": "{{count}} equipamento(s) salvos para uso offline",
+    "cacheError": "Erro ao salvar dados offline"
   },
   "pwa": {
     "installTitle": "Instalar SafeShip",
