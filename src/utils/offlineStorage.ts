@@ -16,6 +16,7 @@ const STORES = {
   PENDING_ACTIONS: 'pending_actions',
   PHOTOS: 'photos',
   METADATA: 'metadata',
+  MAINTENANCE_PLANS: 'maintenance_plans',
 } as const;
 
 // Interfaces
@@ -56,6 +57,20 @@ export interface CachedTemplate {
   }>;
 }
 
+export interface CachedMaintenancePlan {
+  id: string;
+  equipment_id: string;
+  title: string;
+  description: string | null;
+  frequency: string;
+  next_due_date: string;
+  priority: string;
+  equipment_name: string;
+  equipment_code: string;
+  ship_id: string | null;
+  ship_name: string | null;
+}
+
 export interface PendingPhoto {
   id: string;
   inspectionId: string; // Local pending inspection ID
@@ -85,10 +100,26 @@ export interface PendingInspection {
   photos?: string[]; // Array of photo IDs stored separately
 }
 
+export interface PendingMaintenance {
+  id: string;
+  plan_id: string;
+  plan_title: string;
+  equipment_id: string;
+  equipment_name: string;
+  equipment_code: string;
+  status: 'completed' | 'partial' | 'skipped';
+  notes: string | null;
+  completed_by: string;
+  frequency: string;
+  next_due_date: string;
+  ship_id: string | null;
+  timestamp: number;
+}
+
 export interface PendingAction {
   id: string;
-  type: 'create_inspection' | 'update_inspection' | 'create_equipment';
-  data: PendingInspection | any;
+  type: 'create_inspection' | 'update_inspection' | 'create_equipment' | 'complete_maintenance';
+  data: PendingInspection | PendingMaintenance | any;
   timestamp: number;
   retryCount?: number;
 }
@@ -318,6 +349,20 @@ export const getTemplateByCategory = async (categoryId: string): Promise<CachedT
   return templates[0];
 };
 
+// ===== Maintenance Plans operations =====
+export const cacheMaintenancePlans = async (plans: CachedMaintenancePlan[]): Promise<void> => {
+  await clearStore(STORES.MAINTENANCE_PLANS);
+  await putManyInStore(STORES.MAINTENANCE_PLANS, plans);
+};
+
+export const getMaintenancePlans = async (): Promise<CachedMaintenancePlan[]> => {
+  return getAllFromStore<CachedMaintenancePlan>(STORES.MAINTENANCE_PLANS);
+};
+
+export const getMaintenancePlansCount = async (): Promise<number> => {
+  return countInStore(STORES.MAINTENANCE_PLANS);
+};
+
 // ===== Pending actions operations =====
 export const addPendingAction = async (action: PendingAction): Promise<void> => {
   await putInStore(STORES.PENDING_ACTIONS, action);
@@ -406,6 +451,7 @@ export interface StorageStats {
   categoriesCount: number;
   shipsCount: number;
   templatesCount: number;
+  maintenancePlansCount: number;
   pendingActionsCount: number;
   photosCount: number;
   estimatedSizeMB: number;
@@ -418,6 +464,7 @@ export const getStorageStats = async (): Promise<StorageStats> => {
     categoriesCount,
     shipsCount,
     templatesCount,
+    maintenancePlansCount,
     pendingActionsCount,
     photosCount,
     cacheTimestamp,
@@ -426,6 +473,7 @@ export const getStorageStats = async (): Promise<StorageStats> => {
     countInStore(STORES.CATEGORIES),
     countInStore(STORES.SHIPS),
     countInStore(STORES.TEMPLATES),
+    countInStore(STORES.MAINTENANCE_PLANS),
     countInStore(STORES.PENDING_ACTIONS),
     countInStore(STORES.PHOTOS),
     getCacheTimestamp(),
@@ -437,6 +485,7 @@ export const getStorageStats = async (): Promise<StorageStats> => {
     categoriesCount * 512 +
     shipsCount * 256 +
     templatesCount * 2048 +
+    maintenancePlansCount * 1024 +
     pendingActionsCount * 10240 +
     photosCount * 512000;
 
@@ -445,6 +494,7 @@ export const getStorageStats = async (): Promise<StorageStats> => {
     categoriesCount,
     shipsCount,
     templatesCount,
+    maintenancePlansCount,
     pendingActionsCount,
     photosCount,
     estimatedSizeMB: Math.round((estimatedSizeBytes / (1024 * 1024)) * 100) / 100,

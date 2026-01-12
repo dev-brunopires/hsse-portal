@@ -37,12 +37,14 @@ const showSyncPushNotification = async (title: string, body: string, tag: string
 // Re-export types from offlineStorage
 export type { 
   PendingInspection, 
+  PendingMaintenance,
   PendingAction, 
   PendingPhoto,
   CachedEquipment,
   CachedCategory,
   CachedShip,
   CachedTemplate,
+  CachedMaintenancePlan,
   StorageStats,
 } from '@/utils/offlineStorage';
 
@@ -164,6 +166,43 @@ export function useOfflineSync() {
       
       if (templates) {
         await offlineDB.cacheTemplates(templates);
+      }
+
+      // Cache maintenance plans with equipment info
+      const { data: maintenancePlans } = await supabase
+        .from('maintenance_plans')
+        .select(`
+          id,
+          equipment_id,
+          title,
+          description,
+          frequency,
+          next_due_date,
+          priority,
+          equipment (
+            name,
+            internal_code,
+            ship_id,
+            ships (name)
+          )
+        `)
+        .order('next_due_date', { ascending: true });
+
+      if (maintenancePlans) {
+        const cachedPlans: offlineDB.CachedMaintenancePlan[] = maintenancePlans.map((plan: any) => ({
+          id: plan.id,
+          equipment_id: plan.equipment_id,
+          title: plan.title,
+          description: plan.description,
+          frequency: plan.frequency,
+          next_due_date: plan.next_due_date,
+          priority: plan.priority,
+          equipment_name: plan.equipment?.name || '',
+          equipment_code: plan.equipment?.internal_code || '',
+          ship_id: plan.equipment?.ship_id || null,
+          ship_name: plan.equipment?.ships?.name || null,
+        }));
+        await offlineDB.cacheMaintenancePlans(cachedPlans);
       }
 
       // Set cache timestamp
@@ -372,6 +411,111 @@ export function useOfflineSync() {
     }
   }, [isOnline, queryClient, t, uploadPendingPhotos, refreshStats]);
 
+  // Sync pending maintenance when online
+  const syncPendingMaintenance = useCallback(async () => {
+    if (!isOnline || syncInProgressRef.current) return;
+
+    const pendingActions = await offlineDB.getPendingActions();
+    const maintenanceActions = pendingActions.filter(a => a.type === 'complete_maintenance');
+    
+    if (maintenanceActions.length === 0) return;
+
+    syncInProgressRef.current = true;
+    setIsSyncing(true);
+    
+    let syncedCount = 0;
+    const failedActions: string[] = [];
+
+    for (const action of maintenanceActions) {
+      try {
+        const maintenance = action.data as offlineDB.PendingMaintenance;
+        
+        const { data: user } = await supabase.auth.getUser();
+        
+        // Create maintenance log entry
+        const { error: logError } = await supabase
+          .from('maintenance_logs')
+          .insert({
+            maintenance_plan_id: maintenance.plan_id,
+            equipment_id: maintenance.equipment_id,
+            completed_by: user?.user?.id || maintenance.completed_by,
+            notes: maintenance.notes,
+            status: maintenance.status,
+          });
+
+        if (logError) throw logError;
+
+        // Calculate next due date based on frequency
+        const calculateNextDueDate = (currentDate: string, frequency: string): string => {
+          const date = new Date(currentDate);
+          switch (frequency) {
+            case 'daily': date.setDate(date.getDate() + 1); break;
+            case 'weekly': date.setDate(date.getDate() + 7); break;
+            case 'monthly': date.setMonth(date.getMonth() + 1); break;
+            case 'quarterly': date.setMonth(date.getMonth() + 3); break;
+            case 'yearly': date.setFullYear(date.getFullYear() + 1); break;
+          }
+          return date.toISOString().split('T')[0];
+        };
+
+        // Update plan with next due date
+        const nextDate = calculateNextDueDate(maintenance.next_due_date, maintenance.frequency);
+        await supabase
+          .from('maintenance_plans')
+          .update({
+            last_completed_date: new Date().toISOString().split('T')[0],
+            next_due_date: nextDate,
+          })
+          .eq('id', maintenance.plan_id);
+
+        // Remove synced action
+        await offlineDB.removePendingAction(action.id);
+        syncedCount++;
+      } catch (error) {
+        console.error('Error syncing maintenance:', error);
+        
+        // Increment retry count
+        const retryCount = (action.retryCount || 0) + 1;
+        if (retryCount >= MAX_RETRY_COUNT) {
+          failedActions.push(action.id);
+        } else {
+          await offlineDB.updatePendingAction({ ...action, retryCount });
+        }
+      }
+    }
+
+    syncInProgressRef.current = false;
+    setIsSyncing(false);
+    setLastSyncTime(Date.now());
+    await refreshStats();
+
+    if (syncedCount > 0) {
+      hapticSuccess();
+      toast.success(t('offline.maintenanceSyncCompleted'), {
+        description: t('offline.maintenanceSyncCompletedDesc', { count: syncedCount }),
+      });
+      
+      // Show push notification for sync completion
+      showSyncPushNotification(
+        t('offline.maintenanceSyncCompleted'),
+        t('offline.maintenanceSyncCompletedDesc', { count: syncedCount }),
+        'maintenance-sync-completed'
+      );
+      
+      // Refresh data
+      queryClient.invalidateQueries({ queryKey: ['maintenance-plans'] });
+      queryClient.invalidateQueries({ queryKey: ['upcoming-maintenance'] });
+      queryClient.invalidateQueries({ queryKey: ['maintenance-logs'] });
+    }
+
+    if (failedActions.length > 0) {
+      hapticWarning();
+      toast.error(t('offline.syncFailed'), {
+        description: t('offline.syncFailedDesc', { count: failedActions.length }),
+      });
+    }
+  }, [isOnline, queryClient, t, refreshStats]);
+
   // Online/offline event listeners
   useEffect(() => {
     const handleOnline = () => {
@@ -403,6 +547,7 @@ export function useOfflineSync() {
   useEffect(() => {
     if (isOnline) {
       syncPendingInspections();
+      syncPendingMaintenance();
       checkAndRefreshCache();
     }
   }, [isOnline]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -418,6 +563,7 @@ export function useOfflineSync() {
       if (hasFailedActions && isOnline && !syncInProgressRef.current) {
         console.log('Auto-retry sync triggered for failed actions');
         syncPendingInspections();
+        syncPendingMaintenance();
       }
     }, 30000); // 30 seconds
 
@@ -469,6 +615,19 @@ export function useOfflineSync() {
     return addPendingAction('create_inspection', pendingInspection);
   }, [addPendingAction]);
 
+  // Add pending maintenance (convenience method)
+  const addPendingMaintenance = useCallback(async (
+    maintenance: Omit<offlineDB.PendingMaintenance, 'id' | 'timestamp'>
+  ): Promise<string> => {
+    const pendingMaintenance: offlineDB.PendingMaintenance = {
+      ...maintenance,
+      id: crypto.randomUUID(),
+      timestamp: Date.now(),
+    };
+    
+    return addPendingAction('complete_maintenance', pendingMaintenance);
+  }, [addPendingAction]);
+
   // Remove a pending action
   const removePendingAction = useCallback(async (id: string) => {
     await offlineDB.removePendingAction(id);
@@ -484,11 +643,12 @@ export function useOfflineSync() {
   // Get offline data from IndexedDB
   const getOfflineData = useCallback(async () => {
     try {
-      const [equipment, categories, ships, templates, cacheTimestamp] = await Promise.all([
+      const [equipment, categories, ships, templates, maintenancePlans, cacheTimestamp] = await Promise.all([
         offlineDB.getEquipment(),
         offlineDB.getCategories(),
         offlineDB.getShips(),
         offlineDB.getTemplates(),
+        offlineDB.getMaintenancePlans(),
         offlineDB.getCacheTimestamp(),
       ]);
 
@@ -497,6 +657,7 @@ export function useOfflineSync() {
         categories,
         ships,
         templates,
+        maintenancePlans,
         timestamp: cacheTimestamp,
       };
     } catch (error) {
@@ -511,6 +672,14 @@ export function useOfflineSync() {
     return actions
       .filter(a => a.type === 'create_inspection')
       .map(a => a.data as offlineDB.PendingInspection);
+  }, []);
+
+  // Get pending maintenance for display
+  const getPendingMaintenance = useCallback(async (): Promise<offlineDB.PendingMaintenance[]> => {
+    const actions = await offlineDB.getPendingActions();
+    return actions
+      .filter(a => a.type === 'complete_maintenance')
+      .map(a => a.data as offlineDB.PendingMaintenance);
   }, []);
 
   // Check if cache is available and valid
@@ -547,11 +716,14 @@ export function useOfflineSync() {
     cacheStats,
     addPendingAction,
     addPendingInspection,
+    addPendingMaintenance,
     removePendingAction,
     clearPendingActions,
     getOfflineData,
     getPendingInspections,
+    getPendingMaintenance,
     syncPendingInspections,
+    syncPendingMaintenance,
     preCacheData,
     isCacheAvailable,
     refreshStats,
