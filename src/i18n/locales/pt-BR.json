@@ -2542,7 +2542,10 @@
     "photoRemoveError": "Erro ao remover foto",
     "photoPreview": "Visualizar Foto",
     "photosWillSync": "As fotos serão enviadas quando a conexão for restaurada",
-    "pendingPhotos": "{{count}} foto(s) pendente(s)"
+    "pendingPhotos": "Fotos Pendentes",
+    "pendingPhotosCount": "{{count}} foto(s) pendente(s)",
+    "noPhotos": "Nenhuma foto",
+    "viewPhotos": "Ver Fotos"
   },
   "pwa": {
     "installTitle": "Instalar SafeShip",

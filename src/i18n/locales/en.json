@@ -2541,7 +2541,10 @@
     "photoRemoveError": "Error removing photo",
     "photoPreview": "Photo Preview",
     "photosWillSync": "Photos will be uploaded when connection is restored",
-    "pendingPhotos": "{{count}} pending photo(s)"
+    "pendingPhotos": "Pending Photos",
+    "pendingPhotosCount": "{{count}} pending photo(s)",
+    "noPhotos": "No photos",
+    "viewPhotos": "View Photos"
   },
   "pwa": {
     "installTitle": "Install SafeShip",
