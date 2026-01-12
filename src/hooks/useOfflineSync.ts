@@ -8,8 +8,15 @@ import * as offlineDB from '@/utils/offlineStorage';
 import { generateInspectionPhotoPath, getCurrentOrganizationId } from '@/utils/storageHelpers';
 
 // Push notification helper for sync completion
-const showSyncPushNotification = async (title: string, body: string) => {
-  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+const showSyncPushNotification = async (title: string, body: string, tag: string = 'sync-completed') => {
+  if (!('Notification' in window)) return;
+  
+  // Request permission if not granted
+  if (Notification.permission === 'default') {
+    await Notification.requestPermission();
+  }
+  
+  if (Notification.permission !== 'granted') return;
   
   try {
     if ('serviceWorker' in navigator) {
@@ -17,13 +24,13 @@ const showSyncPushNotification = async (title: string, body: string) => {
       await registration.showNotification(title, {
         body,
         icon: '/pwa-192x192.png',
-        tag: 'sync-completed',
+        tag,
       });
     } else {
       new Notification(title, { body, icon: '/pwa-192x192.png' });
     }
   } catch (error) {
-    console.error('Error showing sync push notification:', error);
+    console.error('Error showing push notification:', error);
   }
 };
 
@@ -175,13 +182,35 @@ export function useOfflineSync() {
     }
   }, [isOnline, t, refreshStats]);
 
-  // Check if cache is stale and refresh
+  // Check if cache is stale and notify/refresh
   const checkAndRefreshCache = useCallback(async () => {
+    const cacheTimestamp = await offlineDB.getCacheTimestamp();
     const isValid = await offlineDB.isCacheValid(CACHE_MAX_AGE);
-    if (!isValid && isOnline) {
+    
+    if (!isValid && cacheTimestamp) {
+      // Cache is stale - notify user
+      const hoursSinceUpdate = Math.round((Date.now() - cacheTimestamp) / (1000 * 60 * 60));
+      
+      toast.warning(t('offline.cacheExpired'), {
+        description: t('offline.cacheExpiredDesc', { hours: hoursSinceUpdate }),
+        duration: 8000,
+      });
+      
+      // Show push notification for cache expiry
+      showSyncPushNotification(
+        t('offline.cacheExpired'),
+        t('offline.cacheExpiredDesc', { hours: hoursSinceUpdate }),
+        'cache-expired'
+      );
+      
+      if (isOnline) {
+        await preCacheData();
+      }
+    } else if (!cacheTimestamp && isOnline) {
+      // No cache exists, create one
       await preCacheData();
     }
-  }, [preCacheData, isOnline]);
+  }, [preCacheData, isOnline, t]);
 
   // Upload pending photos for an inspection
   const uploadPendingPhotos = useCallback(async (
