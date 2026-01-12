@@ -577,7 +577,7 @@ export function EquipmentDetailDialog({
                           </div>
                           <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
                             <User className="h-3 w-3" />
-                            <span>{inspection.inspector_id}</span>
+                            <span>{inspection.profiles?.full_name || t('inspections.inspector')}</span>
                           </div>
                           {inspection.observations && (
                             <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
