@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next';
-import { Calendar } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
@@ -43,10 +42,7 @@ export function MonthQuickFilter({ value, onChange, onDateRangeChange }: MonthQu
 
   return (
     <div className="space-y-2">
-      <Label className="flex items-center gap-1.5">
-        <Calendar className="h-3.5 w-3.5" />
-        {t('reports.quickMonth')}
-      </Label>
+      <Label>{t('reports.quickMonth')}</Label>
       <Select value={value} onValueChange={handleChange}>
         <SelectTrigger>
           <SelectValue placeholder={t('reports.selectMonth')} />

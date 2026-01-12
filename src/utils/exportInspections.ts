@@ -216,14 +216,14 @@ export async function exportInspectionsToPDF(
     },
     alternateRowStyles: { fillColor: [248, 250, 252] },
     columnStyles: {
-      0: { cellWidth: 22 }, // Date
+      0: { cellWidth: 24 }, // Date
       1: { cellWidth: 'auto' }, // Equipment
-      2: { cellWidth: 18 }, // Code
-      3: { cellWidth: 30 }, // Inspector
-      4: { cellWidth: 20 }, // Status
-      5: { cellWidth: 32 }, // Alerts column
-      6: { cellWidth: 40 }, // Observations
-      7: { cellWidth: 22 }, // Next
+      2: { cellWidth: 22 }, // Code
+      3: { cellWidth: 32 }, // Inspector
+      4: { cellWidth: 24 }, // Status
+      5: { cellWidth: 35 }, // Alerts column
+      6: { cellWidth: 38 }, // Observations
+      7: { cellWidth: 24 }, // Next
     }
   });
 
