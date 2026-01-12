@@ -194,6 +194,8 @@
     "syncSuccess": "{{count}} certificado(s) sincronizado(s) com sucesso",
     "syncNoNew": "Todos os equipamentos já possuem certificados",
     "syncError": "Erro ao sincronizar certificados",
+    "autoSyncCreated": "Certificado criado automaticamente",
+    "autoSyncUpdated": "Validade do certificado atualizada",
     "syncFromEquipment": "Sincronizar Equipamentos",
     "syncTooltip": "Cria certificados para equipamentos com data de validade",
     "noCertificates": "Nenhum certificado encontrado",
