@@ -16,6 +16,7 @@ import {
   Trash2,
   MoreHorizontal,
   Zap,
+  CheckSquare,
 } from 'lucide-react';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
@@ -49,9 +50,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Checkbox } from '@/components/ui/checkbox';
 
 import { useCertificates, useCertificateStats, useDeleteCertificate, type Certificate } from '@/hooks/useCertificates';
 import { useSyncAllCertificates } from '@/hooks/useSyncEquipmentCertificates';
+import { useBulkRenewCertificates } from '@/hooks/useBulkActions';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { formatDate } from '@/utils/dateFormat';
 import { cn } from '@/lib/utils';
@@ -102,9 +105,12 @@ export default function Certificates() {
   const [isRenewOpen, setIsRenewOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [certificateToDelete, setCertificateToDelete] = useState<Certificate | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBulkRenewOpen, setIsBulkRenewOpen] = useState(false);
 
   const deleteCertificate = useDeleteCertificate();
   const syncCertificates = useSyncAllCertificates();
+  const bulkRenew = useBulkRenewCertificates();
 
   const expiringDays = activeTab === 'expiring' ? 30 : undefined;
 
@@ -136,6 +142,43 @@ export default function Certificates() {
       );
     });
   }, [certificates, search]);
+
+  const toggleSelectCertificate = (id: string) => {
+    setSelectedIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredCertificates.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredCertificates.map((c) => c.id)));
+    }
+  };
+
+  const selectedCertificatesForBulk = useMemo(() => {
+    return filteredCertificates.filter((c) => selectedIds.has(c.id));
+  }, [filteredCertificates, selectedIds]);
+
+  const canBulkRenew = selectedCertificatesForBulk.length > 0;
+
+  const handleBulkRenew = () => {
+    if (!canBulkRenew) return;
+    setIsBulkRenewOpen(true);
+  };
+
+  const confirmBulkRenew = async () => {
+    await bulkRenew.mutateAsync({ certificateIds: Array.from(selectedIds) });
+    setSelectedIds(new Set());
+    setIsBulkRenewOpen(false);
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -284,7 +327,21 @@ export default function Certificates() {
         title={t('certificates.title')}
         subtitle={t('certificates.subtitle')}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {selectedIds.size > 0 && (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handleBulkRenew}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <CheckSquare className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">{t('certificates.renewSelected')}</span>
+                <Badge variant="secondary" className="ml-2 bg-white/20">
+                  {selectedIds.size}
+                </Badge>
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"
@@ -463,6 +520,13 @@ export default function Certificates() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-12">
+                        <Checkbox
+                          checked={filteredCertificates.length > 0 && selectedIds.size === filteredCertificates.length}
+                          onCheckedChange={toggleSelectAll}
+                          aria-label={t('common.selectAll')}
+                        />
+                      </TableHead>
                       <TableHead>{t('certificates.name')}</TableHead>
                       <TableHead>{t('certificates.type')}</TableHead>
                       <TableHead>{t('certificates.equipment')}</TableHead>
@@ -475,12 +539,23 @@ export default function Certificates() {
                   <TableBody>
                     {filteredCertificates.map((certificate) => {
                       const daysLeft = getDaysUntilExpiry(certificate.expiry_date);
+                      const isSelected = selectedIds.has(certificate.id);
                       return (
                         <TableRow
                           key={certificate.id}
-                          className="cursor-pointer hover:bg-muted/50"
+                          className={cn(
+                            'cursor-pointer hover:bg-muted/50',
+                            isSelected && 'bg-primary/5'
+                          )}
                           onClick={() => handleOpenDetail(certificate)}
                         >
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => toggleSelectCertificate(certificate.id)}
+                              aria-label={t('common.select')}
+                            />
+                          </TableCell>
                           <TableCell>
                             <div>
                               <p className="font-medium">{certificate.name}</p>
@@ -595,6 +670,27 @@ export default function Certificates() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleteCertificate.isPending ? t('common.loading') : t('common.delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Renew Confirmation Dialog */}
+      <AlertDialog open={isBulkRenewOpen} onOpenChange={setIsBulkRenewOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('certificates.bulkRenewTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('certificates.bulkRenewDesc', { count: selectedIds.size })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmBulkRenew}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {bulkRenew.isPending ? t('common.loading') : t('certificates.confirmRenew')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
