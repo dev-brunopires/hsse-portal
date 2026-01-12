@@ -1,5 +1,5 @@
 // Offline indicator component with sync status and debug panel
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { WifiOff, Cloud, RefreshCw, ChevronUp, ChevronDown, ClipboardCheck, Wifi, Database, Trash2, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useOfflineSync } from '@/hooks/useOfflineSync';
+import { useOfflineSync, PendingInspection } from '@/hooks/useOfflineSync';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
@@ -42,7 +42,19 @@ export function OfflineIndicator() {
   } = useOfflineSync();
   const [expanded, setExpanded] = useState(false);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
-  const pendingInspections = getPendingInspections();
+  const [pendingInspections, setPendingInspections] = useState<PendingInspection[]>([]);
+  const [cacheAvailable, setCacheAvailable] = useState(false);
+
+  // Load pending inspections async
+  useEffect(() => {
+    const loadData = async () => {
+      const inspections = await getPendingInspections();
+      setPendingInspections(inspections);
+      const available = await isCacheAvailable();
+      setCacheAvailable(available);
+    };
+    loadData();
+  }, [getPendingInspections, isCacheAvailable, pendingCount]);
 
   const handleViewCachedData = () => {
     navigate('/offline');
@@ -63,8 +75,8 @@ export function OfflineIndicator() {
     toast.success(t('offline.cacheRefreshed'));
   };
 
-  const handleClearPending = () => {
-    clearPendingActions();
+  const handleClearPending = async () => {
+    await clearPendingActions();
     toast.success(t('offline.pendingCleared'));
   };
 
@@ -210,7 +222,7 @@ export function OfflineIndicator() {
                 <div className="text-xs text-muted-foreground space-y-1">
                   <p>📶 {t('offline.online')}</p>
                   <p>📦 {t('offline.pending')}: {pendingCount}</p>
-                  <p>💾 Cache: {isCacheAvailable() ? '✓' : '✗'}</p>
+                  <p>💾 Cache: {cacheAvailable ? '✓' : '✗'}</p>
                   {lastSyncTime && (
                     <p>🕐 {t('offline.lastSync')}: {format(new Date(lastSyncTime), 'HH:mm')}</p>
                   )}

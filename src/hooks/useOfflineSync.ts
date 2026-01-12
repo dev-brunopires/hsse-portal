@@ -1,9 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { hapticSuccess, hapticWarning } from '@/utils/hapticFeedback';
+import * as offlineDB from '@/utils/offlineStorage';
+import { generateInspectionPhotoPath, getCurrentOrganizationId } from '@/utils/storageHelpers';
 
 // Push notification helper for sync completion
 const showSyncPushNotification = async (title: string, body: string) => {
@@ -25,38 +27,21 @@ const showSyncPushNotification = async (title: string, body: string) => {
   }
 };
 
-export interface PendingInspection {
-  id: string;
-  equipment_id: string;
-  equipment_name: string;
-  equipment_code: string;
-  status: string;
-  observations: string | null;
-  recommendations: string | null;
-  checklist_items: Array<{
-    description: string;
-    status: string;
-    notes: string | null;
-  }>;
-  signature_data: string | null;
-  inspector_id: string;
-  ship_id: string | null;
-  timestamp: number;
-}
+// Re-export types from offlineStorage
+export type { 
+  PendingInspection, 
+  PendingAction, 
+  PendingPhoto,
+  CachedEquipment,
+  CachedCategory,
+  CachedShip,
+  CachedTemplate,
+  StorageStats,
+} from '@/utils/offlineStorage';
 
-interface PendingAction {
-  id: string;
-  type: 'create_inspection' | 'update_inspection' | 'create_equipment';
-  data: PendingInspection | any;
-  timestamp: number;
-  retryCount?: number;
-}
-
-const PENDING_ACTIONS_KEY = 'safeship_pending_actions';
-const OFFLINE_DATA_KEY = 'safeship_offline_data';
-const CACHE_TIMESTAMP_KEY = 'safeship_cache_timestamp';
 const MAX_RETRY_COUNT = 3;
 const CACHE_MAX_AGE = 1000 * 60 * 60 * 24; // 24 hours
+const EQUIPMENT_BATCH_SIZE = 500; // Fetch in batches for large datasets
 
 // Safe initialization of state
 const getInitialOnlineState = () => {
@@ -67,48 +52,93 @@ const getInitialOnlineState = () => {
   }
 };
 
-const getInitialPendingActions = (): PendingAction[] => {
-  try {
-    const stored = localStorage.getItem(PENDING_ACTIONS_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
-  }
-};
-
 export function useOfflineSync() {
   const { t } = useTranslation();
   const [isOnline, setIsOnline] = useState(getInitialOnlineState);
-  const [pendingActions, setPendingActions] = useState<PendingAction[]>(getInitialPendingActions);
+  const [pendingCount, setPendingCount] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
+  const [cacheStats, setCacheStats] = useState<offlineDB.StorageStats | null>(null);
   const queryClient = useQueryClient();
+  const syncInProgressRef = useRef(false);
 
-  // Save pending actions to localStorage when they change
+  // Load initial pending count
   useEffect(() => {
-    localStorage.setItem(PENDING_ACTIONS_KEY, JSON.stringify(pendingActions));
-  }, [pendingActions]);
+    const loadPendingCount = async () => {
+      try {
+        const count = await offlineDB.getPendingActionsCount();
+        setPendingCount(count);
+      } catch (error) {
+        console.error('Error loading pending count:', error);
+      }
+    };
+    loadPendingCount();
+  }, []);
 
-  // Pre-cache critical data for offline use
+  // Refresh storage stats
+  const refreshStats = useCallback(async () => {
+    try {
+      const stats = await offlineDB.getStorageStats();
+      setCacheStats(stats);
+      setPendingCount(stats.pendingActionsCount);
+    } catch (error) {
+      console.error('Error refreshing stats:', error);
+    }
+  }, []);
+
+  // Pre-cache critical data for offline use with pagination for large datasets
   const preCacheData = useCallback(async () => {
     if (!isOnline) return;
 
     try {
-      // Cache equipment data
-      const { data: equipment } = await supabase
+      console.log('Starting offline data caching...');
+
+      // Get total equipment count first
+      const { count: totalEquipment } = await supabase
         .from('equipment')
-        .select('id, name, internal_code, status, category_id, ship_id, location, serial_number')
-        .limit(500);
+        .select('*', { count: 'exact', head: true });
+
+      console.log(`Total equipment to cache: ${totalEquipment}`);
+
+      // Fetch equipment in batches to handle 2000+ items
+      const allEquipment: offlineDB.CachedEquipment[] = [];
+      let offset = 0;
+      
+      while (offset < (totalEquipment || 0)) {
+        const { data: batch } = await supabase
+          .from('equipment')
+          .select('id, name, internal_code, status, category_id, ship_id, location, serial_number, short_code')
+          .range(offset, offset + EQUIPMENT_BATCH_SIZE - 1)
+          .order('internal_code', { ascending: true });
+
+        if (batch) {
+          allEquipment.push(...batch);
+          console.log(`Cached ${allEquipment.length}/${totalEquipment} equipment`);
+        }
+        
+        offset += EQUIPMENT_BATCH_SIZE;
+      }
+
+      // Cache equipment in IndexedDB
+      await offlineDB.cacheEquipment(allEquipment);
 
       // Cache categories
       const { data: categories } = await supabase
         .from('categories')
         .select('id, name, description, inspection_frequency');
+      
+      if (categories) {
+        await offlineDB.cacheCategories(categories);
+      }
 
       // Cache ships
       const { data: ships } = await supabase
         .from('ships')
         .select('id, name, code');
+      
+      if (ships) {
+        await offlineDB.cacheShips(ships);
+      }
 
       // Cache checklist templates
       const { data: templates } = await supabase
@@ -124,46 +154,98 @@ export function useOfflineSync() {
             order_index
           )
         `);
-
-      const offlineData = {
-        equipment: equipment || [],
-        categories: categories || [],
-        ships: ships || [],
-        templates: templates || [],
-        timestamp: Date.now(),
-      };
-
-      localStorage.setItem(OFFLINE_DATA_KEY, JSON.stringify(offlineData));
-      localStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString());
       
+      if (templates) {
+        await offlineDB.cacheTemplates(templates);
+      }
+
+      // Set cache timestamp
+      await offlineDB.setCacheTimestamp();
+
+      // Refresh stats
+      await refreshStats();
+
       console.log('Offline data cached successfully');
+      toast.success(t('offline.cacheUpdated'), {
+        description: t('offline.cacheUpdatedDesc', { count: allEquipment.length }),
+      });
     } catch (error) {
       console.error('Error pre-caching data:', error);
+      toast.error(t('offline.cacheError'));
     }
-  }, [isOnline]);
+  }, [isOnline, t, refreshStats]);
 
   // Check if cache is stale and refresh
   const checkAndRefreshCache = useCallback(async () => {
-    const lastCache = localStorage.getItem(CACHE_TIMESTAMP_KEY);
-    const lastCacheTime = lastCache ? parseInt(lastCache, 10) : 0;
-    
-    if (Date.now() - lastCacheTime > CACHE_MAX_AGE) {
+    const isValid = await offlineDB.isCacheValid(CACHE_MAX_AGE);
+    if (!isValid && isOnline) {
       await preCacheData();
     }
-  }, [preCacheData]);
+  }, [preCacheData, isOnline]);
+
+  // Upload pending photos for an inspection
+  const uploadPendingPhotos = useCallback(async (
+    localInspectionId: string,
+    serverInspectionId: string
+  ): Promise<void> => {
+    const photos = await offlineDB.getPhotosByInspection(localInspectionId);
+    if (photos.length === 0) return;
+
+    const organizationId = await getCurrentOrganizationId();
+    if (!organizationId) return;
+
+    for (const photo of photos) {
+      try {
+        // Convert base64 back to blob
+        const blob = offlineDB.base64ToBlob(photo.base64Data, photo.mimeType);
+        const file = new File([blob], photo.fileName, { type: photo.mimeType });
+        
+        // Upload to storage
+        const filePath = generateInspectionPhotoPath(organizationId, serverInspectionId, photo.fileName);
+        const { error: uploadError } = await supabase.storage
+          .from('inspection-photos')
+          .upload(filePath, file);
+        
+        if (uploadError) {
+          console.error('Photo upload error:', uploadError);
+          continue;
+        }
+
+        // Create photo record in database
+        await supabase
+          .from('inspection_photos')
+          .insert({
+            inspection_id: serverInspectionId,
+            file_name: photo.fileName,
+            file_path: filePath,
+          });
+
+        // Remove from local storage
+        await offlineDB.removePhoto(photo.id);
+      } catch (error) {
+        console.error('Error uploading photo:', error);
+      }
+    }
+  }, []);
 
   // Sync pending inspections when online
   const syncPendingInspections = useCallback(async () => {
-    if (!isOnline || pendingActions.length === 0) return;
+    if (!isOnline || syncInProgressRef.current) return;
 
-    setIsSyncing(true);
+    const pendingActions = await offlineDB.getPendingActions();
     const inspectionActions = pendingActions.filter(a => a.type === 'create_inspection');
+    
+    if (inspectionActions.length === 0) return;
+
+    syncInProgressRef.current = true;
+    setIsSyncing(true);
+    
     let syncedCount = 0;
     const failedActions: string[] = [];
 
     for (const action of inspectionActions) {
       try {
-        const inspection = action.data as PendingInspection;
+        const inspection = action.data as offlineDB.PendingInspection;
         
         // Create the inspection
         const { data: newInspection, error: inspectionError } = await supabase
@@ -199,6 +281,11 @@ export function useOfflineSync() {
           if (checklistError) console.error('Checklist error:', checklistError);
         }
 
+        // Upload photos if any
+        if (newInspection) {
+          await uploadPendingPhotos(inspection.id, newInspection.id);
+        }
+
         // Update equipment
         if (newInspection) {
           await supabase
@@ -211,7 +298,7 @@ export function useOfflineSync() {
         }
 
         // Remove synced action
-        setPendingActions(prev => prev.filter(a => a.id !== action.id));
+        await offlineDB.removePendingAction(action.id);
         syncedCount++;
       } catch (error) {
         console.error('Error syncing inspection:', error);
@@ -221,15 +308,15 @@ export function useOfflineSync() {
         if (retryCount >= MAX_RETRY_COUNT) {
           failedActions.push(action.id);
         } else {
-          setPendingActions(prev => 
-            prev.map(a => a.id === action.id ? { ...a, retryCount } : a)
-          );
+          await offlineDB.updatePendingAction({ ...action, retryCount });
         }
       }
     }
 
+    syncInProgressRef.current = false;
     setIsSyncing(false);
     setLastSyncTime(Date.now());
+    await refreshStats();
 
     if (syncedCount > 0) {
       hapticSuccess();
@@ -254,7 +341,7 @@ export function useOfflineSync() {
         description: t('offline.syncFailedDesc', { count: failedActions.length }),
       });
     }
-  }, [isOnline, pendingActions, queryClient, t]);
+  }, [isOnline, queryClient, t, uploadPendingPhotos, refreshStats]);
 
   // Online/offline event listeners
   useEffect(() => {
@@ -286,41 +373,42 @@ export function useOfflineSync() {
   // Auto-sync when coming online and refresh cache
   useEffect(() => {
     if (isOnline) {
-      if (pendingActions.length > 0) {
-        syncPendingInspections();
-      }
+      syncPendingInspections();
       checkAndRefreshCache();
     }
-  }, [isOnline, syncPendingInspections, checkAndRefreshCache, pendingActions.length]);
+  }, [isOnline]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-retry failed sync every 30 seconds when online with pending actions
   useEffect(() => {
-    if (!isOnline || pendingActions.length === 0 || isSyncing) return;
+    if (!isOnline || isSyncing) return;
 
-    // Check if there are failed actions (retryCount > 0 but < MAX_RETRY_COUNT)
-    const hasFailedActions = pendingActions.some(a => (a.retryCount || 0) > 0);
-    if (!hasFailedActions) return;
-
-    const retryInterval = setInterval(() => {
-      if (isOnline && pendingActions.length > 0 && !isSyncing) {
+    const retryInterval = setInterval(async () => {
+      const pendingActions = await offlineDB.getPendingActions();
+      const hasFailedActions = pendingActions.some(a => (a.retryCount || 0) > 0);
+      
+      if (hasFailedActions && isOnline && !syncInProgressRef.current) {
         console.log('Auto-retry sync triggered for failed actions');
         syncPendingInspections();
       }
     }, 30000); // 30 seconds
 
     return () => clearInterval(retryInterval);
-  }, [isOnline, pendingActions, isSyncing, syncPendingInspections]);
+  }, [isOnline, isSyncing, syncPendingInspections]);
 
-  // Initial cache on mount
+  // Initial cache check on mount
   useEffect(() => {
     if (isOnline) {
       checkAndRefreshCache();
     }
-  }, []);
+    refreshStats();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Add a pending action
-  const addPendingAction = useCallback((type: PendingAction['type'], data: any) => {
-    const action: PendingAction = {
+  const addPendingAction = useCallback(async (
+    type: offlineDB.PendingAction['type'], 
+    data: any
+  ): Promise<string> => {
+    const action: offlineDB.PendingAction = {
       id: crypto.randomUUID(),
       type,
       data,
@@ -328,18 +416,21 @@ export function useOfflineSync() {
       retryCount: 0,
     };
     
-    setPendingActions(prev => [...prev, action]);
+    await offlineDB.addPendingAction(action);
+    await refreshStats();
     
     toast.info(t('offline.savedLocally'), {
       description: t('offline.savedLocallyDesc'),
     });
     
     return action.id;
-  }, [t]);
+  }, [t, refreshStats]);
 
   // Add pending inspection (convenience method)
-  const addPendingInspection = useCallback((inspection: Omit<PendingInspection, 'id' | 'timestamp'>) => {
-    const pendingInspection: PendingInspection = {
+  const addPendingInspection = useCallback(async (
+    inspection: Omit<offlineDB.PendingInspection, 'id' | 'timestamp'>
+  ): Promise<string> => {
+    const pendingInspection: offlineDB.PendingInspection = {
       ...inspection,
       id: crypto.randomUUID(),
       timestamp: Date.now(),
@@ -349,75 +440,94 @@ export function useOfflineSync() {
   }, [addPendingAction]);
 
   // Remove a pending action
-  const removePendingAction = useCallback((id: string) => {
-    setPendingActions(prev => prev.filter(a => a.id !== id));
-  }, []);
+  const removePendingAction = useCallback(async (id: string) => {
+    await offlineDB.removePendingAction(id);
+    await refreshStats();
+  }, [refreshStats]);
 
   // Clear all pending actions
-  const clearPendingActions = useCallback(() => {
-    setPendingActions([]);
-    localStorage.removeItem(PENDING_ACTIONS_KEY);
-  }, []);
+  const clearPendingActions = useCallback(async () => {
+    await offlineDB.clearPendingActions();
+    await refreshStats();
+  }, [refreshStats]);
 
-  // Cache data for offline use
-  const cacheOfflineData = useCallback((key: string, data: any) => {
+  // Get offline data from IndexedDB
+  const getOfflineData = useCallback(async () => {
     try {
-      const offlineData = JSON.parse(localStorage.getItem(OFFLINE_DATA_KEY) || '{}');
-      offlineData[key] = {
-        data,
-        timestamp: Date.now(),
+      const [equipment, categories, ships, templates, cacheTimestamp] = await Promise.all([
+        offlineDB.getEquipment(),
+        offlineDB.getCategories(),
+        offlineDB.getShips(),
+        offlineDB.getTemplates(),
+        offlineDB.getCacheTimestamp(),
+      ]);
+
+      return {
+        equipment,
+        categories,
+        ships,
+        templates,
+        timestamp: cacheTimestamp,
       };
-      localStorage.setItem(OFFLINE_DATA_KEY, JSON.stringify(offlineData));
-    } catch (e) {
-      console.error('Error caching offline data:', e);
-    }
-  }, []);
-
-  // Get cached offline data
-  const getOfflineData = useCallback(<T = any>(key?: string): T | null => {
-    try {
-      const offlineData = JSON.parse(localStorage.getItem(OFFLINE_DATA_KEY) || '{}');
-      if (key) {
-        return offlineData[key]?.data || null;
-      }
-      return offlineData as T;
-    } catch (e) {
-      console.error('Error getting offline data:', e);
+    } catch (error) {
+      console.error('Error getting offline data:', error);
       return null;
     }
   }, []);
 
   // Get pending inspections for display
-  const getPendingInspections = useCallback((): PendingInspection[] => {
-    return pendingActions
+  const getPendingInspections = useCallback(async (): Promise<offlineDB.PendingInspection[]> => {
+    const actions = await offlineDB.getPendingActions();
+    return actions
       .filter(a => a.type === 'create_inspection')
-      .map(a => a.data as PendingInspection);
-  }, [pendingActions]);
+      .map(a => a.data as offlineDB.PendingInspection);
+  }, []);
 
   // Check if cache is available and valid
-  const isCacheAvailable = useCallback((): boolean => {
-    const lastCache = localStorage.getItem(CACHE_TIMESTAMP_KEY);
-    if (!lastCache) return false;
-    
-    const lastCacheTime = parseInt(lastCache, 10);
-    return Date.now() - lastCacheTime < CACHE_MAX_AGE;
+  const isCacheAvailable = useCallback(async (): Promise<boolean> => {
+    return offlineDB.isCacheValid(CACHE_MAX_AGE);
   }, []);
+
+  // Add photo to pending inspection
+  const addPendingPhoto = useCallback(async (
+    file: File,
+    inspectionId: string
+  ): Promise<offlineDB.PendingPhoto> => {
+    return offlineDB.processAndStorePhoto(file, inspectionId);
+  }, []);
+
+  // Get photos for inspection
+  const getPendingPhotos = useCallback(async (
+    inspectionId: string
+  ): Promise<offlineDB.PendingPhoto[]> => {
+    return offlineDB.getPhotosByInspection(inspectionId);
+  }, []);
+
+  // Remove pending photo
+  const removePendingPhoto = useCallback(async (photoId: string) => {
+    await offlineDB.removePhoto(photoId);
+    await refreshStats();
+  }, [refreshStats]);
 
   return {
     isOnline,
-    pendingActions,
-    pendingCount: pendingActions.length,
+    pendingCount,
     isSyncing,
     lastSyncTime,
+    cacheStats,
     addPendingAction,
     addPendingInspection,
     removePendingAction,
     clearPendingActions,
-    cacheOfflineData,
     getOfflineData,
     getPendingInspections,
     syncPendingInspections,
     preCacheData,
     isCacheAvailable,
+    refreshStats,
+    // Photo operations
+    addPendingPhoto,
+    getPendingPhotos,
+    removePendingPhoto,
   };
 }

@@ -1,72 +1,61 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { WifiOff, Package, Ship, Tag, ClipboardList, RefreshCw, Clock, Search, ChevronRight, Database, Plus } from 'lucide-react';
+import { WifiOff, Package, Ship, Tag, ClipboardList, RefreshCw, Clock, Search, ChevronRight, Database, Plus, HardDrive, Image } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useOfflineSync } from '@/hooks/useOfflineSync';
+import { Progress } from '@/components/ui/progress';
+import { useOfflineSync, CachedEquipment, CachedCategory, CachedShip, CachedTemplate, PendingInspection, StorageStats } from '@/hooks/useOfflineSync';
 import { OfflineInspectionDialog } from './OfflineInspectionDialog';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-
-interface CachedEquipment {
-  id: string;
-  name: string;
-  internal_code: string;
-  status: string;
-  category_id: string;
-  ship_id: string | null;
-  location: string;
-  serial_number: string;
-}
-
-interface CachedCategory {
-  id: string;
-  name: string;
-  description: string | null;
-  inspection_frequency: string;
-}
-
-interface CachedShip {
-  id: string;
-  name: string;
-  code: string | null;
-}
-
-interface CachedTemplate {
-  id: string;
-  name: string;
-  category_id: string;
-  checklist_template_items: Array<{
-    id: string;
-    description: string;
-    is_required: boolean;
-    order_index: number;
-  }>;
-}
 
 interface OfflineData {
   equipment: CachedEquipment[];
   categories: CachedCategory[];
   ships: CachedShip[];
   templates: CachedTemplate[];
-  timestamp: number;
+  timestamp: number | undefined;
 }
 
 export function OfflinePage() {
   const { t } = useTranslation();
-  const { getOfflineData, isCacheAvailable, preCacheData, isOnline, getPendingInspections, pendingCount } = useOfflineSync();
+  const { getOfflineData, isCacheAvailable, preCacheData, isOnline, getPendingInspections, pendingCount, cacheStats, refreshStats } = useOfflineSync();
   const [searchQuery, setSearchQuery] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedEquipment, setSelectedEquipment] = useState<CachedEquipment | null>(null);
   const [inspectionDialogOpen, setInspectionDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // State for async data
+  const [offlineData, setOfflineData] = useState<OfflineData | null>(null);
+  const [pendingInspections, setPendingInspections] = useState<PendingInspection[]>([]);
+  const [cacheAvailable, setCacheAvailable] = useState(false);
 
-  const offlineData = getOfflineData<OfflineData>();
-  const pendingInspections = getPendingInspections();
-  const cacheAvailable = isCacheAvailable();
+  // Load data on mount and when pendingCount changes
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const [data, inspections, available] = await Promise.all([
+          getOfflineData(),
+          getPendingInspections(),
+          isCacheAvailable(),
+        ]);
+        setOfflineData(data);
+        setPendingInspections(inspections);
+        setCacheAvailable(available);
+      } catch (error) {
+        console.error('Error loading offline data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadData();
+  }, [getOfflineData, getPendingInspections, isCacheAvailable, pendingCount]);
 
   const equipment = offlineData?.equipment || [];
   const categories = offlineData?.categories || [];
@@ -81,7 +70,8 @@ export function OfflinePage() {
     return equipment.filter(
       e => e.name.toLowerCase().includes(query) || 
            e.internal_code.toLowerCase().includes(query) ||
-           e.location.toLowerCase().includes(query)
+           e.location.toLowerCase().includes(query) ||
+           (e.short_code?.toLowerCase().includes(query))
     );
   }, [equipment, searchQuery]);
 
@@ -107,6 +97,10 @@ export function OfflinePage() {
     if (!isOnline) return;
     setIsRefreshing(true);
     await preCacheData();
+    // Reload data after caching
+    const data = await getOfflineData();
+    setOfflineData(data);
+    await refreshStats();
     setIsRefreshing(false);
   };
 
@@ -115,10 +109,24 @@ export function OfflinePage() {
     setInspectionDialogOpen(true);
   };
 
-  const handleInspectionSuccess = () => {
+  const handleInspectionSuccess = async () => {
     setSelectedEquipment(null);
     setInspectionDialogOpen(false);
+    // Refresh pending inspections
+    const inspections = await getPendingInspections();
+    setPendingInspections(inspections);
   };
+
+  // Calculate storage usage percentage (estimate based on 50MB limit for IndexedDB practical use)
+  const storageUsagePercent = cacheStats ? Math.min((cacheStats.estimatedSizeMB / 50) * 100, 100) : 0;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!cacheAvailable && !isOnline) {
     return (
@@ -162,6 +170,46 @@ export function OfflinePage() {
           </Button>
         )}
       </div>
+
+      {/* Storage Usage Indicator */}
+      {cacheStats && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-4">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <HardDrive className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="font-medium">{t('offline.storageUsage')}</span>
+                  <span className="text-muted-foreground">
+                    {cacheStats.estimatedSizeMB.toFixed(1)} MB
+                  </span>
+                </div>
+                <Progress value={storageUsagePercent} className="h-2" />
+                <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <Package className="h-3 w-3" />
+                    {cacheStats.equipmentCount} {t('offline.equipment')}
+                  </span>
+                  {cacheStats.photosCount > 0 && (
+                    <span className="flex items-center gap-1">
+                      <Image className="h-3 w-3" />
+                      {cacheStats.photosCount} {t('offline.photos')}
+                    </span>
+                  )}
+                  {cacheStats.pendingActionsCount > 0 && (
+                    <span className="flex items-center gap-1 text-status-warning">
+                      <Clock className="h-3 w-3" />
+                      {cacheStats.pendingActionsCount} {t('offline.pendingSync')}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
@@ -260,7 +308,9 @@ export function OfflinePage() {
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
                 <div>
                   <CardTitle className="text-lg">{t('offline.cachedEquipment')}</CardTitle>
-                  <CardDescription>{t('offline.cachedEquipmentDesc')}</CardDescription>
+                  <CardDescription>
+                    {t('offline.cachedEquipmentDesc')} ({filteredEquipment.length} / {equipment.length})
+                  </CardDescription>
                 </div>
                 <div className="relative w-full lg:w-64">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -294,6 +344,12 @@ export function OfflinePage() {
                           </div>
                           <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                             <span>{item.internal_code}</span>
+                            {item.short_code && (
+                              <>
+                                <span>•</span>
+                                <span className="font-mono">{item.short_code}</span>
+                              </>
+                            )}
                             <span>•</span>
                             <span>{getCategoryName(item.category_id)}</span>
                             <span>•</span>
@@ -423,11 +479,27 @@ export function OfflinePage() {
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <span>{inspection.equipment_code}</span>
                             <span>•</span>
-                            <span>{format(new Date(inspection.timestamp), 'dd/MM/yyyy HH:mm')}</span>
+                            <span>{format(new Date(inspection.timestamp), 'dd/MM HH:mm')}</span>
+                            {inspection.photos && inspection.photos.length > 0 && (
+                              <>
+                                <span>•</span>
+                                <span className="flex items-center gap-1">
+                                  <Image className="h-3 w-3" />
+                                  {inspection.photos.length}
+                                </span>
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>
-                      <Badge variant="outline" className="bg-status-warning/20 text-status-warning border-status-warning/30">
+                      <Badge variant="outline" className={cn(
+                        "text-xs",
+                        inspection.status === 'compliant' 
+                          ? "bg-status-success/20 text-status-success border-status-success/30"
+                          : inspection.status === 'attention'
+                            ? "bg-status-warning/20 text-status-warning border-status-warning/30"
+                            : "bg-status-danger/20 text-status-danger border-status-danger/30"
+                      )}>
                         {inspection.status}
                       </Badge>
                     </div>
@@ -439,7 +511,7 @@ export function OfflinePage() {
         </TabsContent>
       </Tabs>
 
-      {/* Offline Inspection Dialog */}
+      {/* Inspection Dialog */}
       {selectedEquipment && (
         <OfflineInspectionDialog
           open={inspectionDialogOpen}
