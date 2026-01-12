@@ -35,6 +35,7 @@ export interface Certificate {
     id: string;
     name: string;
     internal_code: string;
+    category_id: string;
   } | null;
   ships?: {
     id: string;
@@ -109,7 +110,7 @@ export function useCertificates(filters?: {
         .from('certificates')
         .select(`
           *,
-          equipment:equipment_id (id, name, internal_code),
+          equipment:equipment_id (id, name, internal_code, category_id),
           ships:ship_id (id, name, code)
         `)
         .order('expiry_date', { ascending: true, nullsFirst: false });
