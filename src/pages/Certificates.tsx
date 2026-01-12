@@ -119,14 +119,22 @@ export default function Certificates() {
   const filteredCertificates = useMemo(() => {
     if (!search.trim()) return certificates;
     const searchLower = search.toLowerCase();
-    return certificates.filter(
-      (cert) =>
-        cert.name.toLowerCase().includes(searchLower) ||
-        cert.equipment?.name?.toLowerCase().includes(searchLower) ||
-        cert.equipment?.internal_code?.toLowerCase().includes(searchLower) ||
-        cert.certificate_number?.toLowerCase().includes(searchLower) ||
-        cert.issuer?.toLowerCase().includes(searchLower)
-    );
+
+    return certificates.filter((cert) => {
+      const name = (cert.name ?? '').toLowerCase();
+      const equipmentName = (cert.equipment?.name ?? '').toLowerCase();
+      const equipmentCode = (cert.equipment?.internal_code ?? '').toLowerCase();
+      const certNumber = (cert.certificate_number ?? '').toLowerCase();
+      const issuer = (cert.issuer ?? '').toLowerCase();
+
+      return (
+        name.includes(searchLower) ||
+        equipmentName.includes(searchLower) ||
+        equipmentCode.includes(searchLower) ||
+        certNumber.includes(searchLower) ||
+        issuer.includes(searchLower)
+      );
+    });
   }, [certificates, search]);
 
   const getStatusBadge = (status: string) => {
