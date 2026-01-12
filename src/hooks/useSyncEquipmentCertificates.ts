@@ -18,6 +18,30 @@ export async function ensureCertificateForEquipment(
   // If no certificate_expiry, nothing to sync
   if (!certificateExpiry) return;
 
+  // If organizationId is not provided, fetch it from the equipment's ship
+  let orgId = organizationId;
+  if (!orgId && shipId) {
+    const { data: ship } = await supabase
+      .from('ships')
+      .select('organization_id')
+      .eq('id', shipId)
+      .single();
+    orgId = ship?.organization_id || null;
+  }
+
+  // If still no org ID, try to get from user profile
+  if (!orgId) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('organization_id')
+        .eq('user_id', user.id)
+        .single();
+      orgId = profile?.organization_id || null;
+    }
+  }
+
   // Check if a certificate already exists for this equipment
   const { data: existingCerts, error: checkError } = await supabase
     .from('certificates')
@@ -52,7 +76,7 @@ export async function ensureCertificateForEquipment(
     .insert({
       equipment_id: equipmentId,
       ship_id: shipId,
-      organization_id: organizationId,
+      organization_id: orgId,
       name: `Certificado - ${equipmentName}`,
       type: 'certificate',
       expiry_date: certificateExpiry,
