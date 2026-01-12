@@ -232,8 +232,8 @@ export default function Reports() {
       startY: startY,
       head: [[t('reports.category'), t('reports.total'), t('reports.active'), t('reports.maintenance'), t('reports.statusExpired'), t('reports.statusRejected'), t('reports.compliance')]],
       body: groupedByCategory,
-      styles: { fontSize: 9, cellPadding: 4 },
-      headStyles: { fillColor: [22, 85, 154], fontStyle: 'bold' },
+      styles: { fontSize: 9, cellPadding: 3 },
+      headStyles: { fillColor: [22, 85, 154], fontStyle: 'bold', cellPadding: 4 },
       alternateRowStyles: { fillColor: [248, 250, 252] },
       columnStyles: {
         0: { cellWidth: 'auto' }, // Category
@@ -367,7 +367,7 @@ export default function Reports() {
       body: tableData,
       styles: { 
         fontSize: 9, 
-        cellPadding: 4,
+        cellPadding: 3,
         minCellHeight: 10,
       },
       headStyles: { 
@@ -377,6 +377,14 @@ export default function Reports() {
         cellPadding: 4,
       },
       alternateRowStyles: { fillColor: [254, 242, 242] },
+      columnStyles: {
+        0: { cellWidth: 26 }, // Code
+        1: { cellWidth: 'auto' }, // Equipment
+        2: { cellWidth: 32 }, // Category
+        3: { cellWidth: 38 }, // Location
+        4: { cellWidth: 26 }, // Expiry
+        5: { cellWidth: 26 }, // Status
+      },
     });
 
     const finalY = (doc as any).lastAutoTable?.finalY || startY + 50;
@@ -488,7 +496,7 @@ export default function Reports() {
       head: [[t('reports.date'), t('reports.equipment'), t('reports.code'), t('reports.inspector'), t('reports.status'), t('reports.equipmentAlerts'), t('reports.observations')]],
       body: tableData,
       styles: { fontSize: 8, cellPadding: 3 },
-      headStyles: { fillColor: [234, 88, 12], fontStyle: 'bold' },
+      headStyles: { fillColor: [234, 88, 12], fontStyle: 'bold', cellPadding: 4 },
       alternateRowStyles: { fillColor: [255, 247, 237] },
       columnStyles: {
         0: { cellWidth: 24 }, // Date
@@ -604,9 +612,19 @@ export default function Reports() {
       startY: startY,
       head: [[t('reports.date'), t('reports.columnTitle'), t('reports.equipment'), t('reports.type'), t('reports.priority'), t('reports.status'), t('maintenance.dueDate'), t('maintenance.completedDate')]],
       body: tableData,
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [59, 130, 246] },
+      styles: { fontSize: 8, cellPadding: 3 },
+      headStyles: { fillColor: [59, 130, 246], fontStyle: 'bold', cellPadding: 4 },
       alternateRowStyles: { fillColor: [248, 250, 252] },
+      columnStyles: {
+        0: { cellWidth: 24 }, // Date
+        1: { cellWidth: 'auto' }, // Title
+        2: { cellWidth: 38 }, // Equipment
+        3: { cellWidth: 24 }, // Type
+        4: { cellWidth: 22 }, // Priority
+        5: { cellWidth: 24 }, // Status
+        6: { cellWidth: 24 }, // Due Date
+        7: { cellWidth: 26 }, // Completed Date
+      },
     });
 
     const finalY = (doc as any).lastAutoTable?.finalY || startY + 50;

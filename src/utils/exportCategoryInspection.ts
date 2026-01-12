@@ -201,20 +201,20 @@ export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFDat
     bodyStyles: {
       fontSize: 9,
       textColor: [33, 37, 41],
-      cellPadding: 4,
+      cellPadding: 3,
       minCellHeight: 10,
     },
     alternateRowStyles: {
       fillColor: [248, 249, 250],
     },
     columnStyles: {
-      0: { cellWidth: 10, halign: 'center' },
-      1: { cellWidth: 26 },
-      2: { cellWidth: 'auto' },
-      3: { cellWidth: 24, halign: 'center' },
-      4: { cellWidth: 34 },
-      5: { cellWidth: 26, halign: 'center' },
-      6: { cellWidth: 30, halign: 'center' },
+      0: { cellWidth: 10, halign: 'center' }, // #
+      1: { cellWidth: 26 }, // Code
+      2: { cellWidth: 'auto' }, // Equipment
+      3: { cellWidth: 24, halign: 'center' }, // Last Inspection
+      4: { cellWidth: 34 }, // Inspector
+      5: { cellWidth: 26, halign: 'center' }, // Status
+      6: { cellWidth: 30, halign: 'center' }, // Expiry
     },
     didParseCell: (hookData) => {
       if (hookData.section === 'body') {
