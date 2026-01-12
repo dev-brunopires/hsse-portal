@@ -105,7 +105,9 @@
     "previewPDF": "Visualizar PDF",
     "pdfPreviewOpened": "Visualização do PDF aberta em nova aba",
     "inspect": "Inspecionar",
-    "new": "Novo"
+    "new": "Novo",
+    "selectAll": "Selecionar todos",
+    "select": "Selecionar"
   },
   "auth": {
     "login": "Entrar",
@@ -229,7 +231,11 @@
     "bulkRenewSuccess": "{{count}} certificado(s) renovado(s) com sucesso",
     "bulkRenewError": "Erro ao renovar certificados em lote",
     "bulkRenew": "Renovar Selecionados",
-    "selectedCount": "{{count}} selecionado(s)"
+    "selectedCount": "{{count}} selecionado(s)",
+    "renewSelected": "Renovar Selecionados",
+    "bulkRenewTitle": "Renovar Certificados em Lote",
+    "bulkRenewDesc": "Você está prestes a renovar {{count}} certificado(s) por mais 12 meses. Deseja continuar?",
+    "confirmRenew": "Confirmar Renovação"
   },
   "dashboard": {
     "title": "Dashboard",

@@ -105,7 +105,9 @@
     "previewPDF": "Preview PDF",
     "pdfPreviewOpened": "PDF preview opened in new tab",
     "inspect": "Inspect",
-    "new": "New"
+    "new": "New",
+    "selectAll": "Select all",
+    "select": "Select"
   },
   "auth": {
     "login": "Login",
@@ -229,7 +231,11 @@
     "bulkRenewSuccess": "{{count}} certificate(s) renewed successfully",
     "bulkRenewError": "Error renewing certificates in bulk",
     "bulkRenew": "Renew Selected",
-    "selectedCount": "{{count}} selected"
+    "selectedCount": "{{count}} selected",
+    "renewSelected": "Renew Selected",
+    "bulkRenewTitle": "Bulk Renew Certificates",
+    "bulkRenewDesc": "You are about to renew {{count}} certificate(s) for 12 more months. Do you want to continue?",
+    "confirmRenew": "Confirm Renewal"
   },
   "dashboard": {
     "title": "Dashboard",
