@@ -150,7 +150,29 @@
     "ships": "Ships",
     "pendingRecommendations": "Pending Recommendations",
     "collapse": "Collapse",
-    "expand": "Expand"
+    "expand": "Expand",
+    "healthCheck": "Health Check",
+    "platformAdmin": "Platform Admin"
+  },
+  "healthCheck": {
+    "title": "System Health Check",
+    "subtitle": "Automated verification of all components",
+    "runAll": "Run Verification",
+    "running": "Checking...",
+    "export": "Export",
+    "checksOk": "checks OK",
+    "notCheckedYet": "Not checked yet",
+    "history": "Verification History",
+    "lastCheck": "Last check",
+    "neverChecked": "No verification performed",
+    "completed": "Verification completed",
+    "status": {
+      "ok": "Operational",
+      "warning": "Degraded",
+      "error": "Down",
+      "pending": "Pending",
+      "running": "Checking"
+    }
   },
   "certificates": {
     "title": "Certificates",

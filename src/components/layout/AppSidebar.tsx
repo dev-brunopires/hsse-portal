@@ -16,6 +16,7 @@ import {
   Wrench,
   Building2,
   Award,
+  Activity,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -64,7 +65,7 @@ NavItem.displayName = 'NavItem';
 
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
-  const { isAdmin, isPlatformOwner } = useAuth();
+  const { isAdmin, isAdminMaster, isPlatformOwner } = useAuth();
   const { t } = useTranslation();
   const { organization, logoWhiteUrl } = useOrganization();
   
@@ -119,9 +120,12 @@ export function AppSidebar() {
           <NavItem to="/audit-log" icon={<History size={20} />} label={t('navigation.auditLog')} collapsed={collapsed} />
         </div>
       )}
-      {isPlatformOwner && (
-        <div className={!isAdmin ? "border-t border-sidebar-border p-3 space-y-1" : "px-3 pb-3"}>
-          <NavItem to="/platform-admin" icon={<Building2 size={20} />} label={t('navigation.platformAdmin')} collapsed={collapsed} />
+      {(isAdminMaster || isPlatformOwner) && (
+        <div className={!isAdmin ? "border-t border-sidebar-border p-3 space-y-1" : "px-3 pb-3 space-y-1"}>
+          <NavItem to="/health-check" icon={<Activity size={20} />} label={t('navigation.healthCheck')} collapsed={collapsed} />
+          {isPlatformOwner && (
+            <NavItem to="/platform-admin" icon={<Building2 size={20} />} label={t('navigation.platformAdmin')} collapsed={collapsed} />
+          )}
         </div>
       )}
 
