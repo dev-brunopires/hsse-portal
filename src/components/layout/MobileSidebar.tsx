@@ -67,7 +67,7 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
         side="left" 
         className="w-72 p-0 bg-sidebar border-sidebar-border flex flex-col h-full"
       >
-        <SheetHeader className="h-16 flex flex-row items-center justify-between border-b border-sidebar-border px-4 pt-safe shrink-0">
+        <SheetHeader className="min-h-16 flex flex-row items-center justify-between border-b border-sidebar-border px-4 shrink-0 pwa-header">
           <SystemLogo variant="white" />
         </SheetHeader>
 
