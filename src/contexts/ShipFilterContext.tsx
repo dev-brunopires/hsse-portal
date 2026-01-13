@@ -65,16 +65,25 @@ export function ShipFilterProvider({ children }: { children: ReactNode }) {
       setPermissionsLoading(true);
 
       try {
-        // Use AbortController for cleaner timeout handling
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+        const timeoutId = window.setTimeout(() => controller.abort(), 8000); // 8 second timeout
 
         const [roleRes, ownerRes] = await Promise.all([
-          supabase.from('user_roles').select('role').eq('user_id', userId).maybeSingle(),
-          supabase.from('platform_owners').select('id').eq('user_id', userId).maybeSingle(),
+          supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', userId)
+            .maybeSingle()
+            .abortSignal(controller.signal),
+          supabase
+            .from('platform_owners')
+            .select('id')
+            .eq('user_id', userId)
+            .maybeSingle()
+            .abortSignal(controller.signal),
         ]);
 
-        clearTimeout(timeoutId);
+        window.clearTimeout(timeoutId);
 
         if (cancelled) return;
 

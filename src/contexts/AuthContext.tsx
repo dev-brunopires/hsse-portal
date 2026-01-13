@@ -47,30 +47,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [sessionUnstable, setSessionUnstable] = useState(false);
   const refreshFailuresRef = useRef(0);
+  const fetchUserDataInFlightRef = useRef(false);
+  const fetchUserDataAbortRef = useRef<AbortController | null>(null);
   const { toast } = useToast();
 
-  const withTimeout = async <T,>(promise: Promise<T>, ms = 20000): Promise<T> => {
-    return await Promise.race([
-      promise,
-      new Promise<T>((_, reject) => {
-        const id = window.setTimeout(() => reject(new Error('timeout')), ms);
-        // Prevent TS unused warning in some builds
-        void id;
-      }),
-    ]);
-  };
+  const fetchUserData = async (userId: string) => {
+    // Prevent concurrent fetch storms (especially around token refresh)
+    if (fetchUserDataInFlightRef.current) return;
 
-  const fetchUserData = async (userId: string, retryCount = 0) => {
+    fetchUserDataInFlightRef.current = true;
+
+    // Cancel any previous in-flight request
+    fetchUserDataAbortRef.current?.abort();
+
+    const controller = new AbortController();
+    fetchUserDataAbortRef.current = controller;
+    const timeoutId = window.setTimeout(() => controller.abort(), 12000);
+
     try {
-      // Fetch profile, role, and platform owner status in parallel with longer timeout
-      const [profileResult, roleResult, platformOwnerResult] = await withTimeout(
-        Promise.all([
-          supabase.from('profiles').select('*').eq('user_id', userId).single(),
-          supabase.from('user_roles').select('role').eq('user_id', userId).maybeSingle(),
-          supabase.from('platform_owners').select('id').eq('user_id', userId).maybeSingle(),
-        ]),
-        25000 // 25 seconds for slow connections
-      );
+      const [profileResult, roleResult, platformOwnerResult] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', userId)
+          .single()
+          .abortSignal(controller.signal),
+        supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .maybeSingle()
+          .abortSignal(controller.signal),
+        supabase
+          .from('platform_owners')
+          .select('id')
+          .eq('user_id', userId)
+          .maybeSingle()
+          .abortSignal(controller.signal),
+      ]);
 
       // If any request errored (network/auth), don't wipe previously loaded state.
       if (profileResult.error && profileResult.error.code !== 'PGRST116') throw profileResult.error;
@@ -90,19 +104,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setIsPlatformOwner(!!platformOwnerResult.data);
       telemetry.debug('fetch_user_data_success', { userId });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'unknown';
-      telemetry.error('fetch_user_data_error', { userId, error: errorMessage, retryCount });
-      
-      // Retry once on timeout
-      if (errorMessage === 'timeout' && retryCount < 1) {
-        console.warn('Retrying user data fetch after timeout...');
-        setTimeout(() => fetchUserData(userId, retryCount + 1), 1000);
+    } catch (error: any) {
+      const name = error?.name ? String(error.name) : '';
+      const message = error instanceof Error ? error.message : String(error);
+
+      // Timeouts / aborts are expected on flaky networks; don't retry and don't spam.
+      if (name === 'AbortError') {
+        telemetry.warn('fetch_user_data_timeout', { userId });
         return;
       }
-      
-      // Keep last known profile/role to avoid UI falling into a permanent "Carregando..." state
+
+      telemetry.error('fetch_user_data_error', { userId, error: message });
       console.error('Error fetching user data:', error);
+    } finally {
+      window.clearTimeout(timeoutId);
+      fetchUserDataInFlightRef.current = false;
     }
   };
 
@@ -125,12 +141,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(currentSession?.user ?? null);
 
         if (currentSession?.user) {
-          // Defer backend calls with setTimeout to prevent deadlock
-          setTimeout(() => {
-            if (mounted) {
-              fetchUserData(currentSession.user.id);
-            }
-          }, 0);
+          // Avoid refetch storms on TOKEN_REFRESHED events
+          if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+            // Defer backend calls with setTimeout to prevent deadlock
+            setTimeout(() => {
+              if (mounted) {
+                fetchUserData(currentSession.user.id);
+              }
+            }, 0);
+          }
         } else {
           setProfile(null);
           setRole(null);
@@ -163,39 +182,64 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Refresh session/profile when the tab returns (common mobile case) or when connection comes back.
-  // Also run a lightweight watchdog every ~50s to detect "stuck" auth (common symptom: UI loads but queries stop).
+  // Keep this conservative to avoid refresh loops.
   useEffect(() => {
     if (!user) return;
 
     let cancelled = false;
+    const lastAttemptRef = { current: 0 };
+    const MIN_ATTEMPT_INTERVAL_MS = 60_000; // 1 min
 
     const redirectToAuth = () => {
       const search = window.location.search || '';
       window.location.href = `/auth${search}`;
     };
 
-    const refreshNow = async () => {
+    const refreshIfNeeded = async () => {
+      if (cancelled) return;
+      if (!navigator.onLine) return;
+
+      const now = Date.now();
+      if (now - lastAttemptRef.current < MIN_ATTEMPT_INTERVAL_MS) return;
+      lastAttemptRef.current = now;
+
       try {
-        const { data, error } = await supabase.auth.refreshSession();
+        const { data: sessionData } = await supabase.auth.getSession();
         if (cancelled) return;
 
-        if (error) {
-          refreshFailuresRef.current += 1;
-          setSessionUnstable(true);
-          telemetry.warn('auth_refresh_failed', { message: error.message, failures: refreshFailuresRef.current });
-
-          // If we fail twice in a row, consider the session dead and force re-login.
-          if (refreshFailuresRef.current >= 2) {
-            redirectToAuth();
-          }
+        const currentSession = sessionData.session;
+        if (!currentSession) {
+          redirectToAuth();
           return;
         }
 
-        refreshFailuresRef.current = 0;
-        setSessionUnstable(false);
+        const expiresAt = currentSession.expires_at ?? 0; // seconds
+        const expiresInSec = expiresAt - Date.now() / 1000;
 
-        if (data.session?.user?.id) {
-          await fetchUserData(data.session.user.id);
+        // Only refresh when close to expiry.
+        if (expiresInSec < 120) {
+          const { data, error } = await supabase.auth.refreshSession();
+          if (cancelled) return;
+
+          if (error) {
+            refreshFailuresRef.current += 1;
+            setSessionUnstable(true);
+            telemetry.warn('auth_refresh_failed', { message: error.message, failures: refreshFailuresRef.current });
+            if (refreshFailuresRef.current >= 2) redirectToAuth();
+            return;
+          }
+
+          refreshFailuresRef.current = 0;
+          setSessionUnstable(false);
+
+          if (data.session?.user?.id) {
+            // Fetch user data after an explicit refresh
+            await fetchUserData(data.session.user.id);
+          }
+        } else {
+          // Session looks fine
+          refreshFailuresRef.current = 0;
+          setSessionUnstable(false);
         }
       } catch (e) {
         if (cancelled) return;
@@ -209,12 +253,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const onFocus = () => {
-      void refreshNow();
+      void refreshIfNeeded();
     };
 
     const onVisibilityChange = () => {
       if (!document.hidden) {
-        void refreshNow();
+        void refreshIfNeeded();
       }
     };
 
@@ -222,12 +266,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.addEventListener('online', onFocus);
     document.addEventListener('visibilitychange', onVisibilityChange);
 
+    // Light watchdog (much less frequent)
     const interval = window.setInterval(() => {
-      // Only check when online to avoid false positives.
       if (navigator.onLine) {
-        void refreshNow();
+        void refreshIfNeeded();
       }
-    }, 50000);
+    }, 5 * 60 * 1000);
 
     return () => {
       cancelled = true;
