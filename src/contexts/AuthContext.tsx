@@ -49,6 +49,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshFailuresRef = useRef(0);
   const fetchUserDataInFlightRef = useRef(false);
   const fetchUserDataAbortRef = useRef<AbortController | null>(null);
+  // Use refs to track latest state for use in callbacks
+  const profileRef = useRef<Profile | null>(null);
+  const roleRef = useRef<AppRole | null>(null);
   const { toast } = useToast();
 
   const fetchUserData = async (userId: string) => {
@@ -86,13 +89,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (profileResult.data) {
         setProfile(profileResult.data);
+        profileRef.current = profileResult.data;
       }
 
       if (roleResult.data?.role) {
         setRole(roleResult.data.role as AppRole);
+        roleRef.current = roleResult.data.role as AppRole;
       } else {
         // Only clear role when the request succeeded but no role exists.
         setRole(null);
+        roleRef.current = null;
       }
 
       setIsPlatformOwner(!!platformOwnerResult.data);
@@ -133,18 +139,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(currentSession?.user ?? null);
 
         if (currentSession?.user) {
-          // Avoid refetch storms on TOKEN_REFRESHED events
-          if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+          // Fetch user data on any auth event where we have a session but missing profile/role
+          // This handles initial load, sign in, and token refresh cases
+          if (event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED') {
             // Defer backend calls with setTimeout to prevent deadlock
             setTimeout(() => {
               if (mounted) {
-                fetchUserData(currentSession.user.id);
+                // Always fetch if profile or role is missing (use refs to get latest values)
+                const shouldFetch = event === 'SIGNED_IN' || event === 'USER_UPDATED' || !profileRef.current || !roleRef.current;
+                if (shouldFetch) {
+                  fetchUserData(currentSession.user.id);
+                }
               }
             }, 0);
           }
         } else {
           setProfile(null);
           setRole(null);
+          profileRef.current = null;
+          roleRef.current = null;
         }
 
         setLoading(false);
@@ -375,6 +388,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
     setRole(null);
     setIsPlatformOwner(false);
+    profileRef.current = null;
+    roleRef.current = null;
     
     toast({
       title: 'Logout realizado',
