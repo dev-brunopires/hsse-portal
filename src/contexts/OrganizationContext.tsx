@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useMemo } from 'react';
+import React, { createContext, useContext, useMemo, useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './AuthContext';
+
 export interface Organization {
   id: string;
   name: string;
@@ -64,9 +64,46 @@ const getSubdomainFromHostname = (search: string): string | null => {
 };
 
 export function OrganizationProvider({ children }: { children: React.ReactNode }) {
-  // Reuse isPlatformOwner from AuthContext to avoid duplicate query
-  const { user, isPlatformOwner, loading: authLoading } = useAuth();
   const location = useLocation();
+  
+  // Use local state for auth instead of useAuth to avoid circular dependency
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isPlatformOwner, setIsPlatformOwner] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // Listen to auth state changes
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const currentUserId = session?.user?.id || null;
+      setUserId(currentUserId);
+
+      if (currentUserId) {
+        const { data } = await supabase.rpc('is_platform_owner', { _user_id: currentUserId });
+        setIsPlatformOwner(!!data);
+      } else {
+        setIsPlatformOwner(false);
+      }
+      setAuthLoading(false);
+    };
+
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_, session) => {
+      const currentUserId = session?.user?.id || null;
+      setUserId(currentUserId);
+
+      if (currentUserId) {
+        const { data } = await supabase.rpc('is_platform_owner', { _user_id: currentUserId });
+        setIsPlatformOwner(!!data);
+      } else {
+        setIsPlatformOwner(false);
+      }
+      setAuthLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Recompute subdomain whenever URL query changes (SPA navigation)
   const subdomain = useMemo(() => getSubdomainFromHostname(location.search), [location.search]);
@@ -90,9 +127,9 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
 
   // Get org from user's membership - only when user is available
   const { data: userOrg, isLoading: isLoadingUserOrg, isFetched: isUserOrgFetched } = useQuery({
-    queryKey: ['user-organization', user?.id],
+    queryKey: ['user-organization', userId],
     queryFn: async () => {
-      if (!user) return null;
+      if (!userId) return null;
 
       // Try to get user's organization membership
       const { data, error } = await supabase
@@ -110,7 +147,7 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
             is_active
           )
         `)
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .maybeSingle();
       
       // Handle RLS errors gracefully - user might be platform owner without org membership
@@ -121,7 +158,7 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
       
       return data?.organizations as Organization | null;
     },
-    enabled: !!user && !authLoading,
+    enabled: !!userId && !authLoading,
     staleTime: 1000 * 60 * 30, // 30 minutes
     gcTime: 1000 * 60 * 60, // 1 hour
     retry: false, // Don't retry on RLS errors
@@ -144,9 +181,9 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
   const isLoading = useMemo(() => {
     if (authLoading) return true;
     if (subdomain && isLoadingSubdomain) return true;
-    if (user && isLoadingUserOrg) return true;
+    if (userId && isLoadingUserOrg) return true;
     return false;
-  }, [subdomain, isLoadingSubdomain, authLoading, user, isLoadingUserOrg]);
+  }, [subdomain, isLoadingSubdomain, authLoading, userId, isLoadingUserOrg]);
 
   const value = useMemo(() => ({
     organization,
