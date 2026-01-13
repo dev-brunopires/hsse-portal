@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import type { User, Session, AuthTokenResponsePassword } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { getOrganizationUrl } from '@/utils/organizationUrl';
 
 interface Profile {
   id: string;
@@ -187,6 +188,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    // Get user's organization subdomain before signing out
+    let orgSubdomain: string | null = null;
+    
+    if (profile) {
+      try {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('organization_id')
+          .eq('user_id', user?.id)
+          .single();
+        
+        if (profileData?.organization_id) {
+          const { data: orgData } = await supabase
+            .from('organizations')
+            .select('subdomain')
+            .eq('id', profileData.organization_id)
+            .single();
+          
+          orgSubdomain = orgData?.subdomain || null;
+        }
+      } catch (error) {
+        console.error('Error fetching org subdomain for redirect:', error);
+      }
+    }
+
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
@@ -198,6 +224,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       title: 'Logout realizado',
       description: 'Até logo!',
     });
+
+    // Redirect to organization's login page
+    if (orgSubdomain) {
+      const orgUrl = getOrganizationUrl(orgSubdomain, '/auth');
+      window.location.href = orgUrl;
+    } else {
+      window.location.href = '/auth';
+    }
   };
 
   const refreshProfile = async () => {
