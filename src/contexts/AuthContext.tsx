@@ -57,34 +57,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     fetchUserDataInFlightRef.current = true;
 
-    // Cancel any previous in-flight request
+    // Cancel any previous in-flight request ref
     fetchUserDataAbortRef.current?.abort();
-
     const controller = new AbortController();
     fetchUserDataAbortRef.current = controller;
-    const timeoutId = window.setTimeout(() => controller.abort(), 12000);
+    let timeoutId: number | undefined;
 
     try {
-      const [profileResult, roleResult, platformOwnerResult] = await Promise.all([
-        supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', userId)
-          .single()
-          .abortSignal(controller.signal),
-        supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', userId)
-          .maybeSingle()
-          .abortSignal(controller.signal),
-        supabase
-          .from('platform_owners')
-          .select('id')
-          .eq('user_id', userId)
-          .maybeSingle()
-          .abortSignal(controller.signal),
-      ]);
+      // Create timeout promise
+      const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = window.setTimeout(() => reject(new Error('timeout')), 12000);
+      });
+
+      // Race queries against timeout
+      const [profileResult, roleResult, platformOwnerResult] = await Promise.race([
+        Promise.all([
+          supabase.from('profiles').select('*').eq('user_id', userId).single(),
+          supabase.from('user_roles').select('role').eq('user_id', userId).maybeSingle(),
+          supabase.from('platform_owners').select('id').eq('user_id', userId).maybeSingle(),
+        ]),
+        timeoutPromise.then(() => { throw new Error('timeout'); }),
+      ]) as any;
 
       // If any request errored (network/auth), don't wipe previously loaded state.
       if (profileResult.error && profileResult.error.code !== 'PGRST116') throw profileResult.error;
@@ -105,11 +98,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsPlatformOwner(!!platformOwnerResult.data);
       telemetry.debug('fetch_user_data_success', { userId });
     } catch (error: any) {
-      const name = error?.name ? String(error.name) : '';
       const message = error instanceof Error ? error.message : String(error);
 
-      // Timeouts / aborts are expected on flaky networks; don't retry and don't spam.
-      if (name === 'AbortError') {
+      // Timeouts are expected on flaky networks; don't spam logs
+      if (message === 'timeout' || controller.signal.aborted) {
         telemetry.warn('fetch_user_data_timeout', { userId });
         return;
       }
@@ -117,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       telemetry.error('fetch_user_data_error', { userId, error: message });
       console.error('Error fetching user data:', error);
     } finally {
-      window.clearTimeout(timeoutId);
+      if (timeoutId) window.clearTimeout(timeoutId);
       fetchUserDataInFlightRef.current = false;
     }
   };

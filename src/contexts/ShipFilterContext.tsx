@@ -65,25 +65,20 @@ export function ShipFilterProvider({ children }: { children: ReactNode }) {
       setPermissionsLoading(true);
 
       try {
-        const controller = new AbortController();
-        const timeoutId = window.setTimeout(() => controller.abort(), 8000); // 8 second timeout
+        let timeoutId: number | undefined;
+        const timeoutPromise = new Promise((_, reject) => {
+          timeoutId = window.setTimeout(() => reject(new Error('timeout')), 8000);
+        });
 
-        const [roleRes, ownerRes] = await Promise.all([
-          supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', userId)
-            .maybeSingle()
-            .abortSignal(controller.signal),
-          supabase
-            .from('platform_owners')
-            .select('id')
-            .eq('user_id', userId)
-            .maybeSingle()
-            .abortSignal(controller.signal),
-        ]);
+        const [roleRes, ownerRes] = await Promise.race([
+          Promise.all([
+            supabase.from('user_roles').select('role').eq('user_id', userId).maybeSingle(),
+            supabase.from('platform_owners').select('id').eq('user_id', userId).maybeSingle(),
+          ]),
+          timeoutPromise.then(() => { throw new Error('timeout'); }),
+        ]) as any;
 
-        window.clearTimeout(timeoutId);
+        if (timeoutId) window.clearTimeout(timeoutId);
 
         if (cancelled) return;
 
