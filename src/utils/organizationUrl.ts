@@ -5,7 +5,8 @@ function shouldUseOrgQueryParam(hostname: string) {
     hostname === 'localhost' ||
     hostname === '127.0.0.1' ||
     hostname.endsWith('.lovable.app') ||
-    hostname.endsWith('.vercel.app')
+    hostname.endsWith('.vercel.app') ||
+    hostname.endsWith('opensafebrasil.com')
   );
 }
 
