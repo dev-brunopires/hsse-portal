@@ -137,25 +137,40 @@ export function useEquipment() {
   return query;
 }
 
-export function useEquipmentById(id: string | undefined) {
+export function useEquipmentById(idOrShortCode: string | undefined) {
   return useQuery({
-    queryKey: ['equipment', id],
+    queryKey: ['equipment', idOrShortCode],
     queryFn: async () => {
-      if (!id) return null;
-      const { data, error } = await supabase
+      if (!idOrShortCode) return null;
+
+      // Check if it's a UUID pattern
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrShortCode);
+      // Check if it's a 6-digit short code
+      const isShortCode = /^\d{6}$/.test(idOrShortCode);
+
+      let query = supabase
         .from('equipment')
         .select(`
           *,
           categories (name, icon),
           ships (id, name, code)
-        `)
-        .eq('id', id)
-        .maybeSingle();
+        `);
+
+      if (isUuid) {
+        query = query.eq('id', idOrShortCode);
+      } else if (isShortCode) {
+        query = query.eq('short_code', idOrShortCode);
+      } else {
+        // Fallback: try as ID first
+        query = query.eq('id', idOrShortCode);
+      }
+
+      const { data, error } = await query.maybeSingle();
       
       if (error) throw error;
       return data as EquipmentWithCategory | null;
     },
-    enabled: !!id,
+    enabled: !!idOrShortCode,
   });
 }
 

@@ -8,7 +8,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Camera, CameraOff, Loader2, QrCode, CheckCircle2, AlertCircle, Scan, SwitchCamera } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Camera, CameraOff, Loader2, QrCode, CheckCircle2, AlertCircle, Scan, SwitchCamera, Keyboard, Search } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
@@ -65,6 +66,8 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
   const [isSwitchingCamera, setIsSwitchingCamera] = useState(false);
   const [permissionChecked, setPermissionChecked] = useState(false);
+  const [showManualInput, setShowManualInput] = useState(false);
+  const [manualCode, setManualCode] = useState('');
 
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const isMountedRef = useRef(true);
@@ -276,6 +279,8 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       setFacingMode('environment');
       setIsSwitchingCamera(false);
       setContainerId(`qr-reader-${Date.now()}`);
+      setShowManualInput(false);
+      setManualCode('');
       // Reset debounce refs when dialog opens
       lastScannedRef.current = null;
       lastScanTimeRef.current = 0;
@@ -351,9 +356,40 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
     setFacingMode('environment');
     setScannerState('initializing');
     setPermissionChecked(true);
+    setShowManualInput(false);
+    setManualCode('');
 
     await cleanupScanner();
     setContainerId(`qr-reader-${Date.now()}`);
+  };
+
+  // Handle manual code submission
+  const handleManualSubmit = () => {
+    const code = manualCode.trim();
+    if (!code) return;
+
+    // UUID pattern
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    // Short code pattern (6 digits)
+    const shortCodePattern = /^\d{6}$/;
+
+    if (uuidPattern.test(code)) {
+      // Direct UUID
+      setScannerState('success');
+      setTimeout(() => {
+        onScan(code);
+        onOpenChange(false);
+      }, 300);
+    } else if (shortCodePattern.test(code)) {
+      // Short code - pass it to onScan, the parent will handle lookup
+      setScannerState('success');
+      setTimeout(() => {
+        onScan(code);
+        onOpenChange(false);
+      }, 300);
+    } else {
+      setErrorMessage(t('qrScanner.invalidManualCode'));
+    }
   };
 
   const getStateConfig = () => {
@@ -560,8 +596,8 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
               </div>
             )}
 
-            {/* Error/Permission denied overlay */}
-            {(scannerState === 'error' || scannerState === 'permission-denied') && (
+            {/* Error/Permission denied overlay - with manual input option */}
+            {(scannerState === 'error' || scannerState === 'permission-denied') && !showManualInput && (
               <div className={cn(
                 "absolute inset-0 flex flex-col items-center justify-center z-10 p-6",
                 stateConfig.bgColor
@@ -578,15 +614,82 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                 <p className="text-sm text-center text-muted-foreground max-w-xs">
                   {stateConfig.subtitle}
                 </p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleRetry}
-                  className="mt-4"
-                >
-                  <Camera className="h-4 w-4 mr-2" />
-                  {t('qrScanner.retry')}
-                </Button>
+                <div className="flex gap-2 mt-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRetry}
+                  >
+                    <Camera className="h-4 w-4 mr-2" />
+                    {t('qrScanner.retry')}
+                  </Button>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => setShowManualInput(true)}
+                  >
+                    <Keyboard className="h-4 w-4 mr-2" />
+                    {t('qrScanner.enterManually')}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Manual input overlay */}
+            {showManualInput && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center z-10 p-6 bg-background">
+                <div className="rounded-full p-4 mb-4 bg-primary/10">
+                  <Keyboard className="h-12 w-12 text-primary" />
+                </div>
+                <p className="text-lg font-semibold mb-2 text-foreground">
+                  {t('qrScanner.manualInputTitle')}
+                </p>
+                <p className="text-sm text-center text-muted-foreground max-w-xs mb-4">
+                  {t('qrScanner.manualInputDescription')}
+                </p>
+                <div className="w-full max-w-xs space-y-3">
+                  <Input
+                    placeholder={t('qrScanner.manualInputPlaceholder')}
+                    value={manualCode}
+                    onChange={(e) => {
+                      setManualCode(e.target.value);
+                      setErrorMessage(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleManualSubmit();
+                      }
+                    }}
+                    className="text-center font-mono text-lg tracking-wider"
+                    autoFocus
+                  />
+                  {errorMessage && (
+                    <p className="text-xs text-destructive text-center">{errorMessage}</p>
+                  )}
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => {
+                        setShowManualInput(false);
+                        setManualCode('');
+                        setErrorMessage(null);
+                      }}
+                    >
+                      {t('common.cancel')}
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="flex-1"
+                      onClick={handleManualSubmit}
+                      disabled={!manualCode.trim()}
+                    >
+                      <Search className="h-4 w-4 mr-2" />
+                      {t('qrScanner.searchEquipment')}
+                    </Button>
+                  </div>
+                </div>
               </div>
             )}
           </div>
