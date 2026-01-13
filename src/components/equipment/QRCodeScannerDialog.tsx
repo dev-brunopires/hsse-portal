@@ -98,6 +98,8 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
     isStartingRef.current = false;
 
     const scanner = scannerRef.current;
+    scannerRef.current = null; // Clear ref immediately to prevent reuse
+    
     if (scanner) {
       try {
         const state = scanner.getState();
@@ -115,8 +117,12 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
         } catch {
           // Ignore secondary errors
         }
+        try {
+          scanner.clear();
+        } catch {
+          // Ignore clear errors
+        }
       }
-      scannerRef.current = null;
     }
 
     isCleaningUpRef.current = false;
@@ -313,14 +319,42 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
         setPermissionChecked(true);
       });
     } else {
-      cleanupScanner();
+      // Dialog is closing - cleanup immediately
+      isMountedRef.current = false;
       setPermissionChecked(false);
+      
+      // Force immediate cleanup
+      const scanner = scannerRef.current;
+      if (scanner) {
+        scannerRef.current = null;
+        isCleaningUpRef.current = true;
+        isStartingRef.current = false;
+        
+        // Stop scanner synchronously if possible
+        try {
+          const state = scanner.getState();
+          if (state === 2) {
+            scanner.stop().then(() => {
+              try { scanner.clear(); } catch {}
+            }).catch(() => {
+              try { scanner.clear(); } catch {}
+            }).finally(() => {
+              isCleaningUpRef.current = false;
+            });
+          } else {
+            try { scanner.clear(); } catch {}
+            isCleaningUpRef.current = false;
+          }
+        } catch {
+          try { scanner.clear(); } catch {}
+          isCleaningUpRef.current = false;
+        }
+      }
     }
     
+    // Cleanup on effect re-run or unmount
     return () => {
-      if (!open) {
-        cleanupScanner();
-      }
+      cleanupScanner();
     };
   }, [open, cleanupScanner, t]);
 
