@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Building2, Upload, Loader2, ImageIcon } from 'lucide-react';
+import { Building2, Upload, Loader2, ImageIcon, Image } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -17,15 +17,21 @@ export function OrganizationSettingsCard() {
   const { toast } = useToast();
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingLogoWhite, setUploadingLogoWhite] = useState(false);
+  const [uploadingLoginBg, setUploadingLoginBg] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const logoWhiteInputRef = useRef<HTMLInputElement>(null);
+  const loginBgInputRef = useRef<HTMLInputElement>(null);
 
   if (!organization) {
     return null;
   }
 
-  const uploadLogo = async (file: File, type: 'logo' | 'logo_white') => {
-    const setUploading = type === 'logo' ? setUploadingLogo : setUploadingLogoWhite;
+  const uploadLogo = async (file: File, type: 'logo' | 'logo_white' | 'login_background') => {
+    const setUploading = type === 'logo' 
+      ? setUploadingLogo 
+      : type === 'logo_white' 
+        ? setUploadingLogoWhite 
+        : setUploadingLoginBg;
     setUploading(true);
 
     try {
@@ -44,13 +50,17 @@ export function OrganizationSettingsCard() {
 
       const updateData = type === 'logo'
         ? { id: organization.id, logo_url: urlData.publicUrl }
-        : { id: organization.id, logo_white_url: urlData.publicUrl };
+        : type === 'logo_white'
+          ? { id: organization.id, logo_white_url: urlData.publicUrl }
+          : { id: organization.id, login_background_url: urlData.publicUrl };
 
       await updateOrganization.mutateAsync(updateData);
 
       toast({
         title: t('settings.logoUpdated'),
-        description: t('settings.logoUpdatedDesc'),
+        description: type === 'login_background' 
+          ? t('settings.loginBackgroundUpdatedDesc')
+          : t('settings.logoUpdatedDesc'),
       });
     } catch (error: any) {
       toast({
@@ -63,7 +73,7 @@ export function OrganizationSettingsCard() {
     }
   };
 
-  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'logo_white') => {
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'logo_white' | 'login_background') => {
     const file = e.target.files?.[0];
     if (file) {
       uploadLogo(file, type);
@@ -153,6 +163,40 @@ export function OrganizationSettingsCard() {
                   <Upload className="h-4 w-4 mr-2" />
                 )}
                 {t('settings.uploadLogo')}
+              </Button>
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-sm font-medium">{t('settings.loginBackground')}</Label>
+            <p className="text-xs text-muted-foreground mb-2">{t('settings.loginBackgroundDesc')}</p>
+            <div className="flex items-center gap-4">
+              <div className="h-20 w-36 rounded-lg border border-dashed border-border flex items-center justify-center bg-muted overflow-hidden">
+                {organization.login_background_url ? (
+                  <img src={organization.login_background_url} alt="Login Background" className="h-full w-full object-cover" />
+                ) : (
+                  <Image className="h-8 w-8 text-muted-foreground/50" />
+                )}
+              </div>
+              <input
+                ref={loginBgInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handleLogoChange(e, 'login_background')}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => loginBgInputRef.current?.click()}
+                disabled={uploadingLoginBg}
+              >
+                {uploadingLoginBg ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Upload className="h-4 w-4 mr-2" />
+                )}
+                {t('settings.uploadBackground')}
               </Button>
             </div>
           </div>

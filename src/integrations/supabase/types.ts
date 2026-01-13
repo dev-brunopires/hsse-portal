@@ -1011,6 +1011,7 @@ export type Database = {
           created_at: string | null
           id: string
           is_active: boolean | null
+          login_background_url: string | null
           logo_url: string | null
           logo_white_url: string | null
           name: string
@@ -1022,6 +1023,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          login_background_url?: string | null
           logo_url?: string | null
           logo_white_url?: string | null
           name: string
@@ -1033,6 +1035,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          login_background_url?: string | null
           logo_url?: string | null
           logo_white_url?: string | null
           name?: string
@@ -1295,6 +1298,7 @@ export type Database = {
         Returns: {
           id: string
           is_active: boolean
+          login_background_url: string
           logo_url: string
           logo_white_url: string
           name: string
