@@ -349,10 +349,10 @@
     padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
   }
 
-  /* PWA standalone mode - fixed safe area for iPhone home indicator */
+  /* PWA standalone mode - fixed safe area for iPhone home indicator and notch */
   @media all and (display-mode: standalone) {
     .pwa-safe-bottom {
-      height: max(env(safe-area-inset-bottom, 0px), 34px);
+      height: max(env(safe-area-inset-bottom, 0px), 28px);
     }
 
     .pwa-bottom-nav {
@@ -360,7 +360,12 @@
     }
 
     .pwa-main-content {
-      padding-bottom: calc(5.5rem + max(env(safe-area-inset-bottom, 0px), 34px));
+      padding-bottom: calc(6rem + max(env(safe-area-inset-bottom, 0px), 28px)) !important;
+    }
+
+    .pwa-header {
+      padding-top: max(env(safe-area-inset-top, 0px), 8px);
+      min-height: calc(4rem + max(env(safe-area-inset-top, 0px), 8px));
     }
   }
 
@@ -379,11 +384,16 @@
   @supports (padding-bottom: env(safe-area-inset-bottom)) {
     @media all and (display-mode: standalone) {
       .pwa-safe-bottom {
-        height: max(env(safe-area-inset-bottom, 0px), 34px);
+        height: max(env(safe-area-inset-bottom, 0px), 32px);
       }
 
       .pwa-main-content {
-        padding-bottom: calc(5.5rem + max(env(safe-area-inset-bottom, 0px), 34px));
+        padding-bottom: calc(6.5rem + max(env(safe-area-inset-bottom, 0px), 32px)) !important;
+      }
+
+      .pwa-header {
+        padding-top: max(env(safe-area-inset-top, 0px), 12px);
+        min-height: calc(4.5rem + max(env(safe-area-inset-top, 0px), 12px));
       }
     }
   }

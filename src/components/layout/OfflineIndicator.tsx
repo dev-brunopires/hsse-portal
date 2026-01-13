@@ -87,7 +87,7 @@ export function OfflineIndicator() {
       {/* Offline/Pending indicator */}
       {(!isOnline || pendingCount > 0) && (
         <div className={cn(
-          "fixed bottom-20 lg:bottom-4 left-4 right-4 lg:right-auto z-50 rounded-xl shadow-lg transition-all lg:max-w-sm",
+          "fixed bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:bottom-4 left-4 right-4 lg:right-auto z-40 rounded-xl shadow-lg transition-all lg:max-w-sm",
           isOnline 
             ? "bg-status-warning text-status-warning-foreground" 
             : "bg-status-danger text-status-danger-foreground"
@@ -209,7 +209,7 @@ export function OfflineIndicator() {
 
       {/* Mobile online status indicator */}
       {showOnlineIndicator && (
-        <div className="fixed bottom-20 right-4 lg:hidden z-40">
+        <div className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] right-4 lg:hidden z-40">
           <Collapsible open={showDebugPanel} onOpenChange={setShowDebugPanel}>
             <CollapsibleTrigger asChild>
               <button className="bg-status-success/90 text-status-success-foreground rounded-full p-2 shadow-lg">
