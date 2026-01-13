@@ -27,11 +27,13 @@ interface AuthContextType {
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  forceRefreshSession: () => Promise<void>;
   isAdmin: boolean;
   isAdminMaster: boolean;
   isTechnician: boolean;
   canEdit: boolean;
   isPlatformOwner: boolean;
+  sessionUnstable: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,6 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<AppRole | null>(null);
   const [isPlatformOwner, setIsPlatformOwner] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [sessionUnstable, setSessionUnstable] = useState(false);
   const refreshFailuresRef = useRef(0);
   const { toast } = useToast();
 
@@ -165,6 +168,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (error) {
           refreshFailuresRef.current += 1;
+          setSessionUnstable(true);
           telemetry.warn('auth_refresh_failed', { message: error.message, failures: refreshFailuresRef.current });
 
           // If we fail twice in a row, consider the session dead and force re-login.
@@ -175,6 +179,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         refreshFailuresRef.current = 0;
+        setSessionUnstable(false);
 
         if (data.session?.user?.id) {
           await fetchUserData(data.session.user.id);
@@ -182,6 +187,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch (e) {
         if (cancelled) return;
         refreshFailuresRef.current += 1;
+        setSessionUnstable(true);
         telemetry.warn('auth_refresh_exception', { message: String(e), failures: refreshFailuresRef.current });
         if (refreshFailuresRef.current >= 2) {
           redirectToAuth();
@@ -341,6 +347,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const forceRefreshSession = async () => {
+    setSessionUnstable(false);
+    refreshFailuresRef.current = 0;
+    try {
+      const { data, error } = await supabase.auth.refreshSession();
+      if (error) {
+        setSessionUnstable(true);
+        telemetry.warn('force_refresh_failed', { message: error.message });
+        return;
+      }
+      if (data.session?.user?.id) {
+        await fetchUserData(data.session.user.id);
+      }
+    } catch (e) {
+      setSessionUnstable(true);
+      telemetry.error('force_refresh_exception', { message: String(e) });
+    }
+  };
+
   const isAdminMaster = role === 'admin_master' || isPlatformOwner;
   const isAdmin = role === 'admin' || role === 'admin_master' || isPlatformOwner;
   const isTechnician = role === 'technician';
@@ -359,11 +384,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signUp,
         signOut,
         refreshProfile,
+        forceRefreshSession,
         isAdmin,
         isAdminMaster,
         isTechnician,
         canEdit,
         isPlatformOwner,
+        sessionUnstable,
       }}
     >
       {children}
