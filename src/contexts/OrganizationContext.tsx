@@ -48,6 +48,11 @@ const getSubdomainFromHostname = (search: string): string | null => {
     return params.get('org') || null;
   }
 
+  // For production domain (opensafebrasil.com)
+  if (hostname.endsWith('opensafebrasil.com')) {
+    return params.get('org') || null;
+  }
+
   // For production domains like sbmoffshore.safeship.app
   const parts = hostname.split('.');
   if (parts.length >= 3) {
