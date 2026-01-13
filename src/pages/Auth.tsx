@@ -118,6 +118,19 @@ export default function Auth() {
       return;
     }
 
+    // Sync the selected language to the user's profile after successful login
+    if (authData?.user) {
+      const selectedLanguage = localStorage.getItem('language') || currentLanguage;
+      try {
+        await supabase
+          .from('profiles')
+          .update({ language: selectedLanguage })
+          .eq('user_id', authData.user.id);
+      } catch (err) {
+        console.error('Error syncing language to profile:', err);
+      }
+    }
+
     // After successful login, validate organization membership
     if (authData?.user && subdomain) {
       try {
