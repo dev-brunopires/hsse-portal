@@ -148,9 +148,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(currentSession?.user ?? null);
       
       if (currentSession?.user) {
-        await fetchUserData(currentSession.user.id);
+        // Don't block loading on user data fetch - it may timeout
+        fetchUserData(currentSession.user.id).catch(() => {});
       }
       
+      // Always finish loading regardless of user data fetch result
       setLoading(false);
     });
 
