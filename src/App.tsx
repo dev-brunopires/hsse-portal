@@ -32,6 +32,7 @@ const Maintenance = lazyWithRetry(() => import("./pages/Maintenance"));
 const Certificates = lazyWithRetry(() => import("./pages/Certificates"));
 const PlatformAdmin = lazyWithRetry(() => import("./pages/PlatformAdmin"));
 const OfflineData = lazyWithRetry(() => import("./pages/OfflineData"));
+const Diagnostics = lazyWithRetry(() => import("./pages/Diagnostics"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -213,6 +214,16 @@ function App() {
                     <ProtectedRoute>
                       <AppLayout>
                         <OfflineData />
+                      </AppLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/diagnostics"
+                  element={
+                    <ProtectedRoute>
+                      <AppLayout>
+                        <Diagnostics />
                       </AppLayout>
                     </ProtectedRoute>
                   }
