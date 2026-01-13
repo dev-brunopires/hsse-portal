@@ -311,7 +311,7 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
   };
 
   return (
-    <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 lg:px-6 overflow-visible">
+    <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 lg:px-6 overflow-visible pwa-header">
       {/* Left side - Menu button for mobile */}
       <div className="flex items-center gap-3 flex-1">
         {showMenuButton && (
