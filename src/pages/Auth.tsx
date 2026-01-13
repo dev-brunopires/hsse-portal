@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTranslation } from 'react-i18next';
-import { Mail, Lock, Loader2, Eye, EyeOff, Globe } from 'lucide-react';
+import { Mail, Lock, Loader2, Eye, EyeOff, Globe, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -16,6 +16,14 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useToast } from '@/hooks/use-toast';
@@ -23,6 +31,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { SystemLogo } from '@/components/ui/SystemLogo';
 import { getOrganizationUrl } from '@/utils/organizationUrl';
 import loginBg from '@/assets/login-bg.jpg';
+import { toast as sonnerToast } from 'sonner';
 
 const REMEMBER_EMAIL_KEY = 'safeship_remembered_email';
 
@@ -32,6 +41,9 @@ export default function Auth() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+  const [isSendingReset, setIsSendingReset] = useState(false);
   const { signIn, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -289,7 +301,11 @@ export default function Auth() {
                     {t('authPage.rememberEmail')}
                   </label>
                 </div>
-                <button type="button" className="text-sm text-primary hover:underline">
+                <button 
+                  type="button" 
+                  className="text-sm text-primary hover:underline"
+                  onClick={() => setShowForgotPassword(true)}
+                >
                   {t('authPage.forgotPassword')}
                 </button>
               </div>
@@ -333,6 +349,79 @@ export default function Auth() {
           </p>
         </div>
       </div>
+
+      {/* Forgot Password Modal */}
+      <Dialog open={showForgotPassword} onOpenChange={setShowForgotPassword}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('authPage.forgotPasswordTitle')}</DialogTitle>
+            <DialogDescription>
+              {t('authPage.forgotPasswordDesc')}
+            </DialogDescription>
+          </DialogHeader>
+          <form 
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (!forgotPasswordEmail) return;
+              
+              setIsSendingReset(true);
+              try {
+                const redirectUrl = `${window.location.origin}/auth/reset-password`;
+                const { error } = await supabase.auth.resetPasswordForEmail(forgotPasswordEmail, {
+                  redirectTo: redirectUrl,
+                });
+                
+                if (error) throw error;
+                
+                sonnerToast.success(t('authPage.resetEmailSent'));
+                setShowForgotPassword(false);
+                setForgotPasswordEmail('');
+              } catch (error: any) {
+                console.error('Error sending reset email:', error);
+                sonnerToast.error(error.message || t('common.error'));
+              } finally {
+                setIsSendingReset(false);
+              }
+            }}
+            className="space-y-4"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="reset-email">{t('authPage.email')}</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="reset-email"
+                  type="email"
+                  value={forgotPasswordEmail}
+                  onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                  placeholder={t('authPage.emailPlaceholder')}
+                  className="pl-10"
+                  required
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setShowForgotPassword(false)}
+              >
+                {t('common.cancel')}
+              </Button>
+              <Button type="submit" disabled={isSendingReset}>
+                {isSendingReset ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {t('common.loading')}
+                  </>
+                ) : (
+                  t('authPage.sendResetLink')
+                )}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
