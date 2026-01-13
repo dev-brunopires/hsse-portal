@@ -26,7 +26,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { GlobalSearchTrigger } from '@/components/global-search/GlobalSearchTrigger';
-import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -72,7 +72,7 @@ interface HeaderProps {
 
 export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
   const { t, i18n } = useTranslation();
-  const { user, profile, role, signOut, isPlatformOwner, sessionUnstable, forceRefreshSession } = useAuth();
+  const { user, profile, role, signOut, isPlatformOwner, sessionUnstable, forceRefreshSession, profileLoading } = useAuth();
   const [isReconnecting, setIsReconnecting] = useState(false);
   const { selectedShipId, setSelectedShipId, isFilterEnabled } = useShipFilter();
   const { language, setLanguage } = useLanguage();
@@ -652,40 +652,55 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
             >
               {/* Avatar with status indicator */}
               <div className="relative">
-                <div className="h-9 w-9 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center flex-shrink-0 shadow-sm">
-                  {profile?.avatar_url ? (
-                    <img 
-                      src={profile.avatar_url} 
-                      alt={profile.full_name} 
-                      className="h-9 w-9 rounded-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-sm font-semibold text-primary-foreground">
-                      {profile?.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'U'}
-                    </span>
-                  )}
-                </div>
-                {/* Online status indicator */}
-                <div className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 border-[1.5px] border-card" />
+                {profileLoading ? (
+                  <Skeleton className="h-9 w-9 rounded-full" />
+                ) : (
+                  <div className="h-9 w-9 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center flex-shrink-0 shadow-sm">
+                    {profile?.avatar_url ? (
+                      <img 
+                        src={profile.avatar_url} 
+                        alt={profile.full_name} 
+                        className="h-9 w-9 rounded-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-sm font-semibold text-primary-foreground">
+                        {profile?.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'U'}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {/* Online status indicator - only show when not loading */}
+                {!profileLoading && (
+                  <div className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 border-[1.5px] border-card" />
+                )}
               </div>
               
               {/* User info - hidden on mobile */}
               <div className="text-left hidden lg:flex flex-col min-w-0">
-                <p className="text-sm font-semibold truncate max-w-[140px] text-foreground group-hover:text-primary transition-colors">
-                  {profile?.full_name || user?.email}
-                </p>
-                <div className="flex items-center gap-1.5">
-                  <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                    isPlatformOwner ? 'bg-primary/15 text-primary' :
-                    role === 'admin_master' ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400' :
-                    role === 'admin' ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400' :
-                    role === 'supervisor' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' :
-                    role === 'technician' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' :
-                    'bg-muted text-muted-foreground'
-                  }`}>
-                    {isPlatformOwner ? t('navigation.platformAdmin') : role ? roleLabels[role] : t('common.loading')}
-                  </span>
-                </div>
+                {profileLoading ? (
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-sm font-semibold truncate max-w-[140px] text-foreground group-hover:text-primary transition-colors">
+                      {profile?.full_name || user?.email}
+                    </p>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                        isPlatformOwner ? 'bg-primary/15 text-primary' :
+                        role === 'admin_master' ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400' :
+                        role === 'admin' ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400' :
+                        role === 'supervisor' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' :
+                        role === 'technician' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' :
+                        'bg-muted text-muted-foreground'
+                      }`}>
+                        {isPlatformOwner ? t('navigation.platformAdmin') : role ? roleLabels[role] : t('common.loading')}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
               
               <ChevronDown className="h-4 w-4 text-muted-foreground hidden lg:block group-hover:text-primary transition-colors" />
@@ -695,32 +710,46 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
             {/* User header in dropdown */}
             <div className="px-3 py-3 bg-muted/50 rounded-lg mx-1 mb-1">
               <div className="flex items-center gap-3">
-                <div className="h-11 w-11 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-sm">
-                  {profile?.avatar_url ? (
-                    <img 
-                      src={profile.avatar_url} 
-                      alt={profile.full_name} 
-                      className="h-11 w-11 rounded-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-base font-semibold text-primary-foreground">
-                      {profile?.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'U'}
-                    </span>
-                  )}
-                </div>
+                {profileLoading ? (
+                  <Skeleton className="h-11 w-11 rounded-full flex-shrink-0" />
+                ) : (
+                  <div className="h-11 w-11 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-sm flex-shrink-0">
+                    {profile?.avatar_url ? (
+                      <img 
+                        src={profile.avatar_url} 
+                        alt={profile.full_name} 
+                        className="h-11 w-11 rounded-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-base font-semibold text-primary-foreground">
+                        {profile?.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'U'}
+                      </span>
+                    )}
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm truncate">{profile?.full_name || user?.email}</p>
-                  <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-                  <span className={`inline-flex items-center mt-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                    isPlatformOwner ? 'bg-primary/15 text-primary' :
-                    role === 'admin_master' ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400' :
-                    role === 'admin' ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400' :
-                    role === 'supervisor' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' :
-                    role === 'technician' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' :
-                    'bg-muted text-muted-foreground'
-                  }`}>
-                    {isPlatformOwner ? t('navigation.platformAdmin') : role ? roleLabels[role] : t('common.loading')}
-                  </span>
+                  {profileLoading ? (
+                    <div className="space-y-1.5">
+                      <Skeleton className="h-4 w-28" />
+                      <Skeleton className="h-3 w-36" />
+                      <Skeleton className="h-4 w-16 mt-1" />
+                    </div>
+                  ) : (
+                    <>
+                      <p className="font-semibold text-sm truncate">{profile?.full_name || user?.email}</p>
+                      <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                      <span className={`inline-flex items-center mt-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                        isPlatformOwner ? 'bg-primary/15 text-primary' :
+                        role === 'admin_master' ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400' :
+                        role === 'admin' ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400' :
+                        role === 'supervisor' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' :
+                        role === 'technician' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' :
+                        'bg-muted text-muted-foreground'
+                      }`}>
+                        {isPlatformOwner ? t('navigation.platformAdmin') : role ? roleLabels[role] : t('common.loading')}
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
