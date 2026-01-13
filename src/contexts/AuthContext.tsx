@@ -1,9 +1,10 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { User, Session, AuthTokenResponsePassword } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { getOrganizationUrl } from '@/utils/organizationUrl';
+import { telemetry } from '@/utils/clientTelemetry';
 
 interface Profile {
   id: string;
@@ -42,6 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<AppRole | null>(null);
   const [isPlatformOwner, setIsPlatformOwner] = useState(false);
   const [loading, setLoading] = useState(true);
+  const refreshFailuresRef = useRef(0);
   const { toast } = useToast();
 
   const withTimeout = async <T,>(promise: Promise<T>, ms = 10000): Promise<T> => {
@@ -98,19 +100,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       (event, currentSession) => {
         if (!mounted) return;
 
-        // If token refresh fails, the app can look "connected" but all data calls will stop working.
-        if (event === 'TOKEN_REFRESH_FAILED') {
-          setSession(null);
-          setUser(null);
-          setProfile(null);
-          setRole(null);
-          setIsPlatformOwner(false);
-          setLoading(false);
+        telemetry.debug('auth_state_change', { event });
 
-          // Preserve tenant routing (query param or subdomain)
-          const search = window.location.search || '';
-          window.location.href = `/auth${search}`;
-          return;
+        // Reset consecutive refresh failures on successful auth events
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+          refreshFailuresRef.current = 0;
         }
 
         setSession(currentSession);
@@ -153,20 +147,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Refresh session/profile when the tab returns (common mobile case) or when connection comes back.
+  // Also run a lightweight watchdog every ~50s to detect "stuck" auth (common symptom: UI loads but queries stop).
   useEffect(() => {
     if (!user) return;
 
     let cancelled = false;
 
+    const redirectToAuth = () => {
+      const search = window.location.search || '';
+      window.location.href = `/auth${search}`;
+    };
+
     const refreshNow = async () => {
       try {
         const { data, error } = await supabase.auth.refreshSession();
         if (cancelled) return;
-        if (!error && data.session?.user?.id) {
+
+        if (error) {
+          refreshFailuresRef.current += 1;
+          telemetry.warn('auth_refresh_failed', { message: error.message, failures: refreshFailuresRef.current });
+
+          // If we fail twice in a row, consider the session dead and force re-login.
+          if (refreshFailuresRef.current >= 2) {
+            redirectToAuth();
+          }
+          return;
+        }
+
+        refreshFailuresRef.current = 0;
+
+        if (data.session?.user?.id) {
           await fetchUserData(data.session.user.id);
         }
-      } catch {
-        // Ignore here; TOKEN_REFRESH_FAILED will be handled by onAuthStateChange
+      } catch (e) {
+        if (cancelled) return;
+        refreshFailuresRef.current += 1;
+        telemetry.warn('auth_refresh_exception', { message: String(e), failures: refreshFailuresRef.current });
+        if (refreshFailuresRef.current >= 2) {
+          redirectToAuth();
+        }
       }
     };
 
@@ -184,11 +203,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.addEventListener('online', onFocus);
     document.addEventListener('visibilitychange', onVisibilityChange);
 
+    const interval = window.setInterval(() => {
+      // Only check when online to avoid false positives.
+      if (navigator.onLine) {
+        void refreshNow();
+      }
+    }, 50000);
+
     return () => {
       cancelled = true;
       window.removeEventListener('focus', onFocus);
       window.removeEventListener('online', onFocus);
       document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.clearInterval(interval);
     };
   }, [user?.id]);
 

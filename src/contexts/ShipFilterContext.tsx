@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { telemetry } from '@/utils/clientTelemetry';
 
 const STORAGE_KEY = 'selected_ship_id';
 
@@ -92,7 +93,7 @@ export function ShipFilterProvider({ children }: { children: ReactNode }) {
         setIsPlatformOwner(!!ownerRes.data);
       } catch (e) {
         // Keep previous role/isPlatformOwner when connection drops
-        if (!cancelled) console.error('Error loading permissions:', e);
+        if (!cancelled) telemetry.warn('ship_filter_permissions_error', { message: String(e) });
       } finally {
         if (!cancelled) setPermissionsLoading(false);
       }
