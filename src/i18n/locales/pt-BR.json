@@ -1049,7 +1049,11 @@
     "uploadLogo": "Enviar Logo",
     "logoUpdated": "Logo Atualizada",
     "logoUpdatedDesc": "A logo da organização foi atualizada com sucesso",
-    "logoUpdateError": "Erro ao atualizar logo"
+    "logoUpdateError": "Erro ao atualizar logo",
+    "loginBackground": "Imagem de Login",
+    "loginBackgroundDesc": "Imagem de fundo exibida na tela de login",
+    "uploadBackground": "Enviar Imagem",
+    "loginBackgroundUpdatedDesc": "A imagem de fundo do login foi atualizada com sucesso"
   },
   "ships": {
     "title": "Embarcações",

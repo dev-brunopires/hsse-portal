@@ -1049,7 +1049,11 @@
     "uploadLogo": "Upload Logo",
     "logoUpdated": "Logo Updated",
     "logoUpdatedDesc": "Organization logo has been updated successfully",
-    "logoUpdateError": "Error updating logo"
+    "logoUpdateError": "Error updating logo",
+    "loginBackground": "Login Background",
+    "loginBackgroundDesc": "Background image displayed on the login page",
+    "uploadBackground": "Upload Image",
+    "loginBackgroundUpdatedDesc": "Login background image has been updated successfully"
   },
   "ships": {
     "title": "Ships",

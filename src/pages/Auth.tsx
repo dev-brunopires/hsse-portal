@@ -35,7 +35,7 @@ export default function Auth() {
   const { signIn, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { organization, logoUrl, subdomain } = useOrganization();
+  const { organization, logoUrl, subdomain, loginBackgroundUrl } = useOrganization();
   const formInitialized = useRef(false);
   
   const currentLanguage = i18n.language;
@@ -321,7 +321,7 @@ export default function Auth() {
       {/* Right Side - Image */}
       <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 relative">
         <img
-          src={loginBg}
+          src={subdomain && loginBackgroundUrl ? loginBackgroundUrl : loginBg}
           alt={t('authPage.loginBackground')}
           className="absolute inset-0 w-full h-full object-cover"
         />

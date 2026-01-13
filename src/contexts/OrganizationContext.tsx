@@ -10,6 +10,7 @@ export interface Organization {
   subdomain: string;
   logo_url: string | null;
   logo_white_url: string | null;
+  login_background_url: string | null;
   is_active: boolean;
 }
 
@@ -19,6 +20,7 @@ interface OrganizationContextType {
   subdomain: string | null;
   logoUrl: string | null;
   logoWhiteUrl: string | null;
+  loginBackgroundUrl: string | null;
   isPlatformOwnerWithoutOrg: boolean;
 }
 
@@ -99,6 +101,7 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
             subdomain,
             logo_url,
             logo_white_url,
+            login_background_url,
             is_active
           )
         `)
@@ -146,6 +149,7 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
     subdomain,
     logoUrl: organization?.logo_url || null,
     logoWhiteUrl: organization?.logo_white_url || null,
+    loginBackgroundUrl: organization?.login_background_url || null,
     isPlatformOwnerWithoutOrg,
   }), [organization, isLoading, subdomain, isPlatformOwnerWithoutOrg]);
 
