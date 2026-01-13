@@ -10,7 +10,7 @@ export function useDashboardStats() {
   
   return useQuery({
     queryKey: ['dashboard-stats', selectedShipId],
-    enabled: isReady, // Wait for ship filter to be initialized
+    // Don't block on isReady - if not ready after mount, proceed without ship filter
     retry: (failureCount, error) => {
       // Don't retry on auth errors
       const errorMessage = (error as Error)?.message?.toLowerCase() || '';
