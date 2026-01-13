@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshFailuresRef = useRef(0);
   const { toast } = useToast();
 
-  const withTimeout = async <T,>(promise: Promise<T>, ms = 10000): Promise<T> => {
+  const withTimeout = async <T,>(promise: Promise<T>, ms = 20000): Promise<T> => {
     return await Promise.race([
       promise,
       new Promise<T>((_, reject) => {
@@ -60,16 +60,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     ]);
   };
 
-  const fetchUserData = async (userId: string) => {
+  const fetchUserData = async (userId: string, retryCount = 0) => {
     try {
-      // Fetch profile, role, and platform owner status in parallel
+      // Fetch profile, role, and platform owner status in parallel with longer timeout
       const [profileResult, roleResult, platformOwnerResult] = await withTimeout(
         Promise.all([
           supabase.from('profiles').select('*').eq('user_id', userId).single(),
           supabase.from('user_roles').select('role').eq('user_id', userId).maybeSingle(),
           supabase.from('platform_owners').select('id').eq('user_id', userId).maybeSingle(),
         ]),
-        12000
+        25000 // 25 seconds for slow connections
       );
 
       // If any request errored (network/auth), don't wipe previously loaded state.
@@ -89,7 +89,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setIsPlatformOwner(!!platformOwnerResult.data);
+      telemetry.debug('fetch_user_data_success', { userId });
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'unknown';
+      telemetry.error('fetch_user_data_error', { userId, error: errorMessage, retryCount });
+      
+      // Retry once on timeout
+      if (errorMessage === 'timeout' && retryCount < 1) {
+        console.warn('Retrying user data fetch after timeout...');
+        setTimeout(() => fetchUserData(userId, retryCount + 1), 1000);
+        return;
+      }
+      
       // Keep last known profile/role to avoid UI falling into a permanent "Carregando..." state
       console.error('Error fetching user data:', error);
     }
