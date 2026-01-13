@@ -64,9 +64,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let timeoutId: number | undefined;
 
     try {
-      // Create timeout promise
+      // Create timeout promise (8s for better UX on slow networks)
       const timeoutPromise = new Promise((_, reject) => {
-        timeoutId = window.setTimeout(() => reject(new Error('timeout')), 12000);
+        timeoutId = window.setTimeout(() => reject(new Error('timeout')), 8000);
       });
 
       // Race queries against timeout
