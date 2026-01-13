@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -125,16 +125,19 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
 
     initAuth();
 
+    // Keep a ref to compare previous user id correctly (closure issue fix)
+    let previousUserIdLocal: string | null = null;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mountedRef.current) return;
       
       const currentUserId = session?.user?.id || null;
-      const previousUserId = userId;
       
       setUserId(currentUserId);
 
-      // Only fetch platform owner status if user changed
-      if (currentUserId && currentUserId !== previousUserId) {
+      // Only fetch platform owner status if user changed (use local var to avoid stale closure)
+      if (currentUserId && currentUserId !== previousUserIdLocal) {
+        previousUserIdLocal = currentUserId;
         let timeoutId: number | undefined;
         const timeoutPromise = new Promise((_, reject) => {
           timeoutId = window.setTimeout(() => reject(new Error('timeout')), 8000);
