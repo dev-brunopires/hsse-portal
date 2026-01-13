@@ -12,6 +12,7 @@ import { Camera, CameraOff, Loader2, QrCode, CheckCircle2, AlertCircle, Scan, Sw
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface QRCodeScannerDialogProps {
   open: boolean;
@@ -68,6 +69,8 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const isMountedRef = useRef(true);
   const isCleaningUpRef = useRef(false);
+  const lastScannedRef = useRef<string | null>(null);
+  const lastScanTimeRef = useRef<number>(0);
 
   const cleanupScanner = useCallback(async () => {
     // Prevent multiple simultaneous cleanups
@@ -100,6 +103,24 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
   }, []);
 
   const handleScanSuccess = useCallback((decodedText: string) => {
+    const now = Date.now();
+    
+    // Debounce: ignore duplicate scans within 1.5 seconds
+    if (
+      lastScannedRef.current === decodedText && 
+      now - lastScanTimeRef.current < 1500
+    ) {
+      return;
+    }
+    
+    // Prevent processing if already in success/error state
+    if (scannerState === 'success' || scannerState === 'error') {
+      return;
+    }
+    
+    lastScannedRef.current = decodedText;
+    lastScanTimeRef.current = now;
+    
     setScannerState('success');
     
     // Brief success animation before processing
@@ -144,7 +165,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
         setErrorMessage(t('qrScanner.invalidQRCode'));
       }
     }, 600);
-  }, [cleanupScanner, onScan, onOpenChange, t]);
+  }, [cleanupScanner, onScan, onOpenChange, t, scannerState]);
 
   const attemptStartScanning = useCallback(async (attempt: number, cameraFacingMode: 'environment' | 'user') => {
     if (!isMountedRef.current || isCleaningUpRef.current) return;
@@ -253,6 +274,9 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       setFacingMode('environment');
       setIsSwitchingCamera(false);
       setContainerId(`qr-reader-${Date.now()}`);
+      // Reset debounce refs when dialog opens
+      lastScannedRef.current = null;
+      lastScanTimeRef.current = 0;
       
       // Pre-check camera permission to avoid repeated prompts
       checkCameraPermission().then((permission) => {
