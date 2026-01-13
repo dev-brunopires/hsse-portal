@@ -23,6 +23,7 @@ interface AuthContextType {
   profile: Profile | null;
   role: AppRole | null;
   loading: boolean;
+  profileLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null; data: AuthTokenResponsePassword['data'] | null }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -45,6 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<AppRole | null>(null);
   const [isPlatformOwner, setIsPlatformOwner] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [sessionUnstable, setSessionUnstable] = useState(false);
   const refreshFailuresRef = useRef(0);
   const fetchUserDataInFlightRef = useRef(false);
@@ -60,6 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (fetchUserDataInFlightRef.current && !force) return;
 
     fetchUserDataInFlightRef.current = true;
+    setProfileLoading(true);
 
     // Cancel any previous in-flight request ref
     fetchUserDataAbortRef.current?.abort();
@@ -103,6 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setIsPlatformOwner(!!platformOwnerResult.data);
+      setProfileLoading(false);
       telemetry.debug('fetch_user_data_success', { userId });
     } catch (error: any) {
       const message = error instanceof Error ? error.message : String(error);
@@ -118,6 +122,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       if (timeoutId) window.clearTimeout(timeoutId);
       fetchUserDataInFlightRef.current = false;
+      // Ensure profileLoading is false even on error/timeout
+      setProfileLoading(false);
     }
   };
 
@@ -161,6 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setRole(null);
           profileRef.current = null;
           roleRef.current = null;
+          setProfileLoading(false);
         }
 
         setLoading(false);
@@ -439,7 +446,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isSupervisor = role === 'supervisor';
   const canEdit = isAdmin || isTechnician || isSupervisor;
 
-  return (
+    return (
     <AuthContext.Provider
       value={{
         user,
@@ -447,6 +454,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profile,
         role,
         loading,
+        profileLoading,
         signIn,
         signUp,
         signOut,
