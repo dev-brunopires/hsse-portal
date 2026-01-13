@@ -23,11 +23,15 @@ interface QRCodeScannerDialogProps {
 
 type ScannerState = 'initializing' | 'scanning' | 'success' | 'error' | 'permission-denied';
 
+// LocalStorage keys
+const CAMERA_PERMISSION_KEY = 'camera_permission_state';
+const CAMERA_FACING_MODE_KEY = 'camera_facing_mode';
+
 // Check if camera permission was already granted
 const checkCameraPermission = async (): Promise<'granted' | 'denied' | 'prompt'> => {
   try {
     // First check if we have a cached permission state
-    const cachedPermission = localStorage.getItem('camera_permission_state');
+    const cachedPermission = localStorage.getItem(CAMERA_PERMISSION_KEY);
     if (cachedPermission === 'granted') {
       return 'granted';
     }
@@ -35,7 +39,7 @@ const checkCameraPermission = async (): Promise<'granted' | 'denied' | 'prompt'>
     // Use Permissions API if available
     if (navigator.permissions && navigator.permissions.query) {
       const result = await navigator.permissions.query({ name: 'camera' as PermissionName });
-      localStorage.setItem('camera_permission_state', result.state);
+      localStorage.setItem(CAMERA_PERMISSION_KEY, result.state);
       return result.state as 'granted' | 'denied' | 'prompt';
     }
 
@@ -43,19 +47,30 @@ const checkCameraPermission = async (): Promise<'granted' | 'denied' | 'prompt'>
     return cachedPermission === 'denied' ? 'denied' : 'prompt';
   } catch {
     // Permissions API not supported, check localStorage
-    const cachedPermission = localStorage.getItem('camera_permission_state');
+    const cachedPermission = localStorage.getItem(CAMERA_PERMISSION_KEY);
     return cachedPermission as 'granted' | 'denied' | 'prompt' || 'prompt';
   }
 };
 
 // Mark camera permission as granted after successful access
 const markCameraPermissionGranted = () => {
-  localStorage.setItem('camera_permission_state', 'granted');
+  localStorage.setItem(CAMERA_PERMISSION_KEY, 'granted');
 };
 
 // Mark camera permission as denied
 const markCameraPermissionDenied = () => {
-  localStorage.setItem('camera_permission_state', 'denied');
+  localStorage.setItem(CAMERA_PERMISSION_KEY, 'denied');
+};
+
+// Get saved camera facing mode
+const getSavedFacingMode = (): 'environment' | 'user' => {
+  const saved = localStorage.getItem(CAMERA_FACING_MODE_KEY);
+  return saved === 'user' ? 'user' : 'environment';
+};
+
+// Save camera facing mode preference
+const saveFacingMode = (mode: 'environment' | 'user') => {
+  localStorage.setItem(CAMERA_FACING_MODE_KEY, mode);
 };
 
 export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScannerDialogProps) {
@@ -260,6 +275,9 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
     const newFacingMode = facingMode === 'environment' ? 'user' : 'environment';
     setFacingMode(newFacingMode);
     
+    // Save preference to localStorage
+    saveFacingMode(newFacingMode);
+    
     // Cleanup current scanner and restart with new camera
     await cleanupScanner();
     setContainerId(`qr-reader-${Date.now()}`);
@@ -276,7 +294,8 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       isMountedRef.current = true;
       setErrorMessage(null);
       setScannerState('initializing');
-      setFacingMode('environment');
+      // Load saved camera preference from localStorage
+      setFacingMode(getSavedFacingMode());
       setIsSwitchingCamera(false);
       setContainerId(`qr-reader-${Date.now()}`);
       setShowManualInput(false);
@@ -349,11 +368,12 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
 
   const handleRetry = async () => {
     // Clear permission state from localStorage to allow re-prompting
-    localStorage.removeItem('camera_permission_state');
+    localStorage.removeItem(CAMERA_PERMISSION_KEY);
 
     setErrorMessage(null);
     setIsSwitchingCamera(false);
-    setFacingMode('environment');
+    // Keep saved camera preference on retry
+    setFacingMode(getSavedFacingMode());
     setScannerState('initializing');
     setPermissionChecked(true);
     setShowManualInput(false);
