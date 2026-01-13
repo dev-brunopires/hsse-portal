@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
-import { useAuth } from './AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 const STORAGE_KEY = 'selected_ship_id';
 
