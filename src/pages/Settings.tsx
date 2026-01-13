@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bell, Shield, Database, Mail, Plug, Rocket, Building2, Settings as SettingsIcon } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -9,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { NotificationSettingsCard } from '@/components/dashboard/NotificationSettingsCard';
 import { IFSIntegrationCard } from '@/components/settings/IFSIntegrationCard';
 import { OrganizationSettingsCard } from '@/components/settings/OrganizationSettingsCard';
+import { ChangePasswordDialog } from '@/components/settings/ChangePasswordDialog';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { useOrganization } from '@/contexts/OrganizationContext';
 
@@ -16,6 +18,7 @@ export default function Settings() {
   const { t } = useTranslation();
   const { resetTour, startTour } = useOnboarding();
   const { organization } = useOrganization();
+  const [showChangePassword, setShowChangePassword] = useState(false);
 
   const handleRestartTour = () => {
     resetTour();
@@ -105,7 +108,11 @@ export default function Settings() {
               <CardDescription>{t('settings.accountSecuritySettings')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Button variant="outline" className="w-full justify-start">
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                onClick={() => setShowChangePassword(true)}
+              >
                 {t('settings.changePassword')}
               </Button>
               <Button variant="outline" className="w-full justify-start">
@@ -116,6 +123,11 @@ export default function Settings() {
               </Button>
             </CardContent>
           </Card>
+
+          <ChangePasswordDialog 
+            open={showChangePassword} 
+            onOpenChange={setShowChangePassword} 
+          />
         </TabsContent>
 
         <TabsContent value="integrations" className="mt-6 space-y-6">
