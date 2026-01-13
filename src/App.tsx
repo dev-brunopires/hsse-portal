@@ -60,8 +60,16 @@ function App() {
                   <ChunkErrorBoundary>
                   <Suspense fallback={<PageLoadingFallback />}>
               <Routes>
-                {/* Public Route */}
+                {/* Public Routes */}
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/auth/reset-password" element={
+                  <Suspense fallback={<PageLoadingFallback />}>
+                    {(() => {
+                      const ResetPassword = lazyWithRetry(() => import("./pages/ResetPassword"));
+                      return <ResetPassword />;
+                    })()}
+                  </Suspense>
+                } />
                 <Route path="/platform-admin" element={
                   <ProtectedRoute>
                     <PlatformAdmin />
