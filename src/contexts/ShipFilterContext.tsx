@@ -1,30 +1,98 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 const STORAGE_KEY = 'selected_ship_id';
+
+type AppRole = 'admin' | 'admin_master' | 'technician' | 'supervisor' | 'viewer';
 
 interface ShipFilterContextType {
   selectedShipId: string | null; // null = all ships
   setSelectedShipId: (shipId: string | null) => void;
-  isFilterEnabled: boolean; // true for admin/admin_master
+  isFilterEnabled: boolean; // true for admin/admin_master/platform owner
   isReady: boolean; // true when auth is loaded and filter state is initialized
 }
 
 const ShipFilterContext = createContext<ShipFilterContextType | undefined>(undefined);
 
 export function ShipFilterProvider({ children }: { children: ReactNode }) {
-  const { role, isPlatformOwner, user, loading: authLoading } = useAuth();
+  const [userId, setUserId] = useState<string | null>(null);
+  const [role, setRole] = useState<AppRole | null>(null);
+  const [isPlatformOwner, setIsPlatformOwner] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [permissionsLoading, setPermissionsLoading] = useState(false);
+
   const [initialized, setInitialized] = useState(false);
   const [selectedShipId, setSelectedShipIdState] = useState<string | null>(null);
+
+  // Track session without depending on AuthContext (prevents context duplication issues)
+  useEffect(() => {
+    let mounted = true;
+
+    const loadSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!mounted) return;
+      setUserId(session?.user?.id ?? null);
+      setAuthLoading(false);
+    };
+
+    loadSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      if (!mounted) return;
+      setUserId(session?.user?.id ?? null);
+      setAuthLoading(false);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  // Load role/platform owner for permission checks
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadPermissions = async () => {
+      if (!userId) {
+        setRole(null);
+        setIsPlatformOwner(false);
+        setPermissionsLoading(false);
+        return;
+      }
+
+      setPermissionsLoading(true);
+
+      try {
+        const [roleRes, ownerRes] = await Promise.all([
+          supabase.from('user_roles').select('role').eq('user_id', userId).maybeSingle(),
+          supabase.from('platform_owners').select('id').eq('user_id', userId).maybeSingle(),
+        ]);
+
+        if (cancelled) return;
+
+        setRole((roleRes.data?.role as AppRole) ?? null);
+        setIsPlatformOwner(!!ownerRes.data);
+      } finally {
+        if (!cancelled) setPermissionsLoading(false);
+      }
+    };
+
+    loadPermissions();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
   // Admin, admin_master, and platform owners can use global ship filter
   const isFilterEnabled = role === 'admin' || role === 'admin_master' || isPlatformOwner;
 
-  // Initialize from localStorage only AFTER auth is loaded
+  // Initialize from localStorage only AFTER auth + permissions are loaded
   useEffect(() => {
-    if (authLoading) return;
-    
-    if (!user) {
+    if (authLoading || permissionsLoading) return;
+
+    if (!userId) {
       // User logged out - clear state
       setSelectedShipIdState(null);
       localStorage.removeItem(STORAGE_KEY);
@@ -41,9 +109,9 @@ export function ShipFilterProvider({ children }: { children: ReactNode }) {
       setSelectedShipIdState(null);
       localStorage.removeItem(STORAGE_KEY);
     }
-    
+
     setInitialized(true);
-  }, [authLoading, user, isFilterEnabled]);
+  }, [authLoading, permissionsLoading, userId, isFilterEnabled]);
 
   // Wrapped setter that also persists to localStorage
   const setSelectedShipId = useCallback((shipId: string | null) => {
@@ -57,8 +125,8 @@ export function ShipFilterProvider({ children }: { children: ReactNode }) {
 
   // Only consider ready when auth has loaded and we've initialized the state
   const isReady = useMemo(() => {
-    return !authLoading && initialized;
-  }, [authLoading, initialized]);
+    return !authLoading && !permissionsLoading && initialized;
+  }, [authLoading, permissionsLoading, initialized]);
 
   return (
     <ShipFilterContext.Provider
