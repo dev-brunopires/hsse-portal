@@ -2,6 +2,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -624,6 +625,7 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
             <QrCode className="h-5 w-5 text-primary" />
             {t('qrCode.dialogTitle')}
           </DialogTitle>
+          <DialogDescription className="sr-only">{t('qrCode.dialogTitle')}</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           {qrContent}

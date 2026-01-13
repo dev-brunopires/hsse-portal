@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -837,6 +838,7 @@ export function EquipmentDetailDialog({
             <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col bg-card border border-border p-0" hideCloseButton>
               <DialogHeader className="p-6 pb-4 border-b border-border shrink-0">
                 <DialogTitle className="sr-only">{equipment.name}</DialogTitle>
+                <DialogDescription className="sr-only">{t('equipmentDetail.details')}</DialogDescription>
                 {headerContent}
               </DialogHeader>
               <div className="flex-1 min-h-0 overflow-y-auto">
