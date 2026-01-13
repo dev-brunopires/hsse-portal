@@ -3093,5 +3093,22 @@
     "inspectionStats": "Inspection Statistics",
     "overdue": "Overdue",
     "upcoming30Days": "Next 30 days"
+  },
+  "diagnostics": {
+    "title": "System Diagnostics",
+    "description": "Session, network and telemetry monitoring",
+    "exportLogs": "Export Logs",
+    "network": "Network",
+    "session": "Session",
+    "stable": "Stable",
+    "expiresIn": "Expires in",
+    "user": "User",
+    "organization": "Organization",
+    "noOrganization": "No organization",
+    "telemetryBuffer": "Telemetry Buffer",
+    "eventsStored": "events stored locally",
+    "clearBuffer": "Clear",
+    "noEvents": "No events recorded",
+    "debugInfo": "Debug Info"
   }
 }

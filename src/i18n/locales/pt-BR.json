@@ -3094,5 +3094,22 @@
     "inspectionStats": "Estatísticas de Inspeções",
     "overdue": "Atrasadas",
     "upcoming30Days": "Próximos 30 dias"
+  },
+  "diagnostics": {
+    "title": "Diagnóstico do Sistema",
+    "description": "Monitoramento de sessão, rede e telemetria",
+    "exportLogs": "Exportar Logs",
+    "network": "Rede",
+    "session": "Sessão",
+    "stable": "Estável",
+    "expiresIn": "Expira em",
+    "user": "Usuário",
+    "organization": "Organização",
+    "noOrganization": "Sem organização",
+    "telemetryBuffer": "Buffer de Telemetria",
+    "eventsStored": "eventos armazenados localmente",
+    "clearBuffer": "Limpar",
+    "noEvents": "Nenhum evento registrado",
+    "debugInfo": "Informações de Debug"
   }
 }
