@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import { hapticSuccess } from '@/utils/hapticFeedback';
+import i18n from '@/i18n';
 
 export function PWAUpdatePrompt() {
   const { t } = useTranslation();
@@ -89,9 +90,11 @@ export function PWAUpdatePrompt() {
             <Download className="h-6 w-6 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-foreground">{t('pwa.updateAvailable')}</h3>
+            <h3 className="font-semibold text-foreground">
+              {i18n.isInitialized ? t('pwa.updateAvailable') : 'Atualização Disponível'}
+            </h3>
             <p className="text-sm text-muted-foreground mt-1">
-              {t('pwa.updateDescription')}
+              {i18n.isInitialized ? t('pwa.updateDescription') : 'Uma nova versão está disponível.'}
             </p>
           </div>
           <Button
@@ -112,7 +115,7 @@ export function PWAUpdatePrompt() {
             onClick={handleDismiss}
             disabled={isUpdating}
           >
-            {t('pwa.later')}
+            {i18n.isInitialized ? t('pwa.later') : 'Depois'}
           </Button>
           <Button
             size="sm"
@@ -125,7 +128,7 @@ export function PWAUpdatePrompt() {
             ) : (
               <RefreshCw className="h-4 w-4 mr-2" />
             )}
-            {t('pwa.updateNow')}
+            {i18n.isInitialized ? t('pwa.updateNow') : 'Atualizar Agora'}
           </Button>
         </div>
       </div>
