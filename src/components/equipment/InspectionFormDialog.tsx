@@ -899,6 +899,7 @@ export function InspectionFormDialog({
       <DialogContent className="max-w-4xl max-h-[95vh] overflow-hidden flex flex-col bg-card border border-border">
         <DialogHeader className="pb-4 border-b border-border flex-shrink-0">
           <DialogTitle>{headerContent}</DialogTitle>
+          <DialogDescription className="sr-only">{t('inspection.form')}</DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
           {formContent}

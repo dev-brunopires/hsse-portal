@@ -1082,6 +1082,7 @@ export function EquipmentFormDialog({
       <DialogContent className="max-w-3xl max-h-[95vh] overflow-hidden flex flex-col bg-card border border-border" hideCloseButton>
         <DialogHeader className="pb-4 border-b border-border flex-shrink-0">
           <DialogTitle>{headerContent}</DialogTitle>
+          <DialogDescription className="sr-only">{mode === 'edit' ? t('equipment.editEquipment') : t('equipment.newEquipment')}</DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-hidden min-h-0">
           {formContent}

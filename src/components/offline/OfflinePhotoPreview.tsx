@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Image, X, ChevronLeft, ChevronRight, ZoomIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { PendingPhoto, getPhotosByInspection } from '@/utils/offlineStorage';
@@ -148,6 +148,7 @@ export function OfflinePhotoPreview({
                 {t('offline.pendingPhotos')} ({currentPhotoIndex + 1}/{photos.length})
               </span>
             </DialogTitle>
+            <DialogDescription className="sr-only">{t('offline.pendingPhotos')}</DialogDescription>
           </DialogHeader>
 
           <div className="relative flex-1 min-h-[300px] max-h-[60vh] flex items-center justify-center bg-muted/50 p-4">

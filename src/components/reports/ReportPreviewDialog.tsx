@@ -291,9 +291,9 @@ export function ReportPreviewDialog({
       <DialogContent className="max-w-5xl max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>{headerContent}</DialogTitle>
-          {description && (
-            <DialogDescription>{description}</DialogDescription>
-          )}
+          <DialogDescription className={description ? '' : 'sr-only'}>
+            {description || title}
+          </DialogDescription>
         </DialogHeader>
         {content}
       </DialogContent>
