@@ -44,14 +44,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
+  const withTimeout = async <T,>(promise: Promise<T>, ms = 10000): Promise<T> => {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        const id = window.setTimeout(() => reject(new Error('timeout')), ms);
+        // Prevent TS unused warning in some builds
+        void id;
+      }),
+    ]);
+  };
+
   const fetchUserData = async (userId: string) => {
     try {
       // Fetch profile, role, and platform owner status in parallel
-      const [profileResult, roleResult, platformOwnerResult] = await Promise.all([
-        supabase.from('profiles').select('*').eq('user_id', userId).single(),
-        supabase.from('user_roles').select('role').eq('user_id', userId).maybeSingle(),
-        supabase.from('platform_owners').select('id').eq('user_id', userId).maybeSingle(),
-      ]);
+      const [profileResult, roleResult, platformOwnerResult] = await withTimeout(
+        Promise.all([
+          supabase.from('profiles').select('*').eq('user_id', userId).single(),
+          supabase.from('user_roles').select('role').eq('user_id', userId).maybeSingle(),
+          supabase.from('platform_owners').select('id').eq('user_id', userId).maybeSingle(),
+        ]),
+        12000
+      );
+
+      // If any request errored (network/auth), don't wipe previously loaded state.
+      if (profileResult.error && profileResult.error.code !== 'PGRST116') throw profileResult.error;
+      if (roleResult.error) throw roleResult.error;
+      if (platformOwnerResult.error) throw platformOwnerResult.error;
 
       if (profileResult.data) {
         setProfile(profileResult.data);
@@ -60,14 +79,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (roleResult.data?.role) {
         setRole(roleResult.data.role as AppRole);
       } else {
+        // Only clear role when the request succeeded but no role exists.
         setRole(null);
       }
 
       setIsPlatformOwner(!!platformOwnerResult.data);
     } catch (error) {
+      // Keep last known profile/role to avoid UI falling into a permanent "Carregando..." state
       console.error('Error fetching user data:', error);
-      setRole(null);
-      setIsPlatformOwner(false);
     }
   };
 
@@ -78,12 +97,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
         if (!mounted) return;
-        
+
+        // If token refresh fails, the app can look "connected" but all data calls will stop working.
+        if (event === 'TOKEN_REFRESH_FAILED') {
+          setSession(null);
+          setUser(null);
+          setProfile(null);
+          setRole(null);
+          setIsPlatformOwner(false);
+          setLoading(false);
+
+          // Preserve tenant routing (query param or subdomain)
+          const search = window.location.search || '';
+          window.location.href = `/auth${search}`;
+          return;
+        }
+
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
-        
+
         if (currentSession?.user) {
-          // Defer Supabase calls with setTimeout to prevent deadlock
+          // Defer backend calls with setTimeout to prevent deadlock
           setTimeout(() => {
             if (mounted) {
               fetchUserData(currentSession.user.id);
@@ -93,7 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setProfile(null);
           setRole(null);
         }
-        
+
         setLoading(false);
       }
     );
@@ -117,6 +151,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       subscription.unsubscribe();
     };
   }, []);
+
+  // Refresh session/profile when the tab returns (common mobile case) or when connection comes back.
+  useEffect(() => {
+    if (!user) return;
+
+    let cancelled = false;
+
+    const refreshNow = async () => {
+      try {
+        const { data, error } = await supabase.auth.refreshSession();
+        if (cancelled) return;
+        if (!error && data.session?.user?.id) {
+          await fetchUserData(data.session.user.id);
+        }
+      } catch {
+        // Ignore here; TOKEN_REFRESH_FAILED will be handled by onAuthStateChange
+      }
+    };
+
+    const onFocus = () => {
+      void refreshNow();
+    };
+
+    const onVisibilityChange = () => {
+      if (!document.hidden) {
+        void refreshNow();
+      }
+    };
+
+    window.addEventListener('focus', onFocus);
+    window.addEventListener('online', onFocus);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener('focus', onFocus);
+      window.removeEventListener('online', onFocus);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [user?.id]);
 
   const signIn = async (email: string, password: string) => {
     try {

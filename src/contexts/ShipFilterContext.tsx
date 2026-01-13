@@ -53,6 +53,16 @@ export function ShipFilterProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
 
+    const withTimeout = async <T,>(promise: Promise<T>, ms = 10000): Promise<T> => {
+      return await Promise.race([
+        promise,
+        new Promise<T>((_, reject) => {
+          const id = window.setTimeout(() => reject(new Error('timeout')), ms);
+          void id;
+        }),
+      ]);
+    };
+
     const loadPermissions = async () => {
       if (!userId) {
         setRole(null);
@@ -64,15 +74,25 @@ export function ShipFilterProvider({ children }: { children: ReactNode }) {
       setPermissionsLoading(true);
 
       try {
-        const [roleRes, ownerRes] = await Promise.all([
-          supabase.from('user_roles').select('role').eq('user_id', userId).maybeSingle(),
-          supabase.from('platform_owners').select('id').eq('user_id', userId).maybeSingle(),
-        ]);
+        const [roleRes, ownerRes] = await withTimeout(
+          Promise.all([
+            supabase.from('user_roles').select('role').eq('user_id', userId).maybeSingle(),
+            supabase.from('platform_owners').select('id').eq('user_id', userId).maybeSingle(),
+          ]),
+          12000
+        );
 
         if (cancelled) return;
 
+        // If requests errored (network/auth), keep last known role/owner so UI doesn't "reset".
+        if (roleRes.error) throw roleRes.error;
+        if (ownerRes.error) throw ownerRes.error;
+
         setRole((roleRes.data?.role as AppRole) ?? null);
         setIsPlatformOwner(!!ownerRes.data);
+      } catch (e) {
+        // Keep previous role/isPlatformOwner when connection drops
+        if (!cancelled) console.error('Error loading permissions:', e);
       } finally {
         if (!cancelled) setPermissionsLoading(false);
       }
