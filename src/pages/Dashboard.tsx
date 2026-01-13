@@ -42,6 +42,7 @@ import { exportDashboardPDF } from '@/utils/exportDashboardPDF';
 import { useOrganizationBranding } from '@/hooks/useOrganizationBranding';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Dashboard() {
   const { t, i18n } = useTranslation();
@@ -130,14 +131,46 @@ export default function Dashboard() {
   }
 
   if (error || !stats) {
+    // Provide fallback text if translations aren't loaded
+    const errorMessage = t('errors.generic', { defaultValue: 'Algo deu errado. Tente novamente.' });
+    const tryAgainText = t('common.tryAgain', { defaultValue: 'Tentar novamente' });
+    
+    // Check if it's a session/auth error
+    const errorStr = error?.message?.toLowerCase() || '';
+    const isSessionError = errorStr.includes('jwt') || 
+                          errorStr.includes('session') || 
+                          errorStr.includes('expired') ||
+                          errorStr.includes('refresh');
+    
+    const handleRetry = async () => {
+      if (isSessionError) {
+        // Try to refresh the session first
+        const { error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError) {
+          // Session truly expired - redirect to login
+          window.location.href = '/auth';
+          return;
+        }
+      }
+      refetch();
+    };
+    
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-4">
-        <div className="p-4 bg-red-500/10 rounded-full">
-          <AlertTriangle className="h-8 w-8 text-red-500" />
+        <div className="p-4 bg-destructive/10 rounded-full">
+          <AlertTriangle className="h-8 w-8 text-destructive" />
         </div>
-        <p className="text-muted-foreground">{t('errors.generic')}</p>
-        <Button variant="outline" onClick={() => refetch()}>
-          {t('common.tryAgain')}
+        <p className="text-muted-foreground">
+          {isSessionError 
+            ? t('errors.sessionExpired', { defaultValue: 'Sua sessão expirou. Faça login novamente.' })
+            : errorMessage
+          }
+        </p>
+        <Button variant="outline" onClick={handleRetry}>
+          {isSessionError 
+            ? t('auth.login', { defaultValue: 'Fazer Login' })
+            : tryAgainText
+          }
         </Button>
       </div>
     );

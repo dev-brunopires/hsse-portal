@@ -11,6 +11,15 @@ export function useDashboardStats() {
   return useQuery({
     queryKey: ['dashboard-stats', selectedShipId],
     enabled: isReady, // Wait for ship filter to be initialized
+    retry: (failureCount, error) => {
+      // Don't retry on auth errors
+      const errorMessage = (error as Error)?.message?.toLowerCase() || '';
+      if (errorMessage.includes('jwt') || errorMessage.includes('session')) {
+        return false;
+      }
+      return failureCount < 3;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
     queryFn: async (): Promise<DashboardStats> => {
       const today = new Date();
       const thirtyDaysFromNow = addDays(today, 30);
