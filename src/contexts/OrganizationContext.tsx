@@ -91,21 +91,24 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
         setUserId(currentUserId);
 
         if (currentUserId) {
-          const controller = new AbortController();
-          const timeoutId = window.setTimeout(() => controller.abort(), 8000);
+          let timeoutId: number | undefined;
+          const timeoutPromise = new Promise((_, reject) => {
+            timeoutId = window.setTimeout(() => reject(new Error('timeout')), 8000);
+          });
 
           try {
-            const { data } = await supabase
-              .rpc('is_platform_owner', { _user_id: currentUserId })
-              .abortSignal(controller.signal);
+            const result = await Promise.race([
+              supabase.rpc('is_platform_owner', { _user_id: currentUserId }),
+              timeoutPromise.then(() => { throw new Error('timeout'); }),
+            ]) as any;
 
             if (mountedRef.current) {
-              setIsPlatformOwner(!!data);
+              setIsPlatformOwner(!!result?.data);
             }
           } catch (err) {
             telemetry.error('org_context_platform_owner_error', { error: String(err) });
           } finally {
-            window.clearTimeout(timeoutId);
+            if (timeoutId) window.clearTimeout(timeoutId);
           }
         } else {
           setIsPlatformOwner(false);
@@ -132,20 +135,24 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
 
       // Only fetch platform owner status if user changed
       if (currentUserId && currentUserId !== previousUserId) {
-        const controller = new AbortController();
-        const timeoutId = window.setTimeout(() => controller.abort(), 8000);
+        let timeoutId: number | undefined;
+        const timeoutPromise = new Promise((_, reject) => {
+          timeoutId = window.setTimeout(() => reject(new Error('timeout')), 8000);
+        });
 
         try {
-          const { data } = await supabase
-            .rpc('is_platform_owner', { _user_id: currentUserId })
-            .abortSignal(controller.signal);
+          const result = await Promise.race([
+            supabase.rpc('is_platform_owner', { _user_id: currentUserId }),
+            timeoutPromise.then(() => { throw new Error('timeout'); }),
+          ]) as any;
+
           if (mountedRef.current) {
-            setIsPlatformOwner(!!data);
+            setIsPlatformOwner(!!result?.data);
           }
         } catch (err) {
           telemetry.error('org_context_platform_owner_error', { error: String(err) });
         } finally {
-          window.clearTimeout(timeoutId);
+          if (timeoutId) window.clearTimeout(timeoutId);
         }
       } else if (!currentUserId) {
         setIsPlatformOwner(false);
@@ -200,41 +207,45 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
       if (!userId) return null;
 
       // Try to get user's organization membership (with timeout to avoid infinite loading)
-      const controller = new AbortController();
-      const timeoutId = window.setTimeout(() => controller.abort(), 10000);
+      let timeoutId: number | undefined;
+      const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = window.setTimeout(() => reject(new Error('timeout')), 10000);
+      });
 
       try {
-        const { data, error } = await supabase
-          .from('user_organizations')
-          .select(`
-            organization_id,
-            organizations:organization_id (
-              id,
-              name,
-              slug,
-              subdomain,
-              logo_url,
-              logo_white_url,
-              login_background_url,
-              is_active
-            )
-          `)
-          .eq('user_id', userId)
-          .maybeSingle()
-          .abortSignal(controller.signal);
+        const result = await Promise.race([
+          supabase
+            .from('user_organizations')
+            .select(`
+              organization_id,
+              organizations:organization_id (
+                id,
+                name,
+                slug,
+                subdomain,
+                logo_url,
+                logo_white_url,
+                login_background_url,
+                is_active
+              )
+            `)
+            .eq('user_id', userId)
+            .maybeSingle(),
+          timeoutPromise.then(() => { throw new Error('timeout'); }),
+        ]) as any;
 
         // Handle RLS errors gracefully - user might be platform owner without org membership
-        if (error) {
-          telemetry.error('org_user_org_fetch_error', { userId, error: error.message });
+        if (result?.error) {
+          telemetry.error('org_user_org_fetch_error', { userId, error: result.error.message });
           return null;
         }
 
-        return data?.organizations as Organization | null;
+        return result?.data?.organizations as Organization | null;
       } catch (e) {
         telemetry.warn('org_user_org_fetch_timeout', { userId, error: String(e) });
         return null;
       } finally {
-        window.clearTimeout(timeoutId);
+        if (timeoutId) window.clearTimeout(timeoutId);
       }
     },
     enabled: !!userId && !authLoading,
