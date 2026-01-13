@@ -63,6 +63,10 @@ const getInitialOnlineState = () => {
   }
 };
 
+// Module-level singleton guards to prevent duplicate caching across hook instances
+let globalCacheInProgress = false;
+let globalLastCacheCheck = 0;
+
 export function useOfflineSync() {
   const { t } = useTranslation();
   const [isOnline, setIsOnline] = useState(getInitialOnlineState);
@@ -72,8 +76,7 @@ export function useOfflineSync() {
   const [cacheStats, setCacheStats] = useState<offlineDB.StorageStats | null>(null);
   const queryClient = useQueryClient();
   const syncInProgressRef = useRef(false);
-  const cacheInProgressRef = useRef(false);
-  const lastCacheCheckRef = useRef<number>(0);
+  const mountedRef = useRef(true);
 
   // Load initial pending count
   useEffect(() => {
@@ -92,6 +95,7 @@ export function useOfflineSync() {
   const refreshStats = useCallback(async () => {
     try {
       const stats = await offlineDB.getStorageStats();
+      if (!mountedRef.current) return;
       setCacheStats(stats);
       setPendingCount(stats.pendingActionsCount);
     } catch (error) {
@@ -101,9 +105,9 @@ export function useOfflineSync() {
 
   // Pre-cache critical data for offline use with pagination for large datasets
   const preCacheData = useCallback(async () => {
-    if (!isOnline || cacheInProgressRef.current) return;
+    if (!isOnline || globalCacheInProgress) return;
     
-    cacheInProgressRef.current = true;
+    globalCacheInProgress = true;
 
     try {
       console.log('Starting offline data caching...');
@@ -229,7 +233,7 @@ export function useOfflineSync() {
       console.error('Error pre-caching data:', error);
       toast.error(t('offline.cacheError'));
     } finally {
-      cacheInProgressRef.current = false;
+      globalCacheInProgress = false;
     }
   }, [isOnline, t, refreshStats]);
 
@@ -237,10 +241,10 @@ export function useOfflineSync() {
   const checkAndRefreshCache = useCallback(async (force = false) => {
     // Throttle: skip if checked recently (unless forced)
     const now = Date.now();
-    if (!force && now - lastCacheCheckRef.current < MIN_CACHE_CHECK_INTERVAL) {
+    if (!force && now - globalLastCacheCheck < MIN_CACHE_CHECK_INTERVAL) {
       return;
     }
-    lastCacheCheckRef.current = now;
+    globalLastCacheCheck = now;
 
     // Skip if already checked this session (for initial mount)
     const sessionChecked = sessionStorage.getItem(SESSION_CACHE_KEY);
@@ -584,12 +588,13 @@ export function useOfflineSync() {
     return () => clearInterval(retryInterval);
   }, [isOnline, isSyncing, syncPendingInspections]);
 
-  // Initial cache check on mount
+  // Initial stats refresh on mount + cleanup
   useEffect(() => {
-    if (isOnline) {
-      checkAndRefreshCache();
-    }
+    mountedRef.current = true;
     refreshStats();
+    return () => {
+      mountedRef.current = false;
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Add a pending action
