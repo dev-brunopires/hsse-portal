@@ -61,7 +61,6 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
   const [scannerState, setScannerState] = useState<ScannerState>('initializing');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [containerId, setContainerId] = useState(() => `qr-reader-${Date.now()}`);
-  const [scanProgress, setScanProgress] = useState(0);
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
   const [isSwitchingCamera, setIsSwitchingCamera] = useState(false);
   const [permissionChecked, setPermissionChecked] = useState(false);
@@ -69,15 +68,8 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const isMountedRef = useRef(true);
   const isCleaningUpRef = useRef(false);
-  const progressIntervalRef = useRef<number | null>(null);
 
   const cleanupScanner = useCallback(async () => {
-    // Clear progress interval first
-    if (progressIntervalRef.current) {
-      clearInterval(progressIntervalRef.current);
-      progressIntervalRef.current = null;
-    }
-
     // Prevent multiple simultaneous cleanups
     if (isCleaningUpRef.current) return;
     isCleaningUpRef.current = true;
@@ -109,7 +101,6 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
 
   const handleScanSuccess = useCallback((decodedText: string) => {
     setScannerState('success');
-    setScanProgress(100);
     
     // Brief success animation before processing
     setTimeout(() => {
@@ -191,9 +182,10 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       await scannerRef.current.start(
         { facingMode: cameraFacingMode },
         {
-          fps: 20,
+          fps: 10, // Reduced from 20 to 10 for better mobile performance
           qrbox: { width: 200, height: 200 },
           aspectRatio: 1.0,
+          disableFlip: false,
         },
         (decodedText) => {
           handleScanSuccess(decodedText);
@@ -209,16 +201,8 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
 
       if (isMountedRef.current) {
         setScannerState('scanning');
-        setScanProgress(0);
         setIsSwitchingCamera(false);
-        
-        // Animate scanning progress for visual feedback
-        progressIntervalRef.current = window.setInterval(() => {
-          setScanProgress(prev => {
-            if (prev >= 95) return 5;
-            return prev + 5;
-          });
-        }, 200);
+        // Removed progress interval - using CSS animation instead
       }
     } catch (err: unknown) {
       if (isMountedRef.current) {
@@ -266,7 +250,6 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       isMountedRef.current = true;
       setErrorMessage(null);
       setScannerState('initializing');
-      setScanProgress(0);
       setFacingMode('environment');
       setIsSwitchingCamera(false);
       setContainerId(`qr-reader-${Date.now()}`);
@@ -467,23 +450,22 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
             {/* Scanning frame overlay - only show when scanning */}
             {scannerState === 'scanning' && !isSwitchingCamera && (
               <div className="absolute inset-0 pointer-events-none z-10">
-                {/* Corner brackets */}
+                {/* Corner brackets - static, no animation */}
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="relative w-56 h-56">
                     {/* Top-left corner */}
-                    <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-primary rounded-tl-lg animate-pulse" />
+                    <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-primary rounded-tl-lg" />
                     {/* Top-right corner */}
-                    <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-primary rounded-tr-lg animate-pulse" />
+                    <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-primary rounded-tr-lg" />
                     {/* Bottom-left corner */}
-                    <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-primary rounded-bl-lg animate-pulse" />
+                    <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-primary rounded-bl-lg" />
                     {/* Bottom-right corner */}
-                    <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-primary rounded-br-lg animate-pulse" />
+                    <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-primary rounded-br-lg" />
                     
-                    {/* Scanning line animation */}
+                    {/* Scanning line - CSS animation only, no JS state updates */}
                     <div 
-                      className="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent transition-all duration-200"
+                      className="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent animate-scan-line"
                       style={{ 
-                        top: `${scanProgress}%`,
                         opacity: 0.8,
                         boxShadow: '0 0 8px hsl(var(--primary))'
                       }}
@@ -571,14 +553,14 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
             )}
           </div>
 
-          {/* Status indicator bar */}
+          {/* Status indicator bar - simplified, fewer animations */}
           <div className={cn(
-            "flex items-center gap-3 p-3 rounded-lg transition-all duration-300",
+            "flex items-center gap-3 p-3 rounded-lg transition-colors duration-300",
             stateConfig.bgColor
           )}>
             <div className={cn(
-              "p-2 rounded-full transition-colors duration-300",
-              scannerState === 'scanning' && "bg-primary/20 animate-pulse",
+              "p-2 rounded-full",
+              scannerState === 'scanning' && "bg-primary/20",
               scannerState === 'success' && "bg-green-500/20",
               scannerState === 'error' && "bg-destructive/20",
               scannerState === 'permission-denied' && "bg-amber-500/20",
@@ -599,11 +581,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
               </p>
             </div>
             {scannerState === 'scanning' && !isSwitchingCamera && (
-              <div className="flex gap-1">
-                <span className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0ms' }} />
-                <span className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '150ms' }} />
-                <span className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '300ms' }} />
-              </div>
+              <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
             )}
           </div>
         </div>
