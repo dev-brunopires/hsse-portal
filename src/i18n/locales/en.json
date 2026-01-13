@@ -1245,7 +1245,9 @@
     "expiredCertificates": "Expired Certificates",
     "expiredCertificatesMessage": "{{count}} certificate(s) have expired and require renewal.",
     "expiringCertificates": "Certificates Expiring Soon",
-    "expiringCertificatesMessage": "{{count}} certificate(s) expire within the next 30 days."
+    "expiringCertificatesMessage": "{{count}} certificate(s) expire within the next 30 days.",
+    "sessionUnstable": "Unstable session — reconnecting...",
+    "reconnect": "Reconnect"
   },
   "authPage": {
     "equipmentManagement": "Equipment Management System",

@@ -1245,7 +1245,9 @@
     "expiredCertificates": "Certificados Vencidos",
     "expiredCertificatesMessage": "{{count}} certificado(s) vencido(s) requerem renovação.",
     "expiringCertificates": "Certificados a Vencer",
-    "expiringCertificatesMessage": "{{count}} certificado(s) vencem nos próximos 30 dias."
+    "expiringCertificatesMessage": "{{count}} certificado(s) vencem nos próximos 30 dias.",
+    "sessionUnstable": "Sessão instável — reconectando...",
+    "reconnect": "Reconectar"
   },
   "authPage": {
     "equipmentManagement": "Sistema de Gestão de Equipamentos",

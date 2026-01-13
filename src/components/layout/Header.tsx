@@ -72,7 +72,8 @@ interface HeaderProps {
 
 export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
   const { t, i18n } = useTranslation();
-  const { user, profile, role, signOut, isPlatformOwner } = useAuth();
+  const { user, profile, role, signOut, isPlatformOwner, sessionUnstable, forceRefreshSession } = useAuth();
+  const [isReconnecting, setIsReconnecting] = useState(false);
   const { selectedShipId, setSelectedShipId, isFilterEnabled } = useShipFilter();
   const { language, setLanguage } = useLanguage();
   const { resolvedTheme, setTheme } = useTheme();
@@ -769,6 +770,27 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {/* Session Unstable Banner */}
+      {sessionUnstable && (
+        <div className="absolute left-0 right-0 top-full z-50 bg-amber-500/90 dark:bg-amber-600/90 text-white px-4 py-2 flex items-center justify-center gap-3 text-sm shadow-md animate-in slide-in-from-top-2 duration-200">
+          <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+          <span className="font-medium">{t('header.sessionUnstable', { defaultValue: 'Sessão instável — reconectando...' })}</span>
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={isReconnecting}
+            onClick={async () => {
+              setIsReconnecting(true);
+              await forceRefreshSession();
+              setIsReconnecting(false);
+            }}
+            className="h-7 px-3 bg-white/20 hover:bg-white/30 text-white border-0"
+          >
+            {isReconnecting ? t('common.loading', { defaultValue: 'Carregando...' }) : t('header.reconnect', { defaultValue: 'Reconectar' })}
+          </Button>
+        </div>
+      )}
     </header>
   );
 }
