@@ -52,7 +52,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           onMenuClick={() => setMobileMenuOpen(true)} 
         />
 
-        <main className="flex-1 overflow-auto p-4 lg:p-6 pb-24 lg:pb-6">
+        <main className="flex-1 overflow-auto p-4 lg:p-6 pwa-main-content lg:pb-6">
           {children}
         </main>
       </div>
