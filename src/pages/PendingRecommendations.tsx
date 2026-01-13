@@ -20,6 +20,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { StatCard } from '@/components/ui/stat-card';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -313,106 +314,58 @@ export default function PendingRecommendations() {
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
-        <Card>
-          <CardHeader className="p-3 md:p-4 pb-1 md:pb-2">
-            <CardTitle className="flex items-center gap-1 md:gap-2 text-xs md:text-base">
-              <AlertTriangle className="h-4 w-4 md:h-5 md:w-5 text-status-danger" />
-              <span className="truncate">{t('pendingRecommendations.total')}</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-3 md:p-4 pt-1 md:pt-2">
-            {isLoading ? (
-              <Skeleton className="h-7 md:h-9 w-12 md:w-16" />
-            ) : (
-              <p className="text-2xl md:text-3xl font-bold">{stats.total}</p>
-            )}
-          </CardContent>
-        </Card>
+        <StatCard
+          title={t('pendingRecommendations.total')}
+          value={stats.total}
+          icon={AlertTriangle}
+          variant="danger"
+          isLoading={isLoading}
+        />
 
-        <Card className="border-red-500/50 bg-red-500/5">
-          <CardHeader className="p-3 md:p-4 pb-1 md:pb-2">
-            <CardTitle className="flex items-center gap-1 md:gap-2 text-xs md:text-base">
-              <ShieldAlert className="h-4 w-4 md:h-5 md:w-5 text-red-500" />
-              <span className="truncate">{t('pendingRecommendations.rejected')}</span>
-            </CardTitle>
-            <CardDescription className="text-xs hidden sm:block">{t('pendingRecommendations.automatic')}</CardDescription>
-          </CardHeader>
-          <CardContent className="p-3 md:p-4 pt-1 md:pt-2">
-            {isLoading ? (
-              <Skeleton className="h-7 md:h-9 w-12 md:w-16" />
-            ) : (
-              <p className="text-2xl md:text-3xl font-bold text-red-500">{stats.autoRejected}</p>
-            )}
-          </CardContent>
-        </Card>
+        <StatCard
+          title={t('pendingRecommendations.rejected')}
+          value={stats.autoRejected}
+          description={t('pendingRecommendations.automatic')}
+          icon={ShieldAlert}
+          variant="danger"
+          isLoading={isLoading}
+        />
 
-        <Card className="border-primary/30">
-          <CardHeader className="p-3 md:p-4 pb-1 md:pb-2">
-            <CardTitle className="flex items-center gap-1 md:gap-2 text-xs md:text-base">
-              <MessageSquare className="h-4 w-4 md:h-5 md:w-5 text-primary" />
-              <span className="truncate">{t('pendingRecommendations.recommendations')}</span>
-            </CardTitle>
-            <CardDescription className="text-xs hidden sm:block">{t('pendingRecommendations.unresolved')}</CardDescription>
-          </CardHeader>
-          <CardContent className="p-3 md:p-4 pt-1 md:pt-2">
-            {isLoading ? (
-              <Skeleton className="h-7 md:h-9 w-12 md:w-16" />
-            ) : (
-              <p className="text-2xl md:text-3xl font-bold text-primary">{stats.unresolvedRecommendations}</p>
-            )}
-          </CardContent>
-        </Card>
+        <StatCard
+          title={t('pendingRecommendations.recommendations')}
+          value={stats.unresolvedRecommendations}
+          description={t('pendingRecommendations.unresolved')}
+          icon={MessageSquare}
+          variant="info"
+          isLoading={isLoading}
+        />
 
-        <Card className="border-status-danger/30">
-          <CardHeader className="p-3 md:p-4 pb-1 md:pb-2">
-            <CardTitle className="flex items-center gap-1 md:gap-2 text-xs md:text-base">
-              <FileText className="h-4 w-4 md:h-5 md:w-5 text-status-danger" />
-              <span className="truncate">{t('pendingRecommendations.certificates')}</span>
-            </CardTitle>
-            <CardDescription className="text-xs hidden sm:block">{t('pendingRecommendations.expired')}</CardDescription>
-          </CardHeader>
-          <CardContent className="p-3 md:p-4 pt-1 md:pt-2">
-            {isLoading ? (
-              <Skeleton className="h-7 md:h-9 w-12 md:w-16" />
-            ) : (
-              <p className="text-2xl md:text-3xl font-bold text-status-danger">{stats.expiredCertificates}</p>
-            )}
-          </CardContent>
-        </Card>
+        <StatCard
+          title={t('pendingRecommendations.certificates')}
+          value={stats.expiredCertificates}
+          description={t('pendingRecommendations.expired')}
+          icon={FileText}
+          variant="danger"
+          isLoading={isLoading}
+        />
 
-        <Card className="border-status-warning/30">
-          <CardHeader className="p-3 md:p-4 pb-1 md:pb-2">
-            <CardTitle className="flex items-center gap-1 md:gap-2 text-xs md:text-base">
-              <Clock className="h-4 w-4 md:h-5 md:w-5 text-status-warning" />
-              <span className="truncate">{t('pendingRecommendations.inspectionsCard')}</span>
-            </CardTitle>
-            <CardDescription className="text-xs hidden sm:block">{t('pendingRecommendations.overdue')}</CardDescription>
-          </CardHeader>
-          <CardContent className="p-3 md:p-4 pt-1 md:pt-2">
-            {isLoading ? (
-              <Skeleton className="h-7 md:h-9 w-12 md:w-16" />
-            ) : (
-              <p className="text-2xl md:text-3xl font-bold text-status-warning">{stats.overdueInspections}</p>
-            )}
-          </CardContent>
-        </Card>
+        <StatCard
+          title={t('pendingRecommendations.inspectionsCard')}
+          value={stats.overdueInspections}
+          description={t('pendingRecommendations.overdue')}
+          icon={Clock}
+          variant="warning"
+          isLoading={isLoading}
+        />
 
-        <Card className="border-destructive/30">
-          <CardHeader className="p-3 md:p-4 pb-1 md:pb-2">
-            <CardTitle className="flex items-center gap-1 md:gap-2 text-xs md:text-base">
-              <X className="h-4 w-4 md:h-5 md:w-5 text-destructive" />
-              <span className="truncate">{t('pendingRecommendations.criticalStatus')}</span>
-            </CardTitle>
-            <CardDescription className="text-xs hidden sm:block">{t('pendingRecommendations.rejectedExpired')}</CardDescription>
-          </CardHeader>
-          <CardContent className="p-3 md:p-4 pt-1 md:pt-2">
-            {isLoading ? (
-              <Skeleton className="h-7 md:h-9 w-12 md:w-16" />
-            ) : (
-              <p className="text-2xl md:text-3xl font-bold text-destructive">{stats.criticalStatus}</p>
-            )}
-          </CardContent>
-        </Card>
+        <StatCard
+          title={t('pendingRecommendations.criticalStatus')}
+          value={stats.criticalStatus}
+          description={t('pendingRecommendations.rejectedExpired')}
+          icon={X}
+          variant="danger"
+          isLoading={isLoading}
+        />
       </div>
 
       {/* Filters and Table */}
