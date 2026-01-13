@@ -29,6 +29,7 @@ const OrganizationContext = createContext<OrganizationContextType | undefined>(u
 
 // Helper to extract organization subdomain.
 // In preview/staging environments we use the `?org=` query param.
+// In production with real subdomains (e.g., sbmoffshore.opensafebrasil.com), extract from hostname.
 const getSubdomainFromHostname = (search: string): string | null => {
   if (typeof window === 'undefined') return null;
 
@@ -40,7 +41,7 @@ const getSubdomainFromHostname = (search: string): string | null => {
     return params.get('org') || null;
   }
 
-  // For preview/staging domains
+  // For preview/staging domains - always use query param
   if (
     hostname.endsWith('.lovable.app') ||
     hostname.endsWith('.vercel.app') ||
@@ -50,14 +51,28 @@ const getSubdomainFromHostname = (search: string): string | null => {
   }
 
   // For production domain (opensafebrasil.com)
+  // Check if it's a subdomain like sbmoffshore.opensafebrasil.com
   if (hostname.endsWith('opensafebrasil.com')) {
+    const parts = hostname.split('.');
+    // If we have 3+ parts (e.g., sbmoffshore.opensafebrasil.com), extract the subdomain
+    if (parts.length >= 3) {
+      const subdomain = parts[0];
+      // Ignore 'www' as it's not a real org subdomain
+      if (subdomain && subdomain !== 'www') {
+        return subdomain;
+      }
+    }
+    // Fall back to query param for opensafebrasil.com or www.opensafebrasil.com
     return params.get('org') || null;
   }
 
-  // For production domains like sbmoffshore.safeship.app
+  // For other production domains like sbmoffshore.safeship.app
   const parts = hostname.split('.');
   if (parts.length >= 3) {
-    return parts[0] || null;
+    const subdomain = parts[0];
+    if (subdomain && subdomain !== 'www') {
+      return subdomain;
+    }
   }
 
   // Single domain or www - try to get from query param
