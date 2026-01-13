@@ -150,7 +150,29 @@
     "ships": "Embarcações",
     "pendingRecommendations": "Recomendações Pendentes",
     "collapse": "Recolher",
-    "expand": "Expandir"
+    "expand": "Expandir",
+    "healthCheck": "Health Check",
+    "platformAdmin": "Admin Plataforma"
+  },
+  "healthCheck": {
+    "title": "Health Check do Sistema",
+    "subtitle": "Verificação automatizada de todos os componentes",
+    "runAll": "Executar Verificação",
+    "running": "Verificando...",
+    "export": "Exportar",
+    "checksOk": "verificações OK",
+    "notCheckedYet": "Ainda não verificado",
+    "history": "Histórico de Verificações",
+    "lastCheck": "Última verificação",
+    "neverChecked": "Nenhuma verificação realizada",
+    "completed": "Verificação concluída",
+    "status": {
+      "ok": "Operacional",
+      "warning": "Degradado",
+      "error": "Com Problemas",
+      "pending": "Pendente",
+      "running": "Verificando"
+    }
   },
   "certificates": {
     "title": "Certificados",
