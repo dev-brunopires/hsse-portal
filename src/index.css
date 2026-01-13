@@ -349,6 +349,49 @@
     padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
   }
 
+  /* PWA standalone mode - fixed safe area for iPhone home indicator */
+  @media all and (display-mode: standalone) {
+    .pwa-safe-bottom {
+      height: max(env(safe-area-inset-bottom, 0px), 20px);
+    }
+
+    .pwa-bottom-nav {
+      padding-bottom: 0;
+    }
+
+    .pwa-main-content {
+      padding-bottom: calc(5rem + max(env(safe-area-inset-bottom, 0px), 20px));
+    }
+  }
+
+  /* Fallback for non-PWA mode */
+  @media all and (display-mode: browser) {
+    .pwa-safe-bottom {
+      height: env(safe-area-inset-bottom, 0px);
+    }
+
+    .pwa-main-content {
+      padding-bottom: 6rem;
+    }
+  }
+
+  /* iOS Safari with home indicator detection */
+  @supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .pwa-safe-bottom {
+      height: max(env(safe-area-inset-bottom, 0px), 0px);
+    }
+
+    @media all and (display-mode: standalone) {
+      .pwa-safe-bottom {
+        height: max(env(safe-area-inset-bottom, 0px), 20px);
+      }
+
+      .pwa-main-content {
+        padding-bottom: calc(5rem + max(env(safe-area-inset-bottom, 0px), 20px));
+      }
+    }
+  }
+
   /* Touch-friendly sizing */
   .touch-manipulation {
     touch-action: manipulation;

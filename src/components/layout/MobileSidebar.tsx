@@ -65,9 +65,9 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent 
         side="left" 
-        className="w-72 p-0 bg-sidebar border-sidebar-border"
+        className="w-72 p-0 bg-sidebar border-sidebar-border flex flex-col h-full"
       >
-        <SheetHeader className="h-16 flex flex-row items-center justify-between border-b border-sidebar-border px-4">
+        <SheetHeader className="h-16 flex flex-row items-center justify-between border-b border-sidebar-border px-4 pt-safe shrink-0">
           <SystemLogo variant="white" />
         </SheetHeader>
 
@@ -86,7 +86,7 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
 
         {/* Admin Section - Only admin-specific items */}
         {(isAdmin || isPlatformOwner) && (
-          <div className="border-t border-sidebar-border p-3 space-y-1">
+          <div className="border-t border-sidebar-border p-3 space-y-1 shrink-0 pb-safe">
             {isAdmin && (
               <>
                 <MobileNavItem to="/users" icon={<Users size={20} />} label={t('navigation.users')} onClick={handleNavClick} />

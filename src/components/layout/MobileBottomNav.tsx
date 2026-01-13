@@ -51,12 +51,12 @@ export function MobileBottomNav() {
 
   return (
     <>
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 pwa-bottom-nav">
         {/* Background with curved notch */}
         <div className="relative">
           {/* Main bar background */}
           <div className="bg-card border-t border-border shadow-lg">
-            <div className="flex items-center justify-around h-16 px-2 pb-safe">
+            <div className="flex items-center justify-around h-16 px-2">
               {/* Left items */}
               {leftNavItems.map((item) => (
                 <button
@@ -114,8 +114,8 @@ export function MobileBottomNav() {
           </button>
         </div>
 
-        {/* Safe area padding for devices with home indicator */}
-        <div className="bg-card h-safe" />
+        {/* Safe area padding for devices with home indicator - fixed height for PWA */}
+        <div className="bg-card pwa-safe-bottom" />
       </nav>
 
       <QRCodeScannerDialog
