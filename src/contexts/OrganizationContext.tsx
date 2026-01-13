@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useMemo, useState, useEffect } from 'react';
+import React, { createContext, useContext, useMemo, useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { telemetry } from '@/utils/clientTelemetry';
 
 export interface Organization {
   id: string;
@@ -65,48 +66,92 @@ const getSubdomainFromHostname = (search: string): string | null => {
 
 export function OrganizationProvider({ children }: { children: React.ReactNode }) {
   const location = useLocation();
+  const queryClient = useQueryClient();
   
-  // Use local state for auth instead of useAuth to avoid circular dependency
+  // Use local state for auth - single source from supabase client cache
   const [userId, setUserId] = useState<string | null>(null);
   const [isPlatformOwner, setIsPlatformOwner] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
+  const mountedRef = useRef(true);
+  const initDoneRef = useRef(false);
 
-  // Listen to auth state changes
+  // Listen to auth state changes - but avoid redundant getSession calls
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      const currentUserId = session?.user?.id || null;
-      setUserId(currentUserId);
+    mountedRef.current = true;
+    
+    const initAuth = async () => {
+      // Skip if already initialized (avoid race with onAuthStateChange)
+      if (initDoneRef.current) return;
+      
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!mountedRef.current) return;
+        
+        const currentUserId = session?.user?.id || null;
+        setUserId(currentUserId);
 
-      if (currentUserId) {
-        const { data } = await supabase.rpc('is_platform_owner', { _user_id: currentUserId });
-        setIsPlatformOwner(!!data);
-      } else {
-        setIsPlatformOwner(false);
+        if (currentUserId) {
+          const { data } = await supabase.rpc('is_platform_owner', { _user_id: currentUserId });
+          if (mountedRef.current) {
+            setIsPlatformOwner(!!data);
+          }
+        } else {
+          setIsPlatformOwner(false);
+        }
+      } catch (err) {
+        telemetry.error('org_context_init_error', { error: String(err) });
+      } finally {
+        if (mountedRef.current) {
+          setAuthLoading(false);
+          initDoneRef.current = true;
+        }
       }
-      setAuthLoading(false);
     };
 
-    checkAuth();
+    initAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mountedRef.current) return;
+      
       const currentUserId = session?.user?.id || null;
+      const previousUserId = userId;
+      
       setUserId(currentUserId);
 
-      if (currentUserId) {
-        const { data } = await supabase.rpc('is_platform_owner', { _user_id: currentUserId });
-        setIsPlatformOwner(!!data);
-      } else {
+      // Only fetch platform owner status if user changed
+      if (currentUserId && currentUserId !== previousUserId) {
+        try {
+          const { data } = await supabase.rpc('is_platform_owner', { _user_id: currentUserId });
+          if (mountedRef.current) {
+            setIsPlatformOwner(!!data);
+          }
+        } catch (err) {
+          telemetry.error('org_context_platform_owner_error', { error: String(err) });
+        }
+      } else if (!currentUserId) {
         setIsPlatformOwner(false);
       }
-      setAuthLoading(false);
+      
+      if (mountedRef.current) {
+        setAuthLoading(false);
+        initDoneRef.current = true;
+      }
+      
+      // Clear user org cache on sign out
+      if (event === 'SIGNED_OUT') {
+        queryClient.removeQueries({ queryKey: ['user-organization'] });
+      }
     });
 
-    return () => subscription.unsubscribe();
-  }, []);
+    return () => {
+      mountedRef.current = false;
+      subscription.unsubscribe();
+    };
+  }, []); // Empty deps - only run once
 
   // Recompute subdomain whenever URL query changes (SPA navigation)
   const subdomain = useMemo(() => getSubdomainFromHostname(location.search), [location.search]);
+  
   // Get org from subdomain (for login page) - uses SECURITY DEFINER function to bypass RLS
   const { data: orgFromSubdomain, isLoading: isLoadingSubdomain } = useQuery({
     queryKey: ['organization', 'subdomain', subdomain],
@@ -117,12 +162,16 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
         .rpc('get_org_branding_by_subdomain', { _subdomain: subdomain })
         .maybeSingle();
       
-      if (error) throw error;
+      if (error) {
+        telemetry.error('org_subdomain_fetch_error', { subdomain, error: error.message });
+        throw error;
+      }
       return data as Organization | null;
     },
     enabled: !!subdomain,
     staleTime: 1000 * 60 * 30, // 30 minutes - org data rarely changes
     gcTime: 1000 * 60 * 60, // 1 hour
+    retry: 1,
   });
 
   // Get org from user's membership - only when user is available
@@ -152,7 +201,7 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
       
       // Handle RLS errors gracefully - user might be platform owner without org membership
       if (error) {
-        console.warn('Error fetching user organization:', error.message);
+        telemetry.error('org_user_org_fetch_error', { userId, error: error.message });
         return null;
       }
       
