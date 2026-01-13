@@ -12,7 +12,7 @@ import { Camera, CameraOff, Loader2, QrCode, CheckCircle2, AlertCircle, Scan, Sw
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
-import { useDebounce } from '@/hooks/useDebounce';
+
 
 interface QRCodeScannerDialogProps {
   open: boolean;
@@ -69,6 +69,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const isMountedRef = useRef(true);
   const isCleaningUpRef = useRef(false);
+  const isStartingRef = useRef(false);
   const lastScannedRef = useRef<string | null>(null);
   const lastScanTimeRef = useRef<number>(0);
 
@@ -76,6 +77,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
     // Prevent multiple simultaneous cleanups
     if (isCleaningUpRef.current) return;
     isCleaningUpRef.current = true;
+    isStartingRef.current = false;
 
     const scanner = scannerRef.current;
     if (scanner) {
@@ -298,13 +300,20 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
     };
   }, [open, cleanupScanner, t]);
 
-  // Start scanning when the containerId is rendered and permission is not denied
+  // Start scanning only once per open (prevents flicker/restart loops on mobile)
   useEffect(() => {
     if (!open || isSwitchingCamera || !permissionChecked) return;
-    if (scannerState === 'permission-denied') return;
+    if (scannerState !== 'initializing') return;
+    if (isCleaningUpRef.current || isStartingRef.current || scannerRef.current) return;
 
     const timeout = window.setTimeout(() => {
-      if (isMountedRef.current) startScanning();
+      if (!isMountedRef.current) return;
+      if (isCleaningUpRef.current || isStartingRef.current || scannerRef.current) return;
+
+      isStartingRef.current = true;
+      Promise.resolve(startScanning()).finally(() => {
+        isStartingRef.current = false;
+      });
     }, 50);
 
     return () => window.clearTimeout(timeout);
@@ -333,13 +342,18 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
     };
   }, [cleanupScanner]);
 
-  const handleRetry = () => {
-    // Clear permission denied state from localStorage to allow re-prompting
+  const handleRetry = async () => {
+    // Clear permission state from localStorage to allow re-prompting
     localStorage.removeItem('camera_permission_state');
+
     setErrorMessage(null);
+    setIsSwitchingCamera(false);
+    setFacingMode('environment');
     setScannerState('initializing');
     setPermissionChecked(true);
-    startScanning();
+
+    await cleanupScanner();
+    setContainerId(`qr-reader-${Date.now()}`);
   };
 
   const getStateConfig = () => {
