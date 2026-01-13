@@ -54,9 +54,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const roleRef = useRef<AppRole | null>(null);
   const { toast } = useToast();
 
-  const fetchUserData = async (userId: string) => {
+  const fetchUserData = async (userId: string, force = false) => {
     // Prevent concurrent fetch storms (especially around token refresh)
-    if (fetchUserDataInFlightRef.current) return;
+    // Use force=true to bypass this check on initial load
+    if (fetchUserDataInFlightRef.current && !force) return;
 
     fetchUserDataInFlightRef.current = true;
 
@@ -145,10 +146,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Defer backend calls with setTimeout to prevent deadlock
             setTimeout(() => {
               if (mounted) {
-                // Always fetch if profile or role is missing (use refs to get latest values)
-                const shouldFetch = event === 'SIGNED_IN' || event === 'USER_UPDATED' || !profileRef.current || !roleRef.current;
+                // Always fetch on SIGNED_IN, otherwise fetch if profile or role is missing
+                const isInitialAuth = event === 'SIGNED_IN' || event === 'USER_UPDATED';
+                const shouldFetch = isInitialAuth || !profileRef.current || !roleRef.current;
                 if (shouldFetch) {
-                  fetchUserData(currentSession.user.id);
+                  // Use force=true on SIGNED_IN to ensure we get fresh data
+                  fetchUserData(currentSession.user.id, isInitialAuth);
                 }
               }
             }, 0);
@@ -172,8 +175,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(currentSession?.user ?? null);
       
       if (currentSession?.user) {
-        // Don't block loading on user data fetch - it may timeout
-        fetchUserData(currentSession.user.id).catch(() => {});
+        // Use force=true on initial session load to ensure data is fetched
+        fetchUserData(currentSession.user.id, true).catch(() => {});
       }
       
       // Always finish loading regardless of user data fetch result
