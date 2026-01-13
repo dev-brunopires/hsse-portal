@@ -4,6 +4,7 @@ import 'react-image-crop/dist/ReactCrop.css';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -154,6 +155,7 @@ export function AvatarCropDialog({
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{t('avatarCrop.title')}</DialogTitle>
+          <DialogDescription className="sr-only">{t('avatarCrop.title')}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">

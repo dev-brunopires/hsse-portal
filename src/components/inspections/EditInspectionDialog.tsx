@@ -7,6 +7,7 @@ import { useIsMobile, useIsTabletOrMobile } from '@/hooks/use-mobile';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -866,6 +867,7 @@ export function EditInspectionDialog({
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col bg-card border border-border" hideCloseButton>
         <DialogHeader className="pb-4 border-b border-border pr-0">
           <DialogTitle className="sr-only">{t('editInspection.title')}</DialogTitle>
+          <DialogDescription className="sr-only">{t('editInspection.title')}</DialogDescription>
           {headerContent}
         </DialogHeader>
         <div className="flex-1 overflow-hidden flex flex-col min-h-0">

@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -331,9 +332,9 @@ export function InspectionCalendar({ inspections, onInspectionClick }: Inspectio
                 {selectedDate && format(selectedDate, "dd MMMM yyyy", { locale: dateLocale })}
               </span>
             </DialogTitle>
-            <p className="text-sm text-muted-foreground">
+            <DialogDescription className="text-sm text-muted-foreground">
               {selectedDateInspections.length} {t('inspectionCalendar.inspectionsOnDay')}
-            </p>
+            </DialogDescription>
           </DialogHeader>
           <ScrollArea className="max-h-[60vh] pr-4">
             <div className="space-y-3 py-2">
