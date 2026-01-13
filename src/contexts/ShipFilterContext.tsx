@@ -83,15 +83,25 @@ export function ShipFilterProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
 
         // Only update if no errors - otherwise keep previous values
-        if (!roleRes.error) {
-          setRole((roleRes.data?.role as AppRole) ?? null);
+        if (!roleRes.error && roleRes.data?.role) {
+          setRole(roleRes.data.role as AppRole);
         }
         if (!ownerRes.error) {
           setIsPlatformOwner(!!ownerRes.data);
         }
+        
+        console.log('[ShipFilter] Permissions loaded:', { 
+          role: roleRes.data?.role, 
+          isPlatformOwner: !!ownerRes.data,
+          roleError: roleRes.error,
+          ownerError: ownerRes.error
+        });
       } catch (e) {
         // On any error, continue with current/default values
-        if (!cancelled) telemetry.warn('ship_filter_permissions_error', { message: String(e) });
+        if (!cancelled) {
+          console.warn('[ShipFilter] Error loading permissions:', e);
+          telemetry.warn('ship_filter_permissions_error', { message: String(e) });
+        }
       } finally {
         // Always finish loading to unblock the UI
         if (!cancelled) setPermissionsLoading(false);
