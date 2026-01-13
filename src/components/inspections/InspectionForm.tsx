@@ -283,8 +283,15 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
     setEquipmentSearchTerm('');
   };
 
-  const handleQRScan = (equipmentId: string) => {
-    const equip = equipment.find(e => e.id === equipmentId);
+  const handleQRScan = (codeOrId: string) => {
+    // Try to find by UUID first
+    let equip = equipment.find(e => e.id === codeOrId);
+    
+    // If not found, try by short_code (6 digits)
+    if (!equip && /^\d{6}$/.test(codeOrId)) {
+      equip = equipment.find(e => e.short_code === codeOrId);
+    }
+
     if (equip) {
       handleEquipmentSelect(equip);
       toast({

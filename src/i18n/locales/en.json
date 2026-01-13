@@ -1990,7 +1990,13 @@
     "switchingTo": "Switching to camera",
     "retry": "Try Again",
     "grantPermission": "Grant Permission",
-    "permissionInstructions": "Click the lock icon in the address bar and allow camera access."
+    "permissionInstructions": "Click the lock icon in the address bar and allow camera access.",
+    "enterManually": "Enter Code",
+    "manualInputTitle": "Manual Entry",
+    "manualInputDescription": "Enter the short code (6 digits) or equipment ID to find it.",
+    "manualInputPlaceholder": "E.g.: 123456 or UUID",
+    "searchEquipment": "Search",
+    "invalidManualCode": "Invalid code. Enter a 6-digit code or a valid UUID."
   },
   "statusBadge": {
     "autoRejected": "Automatically rejected due to expiration"

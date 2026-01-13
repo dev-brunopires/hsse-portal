@@ -1990,7 +1990,13 @@
     "switchingTo": "Alternando para câmera",
     "retry": "Tentar Novamente",
     "grantPermission": "Conceder Permissão",
-    "permissionInstructions": "Clique no ícone de cadeado na barra de endereços e permita o acesso à câmera."
+    "permissionInstructions": "Clique no ícone de cadeado na barra de endereços e permita o acesso à câmera.",
+    "enterManually": "Digitar Código",
+    "manualInputTitle": "Entrada Manual",
+    "manualInputDescription": "Digite o código curto (6 dígitos) ou o ID do equipamento para localizá-lo.",
+    "manualInputPlaceholder": "Ex: 123456 ou UUID",
+    "searchEquipment": "Buscar",
+    "invalidManualCode": "Código inválido. Digite um código de 6 dígitos ou um UUID válido."
   },
   "statusBadge": {
     "autoRejected": "Reprovado automaticamente devido a vencimento"
