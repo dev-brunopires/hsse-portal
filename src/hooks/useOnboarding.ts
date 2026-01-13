@@ -1,22 +1,60 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { driver, DriveStep } from 'driver.js';
 import 'driver.js/dist/driver.css';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 
 export function useOnboarding() {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const [userId, setUserId] = useState<string | null>(null);
   const [hasCompleted, setHasCompleted] = useState(true);
   const [isRunning, setIsRunning] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const userIdRef = useRef<string | null>(null);
+
+  // Get user ID directly from Supabase to avoid AuthContext dependency during init
+  useEffect(() => {
+    let mounted = true;
+
+    const initUser = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (mounted && session?.user?.id) {
+          setUserId(session.user.id);
+          userIdRef.current = session.user.id;
+        } else if (mounted) {
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Error getting session:', error);
+        if (mounted) setIsLoading(false);
+      }
+    };
+
+    initUser();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (mounted) {
+        const newUserId = session?.user?.id ?? null;
+        setUserId(newUserId);
+        userIdRef.current = newUserId;
+        if (!newUserId) {
+          setIsLoading(false);
+          setHasCompleted(true);
+        }
+      }
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   // Fetch onboarding status from database
   useEffect(() => {
     const fetchOnboardingStatus = async () => {
-      if (!user?.id) {
-        setIsLoading(false);
+      if (!userId) {
         return;
       }
 
@@ -24,7 +62,7 @@ export function useOnboarding() {
         const { data, error } = await supabase
           .from('profiles')
           .select('onboarding_completed')
-          .eq('user_id', user.id)
+          .eq('user_id', userId)
           .single();
 
         if (error) {
@@ -42,7 +80,7 @@ export function useOnboarding() {
     };
 
     fetchOnboardingStatus();
-  }, [user?.id]);
+  }, [userId]);
 
   const getSteps = useCallback((): DriveStep[] => [
     {
@@ -142,18 +180,19 @@ export function useOnboarding() {
     },
   ], [t]);
 
-  const markOnboardingComplete = async () => {
-    if (!user?.id) return;
+  const markOnboardingComplete = useCallback(async () => {
+    const currentUserId = userIdRef.current;
+    if (!currentUserId) return;
 
     try {
       await supabase
         .from('profiles')
         .update({ onboarding_completed: true })
-        .eq('user_id', user.id);
+        .eq('user_id', currentUserId);
     } catch (error) {
       console.error('Error marking onboarding complete:', error);
     }
-  };
+  }, []);
 
   const startTour = useCallback(() => {
     setIsRunning(true);
@@ -177,27 +216,28 @@ export function useOnboarding() {
     });
 
     driverObj.drive();
-  }, [user?.id, t, getSteps]);
+  }, [t, getSteps, markOnboardingComplete]);
 
   const resetTour = useCallback(async () => {
-    if (!user?.id) return;
+    const currentUserId = userIdRef.current;
+    if (!currentUserId) return;
 
     try {
       await supabase
         .from('profiles')
         .update({ onboarding_completed: false })
-        .eq('user_id', user.id);
+        .eq('user_id', currentUserId);
       
       setHasCompleted(false);
     } catch (error) {
       console.error('Error resetting tour:', error);
     }
-  }, [user?.id]);
+  }, []);
 
   const skipTour = useCallback(async () => {
     setHasCompleted(true);
     await markOnboardingComplete();
-  }, [user?.id]);
+  }, [markOnboardingComplete]);
 
   return {
     hasCompleted,
