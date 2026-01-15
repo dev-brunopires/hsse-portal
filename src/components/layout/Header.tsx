@@ -371,14 +371,14 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
           {resolvedTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
         </Button>
 
-        {/* Mobile Ship Selector - Only for Admin/Admin Master - Uses Drawer */}
+        {/* Mobile/Tablet Ship Selector - Only for Admin/Admin Master - Uses Drawer */}
         {isFilterEnabled && (
           <Drawer>
             <DrawerTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="lg:hidden text-muted-foreground hover:text-foreground relative"
+                className="md:hidden text-muted-foreground hover:text-foreground relative"
                 title={t('header.filterByUnit')}
               >
                 <Ship className="h-5 w-5" />
