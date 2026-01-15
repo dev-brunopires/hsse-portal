@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ResponsiveDialog, ResponsiveDialogBody } from '@/components/ui/responsive-dialog';
 import {
@@ -20,11 +20,15 @@ import {
   ArrowRight,
   Filter,
   AlertTriangle,
+  WifiOff,
+  RefreshCw,
 } from 'lucide-react';
 import { useEquipment, type EquipmentWithCategory } from '@/hooks/useEquipment';
 import { useCategories } from '@/hooks/useCategories';
 import { useLastInspection } from '@/hooks/useInspections';
+import { useOfflineSync, CachedEquipment, CachedCategory, CachedTemplate } from '@/hooks/useOfflineSync';
 import { InspectionFormDialog } from '@/components/equipment/InspectionFormDialog';
+import { OfflineInspectionDialog } from '@/components/offline/OfflineInspectionDialog';
 import { PreInspectionWarningDialog } from './PreInspectionWarningDialog';
 import { format } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
@@ -44,6 +48,9 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
   const isMobile = useIsMobile();
   const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
   
+  // Offline sync hook
+  const { isOnline, getOfflineData, isCacheAvailable } = useOfflineSync();
+  
   const statusLabels: Record<string, string> = {
     active: t('inspectionForm.statusLabels.active'),
     inactive: t('inspectionForm.statusLabels.inactive'),
@@ -58,18 +65,93 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
     rejected: 'bg-status-danger/10 text-status-danger border-status-danger/30',
   };
 
-  const { data: equipmentList = [], isLoading } = useEquipment();
-  const { data: categories = [] } = useCategories();
+  // Online data hooks
+  const { data: onlineEquipmentList = [], isLoading: isLoadingOnline } = useEquipment();
+  const { data: onlineCategories = [] } = useCategories();
+  
+  // Offline data state
+  const [offlineEquipment, setOfflineEquipment] = useState<CachedEquipment[]>([]);
+  const [offlineCategories, setOfflineCategories] = useState<CachedCategory[]>([]);
+  const [offlineTemplates, setOfflineTemplates] = useState<CachedTemplate[]>([]);
+  const [isLoadingOffline, setIsLoadingOffline] = useState(false);
+  const [cacheAvailable, setCacheAvailable] = useState(false);
+  
   const [selectedEquipment, setSelectedEquipment] = useState<EquipmentWithCategory | null>(null);
+  const [selectedOfflineEquipment, setSelectedOfflineEquipment] = useState<CachedEquipment | null>(null);
   const [pendingEquipment, setPendingEquipment] = useState<EquipmentWithCategory | null>(null);
   const [inspectionDialogOpen, setInspectionDialogOpen] = useState(false);
+  const [offlineInspectionDialogOpen, setOfflineInspectionDialogOpen] = useState(false);
   const [warningDialogOpen, setWarningDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [hasAutoSelected, setHasAutoSelected] = useState(false);
 
-  // Fetch last inspection for pending equipment to check for warnings
-  const { data: lastInspection } = useLastInspection(pendingEquipment?.id);
+  // Fetch last inspection for pending equipment to check for warnings (only when online)
+  const { data: lastInspection } = useLastInspection(isOnline ? pendingEquipment?.id : undefined);
+
+  // Load offline data when not online and dialog opens
+  useEffect(() => {
+    const loadOfflineData = async () => {
+      if (!isOnline && open) {
+        setIsLoadingOffline(true);
+        try {
+          const [available, data] = await Promise.all([
+            isCacheAvailable(),
+            getOfflineData(),
+          ]);
+          setCacheAvailable(available);
+          if (data) {
+            setOfflineEquipment(data.equipment || []);
+            setOfflineCategories(data.categories || []);
+            setOfflineTemplates(data.templates || []);
+          }
+        } catch (error) {
+          console.error('[NewInspectionDialog] Error loading offline data:', error);
+        } finally {
+          setIsLoadingOffline(false);
+        }
+      }
+    };
+    loadOfflineData();
+  }, [isOnline, open, getOfflineData, isCacheAvailable]);
+
+  // Determine which equipment list to use
+  const equipmentList = useMemo(() => {
+    if (isOnline) {
+      return onlineEquipmentList;
+    }
+    // Map offline equipment to match the structure of EquipmentWithCategory
+    return offlineEquipment.map(eq => ({
+      ...eq,
+      type: '',
+      unit: '',
+      manufacturer: null,
+      model: null,
+      manufacturing_date: null,
+      acquisition_date: null,
+      expiry_date: null,
+      certificate_expiry: null,
+      last_inspection: null,
+      next_inspection: null,
+      capacity: null,
+      observations: null,
+      created_at: '',
+      updated_at: '',
+      created_by: null,
+      short_code: (eq as any).short_code || null,
+      categories: offlineCategories.find(c => c.id === eq.category_id) 
+        ? { name: offlineCategories.find(c => c.id === eq.category_id)!.name }
+        : null,
+      ships: null,
+    })) as unknown as EquipmentWithCategory[];
+  }, [isOnline, onlineEquipmentList, offlineEquipment, offlineCategories]);
+
+  // Categories to use
+  const categories = useMemo(() => {
+    return isOnline ? onlineCategories : offlineCategories;
+  }, [isOnline, onlineCategories, offlineCategories]);
+
+  const isLoading = isOnline ? isLoadingOnline : isLoadingOffline;
 
   // Auto-select equipment when preSelectedEquipmentId is provided (from QR scan)
   useEffect(() => {
@@ -83,15 +165,25 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
       }
       
       if (equipment) {
-        console.log('[NewInspectionDialog] Auto-selecting equipment:', equipment.internal_code);
+        console.log('[NewInspectionDialog] Auto-selecting equipment:', equipment.internal_code, 'Online:', isOnline);
         setHasAutoSelected(true);
-        // Trigger the selection flow (which will check for warnings)
-        setPendingEquipment(equipment);
+        
+        if (isOnline) {
+          // Trigger the selection flow (which will check for warnings)
+          setPendingEquipment(equipment);
+        } else {
+          // Directly open offline inspection dialog
+          const offlineEq = offlineEquipment.find(e => e.id === equipment!.id);
+          if (offlineEq) {
+            setSelectedOfflineEquipment(offlineEq);
+            setOfflineInspectionDialogOpen(true);
+          }
+        }
       } else {
         console.log('[NewInspectionDialog] Equipment not found for ID:', preSelectedEquipmentId);
       }
     }
-  }, [open, preSelectedEquipmentId, equipmentList, hasAutoSelected]);
+  }, [open, preSelectedEquipmentId, equipmentList, hasAutoSelected, isOnline, offlineEquipment]);
 
   // Reset auto-selection flag when dialog closes
   useEffect(() => {
@@ -129,9 +221,9 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
     return !!(isCertificateExpired || isInspectionOverdue || isEquipmentExpired || isStatusCritical);
   };
 
-  // Effect to check if we need to show warning when last inspection data is loaded
+  // Effect to check if we need to show warning when last inspection data is loaded (only online)
   useEffect(() => {
-    if (pendingEquipment && lastInspection !== undefined) {
+    if (isOnline && pendingEquipment && lastInspection !== undefined) {
       const hasEquipmentWarnings = checkEquipmentWarnings(pendingEquipment);
       const hasRecommendations = lastInspection?.recommendations && lastInspection.recommendations.trim().length > 0;
       const lastInspectionHadIssues = lastInspection?.status === 'attention' || lastInspection?.status === 'non-compliant';
@@ -145,11 +237,20 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
         setPendingEquipment(null);
       }
     }
-  }, [pendingEquipment, lastInspection]);
+  }, [isOnline, pendingEquipment, lastInspection]);
 
   const handleSelectEquipment = (equipment: EquipmentWithCategory) => {
-    // Set pending equipment to trigger last inspection fetch
-    setPendingEquipment(equipment);
+    if (isOnline) {
+      // Set pending equipment to trigger last inspection fetch
+      setPendingEquipment(equipment);
+    } else {
+      // Directly open offline inspection dialog
+      const offlineEq = offlineEquipment.find(e => e.id === equipment.id);
+      if (offlineEq) {
+        setSelectedOfflineEquipment(offlineEq);
+        setOfflineInspectionDialogOpen(true);
+      }
+    }
   };
 
   const handleWarningProceed = () => {
@@ -174,10 +275,23 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
     onOpenChange(false);
   };
 
+  const handleOfflineInspectionSuccess = () => {
+    setSelectedOfflineEquipment(null);
+    setOfflineInspectionDialogOpen(false);
+    onOpenChange(false);
+  };
+
   const handleInspectionClose = (isOpen: boolean) => {
     setInspectionDialogOpen(isOpen);
     if (!isOpen) {
       setSelectedEquipment(null);
+    }
+  };
+
+  const handleOfflineInspectionClose = (isOpen: boolean) => {
+    setOfflineInspectionDialogOpen(isOpen);
+    if (!isOpen) {
+      setSelectedOfflineEquipment(null);
     }
   };
 
@@ -204,10 +318,34 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
     capacity: eq.capacity || undefined,
   });
 
+  // Show no cache message when offline and no cache available
+  if (!isOnline && !cacheAvailable && !isLoadingOffline) {
+    return (
+      <ResponsiveDialog
+        open={open}
+        onOpenChange={onOpenChange}
+        title={t('inspectionForm.newInspection')}
+        description={t('inspectionForm.selectEquipmentToInspect')}
+        titleIcon={<ClipboardCheck className="h-5 w-5 text-primary" />}
+        className="max-w-2xl"
+      >
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="p-4 rounded-full bg-status-warning/10 mb-4">
+            <WifiOff className="h-8 w-8 text-status-warning" />
+          </div>
+          <h3 className="font-semibold text-lg mb-2">{t('offline.noCache')}</h3>
+          <p className="text-muted-foreground max-w-sm">
+            {t('offline.noCacheDesc')}
+          </p>
+        </div>
+      </ResponsiveDialog>
+    );
+  }
+
   return (
     <>
       <ResponsiveDialog
-        open={open && !inspectionDialogOpen}
+        open={open && !inspectionDialogOpen && !offlineInspectionDialogOpen}
         onOpenChange={onOpenChange}
         title={t('inspectionForm.newInspection')}
         description={t('inspectionForm.selectEquipmentToInspect')}
@@ -215,6 +353,14 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
         className="max-w-2xl"
       >
         <div className="flex flex-col gap-3 pb-2">
+          {/* Offline indicator */}
+          {!isOnline && (
+            <div className="flex items-center gap-2 p-2 rounded-lg bg-status-warning/10 border border-status-warning/30 text-status-warning text-sm">
+              <WifiOff className="h-4 w-4 flex-shrink-0" />
+              <span>{t('offline.offlineMode')}</span>
+            </div>
+          )}
+          
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -244,7 +390,8 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
           <ScrollArea className={cn(isMobile ? 'h-[50vh]' : 'h-[400px]')}>
             <div className="space-y-2">
               {isLoading ? (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                  <RefreshCw className="h-6 w-6 animate-spin mb-2" />
                   {t('inspectionForm.loadingEquipment')}
                 </div>
               ) : filteredEquipment.length === 0 ? (
@@ -253,7 +400,7 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
                 </div>
               ) : (
                 filteredEquipment.map((equipment) => {
-                  const hasWarnings = checkEquipmentWarnings(equipment);
+                  const hasWarnings = isOnline ? checkEquipmentWarnings(equipment) : false;
                   return (
                     <div
                       key={equipment.id}
@@ -329,8 +476,8 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
         </div>
       </ResponsiveDialog>
 
-      {/* Warning Dialog */}
-      {pendingEquipment && (
+      {/* Warning Dialog (online only) */}
+      {isOnline && pendingEquipment && (
         <PreInspectionWarningDialog
           open={warningDialogOpen}
           onOpenChange={handleWarningClose}
@@ -340,13 +487,25 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
         />
       )}
 
-      {/* Inspection Form Dialog */}
-      {selectedEquipment && (
+      {/* Online Inspection Form Dialog */}
+      {isOnline && selectedEquipment && (
         <InspectionFormDialog
           open={inspectionDialogOpen}
           onOpenChange={handleInspectionClose}
           equipment={convertToEquipmentType(selectedEquipment)}
           onSuccess={handleInspectionSuccess}
+        />
+      )}
+
+      {/* Offline Inspection Dialog */}
+      {!isOnline && selectedOfflineEquipment && (
+        <OfflineInspectionDialog
+          open={offlineInspectionDialogOpen}
+          onOpenChange={handleOfflineInspectionClose}
+          equipment={selectedOfflineEquipment}
+          categories={offlineCategories}
+          templates={offlineTemplates}
+          onSuccess={handleOfflineInspectionSuccess}
         />
       )}
     </>
