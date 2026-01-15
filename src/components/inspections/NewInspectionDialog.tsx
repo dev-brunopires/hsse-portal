@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ResponsiveDialog, ResponsiveDialogBody } from '@/components/ui/responsive-dialog';
+import { ResponsiveDialog } from '@/components/ui/responsive-dialog';
 import {
   Select,
   SelectContent,
@@ -30,6 +30,7 @@ import { useOfflineSync, CachedEquipment, CachedCategory, CachedTemplate } from 
 import { InspectionFormDialog } from '@/components/equipment/InspectionFormDialog';
 import { OfflineInspectionDialog } from '@/components/offline/OfflineInspectionDialog';
 import { PreInspectionWarningDialog } from './PreInspectionWarningDialog';
+import { ConnectionStatus } from '@/components/ui/connection-status';
 import { format } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
 import i18n from '@/i18n';
@@ -354,17 +355,7 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
       >
         <div className="flex flex-col gap-3 pb-2">
           {/* Connection status indicator - minimalist */}
-          <div className="flex items-center gap-1.5 text-xs">
-            <span className={cn(
-              "h-2 w-2 rounded-full",
-              isOnline ? "bg-status-success" : "bg-status-danger animate-pulse"
-            )} />
-            <span className={cn(
-              isOnline ? "text-status-success" : "text-status-danger"
-            )}>
-              {isOnline ? t('offline.online') : t('offline.offlineMode')}
-            </span>
-          </div>
+          <ConnectionStatus isOnline={isOnline} />
           
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">

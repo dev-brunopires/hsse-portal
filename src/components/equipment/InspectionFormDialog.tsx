@@ -71,6 +71,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useUserSignature } from '@/hooks/useUserSignature';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { useDefaultChecklistTemplate } from '@/hooks/useChecklistTemplates';
+import { ConnectionStatus } from '@/components/ui/connection-status';
 
 const createInspectionSchema = (t: (key: string) => string) => z.object({
   inspectorId: z.string().min(1, t('inspectionForm.selectInspectorBefore')),
@@ -420,12 +421,7 @@ export function InspectionFormDialog({
       <div className="flex items-center gap-2 text-xl font-semibold">
         <ClipboardCheck className="h-5 w-5 text-primary" />
         {t('inspectionForm.registerInspection')}
-        {!isOnline && (
-          <Badge variant="destructive" className="ml-2 gap-1">
-            <WifiOff className="h-3 w-3" />
-            {t('inspectionForm.offline')}
-          </Badge>
-        )}
+        <ConnectionStatus isOnline={isOnline} className="ml-2" />
       </div>
       <div className="flex items-center gap-4 text-sm text-muted-foreground">
         <span>

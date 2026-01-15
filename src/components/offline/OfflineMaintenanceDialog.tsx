@@ -53,6 +53,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
+import { ConnectionStatus } from '@/components/ui/connection-status';
 
 interface OfflineMaintenanceDialogProps {
   open: boolean;
@@ -149,10 +150,7 @@ export function OfflineMaintenanceDialog({
       <div className="flex items-center gap-2 text-xl font-semibold">
         <Wrench className="h-5 w-5 text-primary" />
         {t('offline.offlineMaintenance')}
-        <Badge variant="outline" className="ml-2 gap-1 bg-status-warning/10 text-status-warning border-status-warning/30">
-          <WifiOff className="h-3 w-3" />
-          {t('inspectionForm.offline')}
-        </Badge>
+        <ConnectionStatus isOnline={false} className="ml-2" />
       </div>
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Package className="h-4 w-4" />

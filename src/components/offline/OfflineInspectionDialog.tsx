@@ -61,6 +61,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { OfflinePhotoCapture } from './OfflinePhotoCapture';
 import { type PendingPhoto, removePhotosByInspection } from '@/utils/offlineStorage';
+import { ConnectionStatus } from '@/components/ui/connection-status';
 
 interface CachedEquipment {
   id: string;
@@ -319,10 +320,7 @@ export function OfflineInspectionDialog({
       <div className="flex items-center gap-2 text-xl font-semibold">
         <ClipboardCheck className="h-5 w-5 text-primary" />
         {t('offline.offlineInspection')}
-        <Badge variant="outline" className="ml-2 gap-1 bg-status-warning/10 text-status-warning border-status-warning/30">
-          <WifiOff className="h-3 w-3" />
-          {t('inspectionForm.offline')}
-        </Badge>
+        <ConnectionStatus isOnline={false} className="ml-2" />
       </div>
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Package className="h-4 w-4" />
