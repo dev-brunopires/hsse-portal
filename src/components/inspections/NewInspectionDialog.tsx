@@ -353,13 +353,18 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
         className="max-w-2xl"
       >
         <div className="flex flex-col gap-3 pb-2">
-          {/* Offline indicator */}
-          {!isOnline && (
-            <div className="flex items-center gap-2 p-2 rounded-lg bg-status-warning/10 border border-status-warning/30 text-status-warning text-sm">
-              <WifiOff className="h-4 w-4 flex-shrink-0" />
-              <span>{t('offline.offlineMode')}</span>
-            </div>
-          )}
+          {/* Connection status indicator - minimalist */}
+          <div className="flex items-center gap-1.5 text-xs">
+            <span className={cn(
+              "h-2 w-2 rounded-full",
+              isOnline ? "bg-status-success" : "bg-status-danger animate-pulse"
+            )} />
+            <span className={cn(
+              isOnline ? "text-status-success" : "text-status-danger"
+            )}>
+              {isOnline ? t('offline.online') : t('offline.offlineMode')}
+            </span>
+          </div>
           
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
