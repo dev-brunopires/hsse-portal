@@ -328,8 +328,16 @@ export function useOfflineSync() {
     
     let syncedCount = 0;
     const failedActions: string[] = [];
+    const processedActionIds = new Set<string>(); // Track already processed actions to avoid duplicates
 
     for (const action of inspectionActions) {
+      // Skip if already processed in this sync cycle (prevents duplicates)
+      if (processedActionIds.has(action.id)) {
+        console.log('Skipping duplicate action:', action.id);
+        continue;
+      }
+      processedActionIds.add(action.id);
+      
       try {
         const inspection = action.data as offlineDB.PendingInspection;
         
