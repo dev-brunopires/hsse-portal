@@ -109,8 +109,8 @@ export function PreInspectionWarningDialog({
   );
 
   const alertsContent = (
-    <ScrollArea className="flex-1 max-h-[50vh] pr-4">
-      <div className="space-y-4 py-2">
+    <ScrollArea className="flex-1 max-h-[60vh] pr-4">
+      <div className="space-y-4 py-2 pb-4">
         {/* Critical Alerts Section */}
         {criticalIssuesCount > 0 && (
           <div className="space-y-3">
@@ -269,12 +269,12 @@ export function PreInspectionWarningDialog({
   if (isTabletOrMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="max-h-[90vh] flex flex-col">
-          <DrawerHeader className="pb-2 border-b border-border">
+        <DrawerContent className="max-h-[85vh] flex flex-col">
+          <DrawerHeader className="pb-2 border-b border-border flex-shrink-0">
             <DrawerTitle>{headerContent}</DrawerTitle>
             <DrawerDescription asChild>{descriptionContent}</DrawerDescription>
           </DrawerHeader>
-          <div className="flex-1 overflow-hidden px-4 py-2">
+          <div className="flex-1 min-h-0 overflow-y-auto px-4 py-2">
             {alertsContent}
           </div>
           <Separator />

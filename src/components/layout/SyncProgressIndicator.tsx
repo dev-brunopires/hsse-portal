@@ -61,13 +61,13 @@ export function SyncProgressIndicator() {
         setSyncStatus('error');
       }
       
-      // Reset after showing result
+      // Auto-close after 2 seconds when complete (100%)
       const timer = setTimeout(() => {
         setShowIndicator(false);
         setSyncStatus('idle');
         setSyncProgress(0);
         setInitialPendingCount(0);
-      }, 3000);
+      }, 2000);
       
       return () => clearTimeout(timer);
     }
