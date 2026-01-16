@@ -52,6 +52,11 @@ import {
   Zap,
   Package,
   Camera,
+  Info,
+  MapPin,
+  Calendar,
+  Wrench,
+  Building2,
 } from 'lucide-react';
 import { SignaturePad } from '@/components/inspections/SignaturePad';
 import { useIsTabletOrMobile } from '@/hooks/use-mobile';
@@ -72,6 +77,18 @@ interface CachedEquipment {
   ship_id: string | null;
   location: string;
   serial_number: string;
+  // Extended fields for equipment info display
+  type?: string;
+  manufacturer?: string | null;
+  model?: string | null;
+  capacity?: string | null;
+  manufacturing_date?: string | null;
+  acquisition_date?: string | null;
+  expiry_date?: string | null;
+  certificate_expiry?: string | null;
+  last_inspection?: string | null;
+  next_inspection?: string | null;
+  observations?: string | null;
 }
 
 interface CachedCategory {
@@ -337,8 +354,12 @@ export function OfflineInspectionDialog({
   const formContent = (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-hidden flex flex-col min-h-0">
-        <Tabs defaultValue="checklist" className="flex-1 flex flex-col overflow-hidden min-h-0">
-          <TabsList className="grid w-full grid-cols-4 flex-shrink-0">
+        <Tabs defaultValue="equipment" className="flex-1 flex flex-col overflow-hidden min-h-0">
+          <TabsList className="grid w-full grid-cols-5 flex-shrink-0">
+            <TabsTrigger value="equipment" className="flex items-center gap-1 px-1 sm:px-3 sm:gap-2">
+              <Info className="h-4 w-4" />
+              <span className="hidden sm:inline">{t('common.info')}</span>
+            </TabsTrigger>
             <TabsTrigger value="checklist" className="flex items-center gap-1 px-1 sm:px-3 sm:gap-2">
               <ClipboardList className="h-4 w-4" />
               <span className="hidden sm:inline">{t('inspectionForm.checklist')}</span>
@@ -369,6 +390,124 @@ export function OfflineInspectionDialog({
               )}
             </TabsTrigger>
           </TabsList>
+
+          {/* Tab: Equipment Info */}
+          <TabsContent value="equipment" className="flex-1 overflow-y-auto mt-4 min-h-0">
+            <div className="space-y-4 pb-4 px-1">
+              {/* Equipment Details Card */}
+              <div className="p-4 border rounded-lg bg-card space-y-4">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <Package className="h-4 w-4 text-primary" />
+                  {t('equipmentDetail.identification')}
+                </h3>
+                
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">{t('equipment.internalCode')}</span>
+                    <p className="font-medium">{equipment.internal_code}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">{t('equipment.serialNumber')}</span>
+                    <p className="font-medium">{equipment.serial_number || '-'}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">{t('common.category')}</span>
+                    <p className="font-medium">{categoryName}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">{t('common.type')}</span>
+                    <p className="font-medium">{equipment.type || '-'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Location & Status Card */}
+              <div className="p-4 border rounded-lg bg-card space-y-4">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-primary" />
+                  {t('equipmentDetail.locationSection')}
+                </h3>
+                
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">{t('equipmentDetail.physicalLocation')}</span>
+                    <p className="font-medium">{equipment.location || '-'}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">{t('common.status')}</span>
+                    <Badge variant={equipment.status === 'active' ? 'default' : 'secondary'}>
+                      {t(`equipment.status${equipment.status?.charAt(0).toUpperCase()}${equipment.status?.slice(1)}`, equipment.status)}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              {/* Technical Info Card */}
+              <div className="p-4 border rounded-lg bg-card space-y-4">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <Wrench className="h-4 w-4 text-primary" />
+                  {t('equipmentDetail.technicalData')}
+                </h3>
+                
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">{t('equipment.manufacturer')}</span>
+                    <p className="font-medium">{equipment.manufacturer || '-'}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">{t('equipment.model')}</span>
+                    <p className="font-medium">{equipment.model || '-'}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">{t('equipment.capacity')}</span>
+                    <p className="font-medium">{equipment.capacity || '-'}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">{t('equipment.manufacturingDate')}</span>
+                    <p className="font-medium">{equipment.manufacturing_date || '-'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Dates Card */}
+              <div className="p-4 border rounded-lg bg-card space-y-4">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-primary" />
+                  {t('equipmentDetail.datesSection')}
+                </h3>
+                
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">{t('equipment.lastInspection')}</span>
+                    <p className="font-medium">{equipment.last_inspection || '-'}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">{t('equipment.nextInspection')}</span>
+                    <p className="font-medium">{equipment.next_inspection || '-'}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">{t('equipment.certificateExpiry')}</span>
+                    <p className="font-medium">{equipment.certificate_expiry || '-'}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">{t('equipment.expiryDate')}</span>
+                    <p className="font-medium">{equipment.expiry_date || '-'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Observations */}
+              {equipment.observations && (
+                <div className="p-4 border rounded-lg bg-card space-y-2">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-primary" />
+                    {t('equipment.observations')}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">{equipment.observations}</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
 
           {/* Tab: Checklist */}
           <TabsContent value="checklist" className="flex-1 overflow-y-auto mt-4 min-h-0">

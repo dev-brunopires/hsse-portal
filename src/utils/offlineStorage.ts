@@ -31,6 +31,18 @@ export interface CachedEquipment {
   location: string;
   serial_number: string;
   short_code?: string;
+  // Additional fields for equipment info display
+  type?: string;
+  manufacturer?: string | null;
+  model?: string | null;
+  capacity?: string | null;
+  manufacturing_date?: string | null;
+  acquisition_date?: string | null;
+  expiry_date?: string | null;
+  certificate_expiry?: string | null;
+  last_inspection?: string | null;
+  next_inspection?: string | null;
+  observations?: string | null;
 }
 
 export interface CachedCategory {

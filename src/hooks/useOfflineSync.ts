@@ -127,7 +127,11 @@ export function useOfflineSync() {
       while (offset < (totalEquipment || 0)) {
         const { data: batch } = await supabase
           .from('equipment')
-          .select('id, name, internal_code, status, category_id, ship_id, location, serial_number, short_code')
+          .select(`
+            id, name, internal_code, status, category_id, ship_id, location, serial_number, short_code,
+            type, manufacturer, model, capacity, manufacturing_date, acquisition_date,
+            expiry_date, certificate_expiry, last_inspection, next_inspection, observations
+          `)
           .range(offset, offset + EQUIPMENT_BATCH_SIZE - 1)
           .order('internal_code', { ascending: true });
 
