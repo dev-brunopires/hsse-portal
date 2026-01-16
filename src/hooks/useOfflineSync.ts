@@ -49,11 +49,33 @@ export type {
   StorageStats,
 } from '@/utils/offlineStorage';
 
-const MAX_RETRY_COUNT = 3;
+const MAX_RETRY_COUNT = 5;
 const CACHE_MAX_AGE = 1000 * 60 * 60 * 24; // 24 hours
 const EQUIPMENT_BATCH_SIZE = 500; // Fetch in batches for large datasets
 const MIN_CACHE_CHECK_INTERVAL = 1000 * 60 * 5; // 5 minutes between cache checks
 const SESSION_CACHE_KEY = 'offline_cache_checked_this_session';
+
+// Exponential backoff configuration
+const BASE_RETRY_DELAY = 1000; // 1 second base
+const MAX_RETRY_DELAY = 30000; // 30 seconds max
+
+// Calculate delay with exponential backoff and jitter
+const calculateBackoffDelay = (retryCount: number): number => {
+  const exponentialDelay = Math.min(
+    BASE_RETRY_DELAY * Math.pow(2, retryCount),
+    MAX_RETRY_DELAY
+  );
+  // Add jitter (±25% randomization to prevent thundering herd)
+  const jitter = exponentialDelay * 0.25 * (Math.random() * 2 - 1);
+  return Math.round(exponentialDelay + jitter);
+};
+
+// Helper to wait with backoff
+const waitWithBackoff = (retryCount: number): Promise<void> => {
+  const delay = calculateBackoffDelay(retryCount);
+  console.log(`Retry ${retryCount}: waiting ${delay}ms before next attempt`);
+  return new Promise(resolve => setTimeout(resolve, delay));
+};
 
 // Safe initialization of state
 const getInitialOnlineState = () => {
@@ -506,12 +528,18 @@ export function useOfflineSync() {
         
         // Increment retry count
         const retryCount = (action.retryCount || 0) + 1;
+        
         if (retryCount >= MAX_RETRY_COUNT) {
           failedActions.push(action.id);
           // Remove failed action after max retries to prevent infinite loop
           await offlineDB.removePendingAction(action.id);
+          console.log(`Inspection sync permanently failed after ${MAX_RETRY_COUNT} attempts`);
         } else {
+          // Update action with new retry count
           await offlineDB.updatePendingAction({ ...action, retryCount });
+          
+          // Apply exponential backoff before continuing
+          await waitWithBackoff(retryCount);
         }
       }
     }
@@ -615,10 +643,18 @@ export function useOfflineSync() {
         
         // Increment retry count
         const retryCount = (action.retryCount || 0) + 1;
+        
         if (retryCount >= MAX_RETRY_COUNT) {
           failedActions.push(action.id);
+          // Remove failed action after max retries
+          await offlineDB.removePendingAction(action.id);
+          console.log(`Maintenance sync permanently failed after ${MAX_RETRY_COUNT} attempts`);
         } else {
+          // Update action with new retry count
           await offlineDB.updatePendingAction({ ...action, retryCount });
+          
+          // Apply exponential backoff before continuing
+          await waitWithBackoff(retryCount);
         }
       }
     }

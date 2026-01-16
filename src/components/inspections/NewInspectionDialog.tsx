@@ -438,7 +438,29 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
                 </div>
               ) : (
                 filteredEquipment.map((equipment) => {
-                  const hasWarnings = isOnline ? checkEquipmentWarnings(equipment) : false;
+                  // Check for warnings (both online and offline)
+                  const hasEquipmentWarnings = checkEquipmentWarnings(equipment);
+                  
+                  // For offline: also check cached last inspection for warnings
+                  let hasOfflineWarnings = false;
+                  let offlineWarningType: 'recommendation' | 'attention' | 'non-compliant' | null = null;
+                  if (!isOnline) {
+                    const cachedInsp = offlineLastInspections.find(i => i.equipment_id === equipment.id);
+                    if (cachedInsp) {
+                      if (cachedInsp.status === 'non-compliant') {
+                        hasOfflineWarnings = true;
+                        offlineWarningType = 'non-compliant';
+                      } else if (cachedInsp.status === 'attention') {
+                        hasOfflineWarnings = true;
+                        offlineWarningType = 'attention';
+                      } else if (cachedInsp.recommendations && cachedInsp.recommendations.trim().length > 0) {
+                        hasOfflineWarnings = true;
+                        offlineWarningType = 'recommendation';
+                      }
+                    }
+                  }
+                  
+                  const hasWarnings = isOnline ? hasEquipmentWarnings : (hasEquipmentWarnings || hasOfflineWarnings);
                   return (
                     <div
                       key={equipment.id}
@@ -467,8 +489,22 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
                                 {equipment.internal_code}
                               </Badge>
                               {hasWarnings && (
-                                <Badge variant="outline" className="text-xs border-warning text-warning bg-warning/10">
-                                  {t('inspectionForm.attention')}
+                                <Badge 
+                                  variant="outline" 
+                                  className={cn(
+                                    "text-xs",
+                                    offlineWarningType === 'non-compliant' 
+                                      ? "border-status-danger text-status-danger bg-status-danger/10"
+                                      : offlineWarningType === 'attention'
+                                      ? "border-status-warning text-status-warning bg-status-warning/10"
+                                      : "border-warning text-warning bg-warning/10"
+                                  )}
+                                >
+                                  {offlineWarningType === 'non-compliant' 
+                                    ? t('equipment.statusRejected')
+                                    : offlineWarningType === 'recommendation'
+                                    ? t('inspectionForm.hasRecommendations')
+                                    : t('inspectionForm.attention')}
                                 </Badge>
                               )}
                             </div>
