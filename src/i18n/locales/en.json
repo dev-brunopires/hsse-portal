@@ -1,4 +1,15 @@
 {
+  "pushNotifications": {
+    "syncCompletedTitle": "Sync Completed",
+    "syncCompletedBody": "{{count}} inspection(s) synced successfully",
+    "maintenanceSyncCompletedTitle": "Maintenance Sync Completed",
+    "maintenanceSyncCompletedBody": "{{count}} maintenance(s) synced successfully",
+    "syncInBackground": "Sync completed in background",
+    "upcomingInspections": "Upcoming Inspections",
+    "upcomingInspectionsBody": "You have {{count}} inspection(s) scheduled for the next 7 days",
+    "expiredCertificates": "Expired Certificates",
+    "expiredCertificatesBody": "{{count}} equipment(s) with expired certificate(s)"
+  },
   "pwa": {
     "installTitle": "Install App",
     "installDescription": "Install this app on your device for a better experience",

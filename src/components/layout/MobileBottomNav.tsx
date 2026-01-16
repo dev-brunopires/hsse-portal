@@ -1,22 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { FileText, ClipboardList, Package, QrCode, Bell, LayoutDashboard, Wrench } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { QRCodeScannerDialog } from '@/components/equipment/QRCodeScannerDialog';
 import { hapticButton, hapticSuccess } from '@/utils/hapticFeedback';
+import { Badge } from '@/components/ui/badge';
+import { useOfflineSync } from '@/hooks/useOfflineSync';
 
 interface NavItem {
   icon: React.ElementType;
   labelKey: string;
   path: string;
   tabletOnly?: boolean;
+  showPendingBadge?: boolean;
 }
 
 const leftNavItems: NavItem[] = [
   { icon: LayoutDashboard, labelKey: 'navigation.dashboard', path: '/', tabletOnly: true },
   { icon: FileText, labelKey: 'navigation.reports', path: '/reports' },
-  { icon: ClipboardList, labelKey: 'navigation.inspections', path: '/inspections' },
+  { icon: ClipboardList, labelKey: 'navigation.inspections', path: '/inspections', showPendingBadge: true },
 ];
 
 const rightNavItems: NavItem[] = [
@@ -30,6 +33,7 @@ export function MobileBottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const [scannerOpen, setScannerOpen] = useState(false);
+  const { pendingCount, isOnline } = useOfflineSync();
 
   const handleNavigation = (path: string) => {
     hapticButton();
@@ -63,17 +67,30 @@ export function MobileBottomNav() {
                   key={item.path}
                   onClick={() => handleNavigation(item.path)}
                   className={cn(
-                    "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[64px] min-h-[48px] touch-manipulation active:scale-95",
+                    "relative flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[64px] min-h-[48px] touch-manipulation active:scale-95",
                     isActive(item.path) 
                       ? "text-primary" 
                       : "text-muted-foreground hover:text-foreground active:text-foreground",
                     item.tabletOnly && "hidden sm:flex"
                   )}
                 >
-                  <item.icon className={cn(
-                    "h-5 w-5",
-                    isActive(item.path) && "stroke-[2.5]"
-                  )} />
+                  <div className="relative">
+                    <item.icon className={cn(
+                      "h-5 w-5",
+                      isActive(item.path) && "stroke-[2.5]"
+                    )} />
+                    {item.showPendingBadge && pendingCount > 0 && (
+                      <Badge 
+                        variant="destructive" 
+                        className={cn(
+                          "absolute -top-2 -right-3 h-4 min-w-4 px-1 text-[9px] font-bold flex items-center justify-center",
+                          !isOnline && "animate-pulse"
+                        )}
+                      >
+                        {pendingCount > 99 ? '99+' : pendingCount}
+                      </Badge>
+                    )}
+                  </div>
                   <span className="text-[10px] font-medium leading-tight">{t(item.labelKey)}</span>
                 </button>
               ))}
