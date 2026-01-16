@@ -8,7 +8,12 @@ import * as offlineDB from '@/utils/offlineStorage';
 import { generateInspectionPhotoPath, getCurrentOrganizationId } from '@/utils/storageHelpers';
 
 // Push notification helper for sync completion
-const showSyncPushNotification = async (title: string, body: string, tag: string = 'sync-completed') => {
+const showSyncPushNotification = async (
+  title: string, 
+  body: string, 
+  tag: string = 'sync-completed',
+  requireInteraction: boolean = false
+) => {
   if (!('Notification' in window)) return;
   
   // Request permission if not granted
@@ -24,8 +29,14 @@ const showSyncPushNotification = async (title: string, body: string, tag: string
       await registration.showNotification(title, {
         body,
         icon: '/pwa-192x192.png',
+        badge: '/pwa-192x192.png',
         tag,
-      });
+        requireInteraction, // Keep notification visible on some platforms
+        data: { 
+          type: tag,
+          timestamp: Date.now(),
+        },
+      } as NotificationOptions);
     } else {
       new Notification(title, { body, icon: '/pwa-192x192.png' });
     }

@@ -1,4 +1,15 @@
 {
+  "pushNotifications": {
+    "syncCompletedTitle": "Sincronização Concluída",
+    "syncCompletedBody": "{{count}} inspeção(ões) sincronizada(s) com sucesso",
+    "maintenanceSyncCompletedTitle": "Sincronização de Manutenções Concluída",
+    "maintenanceSyncCompletedBody": "{{count}} manutenção(ões) sincronizada(s) com sucesso",
+    "syncInBackground": "A sincronização foi concluída em segundo plano",
+    "upcomingInspections": "Inspeções Próximas",
+    "upcomingInspectionsBody": "Você tem {{count}} inspeção(ões) agendada(s) para os próximos 7 dias",
+    "expiredCertificates": "Certificados Vencidos",
+    "expiredCertificatesBody": "{{count}} equipamento(s) com certificado(s) vencido(s)"
+  },
   "pwa": {
     "installTitle": "Instalar Aplicativo",
     "installDescription": "Instale este app no seu dispositivo para uma melhor experiência",
