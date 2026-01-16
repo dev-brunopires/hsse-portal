@@ -1642,6 +1642,7 @@
     "verificationItems": "Verification Items",
     "conform": "Conforming",
     "attention": "Attention",
+    "hasRecommendations": "Has Recommendations",
     "notConform": "Non-Conforming",
     "describeProblem": "Describe the problem found...",
     "itemsCompleted": "completed",
