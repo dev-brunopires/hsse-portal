@@ -314,6 +314,35 @@ export function useOfflineSync() {
     }
   }, []);
 
+  // Check if a recent inspection exists for the same equipment (prevents duplicates)
+  const checkDuplicateInspection = useCallback(async (
+    equipmentId: string,
+    timestamp: number,
+    windowMs: number = 5 * 60 * 1000 // 5 minutes window
+  ): Promise<boolean> => {
+    try {
+      const minDate = new Date(timestamp - windowMs).toISOString();
+      const maxDate = new Date(timestamp + windowMs).toISOString();
+      
+      const { data, error } = await supabase
+        .from('inspections')
+        .select('id')
+        .eq('equipment_id', equipmentId)
+        .gte('created_at', minDate)
+        .lte('created_at', maxDate)
+        .limit(1);
+      
+      if (error) {
+        console.error('Error checking duplicate:', error);
+        return false;
+      }
+      
+      return (data?.length || 0) > 0;
+    } catch {
+      return false;
+    }
+  }, []);
+
   // Sync pending inspections when online
   const syncPendingInspections = useCallback(async () => {
     if (!isOnline || syncInProgressRef.current) return;
@@ -327,19 +356,36 @@ export function useOfflineSync() {
     setIsSyncing(true);
     
     let syncedCount = 0;
+    let skippedCount = 0;
     const failedActions: string[] = [];
     const processedActionIds = new Set<string>(); // Track already processed actions to avoid duplicates
 
     for (const action of inspectionActions) {
-      // Skip if already processed in this sync cycle (prevents duplicates)
+      // Skip if already processed in this sync cycle (prevents duplicates in same batch)
       if (processedActionIds.has(action.id)) {
-        console.log('Skipping duplicate action:', action.id);
+        console.log('Skipping duplicate action in batch:', action.id);
         continue;
       }
       processedActionIds.add(action.id);
       
       try {
         const inspection = action.data as offlineDB.PendingInspection;
+        
+        // Check if this inspection already exists in the database (equipment_id + timestamp check)
+        const isDuplicate = await checkDuplicateInspection(
+          inspection.equipment_id,
+          inspection.timestamp
+        );
+        
+        if (isDuplicate) {
+          console.log('Skipping duplicate inspection for equipment:', inspection.equipment_id);
+          // Remove the action since it's already synced
+          await offlineDB.removePendingAction(action.id);
+          // Also clean up any pending photos
+          await offlineDB.removePhotosByInspection(inspection.id);
+          skippedCount++;
+          continue;
+        }
         
         // Create the inspection
         const { data: newInspection, error: inspectionError } = await supabase
@@ -401,6 +447,8 @@ export function useOfflineSync() {
         const retryCount = (action.retryCount || 0) + 1;
         if (retryCount >= MAX_RETRY_COUNT) {
           failedActions.push(action.id);
+          // Remove failed action after max retries to prevent infinite loop
+          await offlineDB.removePendingAction(action.id);
         } else {
           await offlineDB.updatePendingAction({ ...action, retryCount });
         }
@@ -428,6 +476,10 @@ export function useOfflineSync() {
       queryClient.invalidateQueries({ queryKey: ['inspections'] });
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
     }
+    
+    if (skippedCount > 0) {
+      console.log(`Skipped ${skippedCount} duplicate inspections`);
+    }
 
     if (failedActions.length > 0) {
       hapticWarning();
@@ -435,7 +487,7 @@ export function useOfflineSync() {
         description: t('offline.syncFailedDesc', { count: failedActions.length }),
       });
     }
-  }, [isOnline, queryClient, t, uploadPendingPhotos, refreshStats]);
+  }, [isOnline, queryClient, t, uploadPendingPhotos, refreshStats, checkDuplicateInspection]);
 
   // Sync pending maintenance when online
   const syncPendingMaintenance = useCallback(async () => {
