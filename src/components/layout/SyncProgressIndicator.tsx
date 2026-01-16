@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { RefreshCw, Check, AlertCircle, Cloud, CloudOff, Image } from 'lucide-react';
+import { RefreshCw, Check, AlertCircle, Cloud, CloudOff, Image, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
 import { getPhotosCount } from '@/utils/offlineStorage';
 
 export function SyncProgressIndicator() {
@@ -14,6 +15,7 @@ export function SyncProgressIndicator() {
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
   const [initialPendingCount, setInitialPendingCount] = useState(0);
   const [pendingPhotosCount, setPendingPhotosCount] = useState(0);
+  const [currentEquipment, setCurrentEquipment] = useState<string | null>(null);
 
   // Load pending photos count
   useEffect(() => {
@@ -61,13 +63,10 @@ export function SyncProgressIndicator() {
         setSyncStatus('error');
       }
       
-      // Auto-close after 2 seconds when complete (100%)
+      // Auto-close after 1.5 seconds when complete (100%)
       const timer = setTimeout(() => {
-        setShowIndicator(false);
-        setSyncStatus('idle');
-        setSyncProgress(0);
-        setInitialPendingCount(0);
-      }, 2000);
+        handleClose();
+      }, 1500);
       
       return () => clearTimeout(timer);
     }
@@ -80,6 +79,14 @@ export function SyncProgressIndicator() {
       setInitialPendingCount(pendingCount);
     }
   }, [isOnline, pendingCount, isSyncing]);
+
+  const handleClose = () => {
+    setShowIndicator(false);
+    setSyncStatus('idle');
+    setSyncProgress(0);
+    setInitialPendingCount(0);
+    setCurrentEquipment(null);
+  };
 
   if (!showIndicator) {
     return null;
@@ -127,20 +134,33 @@ export function SyncProgressIndicator() {
   return (
     <div className={cn(
       "fixed top-16 right-4 z-50",
-      "bg-card/95 backdrop-blur-sm border border-border rounded-lg shadow-md",
+      "bg-card/95 backdrop-blur-sm border border-border rounded-lg shadow-lg",
       "animate-in slide-in-from-right-5 fade-in duration-300",
-      "min-w-[200px] max-w-[280px]"
+      "min-w-[220px] max-w-[300px]"
     )}>
       <div className="p-3">
-        <div className="flex items-center gap-2">
-          {getStatusIcon()}
-          <span className="text-sm font-medium text-foreground flex-1">
-            {getStatusText()}
-          </span>
+        {/* Header with close button */}
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            {getStatusIcon()}
+            <span className="text-sm font-medium text-foreground truncate">
+              {getStatusText()}
+            </span>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 shrink-0 hover:bg-muted"
+            onClick={handleClose}
+          >
+            <X className="h-3.5 w-3.5" />
+            <span className="sr-only">{t('common.close')}</span>
+          </Button>
         </div>
         
+        {/* Progress bar */}
         {(syncStatus === 'syncing' || syncProgress > 0) && (
-          <div className="mt-2">
+          <div className="mb-2">
             <Progress 
               value={syncProgress} 
               className={cn("h-1.5", getProgressColor())}
@@ -158,14 +178,22 @@ export function SyncProgressIndicator() {
           </div>
         )}
         
+        {/* Current equipment being synced */}
+        {syncStatus === 'syncing' && currentEquipment && (
+          <p className="text-xs text-muted-foreground truncate mb-1">
+            {currentEquipment}
+          </p>
+        )}
+        
         {/* Pending photos indicator */}
         {syncStatus === 'idle' && pendingPhotosCount > 0 && (
-          <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Image className="h-3 w-3" />
             <span>{t('offline.pendingPhotosCount', { count: pendingPhotosCount })}</span>
           </div>
         )}
         
+        {/* Last sync time */}
         {lastSyncTime && syncStatus === 'idle' && (
           <p className="text-xs text-muted-foreground mt-1">
             {t('offline.lastSync')}: {new Date(lastSyncTime).toLocaleTimeString()}
