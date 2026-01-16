@@ -3,16 +3,18 @@ import * as XLSX from 'xlsx';
 export interface ImportedEquipment {
   internal_code: string;
   name: string;
-  category_id: string;
+  category_name?: string; // For matching by name
+  ship_name?: string; // For matching by name
   type: string;
-  manufacturer: string;
-  model: string;
+  manufacturer?: string;
+  model?: string;
   serial_number: string;
   capacity?: string;
   unit: string;
   location: string;
-  manufacturing_date: string;
-  acquisition_date: string;
+  status?: string;
+  manufacturing_date?: string;
+  acquisition_date?: string;
   expiry_date?: string;
   certificate_expiry?: string;
   observations?: string;
@@ -25,39 +27,118 @@ export interface ImportResult {
 }
 
 const columnMapping: Record<string, keyof ImportedEquipment> = {
+  // Internal code
   'código interno': 'internal_code',
   'codigo interno': 'internal_code',
   'código': 'internal_code',
   'codigo': 'internal_code',
+  'internal code': 'internal_code',
+  'code': 'internal_code',
+  
+  // Name
   'nome': 'name',
   'equipamento': 'name',
+  'name': 'name',
+  'equipment': 'name',
+  
+  // Category
+  'categoria': 'category_name',
+  'category': 'category_name',
+  
+  // Ship/Unit
+  'navio': 'ship_name',
+  'embarcação': 'ship_name',
+  'embarcacao': 'ship_name',
+  'ship': 'ship_name',
+  'vessel': 'ship_name',
+  'unidade operacional': 'ship_name',
+  
+  // Type
   'tipo': 'type',
+  'type': 'type',
+  
+  // Manufacturer
   'fabricante': 'manufacturer',
+  'manufacturer': 'manufacturer',
+  
+  // Model
   'modelo': 'model',
+  'model': 'model',
+  
+  // Serial number
   'número de série': 'serial_number',
   'numero de serie': 'serial_number',
   'nº série': 'serial_number',
   'n série': 'serial_number',
   'série': 'serial_number',
   'serie': 'serial_number',
+  'serial number': 'serial_number',
+  'serial': 'serial_number',
+  
+  // Capacity
   'capacidade': 'capacity',
+  'capacity': 'capacity',
+  
+  // Unit/Department
   'unidade': 'unit',
+  'departamento': 'unit',
+  'unit': 'unit',
+  'department': 'unit',
+  
+  // Location
   'localização': 'location',
   'localizacao': 'location',
   'local': 'location',
+  'location': 'location',
+  
+  // Status
+  'status': 'status',
+  'situação': 'status',
+  'situacao': 'status',
+  
+  // Manufacturing date
   'data fabricação': 'manufacturing_date',
   'data fabricacao': 'manufacturing_date',
   'fabricação': 'manufacturing_date',
+  'manufacturing date': 'manufacturing_date',
+  
+  // Acquisition date
   'data aquisição': 'acquisition_date',
   'data aquisicao': 'acquisition_date',
   'aquisição': 'acquisition_date',
+  'acquisition date': 'acquisition_date',
+  
+  // Expiry date
   'validade': 'expiry_date',
   'data validade': 'expiry_date',
+  'expiry date': 'expiry_date',
+  'expiry': 'expiry_date',
+  
+  // Certificate expiry
   'validade certificado': 'certificate_expiry',
   'val. certificado': 'certificate_expiry',
+  'certificate expiry': 'certificate_expiry',
+  
+  // Observations
   'observações': 'observations',
   'observacoes': 'observations',
   'obs': 'observations',
+  'observations': 'observations',
+  'notes': 'observations',
+};
+
+const statusMapping: Record<string, string> = {
+  'ativo': 'active',
+  'active': 'active',
+  'manutenção': 'maintenance',
+  'manutencao': 'maintenance',
+  'maintenance': 'maintenance',
+  'reprovado': 'rejected',
+  'rejected': 'rejected',
+  'vencido': 'expired',
+  'expired': 'expired',
+  'inativo': 'inactive',
+  'inactive': 'inactive',
 };
 
 function parseDate(value: any): string | undefined {
@@ -84,6 +165,12 @@ function parseDate(value: any): string | undefined {
   }
   
   return undefined;
+}
+
+function parseStatus(value: any): string | undefined {
+  if (!value) return undefined;
+  const normalized = String(value).toLowerCase().trim();
+  return statusMapping[normalized] || undefined;
 }
 
 export function parseCSV(file: File): Promise<ImportResult> {
@@ -118,18 +205,19 @@ export function parseCSV(file: File): Promise<ImportResult> {
             if (mappedKey && row[colIndex] !== undefined && row[colIndex] !== null) {
               const value = row[colIndex];
               
-              if (mappedKey.includes('date')) {
+              if (mappedKey.includes('date') || mappedKey === 'certificate_expiry') {
                 item[mappedKey] = parseDate(value) || '';
+              } else if (mappedKey === 'status') {
+                item[mappedKey] = parseStatus(value) || 'active';
               } else {
                 item[mappedKey] = String(value).trim();
               }
             }
           });
           
-          // Validate required fields
+          // Validate required fields - only truly required ones
           const requiredFields: (keyof ImportedEquipment)[] = [
-            'internal_code', 'name', 'type', 'manufacturer', 'model', 
-            'serial_number', 'unit', 'location', 'manufacturing_date', 'acquisition_date'
+            'internal_code', 'name', 'type', 'serial_number', 'unit', 'location'
           ];
           
           const missingFields = requiredFields.filter(f => !item[f]);
@@ -162,22 +250,47 @@ export function parseCSV(file: File): Promise<ImportResult> {
 export function generateTemplate(): void {
   const templateData = [{
     'Código Interno': 'EXT-001',
-    'Nome': 'Extintor ABC',
-    'Tipo': 'Extintor',
+    'Nome': 'Extintor ABC 6kg',
+    'Categoria': 'Extintores',
+    'Navio': 'FPSO Cidade de Santos',
+    'Tipo': 'Extintor de Incêndio',
     'Fabricante': 'Kidde',
     'Modelo': 'K-10',
     'Nº Série': 'SN123456',
     'Capacidade': '6kg',
-    'Unidade': 'Matriz',
-    'Localização': 'Recepção',
+    'Unidade': 'Operações',
+    'Localização': 'Convés Principal',
+    'Status': 'Ativo',
     'Data Fabricação': '01/01/2023',
     'Data Aquisição': '15/01/2023',
     'Validade': '01/01/2028',
-    'Validade Certificado': '01/01/2024',
-    'Observações': 'Exemplo de equipamento',
+    'Validade Certificado': '01/01/2025',
+    'Observações': 'Equipamento novo',
   }];
 
   const ws = XLSX.utils.json_to_sheet(templateData);
+  
+  // Set column widths for better visibility
+  ws['!cols'] = [
+    { wch: 15 }, // Código Interno
+    { wch: 25 }, // Nome
+    { wch: 15 }, // Categoria
+    { wch: 25 }, // Navio
+    { wch: 20 }, // Tipo
+    { wch: 15 }, // Fabricante
+    { wch: 12 }, // Modelo
+    { wch: 15 }, // Nº Série
+    { wch: 12 }, // Capacidade
+    { wch: 12 }, // Unidade
+    { wch: 20 }, // Localização
+    { wch: 10 }, // Status
+    { wch: 15 }, // Data Fabricação
+    { wch: 15 }, // Data Aquisição
+    { wch: 12 }, // Validade
+    { wch: 18 }, // Validade Certificado
+    { wch: 25 }, // Observações
+  ];
+  
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Template');
   
