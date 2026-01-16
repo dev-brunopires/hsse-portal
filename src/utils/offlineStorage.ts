@@ -5,7 +5,7 @@
  */
 
 const DB_NAME = 'safeship_offline';
-const DB_VERSION = 2; // Incremented to add maintenance_plans store
+const DB_VERSION = 3; // Incremented to add last_inspections store
 
 // Store names
 const STORES = {
@@ -17,6 +17,7 @@ const STORES = {
   PHOTOS: 'photos',
   METADATA: 'metadata',
   MAINTENANCE_PLANS: 'maintenance_plans',
+  LAST_INSPECTIONS: 'last_inspections',
 } as const;
 
 // Interfaces
@@ -69,6 +70,18 @@ export interface CachedMaintenancePlan {
   equipment_code: string;
   ship_id: string | null;
   ship_name: string | null;
+}
+
+// Cached last inspection for pre-inspection warnings
+export interface CachedLastInspection {
+  id: string;
+  equipment_id: string;
+  inspection_date: string;
+  status: string;
+  observations: string | null;
+  recommendations: string | null;
+  actions_taken: string | null;
+  inspector_name: string | null;
 }
 
 export interface PendingPhoto {
@@ -265,6 +278,12 @@ export const openDatabase = (): Promise<IDBDatabase> => {
         maintenanceStore.createIndex('equipment_id', 'equipment_id', { unique: false });
         maintenanceStore.createIndex('ship_id', 'ship_id', { unique: false });
       }
+
+      // Last inspections store (added in version 3) - keyed by equipment_id for quick lookup
+      if (!db.objectStoreNames.contains(STORES.LAST_INSPECTIONS)) {
+        const lastInspectionsStore = db.createObjectStore(STORES.LAST_INSPECTIONS, { keyPath: 'equipment_id' });
+        lastInspectionsStore.createIndex('status', 'status', { unique: false });
+      }
     };
     } catch (error) {
       console.error('Failed to open IndexedDB:', error);
@@ -440,6 +459,24 @@ export const getMaintenancePlansCount = async (): Promise<number> => {
   return countInStore(STORES.MAINTENANCE_PLANS);
 };
 
+// ===== Last Inspections operations =====
+export const cacheLastInspections = async (inspections: CachedLastInspection[]): Promise<void> => {
+  await clearStore(STORES.LAST_INSPECTIONS);
+  await putManyInStore(STORES.LAST_INSPECTIONS, inspections);
+};
+
+export const getLastInspections = async (): Promise<CachedLastInspection[]> => {
+  return getAllFromStore<CachedLastInspection>(STORES.LAST_INSPECTIONS);
+};
+
+export const getLastInspectionByEquipment = async (equipmentId: string): Promise<CachedLastInspection | undefined> => {
+  return getFromStore<CachedLastInspection>(STORES.LAST_INSPECTIONS, equipmentId);
+};
+
+export const getLastInspectionsCount = async (): Promise<number> => {
+  return countInStore(STORES.LAST_INSPECTIONS);
+};
+
 // ===== Pending actions operations =====
 export const addPendingAction = async (action: PendingAction): Promise<void> => {
   await putInStore(STORES.PENDING_ACTIONS, action);
@@ -529,6 +566,7 @@ export interface StorageStats {
   shipsCount: number;
   templatesCount: number;
   maintenancePlansCount: number;
+  lastInspectionsCount: number;
   pendingActionsCount: number;
   photosCount: number;
   estimatedSizeMB: number;
@@ -542,6 +580,7 @@ export const getStorageStats = async (): Promise<StorageStats> => {
     shipsCount,
     templatesCount,
     maintenancePlansCount,
+    lastInspectionsCount,
     pendingActionsCount,
     photosCount,
     cacheTimestamp,
@@ -551,6 +590,7 @@ export const getStorageStats = async (): Promise<StorageStats> => {
     countInStore(STORES.SHIPS),
     countInStore(STORES.TEMPLATES),
     countInStore(STORES.MAINTENANCE_PLANS),
+    countInStore(STORES.LAST_INSPECTIONS),
     countInStore(STORES.PENDING_ACTIONS),
     countInStore(STORES.PHOTOS),
     getCacheTimestamp(),
@@ -563,6 +603,7 @@ export const getStorageStats = async (): Promise<StorageStats> => {
     shipsCount * 256 +
     templatesCount * 2048 +
     maintenancePlansCount * 1024 +
+    lastInspectionsCount * 512 +
     pendingActionsCount * 10240 +
     photosCount * 512000;
 
@@ -572,6 +613,7 @@ export const getStorageStats = async (): Promise<StorageStats> => {
     shipsCount,
     templatesCount,
     maintenancePlansCount,
+    lastInspectionsCount,
     pendingActionsCount,
     photosCount,
     estimatedSizeMB: Math.round((estimatedSizeBytes / (1024 * 1024)) * 100) / 100,

@@ -26,7 +26,7 @@ import {
 import { useEquipment, type EquipmentWithCategory } from '@/hooks/useEquipment';
 import { useCategories } from '@/hooks/useCategories';
 import { useLastInspection } from '@/hooks/useInspections';
-import { useOfflineSync, CachedEquipment, CachedCategory, CachedTemplate } from '@/hooks/useOfflineSync';
+import { useOfflineSync, CachedEquipment, CachedCategory, CachedTemplate, CachedLastInspection } from '@/hooks/useOfflineSync';
 import { InspectionFormDialog } from '@/components/equipment/InspectionFormDialog';
 import { OfflineInspectionDialog } from '@/components/offline/OfflineInspectionDialog';
 import { PreInspectionWarningDialog } from './PreInspectionWarningDialog';
@@ -50,7 +50,7 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
   const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
   
   // Offline sync hook
-  const { isOnline, getOfflineData, isCacheAvailable } = useOfflineSync();
+  const { isOnline, getOfflineData, isCacheAvailable, getLastInspectionOffline } = useOfflineSync();
   
   const statusLabels: Record<string, string> = {
     active: t('inspectionForm.statusLabels.active'),
@@ -74,12 +74,15 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
   const [offlineEquipment, setOfflineEquipment] = useState<CachedEquipment[]>([]);
   const [offlineCategories, setOfflineCategories] = useState<CachedCategory[]>([]);
   const [offlineTemplates, setOfflineTemplates] = useState<CachedTemplate[]>([]);
+  const [offlineLastInspections, setOfflineLastInspections] = useState<CachedLastInspection[]>([]);
   const [isLoadingOffline, setIsLoadingOffline] = useState(false);
   const [cacheAvailable, setCacheAvailable] = useState(false);
   
   const [selectedEquipment, setSelectedEquipment] = useState<EquipmentWithCategory | null>(null);
   const [selectedOfflineEquipment, setSelectedOfflineEquipment] = useState<CachedEquipment | null>(null);
   const [pendingEquipment, setPendingEquipment] = useState<EquipmentWithCategory | null>(null);
+  const [pendingOfflineEquipment, setPendingOfflineEquipment] = useState<CachedEquipment | null>(null);
+  const [offlineLastInspection, setOfflineLastInspection] = useState<CachedLastInspection | null>(null);
   const [inspectionDialogOpen, setInspectionDialogOpen] = useState(false);
   const [offlineInspectionDialogOpen, setOfflineInspectionDialogOpen] = useState(false);
   const [warningDialogOpen, setWarningDialogOpen] = useState(false);
@@ -105,6 +108,7 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
             setOfflineEquipment(data.equipment || []);
             setOfflineCategories(data.categories || []);
             setOfflineTemplates(data.templates || []);
+            setOfflineLastInspections(data.lastInspections || []);
           }
         } catch (error) {
           console.error('[NewInspectionDialog] Error loading offline data:', error);
@@ -173,9 +177,24 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
           // Trigger the selection flow (which will check for warnings)
           setPendingEquipment(equipment);
         } else {
-          // Directly open offline inspection dialog
+          // For offline, check if there's a cached last inspection with warnings
           const offlineEq = offlineEquipment.find(e => e.id === equipment!.id);
           if (offlineEq) {
+            // Check for warnings before opening inspection dialog
+            const cachedLastInsp = offlineLastInspections.find(i => i.equipment_id === offlineEq.id);
+            if (cachedLastInsp) {
+              const hasIssues = cachedLastInsp.status === 'attention' || cachedLastInsp.status === 'non-compliant';
+              const hasRecommendations = cachedLastInsp.recommendations && cachedLastInsp.recommendations.trim().length > 0;
+              
+              if (hasIssues || hasRecommendations) {
+                // Show warning dialog for offline mode too
+                setPendingOfflineEquipment(offlineEq);
+                setOfflineLastInspection(cachedLastInsp);
+                setWarningDialogOpen(true);
+                return;
+              }
+            }
+            // No warnings, proceed directly
             setSelectedOfflineEquipment(offlineEq);
             setOfflineInspectionDialogOpen(true);
           }
@@ -245,9 +264,23 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
       // Set pending equipment to trigger last inspection fetch
       setPendingEquipment(equipment);
     } else {
-      // Directly open offline inspection dialog
+      // For offline, check if there's a cached last inspection with warnings
       const offlineEq = offlineEquipment.find(e => e.id === equipment.id);
       if (offlineEq) {
+        const cachedLastInsp = offlineLastInspections.find(i => i.equipment_id === offlineEq.id);
+        if (cachedLastInsp) {
+          const hasIssues = cachedLastInsp.status === 'attention' || cachedLastInsp.status === 'non-compliant';
+          const hasRecommendations = cachedLastInsp.recommendations && cachedLastInsp.recommendations.trim().length > 0;
+          
+          if (hasIssues || hasRecommendations) {
+            // Show warning dialog for offline mode too
+            setPendingOfflineEquipment(offlineEq);
+            setOfflineLastInspection(cachedLastInsp);
+            setWarningDialogOpen(true);
+            return;
+          }
+        }
+        // No warnings, proceed directly
         setSelectedOfflineEquipment(offlineEq);
         setOfflineInspectionDialogOpen(true);
       }
@@ -255,11 +288,18 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
   };
 
   const handleWarningProceed = () => {
-    if (pendingEquipment) {
+    if (isOnline && pendingEquipment) {
       setSelectedEquipment(pendingEquipment);
       setWarningDialogOpen(false);
       setInspectionDialogOpen(true);
       setPendingEquipment(null);
+    } else if (!isOnline && pendingOfflineEquipment) {
+      // Offline mode: proceed to offline inspection dialog
+      setSelectedOfflineEquipment(pendingOfflineEquipment);
+      setWarningDialogOpen(false);
+      setOfflineInspectionDialogOpen(true);
+      setPendingOfflineEquipment(null);
+      setOfflineLastInspection(null);
     }
   };
 
@@ -267,6 +307,8 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
     setWarningDialogOpen(isOpen);
     if (!isOpen) {
       setPendingEquipment(null);
+      setPendingOfflineEquipment(null);
+      setOfflineLastInspection(null);
     }
   };
 
@@ -472,13 +514,68 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
         </div>
       </ResponsiveDialog>
 
-      {/* Warning Dialog (online only) */}
+      {/* Warning Dialog - works for both online and offline */}
       {isOnline && pendingEquipment && (
         <PreInspectionWarningDialog
           open={warningDialogOpen}
           onOpenChange={handleWarningClose}
           equipment={pendingEquipment}
           lastInspection={lastInspection || null}
+          onProceed={handleWarningProceed}
+        />
+      )}
+
+      {/* Offline Warning Dialog - using cached last inspection */}
+      {!isOnline && pendingOfflineEquipment && offlineLastInspection && (
+        <PreInspectionWarningDialog
+          open={warningDialogOpen}
+          onOpenChange={handleWarningClose}
+          equipment={{
+            // Convert CachedEquipment to EquipmentWithCategory for the dialog
+            id: pendingOfflineEquipment.id,
+            name: pendingOfflineEquipment.name,
+            internal_code: pendingOfflineEquipment.internal_code,
+            status: pendingOfflineEquipment.status,
+            category_id: pendingOfflineEquipment.category_id,
+            ship_id: pendingOfflineEquipment.ship_id,
+            location: pendingOfflineEquipment.location,
+            serial_number: pendingOfflineEquipment.serial_number,
+            type: '',
+            unit: '',
+            manufacturer: null,
+            model: null,
+            manufacturing_date: null,
+            acquisition_date: null,
+            expiry_date: null,
+            certificate_expiry: null,
+            last_inspection: offlineLastInspection.inspection_date,
+            next_inspection: null,
+            capacity: null,
+            observations: null,
+            created_at: '',
+            updated_at: '',
+            created_by: null,
+            short_code: (pendingOfflineEquipment as any).short_code || null,
+            categories: offlineCategories.find(c => c.id === pendingOfflineEquipment.category_id) 
+              ? { name: offlineCategories.find(c => c.id === pendingOfflineEquipment.category_id)!.name }
+              : null,
+            ships: null,
+          } as EquipmentWithCategory}
+          lastInspection={{
+            id: offlineLastInspection.id,
+            equipment_id: offlineLastInspection.equipment_id,
+            inspection_date: offlineLastInspection.inspection_date,
+            status: offlineLastInspection.status,
+            observations: offlineLastInspection.observations,
+            recommendations: offlineLastInspection.recommendations,
+            actions_taken: offlineLastInspection.actions_taken,
+            inspector_id: '',
+            ship_id: null,
+            signature_data: null,
+            signed_at: null,
+            next_inspection_date: null,
+            created_at: '',
+          } as any}
           onProceed={handleWarningProceed}
         />
       )}
