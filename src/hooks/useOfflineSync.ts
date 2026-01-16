@@ -45,6 +45,7 @@ export type {
   CachedShip,
   CachedTemplate,
   CachedMaintenancePlan,
+  CachedLastInspection,
   StorageStats,
 } from '@/utils/offlineStorage';
 
@@ -214,6 +215,62 @@ export function useOfflineSync() {
         }));
         await offlineDB.cacheMaintenancePlans(cachedPlans);
       }
+
+      // Cache last inspection for each equipment (for pre-inspection warnings)
+      // Uses a subquery approach: get all equipment IDs, then fetch their last inspections
+      const equipmentIds = allEquipment.map(e => e.id);
+      
+      // Fetch last inspection for each equipment in batches
+      const lastInspections: offlineDB.CachedLastInspection[] = [];
+      const INSPECTION_BATCH_SIZE = 200;
+      
+      for (let i = 0; i < equipmentIds.length; i += INSPECTION_BATCH_SIZE) {
+        const batchIds = equipmentIds.slice(i, i + INSPECTION_BATCH_SIZE);
+        
+        // Get the most recent inspection for each equipment in this batch
+        const { data: inspections } = await supabase
+          .from('inspections')
+          .select(`
+            id,
+            equipment_id,
+            inspection_date,
+            status,
+            observations,
+            recommendations,
+            actions_taken,
+            profiles!inspections_inspector_id_fkey (full_name)
+          `)
+          .in('equipment_id', batchIds)
+          .order('inspection_date', { ascending: false });
+
+        if (inspections) {
+          // Group by equipment_id and take the first (most recent) one
+          const inspectionsByEquipment = new Map<string, any>();
+          for (const insp of inspections) {
+            if (!inspectionsByEquipment.has(insp.equipment_id)) {
+              inspectionsByEquipment.set(insp.equipment_id, insp);
+            }
+          }
+          
+          // Convert to CachedLastInspection format
+          inspectionsByEquipment.forEach((insp, equipId) => {
+            lastInspections.push({
+              id: insp.id,
+              equipment_id: equipId,
+              inspection_date: insp.inspection_date,
+              status: insp.status,
+              observations: insp.observations,
+              recommendations: insp.recommendations,
+              actions_taken: insp.actions_taken,
+              inspector_name: (insp.profiles as any)?.full_name || null,
+            });
+          });
+        }
+        
+        console.log(`Cached ${lastInspections.length}/${equipmentIds.length} last inspections`);
+      }
+      
+      await offlineDB.cacheLastInspections(lastInspections);
 
       // Set cache timestamp
       await offlineDB.setCacheTimestamp();
@@ -722,12 +779,13 @@ export function useOfflineSync() {
   // Get offline data from IndexedDB
   const getOfflineData = useCallback(async () => {
     try {
-      const [equipment, categories, ships, templates, maintenancePlans, cacheTimestamp] = await Promise.all([
+      const [equipment, categories, ships, templates, maintenancePlans, lastInspections, cacheTimestamp] = await Promise.all([
         offlineDB.getEquipment(),
         offlineDB.getCategories(),
         offlineDB.getShips(),
         offlineDB.getTemplates(),
         offlineDB.getMaintenancePlans(),
+        offlineDB.getLastInspections(),
         offlineDB.getCacheTimestamp(),
       ]);
 
@@ -737,12 +795,18 @@ export function useOfflineSync() {
         ships,
         templates,
         maintenancePlans,
+        lastInspections,
         timestamp: cacheTimestamp,
       };
     } catch (error) {
       console.error('Error getting offline data:', error);
       return null;
     }
+  }, []);
+
+  // Get last inspection for a specific equipment (offline)
+  const getLastInspectionOffline = useCallback(async (equipmentId: string): Promise<offlineDB.CachedLastInspection | undefined> => {
+    return offlineDB.getLastInspectionByEquipment(equipmentId);
   }, []);
 
   // Get pending inspections for display
@@ -799,6 +863,7 @@ export function useOfflineSync() {
     removePendingAction,
     clearPendingActions,
     getOfflineData,
+    getLastInspectionOffline,
     getPendingInspections,
     getPendingMaintenance,
     syncPendingInspections,
