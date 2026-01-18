@@ -964,7 +964,16 @@
       "expiryDate": "Validade",
       "certificateExpiry": "Val. Certificado",
       "observations": "Observações"
-    }
+    },
+    "previewChanges": "Preview das Alterações",
+    "previewChangesDesc": "{{count}} equipamento(s) terão campos modificados",
+    "fieldChanges": "alterações",
+    "change": "alteração",
+    "changes": "alterações",
+    "expandAll": "Expandir tudo",
+    "collapseAll": "Recolher tudo",
+    "empty": "(vazio)",
+    "noChangesDetected": "Nenhuma alteração detectada"
   },
   "transferEquipment": {
     "title": "Transferir Equipamento",

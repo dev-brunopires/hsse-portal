@@ -964,7 +964,16 @@
       "expiryDate": "Expiry Date",
       "certificateExpiry": "Certificate Expiry",
       "observations": "Observations"
-    }
+    },
+    "previewChanges": "Changes Preview",
+    "previewChangesDesc": "{{count}} equipment(s) will have fields modified",
+    "fieldChanges": "changes",
+    "change": "change",
+    "changes": "changes",
+    "expandAll": "Expand all",
+    "collapseAll": "Collapse all",
+    "empty": "(empty)",
+    "noChangesDetected": "No changes detected"
   },
   "transferEquipment": {
     "title": "Transfer Equipment",

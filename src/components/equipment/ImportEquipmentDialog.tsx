@@ -19,7 +19,8 @@ import {
   FolderOpen,
   AlertTriangle,
   Plus,
-  RefreshCw
+  RefreshCw,
+  Eye
 } from 'lucide-react';
 import { parseCSV, generateTemplate, type ImportResult, type ImportedEquipment } from '@/utils/importEquipment';
 import { useCategories } from '@/hooks/useCategories';
@@ -39,6 +40,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { ImportChangesPreview, type EquipmentChange, type FieldChange } from './ImportChangesPreview';
 
 interface ImportEquipmentDialogProps {
   open: boolean;
@@ -47,10 +49,32 @@ interface ImportEquipmentDialogProps {
 
 type ImportMode = 'create' | 'update' | 'upsert';
 
+interface ExistingEquipmentData {
+  id: string;
+  internal_code: string;
+  name: string;
+  type: string;
+  serial_number: string;
+  manufacturer: string | null;
+  model: string | null;
+  capacity: string | null;
+  unit: string;
+  location: string;
+  status: string;
+  manufacturing_date: string | null;
+  acquisition_date: string | null;
+  expiry_date: string | null;
+  certificate_expiry: string | null;
+  observations: string | null;
+  category_id: string;
+  ship_id: string | null;
+}
+
 interface EquipmentMatch {
   item: ImportedEquipment;
   existingId?: string;
   existingName?: string;
+  existingData?: ExistingEquipmentData;
   action: 'create' | 'update' | 'skip';
 }
 
@@ -99,18 +123,18 @@ export function ImportEquipmentDialog({ open, onOpenChange }: ImportEquipmentDia
     return map;
   }, [ships]);
 
-  // Check for existing equipment by internal_code
+  // Check for existing equipment by internal_code - fetch full data for diff preview
   const checkExistingEquipment = async (items: ImportedEquipment[]): Promise<EquipmentMatch[]> => {
     const internalCodes = items.map(item => item.internal_code);
     
     const { data: existingEquipment } = await supabase
       .from('equipment')
-      .select('id, internal_code, name')
+      .select('id, internal_code, name, type, serial_number, manufacturer, model, capacity, unit, location, status, manufacturing_date, acquisition_date, expiry_date, certificate_expiry, observations, category_id, ship_id')
       .in('internal_code', internalCodes);
 
-    const existingMap = new Map<string, { id: string; name: string }>();
+    const existingMap = new Map<string, ExistingEquipmentData>();
     existingEquipment?.forEach(eq => {
-      existingMap.set(eq.internal_code.toLowerCase().trim(), { id: eq.id, name: eq.name });
+      existingMap.set(eq.internal_code.toLowerCase().trim(), eq as ExistingEquipmentData);
     });
 
     return items.map(item => {
@@ -119,10 +143,108 @@ export function ImportEquipmentDialog({ open, onOpenChange }: ImportEquipmentDia
         item,
         existingId: existing?.id,
         existingName: existing?.name,
+        existingData: existing,
         action: existing ? 'update' : 'create',
       };
     });
   };
+
+  // Calculate changes for equipment that will be updated
+  const equipmentChanges = useMemo((): EquipmentChange[] => {
+    const fieldLabels: Record<string, string> = {
+      name: t('importEquipment.columns.name'),
+      type: t('importEquipment.columns.type'),
+      serial_number: t('importEquipment.columns.serialNumber'),
+      manufacturer: t('importEquipment.columns.manufacturer'),
+      model: t('importEquipment.columns.model'),
+      capacity: t('importEquipment.columns.capacity'),
+      unit: t('importEquipment.columns.unit'),
+      location: t('importEquipment.columns.location'),
+      status: t('importEquipment.columns.status'),
+      manufacturing_date: t('importEquipment.columns.manufacturingDate'),
+      acquisition_date: t('importEquipment.columns.acquisitionDate'),
+      expiry_date: t('importEquipment.columns.expiryDate'),
+      certificate_expiry: t('importEquipment.columns.certificateExpiry'),
+      observations: t('importEquipment.columns.observations'),
+      category_name: t('importEquipment.columns.category'),
+      ship_name: t('importEquipment.columns.ship'),
+    };
+
+    return equipmentMatches
+      .filter(match => match.action === 'update' && match.existingData)
+      .map(match => {
+        const item = match.item;
+        const existing = match.existingData!;
+        const changes: FieldChange[] = [];
+
+        // Compare each field
+        const compareField = (field: string, newVal: string | null | undefined, oldVal: string | null) => {
+          const newValue = newVal?.toString().trim() || null;
+          const oldValue = oldVal?.toString().trim() || null;
+          
+          // Only add if new value is provided and different from old
+          if (newValue && newValue !== oldValue) {
+            changes.push({
+              field,
+              fieldLabel: fieldLabels[field] || field,
+              oldValue,
+              newValue,
+            });
+          }
+        };
+
+        compareField('name', item.name, existing.name);
+        compareField('type', item.type, existing.type);
+        compareField('serial_number', item.serial_number, existing.serial_number);
+        compareField('manufacturer', item.manufacturer, existing.manufacturer);
+        compareField('model', item.model, existing.model);
+        compareField('capacity', item.capacity, existing.capacity);
+        compareField('unit', item.unit, existing.unit);
+        compareField('location', item.location, existing.location);
+        compareField('status', item.status, existing.status);
+        compareField('manufacturing_date', item.manufacturing_date, existing.manufacturing_date);
+        compareField('acquisition_date', item.acquisition_date, existing.acquisition_date);
+        compareField('expiry_date', item.expiry_date, existing.expiry_date);
+        compareField('certificate_expiry', item.certificate_expiry, existing.certificate_expiry);
+        compareField('observations', item.observations, existing.observations);
+
+        // Check category change
+        if (item.category_name) {
+          const newCategoryId = categoryMap.get(item.category_name.toLowerCase().trim());
+          if (newCategoryId && newCategoryId !== existing.category_id) {
+            const oldCategoryName = categories.find(c => c.id === existing.category_id)?.name || null;
+            changes.push({
+              field: 'category_name',
+              fieldLabel: fieldLabels['category_name'],
+              oldValue: oldCategoryName,
+              newValue: item.category_name,
+            });
+          }
+        }
+
+        // Check ship change
+        if (item.ship_name) {
+          const newShipId = shipMap.get(item.ship_name.toLowerCase().trim());
+          if (newShipId && newShipId !== existing.ship_id) {
+            const oldShipName = ships.find(s => s.id === existing.ship_id)?.name || null;
+            changes.push({
+              field: 'ship_name',
+              fieldLabel: fieldLabels['ship_name'],
+              oldValue: oldShipName,
+              newValue: item.ship_name,
+            });
+          }
+        }
+
+        return {
+          id: match.existingId!,
+          internalCode: item.internal_code,
+          name: item.name,
+          changes,
+        };
+      })
+      .filter(eq => eq.changes.length > 0);
+  }, [equipmentMatches, categoryMap, shipMap, categories, ships, t]);
 
   // Analyze imported data for category/ship matching
   const analysisResult = useMemo(() => {
@@ -682,6 +804,11 @@ export function ImportEquipmentDialog({ open, onOpenChange }: ImportEquipmentDia
                         </div>
                       )}
                     </div>
+                  )}
+
+                  {/* Changes Preview - only show when there are updates */}
+                  {equipmentChanges.length > 0 && actionCounts.toUpdate > 0 && (
+                    <ImportChangesPreview equipmentChanges={equipmentChanges} />
                   )}
 
                   {/* Preview table */}
