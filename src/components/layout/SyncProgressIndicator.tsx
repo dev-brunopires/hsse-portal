@@ -9,13 +9,11 @@ import { getPhotosCount } from '@/utils/offlineStorage';
 
 export function SyncProgressIndicator() {
   const { t } = useTranslation();
-  const { isOnline, isSyncing, pendingCount, lastSyncTime, cacheStats } = useOfflineSync();
+  const { isOnline, isSyncing, pendingCount, lastSyncTime, cacheStats, syncProgress } = useOfflineSync();
   const [showIndicator, setShowIndicator] = useState(false);
-  const [syncProgress, setSyncProgress] = useState(0);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
   const [initialPendingCount, setInitialPendingCount] = useState(0);
   const [pendingPhotosCount, setPendingPhotosCount] = useState(0);
-  const [currentEquipment, setCurrentEquipment] = useState<string | null>(null);
 
   // Load pending photos count
   useEffect(() => {
@@ -41,21 +39,11 @@ export function SyncProgressIndicator() {
     }
   }, [isSyncing, pendingCount, initialPendingCount]);
 
-  // Update progress based on pending count
-  useEffect(() => {
-    if (isSyncing && initialPendingCount > 0) {
-      const syncedCount = initialPendingCount - pendingCount;
-      const progress = Math.round((syncedCount / initialPendingCount) * 100);
-      setSyncProgress(progress);
-    }
-  }, [isSyncing, pendingCount, initialPendingCount]);
-
   // Handle sync completion
   useEffect(() => {
     if (!isSyncing && syncStatus === 'syncing') {
       if (pendingCount === 0) {
         setSyncStatus('success');
-        setSyncProgress(100);
       } else if (pendingCount > 0 && pendingCount < initialPendingCount) {
         // Partial sync
         setSyncStatus('success');
@@ -63,7 +51,7 @@ export function SyncProgressIndicator() {
         setSyncStatus('error');
       }
       
-      // Auto-close after 1.5 seconds when complete (100%)
+      // Auto-close after 1.5 seconds when complete
       const timer = setTimeout(() => {
         handleClose();
       }, 1500);
@@ -83,9 +71,7 @@ export function SyncProgressIndicator() {
   const handleClose = () => {
     setShowIndicator(false);
     setSyncStatus('idle');
-    setSyncProgress(0);
     setInitialPendingCount(0);
-    setCurrentEquipment(null);
   };
 
   if (!showIndicator) {
@@ -131,12 +117,19 @@ export function SyncProgressIndicator() {
     }
   };
 
+  // Use real-time progress from hook
+  const displayProgress = syncProgress.percentage;
+  const currentItem = syncProgress.currentItem;
+  const progressText = syncProgress.totalItems > 0 
+    ? `${syncProgress.currentIndex}/${syncProgress.totalItems}` 
+    : '';
+
   return (
     <div className={cn(
       "fixed top-16 right-4 z-50",
       "bg-card/95 backdrop-blur-sm border border-border rounded-lg shadow-lg",
       "animate-in slide-in-from-right-5 fade-in duration-300",
-      "min-w-[220px] max-w-[300px]"
+      "min-w-[240px] max-w-[320px]"
     )}>
       <div className="p-3">
         {/* Header with close button */}
@@ -158,31 +151,31 @@ export function SyncProgressIndicator() {
           </Button>
         </div>
         
+        {/* Current item being synced */}
+        {syncStatus === 'syncing' && currentItem && (
+          <p className="text-xs text-muted-foreground truncate mb-2 bg-muted/50 px-2 py-1 rounded">
+            📤 {currentItem}
+          </p>
+        )}
+        
         {/* Progress bar */}
-        {(syncStatus === 'syncing' || syncProgress > 0) && (
+        {(syncStatus === 'syncing' || displayProgress > 0) && (
           <div className="mb-2">
             <Progress 
-              value={syncProgress} 
-              className={cn("h-1.5", getProgressColor())}
+              value={displayProgress} 
+              className={cn("h-2", getProgressColor())}
             />
             <div className="flex justify-between mt-1">
-              <span className="text-xs text-muted-foreground">
-                {syncProgress}%
+              <span className="text-xs font-medium text-foreground">
+                {displayProgress}%
               </span>
-              {initialPendingCount > 0 && (
+              {progressText && (
                 <span className="text-xs text-muted-foreground">
-                  {initialPendingCount - pendingCount}/{initialPendingCount}
+                  {progressText}
                 </span>
               )}
             </div>
           </div>
-        )}
-        
-        {/* Current equipment being synced */}
-        {syncStatus === 'syncing' && currentEquipment && (
-          <p className="text-xs text-muted-foreground truncate mb-1">
-            {currentEquipment}
-          </p>
         )}
         
         {/* Pending photos indicator */}
