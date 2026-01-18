@@ -101,6 +101,15 @@ const getInitialOnlineState = () => {
 let globalCacheInProgress = false;
 let globalLastCacheCheck = 0;
 
+// Sync progress state type
+export interface SyncProgressState {
+  currentItem: string | null;
+  currentIndex: number;
+  totalItems: number;
+  percentage: number;
+  type: 'inspection' | 'maintenance' | null;
+}
+
 export function useOfflineSync() {
   const { t } = useTranslation();
   const [isOnline, setIsOnline] = useState(getInitialOnlineState);
@@ -108,6 +117,13 @@ export function useOfflineSync() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
   const [cacheStats, setCacheStats] = useState<offlineDB.StorageStats | null>(null);
+  const [syncProgress, setSyncProgress] = useState<SyncProgressState>({
+    currentItem: null,
+    currentIndex: 0,
+    totalItems: 0,
+    percentage: 0,
+    type: null,
+  });
   const queryClient = useQueryClient();
   const syncInProgressRef = useRef(false);
   const mountedRef = useRef(true);
@@ -449,12 +465,23 @@ export function useOfflineSync() {
     syncInProgressRef.current = true;
     setIsSyncing(true);
     
+    // Initialize progress
+    const totalItems = inspectionActions.length;
+    setSyncProgress({
+      currentItem: null,
+      currentIndex: 0,
+      totalItems,
+      percentage: 0,
+      type: 'inspection',
+    });
+    
     let syncedCount = 0;
     let skippedCount = 0;
     const failedActions: string[] = [];
     const processedActionIds = new Set<string>(); // Track already processed actions to avoid duplicates
 
-    for (const action of inspectionActions) {
+    for (let i = 0; i < inspectionActions.length; i++) {
+      const action = inspectionActions[i];
       // Skip if already processed in this sync cycle (prevents duplicates in same batch)
       if (processedActionIds.has(action.id)) {
         console.log('Skipping duplicate action in batch:', action.id);
@@ -464,6 +491,17 @@ export function useOfflineSync() {
       
       try {
         const inspection = action.data as offlineDB.PendingInspection;
+        
+        // Update progress with current item
+        const currentIndex = i + 1;
+        const percentage = Math.round((currentIndex / totalItems) * 100);
+        setSyncProgress({
+          currentItem: inspection.equipment_name || `Inspeção ${currentIndex}`,
+          currentIndex,
+          totalItems,
+          percentage,
+          type: 'inspection',
+        });
         
         // Check if this inspection already exists in the database (equipment_id + timestamp check)
         const isDuplicate = await checkDuplicateInspection(
@@ -555,6 +593,13 @@ export function useOfflineSync() {
       }
     }
 
+    // Mark progress as complete
+    setSyncProgress(prev => ({
+      ...prev,
+      percentage: 100,
+      currentItem: null,
+    }));
+    
     syncInProgressRef.current = false;
     setIsSyncing(false);
     setLastSyncTime(Date.now());
@@ -601,12 +646,34 @@ export function useOfflineSync() {
     syncInProgressRef.current = true;
     setIsSyncing(true);
     
+    // Initialize progress
+    const totalItems = maintenanceActions.length;
+    setSyncProgress({
+      currentItem: null,
+      currentIndex: 0,
+      totalItems,
+      percentage: 0,
+      type: 'maintenance',
+    });
+    
     let syncedCount = 0;
     const failedActions: string[] = [];
 
-    for (const action of maintenanceActions) {
+    for (let i = 0; i < maintenanceActions.length; i++) {
+      const action = maintenanceActions[i];
       try {
         const maintenance = action.data as offlineDB.PendingMaintenance;
+        
+        // Update progress with current item
+        const currentIndex = i + 1;
+        const percentage = Math.round((currentIndex / totalItems) * 100);
+        setSyncProgress({
+          currentItem: maintenance.equipment_name || `Manutenção ${currentIndex}`,
+          currentIndex,
+          totalItems,
+          percentage,
+          type: 'maintenance',
+        });
         
         const { data: user } = await supabase.auth.getUser();
         
@@ -670,6 +737,13 @@ export function useOfflineSync() {
       }
     }
 
+    // Mark progress as complete
+    setSyncProgress(prev => ({
+      ...prev,
+      percentage: 100,
+      currentItem: null,
+    }));
+    
     syncInProgressRef.current = false;
     setIsSyncing(false);
     setLastSyncTime(Date.now());
@@ -908,6 +982,7 @@ export function useOfflineSync() {
     isSyncing,
     lastSyncTime,
     cacheStats,
+    syncProgress,
     addPendingAction,
     addPendingInspection,
     addPendingMaintenance,
