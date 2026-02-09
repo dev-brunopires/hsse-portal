@@ -1,107 +1,116 @@
 
+# Navio Favorito -- Carregamento Inteligente
 
-# Plano de Performance e Correções para Escala
+## Conceito
 
-## Problemas Identificados
+Admins e admin_masters (ou qualquer usuario com mais de 1 navio) podem marcar **um** navio como favorito (estrela). Esse navio vira o filtro padrao ao acessar o sistema e tambem e o unico baixado para uso offline, otimizando performance.
 
-### 1. Dashboard carrega TODOS os equipamentos na memória
-O `useDashboardStats` faz `SELECT *` sem limite e processa tudo no frontend (status, alertas, categorias). Com milhares de equipamentos, isso vai travar o app.
+## Como Funciona
 
-### 2. Loop de refresh do PWA
-O `PWAUpdatePrompt` faz `window.location.reload()` no evento `controllerchange` sem proteção contra loops. Em ambiente de preview com builds frequentes, isso causa reloads infinitos.
+1. **Estrela no seletor de navios** -- No dropdown/drawer de navios do Header, cada navio ganha um icone de estrela ao lado
+2. **Um favorito por vez** -- Ao favoritar um navio, o anterior e desfavoritado automaticamente (toggle simples)
+3. **Filtro padrao ao login** -- O `ShipFilterContext` carrega o navio favorito como `selectedShipId` inicial (ao inves de "Todas as Unidades")
+4. **Offline otimizado** -- O `useOfflineSync` usa o navio favorito como filtro de download, mesmo para admins (que hoje baixam tudo)
+5. **Sem favorito = comportamento atual** -- Se nenhum navio estiver favoritado, o sistema funciona como hoje (todas as unidades, download completo)
 
-### 3. Mobile renderiza TODOS os cards sem virtualização
-No mobile/tablet, o `VirtualizedEquipmentTable` renderiza todos os equipamentos como cards (`sortedEquipment.map(...)`) sem virtualização -- só o desktop usa o virtualizer.
+## Detalhes Tecnicos
 
-### 4. useEffect com dependência instável causa re-renders
-Linha 246 do VirtualizedEquipmentTable: `rowVirtualizer.getVirtualItems()` na lista de dependências do `useEffect` cria um array novo a cada render, disparando o efeito infinitamente.
+### 1. Tabela no banco (ja existe parcialmente)
 
-### 5. Limite de 1000 rows do Supabase não tratado
-O `useDashboardStats` não pagina -- se houver mais de 1000 equipamentos, os dados ficam incompletos silenciosamente.
-
-### 6. Warning de ref em componente funcional
-`TrendIndicator` dentro de `ActivityComparisonChart` recebe ref indevidamente (React warning no console).
-
----
-
-## Correções Propostas
-
-### A. Mover cálculos do Dashboard para o servidor (SQL)
-Criar uma função SQL `get_dashboard_stats(ship_id)` que retorna contagens e alertas diretamente do banco, eliminando o carregamento de todos os equipamentos no frontend.
-
-### B. Proteger PWA contra loop de reload
-Adicionar um guard com `sessionStorage` no `controllerchange` para evitar mais de 1 reload por sessão.
-
-### C. Virtualizar cards no mobile
-Usar `useVirtualizer` também na view mobile de cards, renderizando apenas os visíveis na tela.
-
-### D. Corrigir dependência instável do useEffect
-Remover `rowVirtualizer.getVirtualItems()` da lista de deps e usar o tamanho do virtualizer ou um ref estável.
-
-### E. Tratar limite de 1000 rows no Dashboard
-Na solução SQL (item A), isso é resolvido automaticamente. Caso mantenhamos frontend, adicionar paginação com `.range()`.
-
-### F. Corrigir warning do TrendIndicator
-Mover `TrendIndicator` para fora do componente ou usar `React.forwardRef`.
-
----
-
-## Detalhes Técnicos
-
-### Migração SQL -- `get_dashboard_stats`
+A tabela `user_favorites` ja existe com `entity_type` e `entity_id`. Vamos reutiliza-la com `entity_type = 'ship'`. Precisamos apenas de uma constraint para garantir no maximo 1 navio favorito por usuario:
 
 ```text
-CREATE OR REPLACE FUNCTION public.get_dashboard_stats(p_ship_id uuid DEFAULT NULL)
-RETURNS jsonb
-LANGUAGE plpgsql STABLE SECURITY DEFINER
-AS $$
-  -- Retorna contagens por status, categoria, alertas de certificados
-  -- e manutenções diretamente do banco, sem carregar todos os registros
+-- Funcao para garantir max 1 ship favorito por usuario
+-- Antes de inserir, remove qualquer favorito ship existente do mesmo usuario
+CREATE OR REPLACE FUNCTION enforce_single_favorite_ship()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF NEW.entity_type = 'ship' THEN
+    DELETE FROM public.user_favorites
+    WHERE user_id = NEW.user_id
+      AND entity_type = 'ship'
+      AND id != NEW.id;
+  END IF;
+  RETURN NEW;
+END;
 $$;
+
+CREATE TRIGGER trg_single_favorite_ship
+  AFTER INSERT ON public.user_favorites
+  FOR EACH ROW EXECUTE FUNCTION enforce_single_favorite_ship();
 ```
 
-O hook `useDashboardStats` passa a chamar essa função via `supabase.rpc('get_dashboard_stats', { p_ship_id })`, reduzindo de "carregar todos os equipamentos + processar no JS" para uma única chamada RPC leve.
+### 2. Hook `useFavoriteShip` (novo)
 
-### PWAUpdatePrompt -- guard de reload
+Hook dedicado que encapsula a logica de navio favorito:
+
+- `useFavoriteShip()` -- retorna o `ship_id` favorito (ou `null`)
+- `useSetFavoriteShip()` -- mutation para favoritar/desfavoritar
+- Internamente usa a tabela `user_favorites` com `entity_type = 'ship'`
+
+### 3. Integrar no `ShipFilterContext`
+
+No `useEffect` de inicializacao:
 
 ```text
-const handleControllerChange = () => {
-  if (sessionStorage.getItem('sw-reloaded')) return;
-  sessionStorage.setItem('sw-reloaded', '1');
-  window.location.reload();
-};
+// Prioridade: localStorage > navio favorito > null (todas)
+if (isFilterEnabled) {
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored) {
+    setSelectedShipId(stored);
+  } else if (favoriteShipId) {
+    setSelectedShipId(favoriteShipId);
+  }
+}
 ```
 
-### VirtualizedEquipmentTable -- mobile virtualizado
+### 4. UI no Header -- Estrela nos navios
 
-Substituir o `sortedEquipment.map()` na view mobile por um virtualizer com `estimateSize: () => 220` (altura do card) e renderizar apenas os itens virtuais.
-
-### useEffect fix
+No dropdown e drawer de selecao de navios, cada item ganha um botao de estrela (Star/StarOff do Lucide). Clicar na estrela favorita aquele navio. O navio favoritado mostra a estrela preenchida.
 
 ```text
-// Antes (instável):
-], [hasNextPage, fetchNextPage, sortedEquipment.length, isFetchingNextPage, rowVirtualizer.getVirtualItems()]);
-
-// Depois (estável):
-], [hasNextPage, fetchNextPage, sortedEquipment.length, isFetchingNextPage]);
+[* Navio Alpha]     <-- favoritado (estrela preenchida)
+[  Navio Beta ]     <-- nao favoritado (estrela vazia)
+[  Navio Gamma]
 ```
 
-Usar um `onScroll` callback ou checar dentro do virtualizer com `scrollOffset`.
+### 5. Offline -- Download filtrado pelo favorito
 
-### TrendIndicator fix
+No `getUserShipIds()` do `useOfflineSync.ts`:
 
-Mover a definição de `TrendIndicator` para fora do componente `ActivityComparisonChart`, como um componente standalone no mesmo arquivo.
+```text
+if (role === 'admin' || role === 'admin_master') {
+  // Verificar se tem navio favorito
+  const { data: fav } = await supabase
+    .from('user_favorites')
+    .select('entity_id')
+    .eq('user_id', user.id)
+    .eq('entity_type', 'ship')
+    .maybeSingle();
 
----
+  if (fav?.entity_id) {
+    return [fav.entity_id]; // Baixar apenas o favorito
+  }
+  return null; // Sem favorito = baixar tudo
+}
+```
 
-## Resumo de Impacto
+### 6. Arquivos a criar/modificar
 
-| Mudança | Impacto |
-|---------|---------|
-| Dashboard SQL | Elimina carregamento de milhares de registros no frontend |
-| PWA guard | Para o loop de refresh |
-| Mobile virtualizado | Renderiza ~5 cards ao invés de milhares |
-| useEffect fix | Elimina re-renders desnecessários |
-| 1000 rows | Dados completos sempre |
-| TrendIndicator | Remove warnings do console |
+| Arquivo | Acao |
+|---------|------|
+| Migracao SQL | Criar trigger `enforce_single_favorite_ship` |
+| `src/hooks/useFavoriteShip.ts` | Novo hook dedicado |
+| `src/contexts/ShipFilterContext.tsx` | Usar favorito como default |
+| `src/components/layout/Header.tsx` | Adicionar estrela nos itens de navio |
+| `src/hooks/useOfflineSync.ts` | Filtrar download pelo favorito |
+| `src/i18n/locales/en.json` e `pt-BR.json` | Traducoes ("Navio favorito", "Favoritar navio") |
 
+### 7. Fluxo do usuario
+
+1. Admin faz login -> ve "Todas as Unidades" (sem favorito ainda)
+2. Abre o seletor de navios -> clica na estrela do "Navio Alpha"
+3. Toast: "Navio Alpha definido como favorito"
+4. Na proxima vez que acessar, "Navio Alpha" ja esta selecionado automaticamente
+5. Offline: so baixa dados do "Navio Alpha"
+6. Para mudar: clica na estrela de outro navio (ou remove a estrela do atual)
