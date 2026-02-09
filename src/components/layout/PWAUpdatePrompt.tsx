@@ -63,13 +63,21 @@ export function PWAUpdatePrompt() {
   }, []);
 
   const handleUpdate = useCallback(() => {
-    if (!waitingWorker) return;
-
     setIsUpdating(true);
-    
-    // Tell the waiting service worker to skip waiting
-    waitingWorker.postMessage({ type: 'SKIP_WAITING' });
     hapticSuccess();
+
+    // Clear any previous reload guard so we can actually reload
+    sessionStorage.removeItem('sw-reloaded');
+    
+    if (waitingWorker) {
+      // Tell the waiting service worker to skip waiting
+      waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+    }
+
+    // Fallback: if controllerchange doesn't fire within 3 seconds, force reload
+    setTimeout(() => {
+      window.location.reload();
+    }, 3000);
   }, [waitingWorker]);
 
   const handleDismiss = () => {
