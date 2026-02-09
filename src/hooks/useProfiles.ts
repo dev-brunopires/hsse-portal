@@ -63,6 +63,7 @@ export function useProfiles() {
     },
     // Enable when org is ready OR platform owner without org
     enabled: !isOrgLoading && (!!organization?.id || isPlatformOwnerWithoutOrg),
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 }
 
@@ -113,5 +114,6 @@ export function useTechniciansAndAdmins() {
     },
     // Enable when org is ready OR platform owner without org
     enabled: !isOrgLoading && (!!organization?.id || isPlatformOwnerWithoutOrg),
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 }

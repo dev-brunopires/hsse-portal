@@ -223,6 +223,7 @@ export function useCertificateStats() {
       return stats;
     },
     enabled: isReady && !!organization?.id,
+    staleTime: 1000 * 60 * 3, // 3 minutes
   });
 }
 

@@ -123,6 +123,9 @@ export function useCreateMaintenancePlan() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-plans'] });
       queryClient.invalidateQueries({ queryKey: ['upcoming-maintenance'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['maintenance-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['maintenance-stats'] });
       toast.success(i18n.t('hooks.maintenance.planCreated'));
     },
     onError: (error) => {
@@ -150,6 +153,9 @@ export function useUpdateMaintenancePlan() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-plans'] });
       queryClient.invalidateQueries({ queryKey: ['upcoming-maintenance'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['maintenance-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['maintenance-stats'] });
       toast.success(i18n.t('hooks.maintenance.planUpdated'));
     },
     onError: (error) => {
@@ -174,6 +180,9 @@ export function useDeleteMaintenancePlan() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-plans'] });
       queryClient.invalidateQueries({ queryKey: ['upcoming-maintenance'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['maintenance-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['maintenance-stats'] });
       toast.success(i18n.t('hooks.maintenance.planDeleted'));
     },
     onError: (error) => {
@@ -235,6 +244,9 @@ export function useCompleteMaintenance() {
       queryClient.invalidateQueries({ queryKey: ['maintenance-plans'] });
       queryClient.invalidateQueries({ queryKey: ['upcoming-maintenance'] });
       queryClient.invalidateQueries({ queryKey: ['maintenance-logs'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['maintenance-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['maintenance-stats'] });
       toast.success(i18n.t('hooks.maintenance.completed'));
     },
     onError: (error) => {
