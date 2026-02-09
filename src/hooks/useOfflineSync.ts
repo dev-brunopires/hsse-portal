@@ -868,7 +868,7 @@ export function useOfflineSync() {
         if (logError) throw logError;
 
         const calculateNextDueDate = (currentDate: string, frequency: string): string => {
-          const date = new Date(currentDate);
+          const date = new Date(`${currentDate}T12:00:00`);
           switch (frequency) {
             case 'daily': date.setDate(date.getDate() + 1); break;
             case 'weekly': date.setDate(date.getDate() + 7); break;
@@ -876,7 +876,10 @@ export function useOfflineSync() {
             case 'quarterly': date.setMonth(date.getMonth() + 3); break;
             case 'yearly': date.setFullYear(date.getFullYear() + 1); break;
           }
-          return date.toISOString().split('T')[0];
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
         };
 
         const nextDate = calculateNextDueDate(maintenance.next_due_date, maintenance.frequency);

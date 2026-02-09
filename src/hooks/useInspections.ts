@@ -137,7 +137,8 @@ interface CreateInspectionData {
 
 // Calculate next inspection date based on category frequency
 function calculateNextInspectionDate(inspectionDate: string, frequency: string): string {
-  const date = new Date(inspectionDate);
+  // Use T12:00:00 to avoid timezone off-by-one when parsing date-only strings
+  const date = new Date(`${inspectionDate}T12:00:00`);
   
   switch (frequency) {
     case 'monthly':
@@ -147,6 +148,7 @@ function calculateNextInspectionDate(inspectionDate: string, frequency: string):
       date.setDate(date.getDate() + 90);
       break;
     case 'semi-annual':
+    case 'semiannual':
       date.setDate(date.getDate() + 180);
       break;
     case 'annual':
@@ -156,7 +158,11 @@ function calculateNextInspectionDate(inspectionDate: string, frequency: string):
       date.setDate(date.getDate() + 30); // Default to monthly
   }
   
-  return date.toISOString().split('T')[0];
+  // Format as YYYY-MM-DD using local date parts to avoid timezone shift
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 // Map inspection status to equipment status
