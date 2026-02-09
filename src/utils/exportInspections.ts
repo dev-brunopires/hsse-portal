@@ -27,22 +27,24 @@ const getDateLocale = () => i18n.language === 'en' ? enUS : ptBR;
 
 async function loadInspectionPhotoAsBase64(filePath: string): Promise<string | null> {
   try {
-    const { data } = await supabase.storage
+    // Use download() instead of signed URL + fetch to avoid CORS issues
+    const { data, error } = await supabase.storage
       .from('inspection-photos')
-      .createSignedUrl(filePath, 60);
+      .download(filePath);
     
-    if (!data?.signedUrl) return null;
+    if (error || !data) {
+      console.warn('Failed to download inspection photo:', filePath, error?.message);
+      return null;
+    }
 
-    const response = await fetch(data.signedUrl);
-    const blob = await response.blob();
-    
     return new Promise((resolve) => {
       const reader = new FileReader();
       reader.onloadend = () => resolve(reader.result as string);
       reader.onerror = () => resolve(null);
-      reader.readAsDataURL(blob);
+      reader.readAsDataURL(data);
     });
-  } catch {
+  } catch (e) {
+    console.warn('Error loading inspection photo for PDF:', filePath, e);
     return null;
   }
 }
