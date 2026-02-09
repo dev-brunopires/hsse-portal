@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFavoriteShip } from '@/hooks/useFavoriteShip';
 
 const STORAGE_KEY = 'selected_ship_id';
 
@@ -16,13 +17,14 @@ export function ShipFilterProvider({ children }: { children: ReactNode }) {
   const { user, role, isPlatformOwner, loading: authLoading, profileLoading } = useAuth();
   const [initialized, setInitialized] = useState(false);
   const [selectedShipId, setSelectedShipIdState] = useState<string | null>(null);
+  const { data: favoriteShipId, isLoading: favLoading } = useFavoriteShip();
 
   // Admin, admin_master, and platform owners can use global ship filter
   const isFilterEnabled = role === 'admin' || role === 'admin_master' || isPlatformOwner;
 
-  // Initialize from localStorage only AFTER auth + profile are loaded
+  // Initialize from localStorage only AFTER auth + profile + favorite are loaded
   useEffect(() => {
-    if (authLoading || profileLoading) return;
+    if (authLoading || profileLoading || favLoading) return;
 
     if (!user) {
       setSelectedShipIdState(null);
@@ -33,14 +35,22 @@ export function ShipFilterProvider({ children }: { children: ReactNode }) {
 
     if (isFilterEnabled) {
       const stored = localStorage.getItem(STORAGE_KEY);
-      setSelectedShipIdState(stored || null);
+      if (stored) {
+        setSelectedShipIdState(stored);
+      } else if (favoriteShipId) {
+        // Use favorite ship as default when no localStorage selection exists
+        setSelectedShipIdState(favoriteShipId);
+        localStorage.setItem(STORAGE_KEY, favoriteShipId);
+      } else {
+        setSelectedShipIdState(null);
+      }
     } else {
       setSelectedShipIdState(null);
       localStorage.removeItem(STORAGE_KEY);
     }
 
     setInitialized(true);
-  }, [authLoading, profileLoading, user?.id, isFilterEnabled]);
+  }, [authLoading, profileLoading, favLoading, user?.id, isFilterEnabled, favoriteShipId]);
 
   const setSelectedShipId = useCallback((shipId: string | null) => {
     setSelectedShipIdState(shipId);
@@ -52,8 +62,8 @@ export function ShipFilterProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const isReady = useMemo(() => {
-    return !authLoading && !profileLoading && initialized;
-  }, [authLoading, profileLoading, initialized]);
+    return !authLoading && !profileLoading && !favLoading && initialized;
+  }, [authLoading, profileLoading, favLoading, initialized]);
 
   return (
     <ShipFilterContext.Provider

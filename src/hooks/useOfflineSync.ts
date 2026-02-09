@@ -117,7 +117,18 @@ async function getUserShipIds(): Promise<string[] | null> {
   const { data: role } = await supabase.rpc('get_user_role', { _user_id: user.id });
   
   if (role === 'admin' || role === 'admin_master') {
-    // Return null = download all (no ship filter)
+    // Check if user has a favorite ship — download only that one
+    const { data: fav } = await supabase
+      .from('user_favorites')
+      .select('entity_id')
+      .eq('user_id', user.id)
+      .eq('entity_type', 'ship')
+      .maybeSingle();
+
+    if (fav?.entity_id) {
+      return [fav.entity_id]; // Download only the favorite ship
+    }
+    // No favorite = download all (no ship filter)
     return null;
   }
 

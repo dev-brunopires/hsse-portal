@@ -2260,6 +2260,12 @@
       "error": "Erro ao atualizar favoritos",
       "notAuthenticated": "Usuário não autenticado"
     },
+    "favoriteShip": {
+      "setSuccess": "{{name}} definido como navio favorito",
+      "removedSuccess": "Navio favorito removido",
+      "error": "Erro ao atualizar navio favorito",
+      "tooltip": "Definir como favorito (carregamento padrão)"
+    },
     "checklistTemplate": {
       "created": "Template de checklist criado com sucesso!",
       "createError": "Erro ao criar template de checklist",
