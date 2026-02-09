@@ -16,7 +16,6 @@ const showSyncPushNotification = async (
 ) => {
   if (!('Notification' in window)) return;
   
-  // Request permission if not granted
   if (Notification.permission === 'default') {
     await Notification.requestPermission();
   }
@@ -31,7 +30,7 @@ const showSyncPushNotification = async (
         icon: '/pwa-192x192.png',
         badge: '/pwa-192x192.png',
         tag,
-        requireInteraction, // Keep notification visible on some platforms
+        requireInteraction,
         data: { 
           type: tag,
           timestamp: Date.now(),
@@ -62,33 +61,29 @@ export type {
 
 const MAX_RETRY_COUNT = 5;
 const CACHE_MAX_AGE = 1000 * 60 * 60 * 24; // 24 hours
-const EQUIPMENT_BATCH_SIZE = 500; // Fetch in batches for large datasets
+const EQUIPMENT_BATCH_SIZE = 500;
 const MIN_CACHE_CHECK_INTERVAL = 1000 * 60 * 5; // 5 minutes between cache checks
 const SESSION_CACHE_KEY = 'offline_cache_checked_this_session';
 
 // Exponential backoff configuration
-const BASE_RETRY_DELAY = 1000; // 1 second base
-const MAX_RETRY_DELAY = 30000; // 30 seconds max
+const BASE_RETRY_DELAY = 1000;
+const MAX_RETRY_DELAY = 30000;
 
-// Calculate delay with exponential backoff and jitter
 const calculateBackoffDelay = (retryCount: number): number => {
   const exponentialDelay = Math.min(
     BASE_RETRY_DELAY * Math.pow(2, retryCount),
     MAX_RETRY_DELAY
   );
-  // Add jitter (±25% randomization to prevent thundering herd)
   const jitter = exponentialDelay * 0.25 * (Math.random() * 2 - 1);
   return Math.round(exponentialDelay + jitter);
 };
 
-// Helper to wait with backoff
 const waitWithBackoff = (retryCount: number): Promise<void> => {
   const delay = calculateBackoffDelay(retryCount);
   console.log(`Retry ${retryCount}: waiting ${delay}ms before next attempt`);
   return new Promise(resolve => setTimeout(resolve, delay));
 };
 
-// Safe initialization of state
 const getInitialOnlineState = () => {
   try {
     return typeof navigator !== 'undefined' ? navigator.onLine : true;
@@ -97,7 +92,7 @@ const getInitialOnlineState = () => {
   }
 };
 
-// Module-level singleton guards to prevent duplicate caching across hook instances
+// Module-level singleton guards
 let globalCacheInProgress = false;
 let globalLastCacheCheck = 0;
 
@@ -108,6 +103,27 @@ export interface SyncProgressState {
   totalItems: number;
   percentage: number;
   type: 'inspection' | 'maintenance' | null;
+}
+
+/**
+ * Get the ship IDs accessible to the current user.
+ * Admins/admin_master see all ships in their org; others see assigned ships.
+ */
+async function getUserShipIds(): Promise<string[] | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  // Check if admin/admin_master (they see all ships in org)
+  const { data: role } = await supabase.rpc('get_user_role', { _user_id: user.id });
+  
+  if (role === 'admin' || role === 'admin_master') {
+    // Return null = download all (no ship filter)
+    return null;
+  }
+
+  // For technicians/supervisors/viewers, get assigned ships
+  const { data: shipIds } = await supabase.rpc('get_user_ship_ids', { _user_id: user.id });
+  return shipIds || [];
 }
 
 export function useOfflineSync() {
@@ -153,7 +169,11 @@ export function useOfflineSync() {
     }
   }, []);
 
-  // Pre-cache critical data for offline use with pagination for large datasets
+  /**
+   * Pre-cache data for offline use.
+   * - First sync: full download filtered by user's ships
+   * - Subsequent syncs: delta sync using updated_at timestamp
+   */
   const preCacheData = useCallback(async () => {
     if (!isOnline || globalCacheInProgress) return;
     
@@ -162,181 +182,49 @@ export function useOfflineSync() {
     try {
       console.log('Starting offline data caching...');
 
-      // Get total equipment count first
-      const { count: totalEquipment } = await supabase
-        .from('equipment')
-        .select('*', { count: 'exact', head: true });
+      // Determine which ships this user can access
+      const userShipIds = await getUserShipIds();
+      const lastSyncTs = await offlineDB.getLastSyncTimestamp();
+      const isFullSync = !lastSyncTs;
+      const syncStartTime = new Date().toISOString();
 
-      console.log(`Total equipment to cache: ${totalEquipment}`);
-
-      // Fetch equipment in batches to handle 2000+ items
-      const allEquipment: offlineDB.CachedEquipment[] = [];
-      let offset = 0;
-      
-      while (offset < (totalEquipment || 0)) {
-        const { data: batch } = await supabase
-          .from('equipment')
-          .select(`
-            id, name, internal_code, status, category_id, ship_id, location, serial_number, short_code,
-            type, manufacturer, model, capacity, manufacturing_date, acquisition_date,
-            expiry_date, certificate_expiry, last_inspection, next_inspection, observations
-          `)
-          .range(offset, offset + EQUIPMENT_BATCH_SIZE - 1)
-          .order('internal_code', { ascending: true });
-
-        if (batch) {
-          allEquipment.push(...batch);
-          console.log(`Cached ${allEquipment.length}/${totalEquipment} equipment`);
-        }
-        
-        offset += EQUIPMENT_BATCH_SIZE;
+      console.log(isFullSync ? 'Full sync (first time)' : `Delta sync since ${lastSyncTs}`);
+      if (userShipIds) {
+        console.log(`Filtering by ${userShipIds.length} user ships`);
       }
 
-      // Cache equipment in IndexedDB
-      await offlineDB.cacheEquipment(allEquipment);
-
-      // Cache categories
-      const { data: categories } = await supabase
-        .from('categories')
-        .select('id, name, description, inspection_frequency');
-      
-      if (categories) {
-        await offlineDB.cacheCategories(categories);
+      // ===== Equipment sync =====
+      if (isFullSync) {
+        // Full sync: clear and download all
+        await fullSyncEquipment(userShipIds);
+      } else {
+        // Delta sync: only fetch updated/new records
+        await deltaSyncEquipment(userShipIds, lastSyncTs);
       }
 
-      // Cache ships
-      const { data: ships } = await supabase
-        .from('ships')
-        .select('id, name, code');
-      
-      if (ships) {
-        await offlineDB.cacheShips(ships);
-      }
+      // ===== Other data (small datasets, always full refresh) =====
+      await Promise.all([
+        syncCategories(),
+        syncShips(),
+        syncTemplates(),
+        syncMaintenancePlans(userShipIds),
+      ]);
 
-      // Cache checklist templates
-      const { data: templates } = await supabase
-        .from('checklist_templates')
-        .select(`
-          id,
-          name,
-          category_id,
-          checklist_template_items (
-            id,
-            description,
-            is_required,
-            order_index
-          )
-        `);
-      
-      if (templates) {
-        await offlineDB.cacheTemplates(templates);
-      }
+      // ===== Last inspections (delta-aware) =====
+      await syncLastInspections(lastSyncTs);
 
-      // Cache maintenance plans with equipment info
-      const { data: maintenancePlans } = await supabase
-        .from('maintenance_plans')
-        .select(`
-          id,
-          equipment_id,
-          title,
-          description,
-          frequency,
-          next_due_date,
-          priority,
-          equipment (
-            name,
-            internal_code,
-            ship_id,
-            ships (name)
-          )
-        `)
-        .order('next_due_date', { ascending: true });
-
-      if (maintenancePlans) {
-        const cachedPlans: offlineDB.CachedMaintenancePlan[] = maintenancePlans.map((plan: any) => ({
-          id: plan.id,
-          equipment_id: plan.equipment_id,
-          title: plan.title,
-          description: plan.description,
-          frequency: plan.frequency,
-          next_due_date: plan.next_due_date,
-          priority: plan.priority,
-          equipment_name: plan.equipment?.name || '',
-          equipment_code: plan.equipment?.internal_code || '',
-          ship_id: plan.equipment?.ship_id || null,
-          ship_name: plan.equipment?.ships?.name || null,
-        }));
-        await offlineDB.cacheMaintenancePlans(cachedPlans);
-      }
-
-      // Cache last inspection for each equipment (for pre-inspection warnings)
-      // Uses a subquery approach: get all equipment IDs, then fetch their last inspections
-      const equipmentIds = allEquipment.map(e => e.id);
-      
-      // Fetch last inspection for each equipment in batches
-      const lastInspections: offlineDB.CachedLastInspection[] = [];
-      const INSPECTION_BATCH_SIZE = 200;
-      
-      for (let i = 0; i < equipmentIds.length; i += INSPECTION_BATCH_SIZE) {
-        const batchIds = equipmentIds.slice(i, i + INSPECTION_BATCH_SIZE);
-        
-        // Get the most recent inspection for each equipment in this batch
-        const { data: inspections } = await supabase
-          .from('inspections')
-          .select(`
-            id,
-            equipment_id,
-            inspection_date,
-            status,
-            observations,
-            recommendations,
-            actions_taken,
-            profiles!inspections_inspector_id_fkey (full_name)
-          `)
-          .in('equipment_id', batchIds)
-          .order('inspection_date', { ascending: false });
-
-        if (inspections) {
-          // Group by equipment_id and take the first (most recent) one
-          const inspectionsByEquipment = new Map<string, any>();
-          for (const insp of inspections) {
-            if (!inspectionsByEquipment.has(insp.equipment_id)) {
-              inspectionsByEquipment.set(insp.equipment_id, insp);
-            }
-          }
-          
-          // Convert to CachedLastInspection format
-          inspectionsByEquipment.forEach((insp, equipId) => {
-            lastInspections.push({
-              id: insp.id,
-              equipment_id: equipId,
-              inspection_date: insp.inspection_date,
-              status: insp.status,
-              observations: insp.observations,
-              recommendations: insp.recommendations,
-              actions_taken: insp.actions_taken,
-              inspector_name: (insp.profiles as any)?.full_name || null,
-            });
-          });
-        }
-        
-        console.log(`Cached ${lastInspections.length}/${equipmentIds.length} last inspections`);
-      }
-      
-      await offlineDB.cacheLastInspections(lastInspections);
-
-      // Set cache timestamp
+      // Save sync timestamp
+      await offlineDB.setLastSyncTimestamp(syncStartTime);
       await offlineDB.setCacheTimestamp();
-
-      // Refresh stats
       await refreshStats();
 
-      console.log('Offline data cached successfully');
-      // Only show toast if this is a manual refresh or first cache (not auto-refresh)
+      const equipCount = await offlineDB.getEquipmentCount();
+      console.log(`Offline data cached successfully (${equipCount} equipment)`);
+      
       const isFirstCache = !sessionStorage.getItem(SESSION_CACHE_KEY);
       if (isFirstCache) {
         toast.success(t('offline.cacheUpdated'), {
-          description: t('offline.cacheUpdatedDesc', { count: allEquipment.length }),
+          description: t('offline.cacheUpdatedDesc', { count: equipCount }),
         });
       }
     } catch (error) {
@@ -347,16 +235,277 @@ export function useOfflineSync() {
     }
   }, [isOnline, t, refreshStats]);
 
+  // ===== Sync helper functions =====
+
+  async function fullSyncEquipment(shipIds: string[] | null) {
+    // Get total count with ship filter
+    let countQuery = supabase
+      .from('equipment')
+      .select('*', { count: 'exact', head: true });
+    
+    if (shipIds && shipIds.length > 0) {
+      countQuery = countQuery.in('ship_id', shipIds);
+    }
+    
+    const { count: totalEquipment } = await countQuery;
+    console.log(`Total equipment to cache: ${totalEquipment}`);
+
+    const allEquipment: offlineDB.CachedEquipment[] = [];
+    let offset = 0;
+    
+    while (offset < (totalEquipment || 0)) {
+      let query = supabase
+        .from('equipment')
+        .select(`
+          id, name, internal_code, status, category_id, ship_id, location, serial_number, short_code,
+          type, manufacturer, model, capacity, manufacturing_date, acquisition_date,
+          expiry_date, certificate_expiry, last_inspection, next_inspection, observations, updated_at
+        `)
+        .range(offset, offset + EQUIPMENT_BATCH_SIZE - 1)
+        .order('internal_code', { ascending: true });
+
+      if (shipIds && shipIds.length > 0) {
+        query = query.in('ship_id', shipIds);
+      }
+
+      const { data: batch } = await query;
+
+      if (batch) {
+        allEquipment.push(...batch);
+        console.log(`Fetched ${allEquipment.length}/${totalEquipment} equipment`);
+      }
+      
+      offset += EQUIPMENT_BATCH_SIZE;
+    }
+
+    // Full replace on first sync
+    await offlineDB.cacheEquipment(allEquipment);
+  }
+
+  async function deltaSyncEquipment(shipIds: string[] | null, lastSyncTs: string) {
+    // Fetch only records updated since last sync
+    let query = supabase
+      .from('equipment')
+      .select(`
+        id, name, internal_code, status, category_id, ship_id, location, serial_number, short_code,
+        type, manufacturer, model, capacity, manufacturing_date, acquisition_date,
+        expiry_date, certificate_expiry, last_inspection, next_inspection, observations, updated_at
+      `)
+      .gte('updated_at', lastSyncTs)
+      .order('internal_code', { ascending: true });
+
+    if (shipIds && shipIds.length > 0) {
+      query = query.in('ship_id', shipIds);
+    }
+
+    // Paginate delta results (could be large after long offline period)
+    const updatedEquipment: offlineDB.CachedEquipment[] = [];
+    let offset = 0;
+    let hasMore = true;
+
+    while (hasMore) {
+      const { data: batch } = await query.range(offset, offset + EQUIPMENT_BATCH_SIZE - 1);
+      
+      if (batch && batch.length > 0) {
+        updatedEquipment.push(...batch);
+        offset += EQUIPMENT_BATCH_SIZE;
+        hasMore = batch.length === EQUIPMENT_BATCH_SIZE;
+      } else {
+        hasMore = false;
+      }
+    }
+
+    if (updatedEquipment.length > 0) {
+      // Upsert (insert or update) without clearing existing data
+      await offlineDB.upsertEquipment(updatedEquipment);
+      console.log(`Delta synced ${updatedEquipment.length} equipment`);
+    }
+
+    // Check for deleted equipment: compare local IDs with server IDs
+    // Only do this occasionally (every 6 hours) to avoid expensive queries
+    const lastDeleteCheck = await offlineDB.getMetadata<number>('last_delete_check');
+    const SIX_HOURS = 6 * 60 * 60 * 1000;
+    
+    if (!lastDeleteCheck || Date.now() - lastDeleteCheck > SIX_HOURS) {
+      await checkDeletedEquipment(shipIds);
+      await offlineDB.setMetadata('last_delete_check', Date.now());
+    }
+  }
+
+  async function checkDeletedEquipment(shipIds: string[] | null) {
+    try {
+      // Get all server IDs
+      let query = supabase.from('equipment').select('id');
+      if (shipIds && shipIds.length > 0) {
+        query = query.in('ship_id', shipIds);
+      }
+
+      const serverIds = new Set<string>();
+      let offset = 0;
+      let hasMore = true;
+
+      while (hasMore) {
+        const { data: batch } = await query.range(offset, offset + 1000 - 1);
+        if (batch && batch.length > 0) {
+          batch.forEach(r => serverIds.add(r.id));
+          offset += 1000;
+          hasMore = batch.length === 1000;
+        } else {
+          hasMore = false;
+        }
+      }
+
+      // Get local IDs
+      const localIds = await offlineDB.getEquipmentIds();
+      
+      // Find IDs that exist locally but not on server
+      const deletedIds = localIds.filter(id => !serverIds.has(id));
+      
+      if (deletedIds.length > 0) {
+        await offlineDB.removeDeletedEquipment(deletedIds);
+        console.log(`Removed ${deletedIds.length} deleted equipment from cache`);
+      }
+    } catch (error) {
+      console.error('Error checking deleted equipment:', error);
+    }
+  }
+
+  async function syncCategories() {
+    const { data: categories } = await supabase
+      .from('categories')
+      .select('id, name, description, inspection_frequency');
+    if (categories) {
+      await offlineDB.cacheCategories(categories);
+    }
+  }
+
+  async function syncShips() {
+    const { data: ships } = await supabase
+      .from('ships')
+      .select('id, name, code');
+    if (ships) {
+      await offlineDB.cacheShips(ships);
+    }
+  }
+
+  async function syncTemplates() {
+    const { data: templates } = await supabase
+      .from('checklist_templates')
+      .select(`
+        id, name, category_id,
+        checklist_template_items (id, description, is_required, order_index)
+      `);
+    if (templates) {
+      await offlineDB.cacheTemplates(templates);
+    }
+  }
+
+  async function syncMaintenancePlans(shipIds: string[] | null) {
+    let query = supabase
+      .from('maintenance_plans')
+      .select(`
+        id, equipment_id, title, description, frequency, next_due_date, priority,
+        equipment (name, internal_code, ship_id, ships (name))
+      `)
+      .order('next_due_date', { ascending: true });
+
+    // Note: maintenance_plans don't have ship_id directly, filter via equipment join
+    const { data: maintenancePlans } = await query;
+
+    if (maintenancePlans) {
+      let cachedPlans: offlineDB.CachedMaintenancePlan[] = maintenancePlans.map((plan: any) => ({
+        id: plan.id,
+        equipment_id: plan.equipment_id,
+        title: plan.title,
+        description: plan.description,
+        frequency: plan.frequency,
+        next_due_date: plan.next_due_date,
+        priority: plan.priority,
+        equipment_name: plan.equipment?.name || '',
+        equipment_code: plan.equipment?.internal_code || '',
+        ship_id: plan.equipment?.ship_id || null,
+        ship_name: plan.equipment?.ships?.name || null,
+      }));
+
+      // Filter by ship IDs if needed
+      if (shipIds && shipIds.length > 0) {
+        cachedPlans = cachedPlans.filter(p => p.ship_id && shipIds.includes(p.ship_id));
+      }
+
+      await offlineDB.cacheMaintenancePlans(cachedPlans);
+    }
+  }
+
+  async function syncLastInspections(lastSyncTs: string | undefined) {
+    // Get equipment IDs from local cache
+    const equipmentIds = await offlineDB.getEquipmentIds();
+    if (equipmentIds.length === 0) return;
+
+    const lastInspections: offlineDB.CachedLastInspection[] = [];
+    const INSPECTION_BATCH_SIZE = 200;
+    
+    for (let i = 0; i < equipmentIds.length; i += INSPECTION_BATCH_SIZE) {
+      const batchIds = equipmentIds.slice(i, i + INSPECTION_BATCH_SIZE);
+      
+      let query = supabase
+        .from('inspections')
+        .select(`
+          id, equipment_id, inspection_date, status, observations,
+          recommendations, actions_taken,
+          profiles!inspections_inspector_id_fkey (full_name)
+        `)
+        .in('equipment_id', batchIds)
+        .order('inspection_date', { ascending: false });
+
+      // For delta sync, only fetch inspections created since last sync
+      if (lastSyncTs) {
+        query = query.gte('created_at', lastSyncTs);
+      }
+
+      const { data: inspections } = await query;
+
+      if (inspections) {
+        const inspectionsByEquipment = new Map<string, any>();
+        for (const insp of inspections) {
+          if (!inspectionsByEquipment.has(insp.equipment_id)) {
+            inspectionsByEquipment.set(insp.equipment_id, insp);
+          }
+        }
+        
+        inspectionsByEquipment.forEach((insp, equipId) => {
+          lastInspections.push({
+            id: insp.id,
+            equipment_id: equipId,
+            inspection_date: insp.inspection_date,
+            status: insp.status,
+            observations: insp.observations,
+            recommendations: insp.recommendations,
+            actions_taken: insp.actions_taken,
+            inspector_name: (insp.profiles as any)?.full_name || null,
+          });
+        });
+      }
+      
+      console.log(`Synced ${lastInspections.length}/${equipmentIds.length} last inspections`);
+    }
+    
+    if (lastSyncTs && lastInspections.length > 0) {
+      // Delta: upsert only changed inspections
+      await offlineDB.upsertManyInStore(offlineDB.STORES.LAST_INSPECTIONS as any, lastInspections);
+    } else if (!lastSyncTs) {
+      // Full sync: replace all
+      await offlineDB.cacheLastInspections(lastInspections);
+    }
+  }
+
   // Check if cache is stale and notify/refresh (with throttling)
   const checkAndRefreshCache = useCallback(async (force = false) => {
-    // Throttle: skip if checked recently (unless forced)
     const now = Date.now();
     if (!force && now - globalLastCacheCheck < MIN_CACHE_CHECK_INTERVAL) {
       return;
     }
     globalLastCacheCheck = now;
 
-    // Skip if already checked this session (for initial mount)
     const sessionChecked = sessionStorage.getItem(SESSION_CACHE_KEY);
     if (!force && sessionChecked) {
       return;
@@ -366,16 +515,13 @@ export function useOfflineSync() {
     const isValid = await offlineDB.isCacheValid(CACHE_MAX_AGE);
     
     if (!isValid && cacheTimestamp) {
-      // Cache is stale - refresh silently without notification spam
       if (isOnline) {
         await preCacheData();
       }
     } else if (!cacheTimestamp && isOnline) {
-      // No cache exists, create one
       await preCacheData();
     }
 
-    // Mark as checked this session
     sessionStorage.setItem(SESSION_CACHE_KEY, 'true');
   }, [preCacheData, isOnline]);
 
@@ -392,11 +538,9 @@ export function useOfflineSync() {
 
     for (const photo of photos) {
       try {
-        // Convert base64 back to blob
         const blob = offlineDB.base64ToBlob(photo.base64Data, photo.mimeType);
         const file = new File([blob], photo.fileName, { type: photo.mimeType });
         
-        // Upload to storage
         const filePath = generateInspectionPhotoPath(organizationId, serverInspectionId, photo.fileName);
         const { error: uploadError } = await supabase.storage
           .from('inspection-photos')
@@ -407,7 +551,6 @@ export function useOfflineSync() {
           continue;
         }
 
-        // Create photo record in database
         await supabase
           .from('inspection_photos')
           .insert({
@@ -416,7 +559,6 @@ export function useOfflineSync() {
             file_path: filePath,
           });
 
-        // Remove from local storage
         await offlineDB.removePhoto(photo.id);
       } catch (error) {
         console.error('Error uploading photo:', error);
@@ -428,7 +570,7 @@ export function useOfflineSync() {
   const checkDuplicateInspection = useCallback(async (
     equipmentId: string,
     timestamp: number,
-    windowMs: number = 5 * 60 * 1000 // 5 minutes window
+    windowMs: number = 5 * 60 * 1000
   ): Promise<boolean> => {
     try {
       const minDate = new Date(timestamp - windowMs).toISOString();
@@ -465,7 +607,6 @@ export function useOfflineSync() {
     syncInProgressRef.current = true;
     setIsSyncing(true);
     
-    // Initialize progress
     const totalItems = inspectionActions.length;
     setSyncProgress({
       currentItem: null,
@@ -478,11 +619,10 @@ export function useOfflineSync() {
     let syncedCount = 0;
     let skippedCount = 0;
     const failedActions: string[] = [];
-    const processedActionIds = new Set<string>(); // Track already processed actions to avoid duplicates
+    const processedActionIds = new Set<string>();
 
     for (let i = 0; i < inspectionActions.length; i++) {
       const action = inspectionActions[i];
-      // Skip if already processed in this sync cycle (prevents duplicates in same batch)
       if (processedActionIds.has(action.id)) {
         console.log('Skipping duplicate action in batch:', action.id);
         continue;
@@ -492,7 +632,6 @@ export function useOfflineSync() {
       try {
         const inspection = action.data as offlineDB.PendingInspection;
         
-        // Update progress with current item
         const currentIndex = i + 1;
         const percentage = Math.round((currentIndex / totalItems) * 100);
         setSyncProgress({
@@ -503,7 +642,6 @@ export function useOfflineSync() {
           type: 'inspection',
         });
         
-        // Check if this inspection already exists in the database (equipment_id + timestamp check)
         const isDuplicate = await checkDuplicateInspection(
           inspection.equipment_id,
           inspection.timestamp
@@ -511,15 +649,12 @@ export function useOfflineSync() {
         
         if (isDuplicate) {
           console.log('Skipping duplicate inspection for equipment:', inspection.equipment_id);
-          // Remove the action since it's already synced
           await offlineDB.removePendingAction(action.id);
-          // Also clean up any pending photos
           await offlineDB.removePhotosByInspection(inspection.id);
           skippedCount++;
           continue;
         }
         
-        // Create the inspection
         const { data: newInspection, error: inspectionError } = await supabase
           .from('inspections')
           .insert({
@@ -537,7 +672,6 @@ export function useOfflineSync() {
 
         if (inspectionError) throw inspectionError;
 
-        // Create checklist items
         if (inspection.checklist_items.length > 0 && newInspection) {
           const { error: checklistError } = await supabase
             .from('inspection_checklist_items')
@@ -553,12 +687,10 @@ export function useOfflineSync() {
           if (checklistError) console.error('Checklist error:', checklistError);
         }
 
-        // Upload photos if any
         if (newInspection) {
           await uploadPendingPhotos(inspection.id, newInspection.id);
         }
 
-        // Update equipment
         if (newInspection) {
           await supabase
             .from('equipment')
@@ -569,31 +701,24 @@ export function useOfflineSync() {
             .eq('id', inspection.equipment_id);
         }
 
-        // Remove synced action
         await offlineDB.removePendingAction(action.id);
         syncedCount++;
       } catch (error) {
         console.error('Error syncing inspection:', error);
         
-        // Increment retry count
         const retryCount = (action.retryCount || 0) + 1;
         
         if (retryCount >= MAX_RETRY_COUNT) {
           failedActions.push(action.id);
-          // Remove failed action after max retries to prevent infinite loop
           await offlineDB.removePendingAction(action.id);
           console.log(`Inspection sync permanently failed after ${MAX_RETRY_COUNT} attempts`);
         } else {
-          // Update action with new retry count
           await offlineDB.updatePendingAction({ ...action, retryCount });
-          
-          // Apply exponential backoff before continuing
           await waitWithBackoff(retryCount);
         }
       }
     }
 
-    // Mark progress as complete
     setSyncProgress(prev => ({
       ...prev,
       percentage: 100,
@@ -611,13 +736,11 @@ export function useOfflineSync() {
         description: t('offline.syncCompletedDesc', { count: syncedCount }),
       });
       
-      // Show push notification for sync completion
       showSyncPushNotification(
         t('offline.syncCompleted'),
         t('offline.syncCompletedDesc', { count: syncedCount })
       );
       
-      // Refresh data
       queryClient.invalidateQueries({ queryKey: ['inspections'] });
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
     }
@@ -646,7 +769,6 @@ export function useOfflineSync() {
     syncInProgressRef.current = true;
     setIsSyncing(true);
     
-    // Initialize progress
     const totalItems = maintenanceActions.length;
     setSyncProgress({
       currentItem: null,
@@ -664,7 +786,6 @@ export function useOfflineSync() {
       try {
         const maintenance = action.data as offlineDB.PendingMaintenance;
         
-        // Update progress with current item
         const currentIndex = i + 1;
         const percentage = Math.round((currentIndex / totalItems) * 100);
         setSyncProgress({
@@ -677,7 +798,6 @@ export function useOfflineSync() {
         
         const { data: user } = await supabase.auth.getUser();
         
-        // Create maintenance log entry
         const { error: logError } = await supabase
           .from('maintenance_logs')
           .insert({
@@ -690,7 +810,6 @@ export function useOfflineSync() {
 
         if (logError) throw logError;
 
-        // Calculate next due date based on frequency
         const calculateNextDueDate = (currentDate: string, frequency: string): string => {
           const date = new Date(currentDate);
           switch (frequency) {
@@ -703,7 +822,6 @@ export function useOfflineSync() {
           return date.toISOString().split('T')[0];
         };
 
-        // Update plan with next due date
         const nextDate = calculateNextDueDate(maintenance.next_due_date, maintenance.frequency);
         await supabase
           .from('maintenance_plans')
@@ -713,31 +831,24 @@ export function useOfflineSync() {
           })
           .eq('id', maintenance.plan_id);
 
-        // Remove synced action
         await offlineDB.removePendingAction(action.id);
         syncedCount++;
       } catch (error) {
         console.error('Error syncing maintenance:', error);
         
-        // Increment retry count
         const retryCount = (action.retryCount || 0) + 1;
         
         if (retryCount >= MAX_RETRY_COUNT) {
           failedActions.push(action.id);
-          // Remove failed action after max retries
           await offlineDB.removePendingAction(action.id);
           console.log(`Maintenance sync permanently failed after ${MAX_RETRY_COUNT} attempts`);
         } else {
-          // Update action with new retry count
           await offlineDB.updatePendingAction({ ...action, retryCount });
-          
-          // Apply exponential backoff before continuing
           await waitWithBackoff(retryCount);
         }
       }
     }
 
-    // Mark progress as complete
     setSyncProgress(prev => ({
       ...prev,
       percentage: 100,
@@ -755,14 +866,12 @@ export function useOfflineSync() {
         description: t('offline.maintenanceSyncCompletedDesc', { count: syncedCount }),
       });
       
-      // Show push notification for sync completion
       showSyncPushNotification(
         t('offline.maintenanceSyncCompleted'),
         t('offline.maintenanceSyncCompletedDesc', { count: syncedCount }),
         'maintenance-sync-completed'
       );
       
-      // Refresh data
       queryClient.invalidateQueries({ queryKey: ['maintenance-plans'] });
       queryClient.invalidateQueries({ queryKey: ['upcoming-maintenance'] });
       queryClient.invalidateQueries({ queryKey: ['maintenance-logs'] });
@@ -825,7 +934,7 @@ export function useOfflineSync() {
         syncPendingInspections();
         syncPendingMaintenance();
       }
-    }, 30000); // 30 seconds
+    }, 30000);
 
     return () => clearInterval(retryInterval);
   }, [isOnline, isSyncing, syncPendingInspections]);
@@ -862,8 +971,6 @@ export function useOfflineSync() {
     return action.id;
   }, [t, refreshStats]);
 
-  // Add pending inspection (convenience method)
-  // If the inspection already has an id (e.g., for photo association), use it
   const addPendingInspection = useCallback(async (
     inspection: Omit<offlineDB.PendingInspection, 'id' | 'timestamp'> & { id?: string }
   ): Promise<string> => {
@@ -876,7 +983,6 @@ export function useOfflineSync() {
     return addPendingAction('create_inspection', pendingInspection);
   }, [addPendingAction]);
 
-  // Add pending maintenance (convenience method)
   const addPendingMaintenance = useCallback(async (
     maintenance: Omit<offlineDB.PendingMaintenance, 'id' | 'timestamp'>
   ): Promise<string> => {
@@ -889,19 +995,16 @@ export function useOfflineSync() {
     return addPendingAction('complete_maintenance', pendingMaintenance);
   }, [addPendingAction]);
 
-  // Remove a pending action
   const removePendingAction = useCallback(async (id: string) => {
     await offlineDB.removePendingAction(id);
     await refreshStats();
   }, [refreshStats]);
 
-  // Clear all pending actions
   const clearPendingActions = useCallback(async () => {
     await offlineDB.clearPendingActions();
     await refreshStats();
   }, [refreshStats]);
 
-  // Get offline data from IndexedDB
   const getOfflineData = useCallback(async () => {
     try {
       const [equipment, categories, ships, templates, maintenancePlans, lastInspections, cacheTimestamp] = await Promise.all([
@@ -929,12 +1032,10 @@ export function useOfflineSync() {
     }
   }, []);
 
-  // Get last inspection for a specific equipment (offline)
   const getLastInspectionOffline = useCallback(async (equipmentId: string): Promise<offlineDB.CachedLastInspection | undefined> => {
     return offlineDB.getLastInspectionByEquipment(equipmentId);
   }, []);
 
-  // Get pending inspections for display
   const getPendingInspections = useCallback(async (): Promise<offlineDB.PendingInspection[]> => {
     const actions = await offlineDB.getPendingActions();
     return actions
@@ -942,7 +1043,6 @@ export function useOfflineSync() {
       .map(a => a.data as offlineDB.PendingInspection);
   }, []);
 
-  // Get pending maintenance for display
   const getPendingMaintenance = useCallback(async (): Promise<offlineDB.PendingMaintenance[]> => {
     const actions = await offlineDB.getPendingActions();
     return actions
@@ -950,12 +1050,10 @@ export function useOfflineSync() {
       .map(a => a.data as offlineDB.PendingMaintenance);
   }, []);
 
-  // Check if cache is available and valid
   const isCacheAvailable = useCallback(async (): Promise<boolean> => {
     return offlineDB.isCacheValid(CACHE_MAX_AGE);
   }, []);
 
-  // Add photo to pending inspection
   const addPendingPhoto = useCallback(async (
     file: File,
     inspectionId: string
@@ -963,14 +1061,12 @@ export function useOfflineSync() {
     return offlineDB.processAndStorePhoto(file, inspectionId);
   }, []);
 
-  // Get photos for inspection
   const getPendingPhotos = useCallback(async (
     inspectionId: string
   ): Promise<offlineDB.PendingPhoto[]> => {
     return offlineDB.getPhotosByInspection(inspectionId);
   }, []);
 
-  // Remove pending photo
   const removePendingPhoto = useCallback(async (photoId: string) => {
     await offlineDB.removePhoto(photoId);
     await refreshStats();

@@ -1,11 +1,11 @@
 /**
  * IndexedDB-based offline storage for large datasets
- * Supports 2000+ equipment per ship and photo storage
+ * Supports 10,000+ equipment with delta sync and paginated reads
  * localStorage limit is ~5-10MB, IndexedDB supports up to gigabytes
  */
 
 const DB_NAME = 'safeship_offline';
-const DB_VERSION = 3; // Incremented to add last_inspections store
+const DB_VERSION = 4; // Incremented to add updated_at index
 
 // Store names
 const STORES = {
@@ -31,7 +31,6 @@ export interface CachedEquipment {
   location: string;
   serial_number: string;
   short_code?: string;
-  // Additional fields for equipment info display
   type?: string;
   manufacturer?: string | null;
   model?: string | null;
@@ -43,6 +42,7 @@ export interface CachedEquipment {
   last_inspection?: string | null;
   next_inspection?: string | null;
   observations?: string | null;
+  updated_at?: string; // For delta sync
 }
 
 export interface CachedCategory {
@@ -84,7 +84,6 @@ export interface CachedMaintenancePlan {
   ship_name: string | null;
 }
 
-// Cached last inspection for pre-inspection warnings
 export interface CachedLastInspection {
   id: string;
   equipment_id: string;
@@ -98,7 +97,7 @@ export interface CachedLastInspection {
 
 export interface PendingPhoto {
   id: string;
-  inspectionId: string; // Local pending inspection ID
+  inspectionId: string;
   fileName: string;
   mimeType: string;
   base64Data: string;
@@ -122,7 +121,7 @@ export interface PendingInspection {
   inspector_id: string;
   ship_id: string | null;
   timestamp: number;
-  photos?: string[]; // Array of photo IDs stored separately
+  photos?: string[];
 }
 
 export interface PendingMaintenance {
@@ -154,12 +153,18 @@ interface StorageMetadata {
   value: any;
 }
 
+// Paginated result interface
+export interface PaginatedResult<T> {
+  items: T[];
+  hasMore: boolean;
+  total: number;
+}
+
 // Open/create database
 let dbInstance: IDBDatabase | null = null;
 let isOpening = false;
 let openPromise: Promise<IDBDatabase> | null = null;
 
-// Reset database instance (useful when upgrading)
 export const resetDatabaseInstance = () => {
   if (dbInstance) {
     try {
@@ -173,7 +178,6 @@ export const resetDatabaseInstance = () => {
   openPromise = null;
 };
 
-// Delete and recreate database (for critical errors)
 export const deleteDatabase = (): Promise<void> => {
   return new Promise((resolve, reject) => {
     resetDatabaseInstance();
@@ -188,19 +192,16 @@ export const deleteDatabase = (): Promise<void> => {
     };
     request.onblocked = () => {
       console.warn('Database deletion blocked - other tabs may be using it');
-      // Still resolve as the delete will happen when tabs close
       resolve();
     };
   });
 };
 
 export const openDatabase = (): Promise<IDBDatabase> => {
-  // Return existing instance
   if (dbInstance && dbInstance.objectStoreNames.length > 0) {
     return Promise.resolve(dbInstance);
   }
 
-  // Return existing promise if already opening
   if (isOpening && openPromise) {
     return openPromise;
   }
@@ -220,7 +221,6 @@ export const openDatabase = (): Promise<IDBDatabase> => {
       request.onsuccess = () => {
         dbInstance = request.result;
         
-        // Handle connection closed unexpectedly
         dbInstance.onclose = () => {
           console.warn('IndexedDB connection closed');
           resetDatabaseInstance();
@@ -238,65 +238,64 @@ export const openDatabase = (): Promise<IDBDatabase> => {
         console.warn('Database upgrade blocked - other tabs may need to close');
       };
 
-    request.onupgradeneeded = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result;
+      request.onupgradeneeded = (event) => {
+        const db = (event.target as IDBOpenDBRequest).result;
 
-      // Equipment store with indexes for fast lookup
-      if (!db.objectStoreNames.contains(STORES.EQUIPMENT)) {
-        const equipmentStore = db.createObjectStore(STORES.EQUIPMENT, { keyPath: 'id' });
-        equipmentStore.createIndex('ship_id', 'ship_id', { unique: false });
-        equipmentStore.createIndex('category_id', 'category_id', { unique: false });
-        equipmentStore.createIndex('internal_code', 'internal_code', { unique: false });
-        equipmentStore.createIndex('name', 'name', { unique: false });
-      }
+        if (!db.objectStoreNames.contains(STORES.EQUIPMENT)) {
+          const equipmentStore = db.createObjectStore(STORES.EQUIPMENT, { keyPath: 'id' });
+          equipmentStore.createIndex('ship_id', 'ship_id', { unique: false });
+          equipmentStore.createIndex('category_id', 'category_id', { unique: false });
+          equipmentStore.createIndex('internal_code', 'internal_code', { unique: false });
+          equipmentStore.createIndex('name', 'name', { unique: false });
+          equipmentStore.createIndex('updated_at', 'updated_at', { unique: false });
+        } else {
+          // Add updated_at index if upgrading from v3
+          const transaction = (event.target as IDBOpenDBRequest).transaction!;
+          const store = transaction.objectStore(STORES.EQUIPMENT);
+          if (!store.indexNames.contains('updated_at')) {
+            store.createIndex('updated_at', 'updated_at', { unique: false });
+          }
+        }
 
-      // Categories store
-      if (!db.objectStoreNames.contains(STORES.CATEGORIES)) {
-        db.createObjectStore(STORES.CATEGORIES, { keyPath: 'id' });
-      }
+        if (!db.objectStoreNames.contains(STORES.CATEGORIES)) {
+          db.createObjectStore(STORES.CATEGORIES, { keyPath: 'id' });
+        }
 
-      // Ships store
-      if (!db.objectStoreNames.contains(STORES.SHIPS)) {
-        db.createObjectStore(STORES.SHIPS, { keyPath: 'id' });
-      }
+        if (!db.objectStoreNames.contains(STORES.SHIPS)) {
+          db.createObjectStore(STORES.SHIPS, { keyPath: 'id' });
+        }
 
-      // Templates store
-      if (!db.objectStoreNames.contains(STORES.TEMPLATES)) {
-        const templateStore = db.createObjectStore(STORES.TEMPLATES, { keyPath: 'id' });
-        templateStore.createIndex('category_id', 'category_id', { unique: false });
-      }
+        if (!db.objectStoreNames.contains(STORES.TEMPLATES)) {
+          const templateStore = db.createObjectStore(STORES.TEMPLATES, { keyPath: 'id' });
+          templateStore.createIndex('category_id', 'category_id', { unique: false });
+        }
 
-      // Pending actions store
-      if (!db.objectStoreNames.contains(STORES.PENDING_ACTIONS)) {
-        const pendingStore = db.createObjectStore(STORES.PENDING_ACTIONS, { keyPath: 'id' });
-        pendingStore.createIndex('type', 'type', { unique: false });
-        pendingStore.createIndex('timestamp', 'timestamp', { unique: false });
-      }
+        if (!db.objectStoreNames.contains(STORES.PENDING_ACTIONS)) {
+          const pendingStore = db.createObjectStore(STORES.PENDING_ACTIONS, { keyPath: 'id' });
+          pendingStore.createIndex('type', 'type', { unique: false });
+          pendingStore.createIndex('timestamp', 'timestamp', { unique: false });
+        }
 
-      // Photos store (for offline photo capture)
-      if (!db.objectStoreNames.contains(STORES.PHOTOS)) {
-        const photoStore = db.createObjectStore(STORES.PHOTOS, { keyPath: 'id' });
-        photoStore.createIndex('inspectionId', 'inspectionId', { unique: false });
-      }
+        if (!db.objectStoreNames.contains(STORES.PHOTOS)) {
+          const photoStore = db.createObjectStore(STORES.PHOTOS, { keyPath: 'id' });
+          photoStore.createIndex('inspectionId', 'inspectionId', { unique: false });
+        }
 
-      // Metadata store (for cache timestamps, etc.)
-      if (!db.objectStoreNames.contains(STORES.METADATA)) {
-        db.createObjectStore(STORES.METADATA, { keyPath: 'key' });
-      }
+        if (!db.objectStoreNames.contains(STORES.METADATA)) {
+          db.createObjectStore(STORES.METADATA, { keyPath: 'key' });
+        }
 
-      // Maintenance plans store (added in version 2)
-      if (!db.objectStoreNames.contains(STORES.MAINTENANCE_PLANS)) {
-        const maintenanceStore = db.createObjectStore(STORES.MAINTENANCE_PLANS, { keyPath: 'id' });
-        maintenanceStore.createIndex('equipment_id', 'equipment_id', { unique: false });
-        maintenanceStore.createIndex('ship_id', 'ship_id', { unique: false });
-      }
+        if (!db.objectStoreNames.contains(STORES.MAINTENANCE_PLANS)) {
+          const maintenanceStore = db.createObjectStore(STORES.MAINTENANCE_PLANS, { keyPath: 'id' });
+          maintenanceStore.createIndex('equipment_id', 'equipment_id', { unique: false });
+          maintenanceStore.createIndex('ship_id', 'ship_id', { unique: false });
+        }
 
-      // Last inspections store (added in version 3) - keyed by equipment_id for quick lookup
-      if (!db.objectStoreNames.contains(STORES.LAST_INSPECTIONS)) {
-        const lastInspectionsStore = db.createObjectStore(STORES.LAST_INSPECTIONS, { keyPath: 'equipment_id' });
-        lastInspectionsStore.createIndex('status', 'status', { unique: false });
-      }
-    };
+        if (!db.objectStoreNames.contains(STORES.LAST_INSPECTIONS)) {
+          const lastInspectionsStore = db.createObjectStore(STORES.LAST_INSPECTIONS, { keyPath: 'equipment_id' });
+          lastInspectionsStore.createIndex('status', 'status', { unique: false });
+        }
+      };
     } catch (error) {
       console.error('Failed to open IndexedDB:', error);
       isOpening = false;
@@ -315,7 +314,6 @@ const getStore = async (storeName: string, mode: IDBTransactionMode = 'readonly'
   return transaction.objectStore(storeName);
 };
 
-// Get all items from a store
 export const getAllFromStore = async <T>(storeName: string): Promise<T[]> => {
   const store = await getStore(storeName);
   return new Promise((resolve, reject) => {
@@ -325,7 +323,6 @@ export const getAllFromStore = async <T>(storeName: string): Promise<T[]> => {
   });
 };
 
-// Get item by key
 export const getFromStore = async <T>(storeName: string, key: string): Promise<T | undefined> => {
   const store = await getStore(storeName);
   return new Promise((resolve, reject) => {
@@ -335,7 +332,6 @@ export const getFromStore = async <T>(storeName: string, key: string): Promise<T
   });
 };
 
-// Get items by index
 export const getByIndex = async <T>(
   storeName: string,
   indexName: string,
@@ -350,7 +346,78 @@ export const getByIndex = async <T>(
   });
 };
 
-// Put item (insert or update)
+// Paginated read using cursor (avoids loading all into memory)
+export const getPaginatedFromStore = async <T>(
+  storeName: string,
+  offset: number,
+  limit: number,
+  indexName?: string,
+  indexValue?: IDBValidKey
+): Promise<PaginatedResult<T>> => {
+  const db = await openDatabase();
+  const transaction = db.transaction(storeName, 'readonly');
+  const store = transaction.objectStore(storeName);
+
+  // Get total count
+  const totalPromise = new Promise<number>((resolve, reject) => {
+    let countRequest: IDBRequest<number>;
+    if (indexName && indexValue !== undefined) {
+      const index = store.index(indexName);
+      countRequest = index.count(indexValue);
+    } else {
+      countRequest = store.count();
+    }
+    countRequest.onsuccess = () => resolve(countRequest.result);
+    countRequest.onerror = () => reject(countRequest.error);
+  });
+
+  // Get paginated items using cursor
+  const itemsPromise = new Promise<T[]>((resolve, reject) => {
+    const items: T[] = [];
+    let skipped = 0;
+
+    let source: IDBObjectStore | IDBIndex = store;
+    if (indexName && indexValue !== undefined) {
+      source = store.index(indexName);
+    }
+
+    const cursorRequest = indexName && indexValue !== undefined
+      ? (source as IDBIndex).openCursor(IDBKeyRange.only(indexValue))
+      : source.openCursor();
+
+    cursorRequest.onsuccess = () => {
+      const cursor = cursorRequest.result;
+      if (!cursor) {
+        resolve(items);
+        return;
+      }
+
+      if (skipped < offset) {
+        skipped++;
+        cursor.continue();
+        return;
+      }
+
+      if (items.length < limit) {
+        items.push(cursor.value);
+        cursor.continue();
+      } else {
+        resolve(items);
+      }
+    };
+
+    cursorRequest.onerror = () => reject(cursorRequest.error);
+  });
+
+  const [total, items] = await Promise.all([totalPromise, itemsPromise]);
+
+  return {
+    items,
+    hasMore: offset + items.length < total,
+    total,
+  };
+};
+
 export const putInStore = async <T>(storeName: string, item: T): Promise<void> => {
   const store = await getStore(storeName, 'readwrite');
   return new Promise((resolve, reject) => {
@@ -360,21 +427,37 @@ export const putInStore = async <T>(storeName: string, item: T): Promise<void> =
   });
 };
 
-// Put multiple items (batch insert/update)
+// Batch upsert (insert or update without clearing first)
+export const upsertManyInStore = async <T>(storeName: string, items: T[]): Promise<void> => {
+  if (items.length === 0) return;
+  const db = await openDatabase();
+  
+  // Process in chunks of 500 to avoid blocking the main thread
+  const CHUNK_SIZE = 500;
+  for (let i = 0; i < items.length; i += CHUNK_SIZE) {
+    const chunk = items.slice(i, i + CHUNK_SIZE);
+    await new Promise<void>((resolve, reject) => {
+      const transaction = db.transaction(storeName, 'readwrite');
+      const store = transaction.objectStore(storeName);
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+      chunk.forEach(item => store.put(item));
+    });
+  }
+};
+
+// Legacy putMany (still used for small datasets)
 export const putManyInStore = async <T>(storeName: string, items: T[]): Promise<void> => {
   const db = await openDatabase();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(storeName, 'readwrite');
     const store = transaction.objectStore(storeName);
-
     transaction.oncomplete = () => resolve();
     transaction.onerror = () => reject(transaction.error);
-
     items.forEach(item => store.put(item));
   });
 };
 
-// Delete item
 export const deleteFromStore = async (storeName: string, key: string): Promise<void> => {
   const store = await getStore(storeName, 'readwrite');
   return new Promise((resolve, reject) => {
@@ -384,7 +467,19 @@ export const deleteFromStore = async (storeName: string, key: string): Promise<v
   });
 };
 
-// Clear store
+// Delete multiple items by keys
+export const deleteManyFromStore = async (storeName: string, keys: string[]): Promise<void> => {
+  if (keys.length === 0) return;
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(storeName, 'readwrite');
+    const store = transaction.objectStore(storeName);
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error);
+    keys.forEach(key => store.delete(key));
+  });
+};
+
 export const clearStore = async (storeName: string): Promise<void> => {
   const store = await getStore(storeName, 'readwrite');
   return new Promise((resolve, reject) => {
@@ -394,7 +489,6 @@ export const clearStore = async (storeName: string): Promise<void> => {
   });
 };
 
-// Count items in store
 export const countInStore = async (storeName: string): Promise<number> => {
   const store = await getStore(storeName);
   return new Promise((resolve, reject) => {
@@ -404,14 +498,49 @@ export const countInStore = async (storeName: string): Promise<number> => {
   });
 };
 
+// Get all IDs from a store (lightweight, no full records)
+export const getAllIdsFromStore = async (storeName: string): Promise<string[]> => {
+  const store = await getStore(storeName);
+  return new Promise((resolve, reject) => {
+    const request = store.getAllKeys();
+    request.onsuccess = () => resolve(request.result as string[]);
+    request.onerror = () => reject(request.error);
+  });
+};
+
 // ===== Equipment operations =====
+
+// Full cache (used only on first sync)
 export const cacheEquipment = async (equipment: CachedEquipment[]): Promise<void> => {
   await clearStore(STORES.EQUIPMENT);
-  await putManyInStore(STORES.EQUIPMENT, equipment);
+  await upsertManyInStore(STORES.EQUIPMENT, equipment);
+};
+
+// Incremental upsert (delta sync - does NOT clear existing data)
+export const upsertEquipment = async (equipment: CachedEquipment[]): Promise<void> => {
+  await upsertManyInStore(STORES.EQUIPMENT, equipment);
+};
+
+// Remove deleted equipment (IDs that no longer exist on server)
+export const removeDeletedEquipment = async (deletedIds: string[]): Promise<void> => {
+  await deleteManyFromStore(STORES.EQUIPMENT, deletedIds);
 };
 
 export const getEquipment = async (): Promise<CachedEquipment[]> => {
   return getAllFromStore<CachedEquipment>(STORES.EQUIPMENT);
+};
+
+export const getEquipmentPaginated = async (
+  offset: number,
+  limit: number,
+  shipId?: string
+): Promise<PaginatedResult<CachedEquipment>> => {
+  if (shipId) {
+    return getPaginatedFromStore<CachedEquipment>(
+      STORES.EQUIPMENT, offset, limit, 'ship_id', shipId
+    );
+  }
+  return getPaginatedFromStore<CachedEquipment>(STORES.EQUIPMENT, offset, limit);
 };
 
 export const getEquipmentByShip = async (shipId: string): Promise<CachedEquipment[]> => {
@@ -420,6 +549,10 @@ export const getEquipmentByShip = async (shipId: string): Promise<CachedEquipmen
 
 export const getEquipmentCount = async (): Promise<number> => {
   return countInStore(STORES.EQUIPMENT);
+};
+
+export const getEquipmentIds = async (): Promise<string[]> => {
+  return getAllIdsFromStore(STORES.EQUIPMENT);
 };
 
 // ===== Categories operations =====
@@ -565,6 +698,15 @@ export const getCacheTimestamp = async (): Promise<number | undefined> => {
   return getMetadata<number>('cache_timestamp');
 };
 
+// Last sync timestamp for delta sync
+export const setLastSyncTimestamp = async (timestamp: string): Promise<void> => {
+  await setMetadata('last_sync_timestamp', timestamp);
+};
+
+export const getLastSyncTimestamp = async (): Promise<string | undefined> => {
+  return getMetadata<string>('last_sync_timestamp');
+};
+
 export const isCacheValid = async (maxAgeMs: number = 24 * 60 * 60 * 1000): Promise<boolean> => {
   const timestamp = await getCacheTimestamp();
   if (!timestamp) return false;
@@ -608,7 +750,6 @@ export const getStorageStats = async (): Promise<StorageStats> => {
     getCacheTimestamp(),
   ]);
 
-  // Estimate size: ~1KB per equipment, ~10KB per pending action, ~500KB per photo average
   const estimatedSizeBytes =
     equipmentCount * 1024 +
     categoriesCount * 512 +
@@ -635,13 +776,11 @@ export const getStorageStats = async (): Promise<StorageStats> => {
 
 // ===== Photo utilities =====
 
-// Convert File to base64
 export const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
       const result = reader.result as string;
-      // Remove data URL prefix to save space
       const base64 = result.split(',')[1];
       resolve(base64);
     };
@@ -650,7 +789,6 @@ export const fileToBase64 = (file: File): Promise<string> => {
   });
 };
 
-// Compress image before storing
 export const compressImage = (file: File, maxWidth = 1200, quality = 0.7): Promise<Blob> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -684,16 +822,12 @@ export const compressImage = (file: File, maxWidth = 1200, quality = 0.7): Promi
   });
 };
 
-// Process and store photo for offline
 export const processAndStorePhoto = async (
   file: File,
   inspectionId: string
 ): Promise<PendingPhoto> => {
-  // Compress the image first
   const compressedBlob = await compressImage(file);
   const compressedFile = new File([compressedBlob], file.name, { type: compressedBlob.type });
-  
-  // Convert to base64
   const base64Data = await fileToBase64(compressedFile);
 
   const photo: PendingPhoto = {
@@ -709,7 +843,6 @@ export const processAndStorePhoto = async (
   return photo;
 };
 
-// Convert base64 back to Blob for upload
 export const base64ToBlob = (base64: string, mimeType: string): Blob => {
   const byteCharacters = atob(base64);
   const byteNumbers = new Array(byteCharacters.length);
