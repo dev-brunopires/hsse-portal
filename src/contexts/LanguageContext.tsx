@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 type Language = 'pt-BR' | 'en';
 
@@ -14,68 +15,53 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const { i18n } = useTranslation();
-  const [language, setLanguageState] = useState<Language>('pt-BR');
+  const { user, loading: authLoading } = useAuth();
+  const [language, setLanguageState] = useState<Language>(() => {
+    const stored = localStorage.getItem('language') as Language;
+    return stored && ['pt-BR', 'en'].includes(stored) ? stored : 'pt-BR';
+  });
   const [isLoading, setIsLoading] = useState(true);
-  const [userId, setUserId] = useState<string | null>(null);
 
-  // Listen to auth state changes instead of using useAuth
+  // Apply initial language immediately from localStorage (no async wait)
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
-      setUserId(session?.user?.id || null);
-    });
-
-    // Check initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUserId(session?.user?.id || null);
-    });
-
-    return () => subscription.unsubscribe();
+    i18n.changeLanguage(language);
   }, []);
 
-  // Load language from user profile or localStorage
+  // Load language from profile when user is available
   useEffect(() => {
-    const loadLanguage = async () => {
-      setIsLoading(true);
-      
-      try {
-        if (userId) {
-          // Try to get language from user profile
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('language')
-            .eq('user_id', userId)
-            .maybeSingle();
+    if (authLoading) return;
 
-          if (!error && data?.language) {
-            const lang = data.language as Language;
-            setLanguageState(lang);
-            i18n.changeLanguage(lang);
-            localStorage.setItem('language', lang);
-          } else {
-            // Fallback to localStorage
-            const storedLang = localStorage.getItem('language') as Language;
-            if (storedLang && ['pt-BR', 'en'].includes(storedLang)) {
-              setLanguageState(storedLang);
-              i18n.changeLanguage(storedLang);
-            }
-          }
-        } else {
-          // No user, use localStorage
-          const storedLang = localStorage.getItem('language') as Language;
-          if (storedLang && ['pt-BR', 'en'].includes(storedLang)) {
-            setLanguageState(storedLang);
-            i18n.changeLanguage(storedLang);
-          }
+    if (!user?.id) {
+      setIsLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadFromProfile = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('language')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (!cancelled && !error && data?.language) {
+          const lang = data.language as Language;
+          setLanguageState(lang);
+          i18n.changeLanguage(lang);
+          localStorage.setItem('language', lang);
         }
       } catch (error) {
         console.error('Error loading language:', error);
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     };
 
-    loadLanguage();
-  }, [userId, i18n]);
+    loadFromProfile();
+    return () => { cancelled = true; };
+  }, [user?.id, authLoading, i18n]);
 
   const setLanguage = async (lang: Language) => {
     try {
@@ -83,12 +69,11 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       i18n.changeLanguage(lang);
       localStorage.setItem('language', lang);
 
-      // Save to profile if user is logged in
-      if (userId) {
+      if (user?.id) {
         await supabase
           .from('profiles')
           .update({ language: lang })
-          .eq('user_id', userId);
+          .eq('user_id', user.id);
       }
     } catch (error) {
       console.error('Error setting language:', error);
