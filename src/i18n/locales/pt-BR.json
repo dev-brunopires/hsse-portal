@@ -2847,25 +2847,6 @@
   "validation": {
     "shipNameMin": "Nome deve ter pelo menos 2 caracteres"
   },
-  "navigation": {
-    "dashboard": "Dashboard",
-    "equipment": "Equipamentos",
-    "inspections": "Inspeções",
-    "maintenance": "Manutenção",
-    "certificates": "Certificados",
-    "reports": "Relatórios",
-    "categories": "Categorias",
-    "users": "Usuários",
-    "settings": "Configurações",
-    "profile": "Meu Perfil",
-    "alerts": "Alertas",
-    "auditLog": "Log de Auditoria",
-    "ships": "Embarcações",
-    "pendingRecommendations": "Recomendações Pendentes",
-    "collapse": "Recolher",
-    "expand": "Expandir",
-    "platformAdmin": "Admin Plataforma"
-  },
   "platformAdmin": {
     "title": "Administração da Plataforma",
     "description": "Gerencie organizações e configurações da plataforma",
