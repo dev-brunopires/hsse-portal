@@ -225,14 +225,25 @@ export function VirtualizedEquipmentTable({
     overscan: 10,
   });
 
-  // Load more when scrolling near bottom
+  // Virtualization for mobile/tablet card view
+  const mobileParentRef = useRef<HTMLDivElement>(null);
+  
+  const mobileVirtualizer = useVirtualizer({
+    count: sortedEquipment.length,
+    getScrollElement: () => mobileParentRef.current,
+    estimateSize: () => 220,
+    overscan: 5,
+  });
+
+  // Load more when scrolling near bottom (stable deps)
+  const virtualItems = rowVirtualizer.getVirtualItems();
+  const lastItemIndex = virtualItems.length > 0 ? virtualItems[virtualItems.length - 1]?.index ?? -1 : -1;
+
   useEffect(() => {
-    const [lastItem] = [...rowVirtualizer.getVirtualItems()].reverse();
-    
-    if (!lastItem) return;
+    if (lastItemIndex < 0) return;
     
     if (
-      lastItem.index >= sortedEquipment.length - 5 &&
+      lastItemIndex >= sortedEquipment.length - 5 &&
       hasNextPage &&
       !isFetchingNextPage
     ) {
@@ -243,7 +254,7 @@ export function VirtualizedEquipmentTable({
     fetchNextPage,
     sortedEquipment.length,
     isFetchingNextPage,
-    rowVirtualizer.getVirtualItems(),
+    lastItemIndex,
   ]);
 
   const handleSort = (field: SortField) => {
@@ -497,129 +508,153 @@ export function VirtualizedEquipmentTable({
         {/* Mobile/Tablet Card View with Pull to Refresh */}
         {isTabletOrMobile && (
           <div 
-            ref={isMobile ? containerRef : undefined}
-            className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 overflow-auto max-h-[calc(100vh-300px)]"
+            ref={mobileParentRef}
+            className="overflow-auto max-h-[calc(100vh-300px)]"
           >
             <PullToRefreshIndicator 
               pullDistance={pullDistance} 
               isRefreshing={isRefreshing} 
             />
             {sortedEquipment.length === 0 ? (
-              <div className="col-span-full text-center py-8 text-muted-foreground">
+              <div className="text-center py-8 text-muted-foreground p-3">
                 {t('equipmentTable.noEquipmentFound')}
               </div>
             ) : (
-              <>
-                {sortedEquipment.map((item) => (
-                  <div 
-                    key={item.id}
-                    className={cn(
-                      'bg-card border rounded-lg p-4 transition-colors',
-                      selectedRows.includes(item.id) && 'border-primary bg-primary/5'
-                    )}
-                  >
-                    <div className="flex items-start gap-3">
-                      <Checkbox
-                        checked={selectedRows.includes(item.id)}
-                        onCheckedChange={() => toggleRow(item.id)}
-                        className="mt-1"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0 flex-1">
-                            <p className="font-mono text-sm font-medium text-primary truncate">
-                              {item.internal_code}
-                            </p>
-                            <p className="font-medium truncate">{item.name}</p>
-                            <p className="text-xs text-muted-foreground truncate">{item.serial_number}</p>
-                          </div>
-                          <StatusBadge status={item.status as any} size="sm" equipment={item} />
-                        </div>
-                        
-                        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                          <span className="truncate">{item.location}</span>
-                          {item.capacity && <span className="truncate">• {item.capacity}</span>}
-                        </div>
+              <div
+                style={{
+                  height: `${mobileVirtualizer.getTotalSize()}px`,
+                  width: '100%',
+                  position: 'relative',
+                }}
+              >
+                {mobileVirtualizer.getVirtualItems().map((virtualItem) => {
+                  const item = sortedEquipment[virtualItem.index];
+                  if (!item) return null;
+                  
+                  return (
+                    <div
+                      key={item.id}
+                      data-index={virtualItem.index}
+                      ref={mobileVirtualizer.measureElement}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        transform: `translateY(${virtualItem.start}px)`,
+                      }}
+                      className="p-1.5"
+                    >
+                      <div 
+                        className={cn(
+                          'bg-card border rounded-lg p-4 transition-colors',
+                          selectedRows.includes(item.id) && 'border-primary bg-primary/5'
+                        )}
+                      >
+                        <div className="flex items-start gap-3">
+                          <Checkbox
+                            checked={selectedRows.includes(item.id)}
+                            onCheckedChange={() => toggleRow(item.id)}
+                            className="mt-1"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <p className="font-mono text-sm font-medium text-primary truncate">
+                                  {item.internal_code}
+                                </p>
+                                <p className="font-medium truncate">{item.name}</p>
+                                <p className="text-xs text-muted-foreground truncate">{item.serial_number}</p>
+                              </div>
+                              <StatusBadge status={item.status as any} size="sm" equipment={item} />
+                            </div>
+                            
+                            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                              <span className="truncate">{item.location}</span>
+                              {item.capacity && <span className="truncate">• {item.capacity}</span>}
+                            </div>
 
-                        <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
-                          <div>
-                            <span className="text-muted-foreground">{t('equipmentTable.lastInsp')}:</span>
-                            <span className="ml-1 font-medium">{formatDate(item.last_inspection) || '—'}</span>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">{t('equipmentTable.nextInsp')}:</span>
-                            <span className="ml-1 font-medium">{formatDate(item.next_inspection) || '—'}</span>
-                          </div>
-                        </div>
+                            <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                              <div>
+                                <span className="text-muted-foreground">{t('equipmentTable.lastInsp')}:</span>
+                                <span className="ml-1 font-medium">{formatDate(item.last_inspection) || '—'}</span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">{t('equipmentTable.nextInsp')}:</span>
+                                <span className="ml-1 font-medium">{formatDate(item.next_inspection) || '—'}</span>
+                              </div>
+                            </div>
 
-                        <div className="mt-3 flex items-center gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="flex-1 min-w-0"
-                            onClick={() => openDetailDialog(item)}
-                          >
-                            <Eye className="h-4 w-4 shrink-0" />
-                            <span className="ml-1 truncate">{t('equipmentTable.view')}</span>
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            className="flex-1 min-w-0"
-                            onClick={() => openInspectionForm(item)}
-                          >
-                            <ClipboardCheck className="h-4 w-4 shrink-0" />
-                            <span className="ml-1 truncate">{t('common.inspect')}</span>
-                          </Button>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="icon" className="h-8 w-8 shrink-0">
-                                <MoreHorizontal className="h-4 w-4" />
+                            <div className="mt-3 flex items-center gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="flex-1 min-w-0"
+                                onClick={() => openDetailDialog(item)}
+                              >
+                                <Eye className="h-4 w-4 shrink-0" />
+                                <span className="ml-1 truncate">{t('equipmentTable.view')}</span>
                               </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="bg-popover border border-border shadow-lg z-50 min-w-[180px]">
-                              <DropdownMenuItem 
-                                className="gap-2 cursor-pointer py-2.5"
-                                onClick={() => openEditForm(item)}
+                              <Button 
+                                size="sm" 
+                                className="flex-1 min-w-0"
+                                onClick={() => openInspectionForm(item)}
                               >
-                                <Edit className="h-4 w-4" /> {t('equipmentTable.edit')}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                className="gap-2 cursor-pointer py-2.5"
-                                onClick={() => openQRCodeDialog(item)}
-                              >
-                                <QrCode className="h-4 w-4" /> {t('equipmentTable.generateQRCode')}
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem 
-                                className="gap-2 text-destructive cursor-pointer py-2.5"
-                                onClick={() => openDeleteDialog(item)}
-                              >
-                                <Trash2 className="h-4 w-4" /> {t('common.delete')}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                                <ClipboardCheck className="h-4 w-4 shrink-0" />
+                                <span className="ml-1 truncate">{t('common.inspect')}</span>
+                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="outline" size="icon" className="h-8 w-8 shrink-0">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="bg-popover border border-border shadow-lg z-50 min-w-[180px]">
+                                  <DropdownMenuItem 
+                                    className="gap-2 cursor-pointer py-2.5"
+                                    onClick={() => openEditForm(item)}
+                                  >
+                                    <Edit className="h-4 w-4" /> {t('equipmentTable.edit')}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    className="gap-2 cursor-pointer py-2.5"
+                                    onClick={() => openQRCodeDialog(item)}
+                                  >
+                                    <QrCode className="h-4 w-4" /> {t('equipmentTable.generateQRCode')}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem 
+                                    className="gap-2 text-destructive cursor-pointer py-2.5"
+                                    onClick={() => openDeleteDialog(item)}
+                                  >
+                                    <Trash2 className="h-4 w-4" /> {t('common.delete')}
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-                {isFetchingNextPage && (
-                  <div className="col-span-full flex justify-center py-4">
-                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                  </div>
-                )}
-                {hasNextPage && !isFetchingNextPage && (
-                  <div className="col-span-full">
-                    <Button 
-                      variant="outline" 
-                      className="w-full"
-                      onClick={() => fetchNextPage()}
-                    >
-                      {t('common.loadMore')}
-                    </Button>
-                  </div>
-                )}
-              </>
+                  );
+                })}
+              </div>
+            )}
+            {isFetchingNextPage && (
+              <div className="flex justify-center py-4">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            )}
+            {hasNextPage && !isFetchingNextPage && (
+              <div className="p-3">
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => fetchNextPage()}
+                >
+                  {t('common.loadMore')}
+                </Button>
+              </div>
             )}
           </div>
         )}
