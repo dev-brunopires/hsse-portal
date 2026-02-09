@@ -74,9 +74,7 @@ export function UserShipsDialog({ open, onOpenChange, user }: UserShipsDialogPro
             {t('dialogs.assignShips')}
           </DialogTitle>
           <DialogDescription>
-            <span dangerouslySetInnerHTML={{ 
-              __html: t('dialogs.selectShipsAccess', { name: user.full_name }) 
-            }} />
+            {t('dialogs.selectShipsAccess', { name: user.full_name })}
           </DialogDescription>
         </DialogHeader>
 

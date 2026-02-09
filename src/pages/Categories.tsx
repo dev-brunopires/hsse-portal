@@ -457,10 +457,8 @@ export default function Categories() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t('categoriesPage.confirmDelete')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              <span dangerouslySetInnerHTML={{ 
-                __html: t('categoriesPage.confirmDeleteCategory', { name: categoryToDelete?.name }) 
-              }} />
+          <AlertDialogDescription>
+              {t('categoriesPage.confirmDeleteCategory', { name: categoryToDelete?.name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

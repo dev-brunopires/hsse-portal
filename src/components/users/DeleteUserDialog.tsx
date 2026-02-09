@@ -38,9 +38,7 @@ export function DeleteUserDialog({ open, onOpenChange, user }: DeleteUserDialogP
         <AlertDialogHeader>
           <AlertDialogTitle>{t('dialogs.removeUser')}</AlertDialogTitle>
           <AlertDialogDescription>
-            <span dangerouslySetInnerHTML={{ 
-              __html: t('dialogs.removeUserConfirm', { name: user.full_name }) 
-            }} />
+            {t('dialogs.removeUserConfirm', { name: user.full_name })}
             <br /><br />
             {t('dialogs.removeUserWarning')}
           </AlertDialogDescription>
