@@ -866,9 +866,7 @@ export function EquipmentTable({
           <AlertDialogHeader>
             <AlertDialogTitle>{t('equipmentTable.deleteEquipment')}</AlertDialogTitle>
             <AlertDialogDescription>
-              <span dangerouslySetInnerHTML={{ 
-                __html: t('equipmentTable.deleteConfirmation', { name: selectedEquipment?.name }) 
-              }} />
+              {t('equipmentTable.deleteConfirmation', { name: selectedEquipment?.name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

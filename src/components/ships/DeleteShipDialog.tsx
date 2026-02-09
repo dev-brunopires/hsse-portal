@@ -41,9 +41,7 @@ export function DeleteShipDialog({ open, onOpenChange, ship }: DeleteShipDialogP
         <AlertDialogHeader>
           <AlertDialogTitle>{t('dialogs.removeShip')}</AlertDialogTitle>
           <AlertDialogDescription>
-            <span dangerouslySetInnerHTML={{ 
-              __html: t('dialogs.removeShipConfirm', { name: ship.name }) 
-            }} />
+            {t('dialogs.removeShipConfirm', { name: ship.name })}
             <br /><br />
             {t('dialogs.removeShipWarning')}
           </AlertDialogDescription>
