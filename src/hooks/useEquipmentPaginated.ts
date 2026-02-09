@@ -165,6 +165,9 @@ export function useCreateEquipment() {
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
       queryClient.invalidateQueries({ queryKey: ['equipment-paginated'] });
       queryClient.invalidateQueries({ queryKey: ['equipment-count'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment-counts-by-category'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment-total-count'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast({
         title: t('hooks.equipment.created'),
         description: t('hooks.equipment.createdDesc'),
@@ -201,6 +204,9 @@ export function useUpdateEquipment() {
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
       queryClient.invalidateQueries({ queryKey: ['equipment-paginated'] });
       queryClient.invalidateQueries({ queryKey: ['equipment-count'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment-counts-by-category'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment-total-count'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast({
         title: t('hooks.equipment.updated'),
         description: t('hooks.equipment.updatedDesc'),
@@ -234,6 +240,9 @@ export function useDeleteEquipment() {
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
       queryClient.invalidateQueries({ queryKey: ['equipment-paginated'] });
       queryClient.invalidateQueries({ queryKey: ['equipment-count'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment-counts-by-category'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment-total-count'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast({
         title: t('hooks.equipment.deleted'),
         description: t('hooks.equipment.deletedDesc'),
