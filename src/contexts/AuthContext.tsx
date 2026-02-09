@@ -64,7 +64,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (fetchUserDataInFlightRef.current && !force) return;
 
     fetchUserDataInFlightRef.current = true;
-    setProfileLoading(true);
+    // Only show loading skeleton on initial load (no existing profile yet)
+    // Re-fetches on token refresh should not flash skeleton
+    if (!profileRef.current) {
+      setProfileLoading(true);
+    }
 
     // Cancel any previous in-flight request ref
     fetchUserDataAbortRef.current?.abort();
