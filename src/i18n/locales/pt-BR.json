@@ -1,15 +1,4 @@
 {
-  "pushNotifications": {
-    "syncCompletedTitle": "Sincronização Concluída",
-    "syncCompletedBody": "{{count}} inspeção(ões) sincronizada(s) com sucesso",
-    "maintenanceSyncCompletedTitle": "Sincronização de Manutenções Concluída",
-    "maintenanceSyncCompletedBody": "{{count}} manutenção(ões) sincronizada(s) com sucesso",
-    "syncInBackground": "A sincronização foi concluída em segundo plano",
-    "upcomingInspections": "Inspeções Próximas",
-    "upcomingInspectionsBody": "Você tem {{count}} inspeção(ões) agendada(s) para os próximos 7 dias",
-    "expiredCertificates": "Certificados Vencidos",
-    "expiredCertificatesBody": "{{count}} equipamento(s) com certificado(s) vencido(s)"
-  },
   "errorBoundary": {
     "updateAvailable": "Atualização Disponível",
     "somethingWentWrong": "Algo deu errado",
@@ -110,7 +99,8 @@
     "selectAll": "Selecionar todos",
     "deselectAll": "Desmarcar todos",
     "selected": "selecionado(s)",
-    "select": "Selecionar"
+    "select": "Selecionar",
+    "view": "Visualizar"
   },
   "auth": {
     "login": "Entrar",
@@ -580,16 +570,6 @@
   },
   "inspectionForm": {
     "recommendationsPlaceholder": "Descreva as recomendações para este equipamento..."
-  },
-  "equipmentWarning": {
-    "equipmentRejected": "Equipamento Reprovado",
-    "equipmentExpiredStatus": "Equipamento com Status Vencido",
-    "markedAs": "Este equipamento está marcado como",
-    "verifyPendingIssues": "Verifique se há pendências antes de prosseguir."
-  },
-  "categoriesPage": {
-    "equipmentCategories": "Categorias de Equipamentos",
-    "manageFrequencies": "Gerencie categorias e frequências de inspeção"
   },
   "maintenance": {
     "title": "Manutenção",
@@ -1229,28 +1209,6 @@
     "record": "Registro",
     "changes": "Alterações",
     "timestamp": "Data/Hora"
-  },
-  "errors": {
-    "generic": "Algo deu errado. Tente novamente.",
-    "notFound": "Página não encontrada",
-    "unauthorized": "Você não tem acesso a este recurso",
-    "forbidden": "Você não tem permissão para esta ação",
-    "serverError": "Não foi possível processar sua solicitação. Tente novamente em instantes.",
-    "networkError": "Sem conexão. Verifique sua internet.",
-    "sessionExpired": "Sua sessão expirou. Faça login novamente.",
-    "validationError": "Verifique os dados informados e tente novamente",
-    "requiredField": "Este campo precisa ser preenchido",
-    "invalidEmail": "Digite um e-mail válido",
-    "passwordTooShort": "A senha deve ter pelo menos 6 caracteres",
-    "passwordsDontMatch": "As senhas não coincidem"
-  },
-  "validation": {
-    "required": "Este campo é obrigatório",
-    "minLength": "Mínimo de {{count}} caracteres",
-    "maxLength": "Máximo de {{count}} caracteres",
-    "email": "Digite um e-mail válido",
-    "date": "Digite uma data válida",
-    "number": "Digite um número válido"
   },
   "dates": {
     "today": "Hoje",
@@ -2377,16 +2335,6 @@
     "nameField": "Nome",
     "serialNumber": "Número de Série"
   },
-  "validation": {
-    "required": "Este campo é obrigatório",
-    "nameMinLength": "O nome precisa ter pelo menos 2 caracteres",
-    "selectIcon": "Escolha um ícone para a categoria",
-    "selectFrequency": "Escolha com que frequência as inspeções devem ocorrer",
-    "selectStatus": "Selecione o status do item",
-    "selectDate": "Selecione uma data no calendário",
-    "invalidEmail": "Digite um endereço de e-mail válido",
-    "passwordMinLength": "A senha precisa ter no mínimo 6 caracteres"
-  },
   "exportEquipment": {
     "internalCode": "Código Interno",
     "name": "Nome",
@@ -2798,6 +2746,11 @@
     "startTour": "Iniciar Tour"
   },
   "pushNotifications": {
+    "syncCompletedTitle": "Sincronização Concluída",
+    "syncCompletedBody": "{{count}} inspeção(ões) sincronizada(s) com sucesso",
+    "maintenanceSyncCompletedTitle": "Sincronização de Manutenções Concluída",
+    "maintenanceSyncCompletedBody": "{{count}} manutenção(ões) sincronizada(s) com sucesso",
+    "syncInBackground": "A sincronização foi concluída em segundo plano",
     "upcomingInspections": "Inspeções Próximas",
     "upcomingInspectionsBody": "{{count}} equipamento(s) com inspeção nos próximos 7 dias",
     "expiredCertificates": "Certificados Vencidos",
@@ -2845,6 +2798,19 @@
     "unknownSize": "Tamanho desconhecido"
   },
   "validation": {
+    "required": "Este campo é obrigatório",
+    "minLength": "Mínimo de {{count}} caracteres",
+    "maxLength": "Máximo de {{count}} caracteres",
+    "email": "Digite um e-mail válido",
+    "date": "Digite uma data válida",
+    "number": "Digite um número válido",
+    "nameMinLength": "O nome precisa ter pelo menos 2 caracteres",
+    "selectIcon": "Escolha um ícone para a categoria",
+    "selectFrequency": "Escolha com que frequência as inspeções devem ocorrer",
+    "selectStatus": "Selecione o status do item",
+    "selectDate": "Selecione uma data no calendário",
+    "invalidEmail": "Digite um endereço de e-mail válido",
+    "passwordMinLength": "A senha precisa ter no mínimo 6 caracteres",
     "shipNameMin": "Nome deve ter pelo menos 2 caracteres"
   },
   "platformAdmin": {
@@ -3112,11 +3078,19 @@
     "copy": "Cópia"
   },
   "errors": {
+    "generic": "Algo deu errado. Tente novamente.",
+    "notFound": "Página não encontrada",
+    "unauthorized": "Você não tem acesso a este recurso",
+    "forbidden": "Você não tem permissão para esta ação",
+    "validationError": "Verifique os dados informados e tente novamente",
+    "requiredField": "Este campo precisa ser preenchido",
+    "invalidEmail": "Digite um e-mail válido",
+    "passwordTooShort": "A senha deve ter pelo menos 6 caracteres",
+    "passwordsDontMatch": "As senhas não coincidem",
     "errorTitle": "Ops! Algo deu errado",
     "genericError": "Não foi possível completar a ação. Tente novamente.",
     "unknownError": "Algo inesperado aconteceu. Tente novamente ou contate o suporte.",
     "databaseError": "Não conseguimos acessar as informações agora. Aguarde um momento e tente novamente.",
-    
     "duplicateEquipmentCode": "Já existe um equipamento com este código. Por favor, use um código diferente.",
     "duplicateSerialNumber": "Este número de série já está cadastrado. Verifique se o equipamento já existe no sistema.",
     "duplicateShortCode": "Este código curto já está em uso. Um novo será gerado automaticamente.",
@@ -3126,35 +3100,27 @@
     "duplicateUserShip": "Este usuário já está vinculado a esta unidade.",
     "duplicateEmail": "Este e-mail já está sendo usado por outro usuário.",
     "duplicateRecord": "Este item já existe no sistema. Verifique os dados e tente novamente.",
-    
     "equipmentInUse": "Não é possível excluir este equipamento porque ele possui inspeções ou manutenções registradas. Remova esses registros primeiro.",
     "categoryInUse": "Não é possível excluir esta categoria porque existem equipamentos vinculados. Mova ou exclua os equipamentos primeiro.",
     "shipInUse": "Não é possível excluir esta unidade porque existem equipamentos ou usuários vinculados.",
     "userInUse": "Não é possível excluir este usuário porque ele possui registros no sistema.",
     "recordInUse": "Não é possível excluir este item porque ele está vinculado a outros dados.",
-    
     "accessDenied": "Você não tem permissão para realizar esta ação. Entre em contato com um administrador se precisar de acesso.",
     "recordNotFound": "O item que você está procurando não foi encontrado ou pode ter sido removido.",
-    
     "invalidCredentials": "E-mail ou senha incorretos. Verifique suas credenciais e tente novamente.",
     "emailNotConfirmed": "Seu e-mail ainda não foi confirmado. Verifique sua caixa de entrada.",
     "userNotFound": "Não encontramos um usuário com esses dados.",
     "sessionExpired": "Sua sessão expirou por inatividade. Por favor, faça login novamente.",
     "invalidSession": "Sua sessão é inválida. Por favor, faça login novamente.",
-    
     "requiredFieldMissing": "Alguns campos obrigatórios não foram preenchidos. Complete-os para continuar.",
-    
     "networkError": "Problema de conexão. Verifique sua internet e tente novamente.",
     "noInternet": "Você está sem internet. Conecte-se e tente novamente.",
-    
     "fileTooLarge": "O arquivo é muito grande. O tamanho máximo permitido é 10MB.",
     "invalidFile": "Este tipo de arquivo não é aceito. Use formatos como PDF, JPG ou PNG.",
     "uploadFailed": "Não foi possível enviar o arquivo. Tente novamente.",
-    
     "timeout": "A operação está demorando mais que o esperado. Tente novamente em alguns instantes.",
     "serverError": "Estamos com problemas técnicos. Tente novamente em alguns minutos.",
     "serviceUnavailable": "O serviço está temporariamente indisponível. Tente novamente mais tarde.",
-    
     "organizationNotFound": "Organização não encontrada. Faça login novamente.",
     "invalidData": "Alguns dados informados estão incorretos. Verifique e tente novamente."
   },

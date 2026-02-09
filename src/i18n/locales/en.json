@@ -1,15 +1,4 @@
 {
-  "pushNotifications": {
-    "syncCompletedTitle": "Sync Completed",
-    "syncCompletedBody": "{{count}} inspection(s) synced successfully",
-    "maintenanceSyncCompletedTitle": "Maintenance Sync Completed",
-    "maintenanceSyncCompletedBody": "{{count}} maintenance(s) synced successfully",
-    "syncInBackground": "Sync completed in background",
-    "upcomingInspections": "Upcoming Inspections",
-    "upcomingInspectionsBody": "You have {{count}} inspection(s) scheduled for the next 7 days",
-    "expiredCertificates": "Expired Certificates",
-    "expiredCertificatesBody": "{{count}} equipment(s) with expired certificate(s)"
-  },
   "errorBoundary": {
     "updateAvailable": "Update Available",
     "somethingWentWrong": "Something went wrong",
@@ -110,7 +99,8 @@
     "selectAll": "Select all",
     "deselectAll": "Deselect all",
     "selected": "selected",
-    "select": "Select"
+    "select": "Select",
+    "view": "View"
   },
   "auth": {
     "login": "Login",
@@ -580,16 +570,6 @@
   },
   "inspectionForm": {
     "recommendationsPlaceholder": "Describe recommendations for this equipment..."
-  },
-  "equipmentWarning": {
-    "equipmentRejected": "Equipment Rejected",
-    "equipmentExpiredStatus": "Equipment Status Expired",
-    "markedAs": "This equipment is marked as",
-    "verifyPendingIssues": "Please verify pending issues before proceeding."
-  },
-  "categoriesPage": {
-    "equipmentCategories": "Equipment Categories",
-    "manageFrequencies": "Manage categories and inspection frequencies"
   },
   "maintenance": {
     "title": "Maintenance",
@@ -1229,28 +1209,6 @@
     "record": "Record",
     "changes": "Changes",
     "timestamp": "Date/Time"
-  },
-  "errors": {
-    "generic": "Something went wrong. Please try again.",
-    "notFound": "Page not found",
-    "unauthorized": "You don't have access to this resource",
-    "forbidden": "You don't have permission for this action",
-    "serverError": "We couldn't process your request. Please try again shortly.",
-    "networkError": "No connection. Check your internet.",
-    "sessionExpired": "Your session has expired. Please log in again.",
-    "validationError": "Please check the information provided and try again",
-    "requiredField": "This field is required",
-    "invalidEmail": "Please enter a valid email",
-    "passwordTooShort": "Password must be at least 6 characters",
-    "passwordsDontMatch": "Passwords don't match"
-  },
-  "validation": {
-    "required": "This field is required",
-    "minLength": "Minimum {{count}} characters",
-    "maxLength": "Maximum {{count}} characters",
-    "email": "Enter a valid email",
-    "date": "Enter a valid date",
-    "number": "Enter a valid number"
   },
   "dates": {
     "today": "Today",
@@ -2376,16 +2334,6 @@
     "nameField": "Name",
     "serialNumber": "Serial Number"
   },
-  "validation": {
-    "required": "This field is required",
-    "nameMinLength": "Name must have at least 2 characters",
-    "selectIcon": "Choose an icon for the category",
-    "selectFrequency": "Choose how often inspections should occur",
-    "selectStatus": "Select the item status",
-    "selectDate": "Select a date from the calendar",
-    "invalidEmail": "Please enter a valid email address",
-    "passwordMinLength": "Password must be at least 6 characters long"
-  },
   "exportEquipment": {
     "internalCode": "Internal Code",
     "name": "Name",
@@ -2797,6 +2745,11 @@
     "startTour": "Start Tour"
   },
   "pushNotifications": {
+    "syncCompletedTitle": "Sync Completed",
+    "syncCompletedBody": "{{count}} inspection(s) synced successfully",
+    "maintenanceSyncCompletedTitle": "Maintenance Sync Completed",
+    "maintenanceSyncCompletedBody": "{{count}} maintenance(s) synced successfully",
+    "syncInBackground": "Sync completed in background",
     "upcomingInspections": "Upcoming Inspections",
     "upcomingInspectionsBody": "{{count}} equipment with inspection in the next 7 days",
     "expiredCertificates": "Expired Certificates",
@@ -2844,6 +2797,19 @@
     "unknownSize": "Unknown size"
   },
   "validation": {
+    "required": "This field is required",
+    "minLength": "Minimum {{count}} characters",
+    "maxLength": "Maximum {{count}} characters",
+    "email": "Enter a valid email",
+    "date": "Enter a valid date",
+    "number": "Enter a valid number",
+    "nameMinLength": "Name must have at least 2 characters",
+    "selectIcon": "Choose an icon for the category",
+    "selectFrequency": "Choose how often inspections should occur",
+    "selectStatus": "Select the item status",
+    "selectDate": "Select a date from the calendar",
+    "invalidEmail": "Please enter a valid email address",
+    "passwordMinLength": "Password must be at least 6 characters long",
     "shipNameMin": "Name must be at least 2 characters"
   },
   "platformAdmin": {
@@ -3111,11 +3077,19 @@
     "copy": "Copy"
   },
   "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "notFound": "Page not found",
+    "unauthorized": "You don't have access to this resource",
+    "forbidden": "You don't have permission for this action",
+    "validationError": "Please check the information provided and try again",
+    "requiredField": "This field is required",
+    "invalidEmail": "Please enter a valid email",
+    "passwordTooShort": "Password must be at least 6 characters",
+    "passwordsDontMatch": "Passwords don't match",
     "errorTitle": "Oops! Something went wrong",
     "genericError": "We couldn't complete this action. Please try again.",
     "unknownError": "Something unexpected happened. Please try again or contact support.",
     "databaseError": "We couldn't access the information right now. Please wait a moment and try again.",
-    
     "duplicateEquipmentCode": "An equipment with this code already exists. Please use a different code.",
     "duplicateSerialNumber": "This serial number is already registered. Check if the equipment already exists in the system.",
     "duplicateShortCode": "This short code is already in use. A new one will be generated automatically.",
@@ -3125,35 +3099,27 @@
     "duplicateUserShip": "This user is already linked to this unit.",
     "duplicateEmail": "This email is already being used by another user.",
     "duplicateRecord": "This item already exists in the system. Please check the data and try again.",
-    
     "equipmentInUse": "This equipment cannot be deleted because it has registered inspections or maintenance records. Remove those records first.",
     "categoryInUse": "This category cannot be deleted because it has linked equipment. Move or delete the equipment first.",
     "shipInUse": "This unit cannot be deleted because it has linked equipment or users.",
     "userInUse": "This user cannot be deleted because they have records in the system.",
     "recordInUse": "This item cannot be deleted because it is linked to other data.",
-    
     "accessDenied": "You don't have permission to perform this action. Contact an administrator if you need access.",
     "recordNotFound": "The item you're looking for was not found or may have been removed.",
-    
     "invalidCredentials": "Incorrect email or password. Please check your credentials and try again.",
     "emailNotConfirmed": "Your email has not been confirmed yet. Please check your inbox.",
     "userNotFound": "We couldn't find a user with this information.",
     "sessionExpired": "Your session has expired due to inactivity. Please log in again.",
     "invalidSession": "Your session is invalid. Please log in again.",
-    
     "requiredFieldMissing": "Some required fields are not filled in. Complete them to continue.",
-    
     "networkError": "Connection problem. Check your internet and try again.",
     "noInternet": "You're offline. Connect to the internet and try again.",
-    
     "fileTooLarge": "The file is too large. Maximum allowed size is 10MB.",
     "invalidFile": "This file type is not accepted. Use formats like PDF, JPG, or PNG.",
     "uploadFailed": "We couldn't upload the file. Please try again.",
-    
     "timeout": "The operation is taking longer than expected. Please try again in a few moments.",
     "serverError": "We're experiencing technical issues. Please try again in a few minutes.",
     "serviceUnavailable": "The service is temporarily unavailable. Please try again later.",
-    
     "organizationNotFound": "Organization not found. Please log in again.",
     "invalidData": "Some of the information provided is incorrect. Please check and try again."
   },

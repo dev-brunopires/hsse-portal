@@ -909,7 +909,7 @@ export function EquipmentFormDialog({
                                 size="icon"
                                 className="h-8 w-8"
                                 onClick={() => handleViewExistingDoc(doc)}
-                                title="Visualizar"
+                                title={t('common.view')}
                               >
                                 <Eye className="h-4 w-4" />
                               </Button>
@@ -919,7 +919,7 @@ export function EquipmentFormDialog({
                                 size="icon"
                                 className="h-8 w-8"
                                 onClick={() => handleDownloadExistingDoc(doc)}
-                                title="Baixar"
+                                title={t('common.download')}
                               >
                                 <Download className="h-4 w-4" />
                               </Button>
@@ -930,7 +930,7 @@ export function EquipmentFormDialog({
                                 className="h-8 w-8 text-destructive hover:text-destructive"
                                 onClick={() => handleDeleteExistingDoc(doc)}
                                 disabled={deletingDocId === doc.id}
-                                title="Excluir"
+                                title={t('common.delete')}
                               >
                                 {deletingDocId === doc.id ? (
                                   <Loader2 className="h-4 w-4 animate-spin" />
