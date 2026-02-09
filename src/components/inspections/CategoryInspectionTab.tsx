@@ -49,7 +49,7 @@ import { useShipFilter } from '@/contexts/ShipFilterContext';
 import { useToast } from '@/hooks/use-toast';
 import { SignaturePad } from './SignaturePad';
 import { exportCategoryInspectionPDF } from '@/utils/exportCategoryInspection';
-import { formatDate } from '@/utils/dateFormat';
+import { formatDate, getLocalToday } from '@/utils/dateFormat';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -250,7 +250,7 @@ export function CategoryInspectionTab() {
         selectedEquipmentIds.has(eq.id)
       );
 
-      const inspectionDate = new Date().toISOString().split('T')[0];
+      const inspectionDate = getLocalToday();
 
       // Fetch category frequency to calculate next inspection date
       const category = categories.find(c => c.id === selectedCategory);
@@ -378,7 +378,7 @@ export function CategoryInspectionTab() {
         email: fullProfile.email,
       },
       signatureData: signatureData || undefined,
-      inspectionDate: new Date().toISOString().split('T')[0],
+      inspectionDate: getLocalToday(),
       branding,
     });
 
@@ -693,7 +693,7 @@ export function CategoryInspectionTab() {
               </div>
               <div className="bg-muted p-4 rounded-lg">
                 <p className="text-sm text-muted-foreground">{t('common.date')}</p>
-                <p className="font-medium">{formatDate(new Date().toISOString().split('T')[0])}</p>
+                <p className="font-medium">{formatDate(getLocalToday())}</p>
               </div>
               <div className="bg-muted p-4 rounded-lg">
                 <p className="text-sm text-muted-foreground">{t('navigation.equipment')}</p>

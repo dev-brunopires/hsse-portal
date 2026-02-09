@@ -58,8 +58,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useInspections, type InspectionWithDetails } from '@/hooks/useInspections';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useEquipmentById } from '@/hooks/useEquipment';
-import { isAfter, isBefore, addDays, startOfMonth, endOfMonth, parseISO } from 'date-fns';
-import { formatDate, formatWeekday } from '@/utils/dateFormat';
+import { isAfter, isBefore, addDays, startOfMonth, endOfMonth } from 'date-fns';
+import { formatDate, formatWeekday, parseLocalDate } from '@/utils/dateFormat';
 import { InspectionDetailDialog } from '@/components/inspections/InspectionDetailDialog';
 import { NewInspectionDialog } from '@/components/inspections/NewInspectionDialog';
 import { EditInspectionDialog } from '@/components/inspections/EditInspectionDialog';
@@ -190,9 +190,9 @@ export default function Inspections() {
       const matchesStatus = statusFilter === 'all' || inspection.status === statusFilter;
       const matchesInspector = inspectorFilter === 'all' || inspection.inspector_id === inspectorFilter;
       
-      const inspectionDate = parseISO(inspection.inspection_date);
-      const matchesDateFrom = !dateFrom || isAfter(inspectionDate, parseISO(dateFrom)) || inspection.inspection_date === dateFrom;
-      const matchesDateTo = !dateTo || isBefore(inspectionDate, parseISO(dateTo)) || inspection.inspection_date === dateTo;
+      const inspectionDate = parseLocalDate(inspection.inspection_date)!;
+      const matchesDateFrom = !dateFrom || isAfter(inspectionDate, parseLocalDate(dateFrom)!) || inspection.inspection_date === dateFrom;
+      const matchesDateTo = !dateTo || isBefore(inspectionDate, parseLocalDate(dateTo)!) || inspection.inspection_date === dateTo;
       
       return matchesSearch && matchesStatus && matchesInspector && matchesDateFrom && matchesDateTo;
     });

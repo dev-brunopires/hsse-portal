@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { useShipFilter } from '@/contexts/ShipFilterContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { getLocalToday, formatLocalDate } from '@/utils/dateFormat';
 
 export interface Certificate {
   id: string;
@@ -148,8 +149,8 @@ export function useCertificates(filters?: {
         const futureDate = new Date();
         futureDate.setDate(futureDate.getDate() + filters.expiringDays);
         query = query
-          .gte('expiry_date', new Date().toISOString().split('T')[0])
-          .lte('expiry_date', futureDate.toISOString().split('T')[0]);
+          .gte('expiry_date', getLocalToday())
+          .lte('expiry_date', formatLocalDate(futureDate));
       }
 
       const { data, error } = await query;
@@ -451,7 +452,7 @@ export function useRenewCertificate() {
       // Update certificate
       const updateData: Record<string, unknown> = {
         expiry_date: newExpiryDate,
-        last_renewal_date: new Date().toISOString().split('T')[0],
+        last_renewal_date: getLocalToday(),
         renewal_status: 'completed',
         renewal_notes: notes,
         renewed_by: user?.id,

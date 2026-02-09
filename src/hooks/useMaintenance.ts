@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import i18n from '@/i18n';
+import { getLocalToday, formatLocalDate, calculateNextDateByFrequency } from '@/utils/dateFormat';
 
 export interface MaintenancePlan {
   id: string;
@@ -76,7 +77,7 @@ export function useUpcomingMaintenance(days: number = 30) {
             ships (name)
           )
         `)
-        .lte('next_due_date', futureDate.toISOString().split('T')[0])
+        .lte('next_due_date', formatLocalDate(futureDate))
         .order('next_due_date', { ascending: true });
 
       if (error) throw error;
@@ -234,7 +235,7 @@ export function useCompleteMaintenance() {
         await supabase
           .from('maintenance_plans')
           .update({
-            last_completed_date: new Date().toISOString().split('T')[0],
+            last_completed_date: getLocalToday(),
             next_due_date: nextDate,
           })
           .eq('id', planId);
@@ -257,25 +258,5 @@ export function useCompleteMaintenance() {
 }
 
 function calculateNextDueDate(currentDate: string, frequency: string): string {
-  const date = new Date(currentDate);
-  
-  switch (frequency) {
-    case 'daily':
-      date.setDate(date.getDate() + 1);
-      break;
-    case 'weekly':
-      date.setDate(date.getDate() + 7);
-      break;
-    case 'monthly':
-      date.setMonth(date.getMonth() + 1);
-      break;
-    case 'quarterly':
-      date.setMonth(date.getMonth() + 3);
-      break;
-    case 'yearly':
-      date.setFullYear(date.getFullYear() + 1);
-      break;
-  }
-  
-  return date.toISOString().split('T')[0];
+  return calculateNextDateByFrequency(currentDate, frequency);
 }

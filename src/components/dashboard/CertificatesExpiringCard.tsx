@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { FileCheck, Calendar, ArrowRight, Ship } from 'lucide-react';
 import { formatDate } from '@/utils/dateFormat';
-import { differenceInDays, parseISO } from 'date-fns';
+import { differenceInDays } from 'date-fns';
+import { parseLocalDate } from '@/utils/dateFormat';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 
@@ -29,19 +30,20 @@ export function CertificatesExpiringCard() {
   const getExpiringCertificates = (days: number) => {
     return allCertificates.filter(cert => {
       if (!cert.expiry_date) return false;
-      const expiryDate = parseISO(cert.expiry_date);
+      const expiryDate = parseLocalDate(cert.expiry_date);
+      if (!expiryDate) return false;
       const daysUntilExpiry = differenceInDays(expiryDate, today);
       // Include expired (negative days) and expiring within range
       return daysUntilExpiry <= days;
     }).sort((a, b) => {
-      const dateA = parseISO(a.expiry_date!);
-      const dateB = parseISO(b.expiry_date!);
+      const dateA = parseLocalDate(a.expiry_date!)!;
+      const dateB = parseLocalDate(b.expiry_date!)!;
       return dateA.getTime() - dateB.getTime();
     });
   };
 
   const getDaysUntilExpiry = (date: string) => {
-    return differenceInDays(parseISO(date), today);
+    return differenceInDays(parseLocalDate(date)!, today);
   };
 
   const getUrgencyColor = (days: number) => {

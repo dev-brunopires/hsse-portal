@@ -24,6 +24,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { useEquipment, type EquipmentWithCategory } from '@/hooks/useEquipment';
+import { getLocalToday } from '@/utils/dateFormat';
 import { useCategories } from '@/hooks/useCategories';
 import { useLastInspection } from '@/hooks/useInspections';
 import { useOfflineSync, CachedEquipment, CachedCategory, CachedTemplate, CachedLastInspection } from '@/hooks/useOfflineSync';
@@ -232,7 +233,7 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
 
   // Check if equipment has any warnings
   const checkEquipmentWarnings = (equipment: EquipmentWithCategory): boolean => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalToday();
     const isCertificateExpired = equipment.certificate_expiry && equipment.certificate_expiry < today;
     const isInspectionOverdue = equipment.next_inspection && equipment.next_inspection < today;
     const isEquipmentExpired = equipment.expiry_date && equipment.expiry_date < today;

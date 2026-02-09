@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Calendar, ShieldAlert } from 'lucide-react';
 import { formatDate } from '@/utils/dateFormat';
-import { differenceInDays, parseISO } from 'date-fns';
+import { differenceInDays } from 'date-fns';
+import { parseLocalDate } from '@/utils/dateFormat';
 import { cn } from '@/lib/utils';
 
 type ExpiryRange = '30' | '60' | '90';
@@ -22,18 +23,19 @@ export function ExpiringCertificatesCard() {
   const getExpiringEquipment = (days: number) => {
     return equipment.filter(item => {
       if (!item.certificate_expiry) return false;
-      const expiryDate = parseISO(item.certificate_expiry);
+      const expiryDate = parseLocalDate(item.certificate_expiry);
+      if (!expiryDate) return false;
       const daysUntilExpiry = differenceInDays(expiryDate, today);
       return daysUntilExpiry >= 0 && daysUntilExpiry <= days;
     }).sort((a, b) => {
-      const dateA = parseISO(a.certificate_expiry!);
-      const dateB = parseISO(b.certificate_expiry!);
+      const dateA = parseLocalDate(a.certificate_expiry!)!;
+      const dateB = parseLocalDate(b.certificate_expiry!)!;
       return dateA.getTime() - dateB.getTime();
     });
   };
 
   const getDaysUntilExpiry = (date: string) => {
-    return differenceInDays(parseISO(date), today);
+    return differenceInDays(parseLocalDate(date)!, today);
   };
 
   const getUrgencyColor = (days: number) => {

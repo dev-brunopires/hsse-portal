@@ -7,6 +7,7 @@ import { hapticSuccess, hapticWarning } from '@/utils/hapticFeedback';
 import * as offlineDB from '@/utils/offlineStorage';
 import { generateInspectionPhotoPath, getCurrentOrganizationId } from '@/utils/storageHelpers';
 import { useShipFilter } from '@/contexts/ShipFilterContext';
+import { getLocalToday, calculateNextDateByFrequency } from '@/utils/dateFormat';
 
 // Bug #5: Safe wrapper — returns null if outside ShipFilterProvider
 function useShipFilterSafe(): { selectedShipId: string | null } {
@@ -867,26 +868,11 @@ export function useOfflineSync() {
 
         if (logError) throw logError;
 
-        const calculateNextDueDate = (currentDate: string, frequency: string): string => {
-          const date = new Date(`${currentDate}T12:00:00`);
-          switch (frequency) {
-            case 'daily': date.setDate(date.getDate() + 1); break;
-            case 'weekly': date.setDate(date.getDate() + 7); break;
-            case 'monthly': date.setMonth(date.getMonth() + 1); break;
-            case 'quarterly': date.setMonth(date.getMonth() + 3); break;
-            case 'yearly': date.setFullYear(date.getFullYear() + 1); break;
-          }
-          const year = date.getFullYear();
-          const month = String(date.getMonth() + 1).padStart(2, '0');
-          const day = String(date.getDate()).padStart(2, '0');
-          return `${year}-${month}-${day}`;
-        };
-
-        const nextDate = calculateNextDueDate(maintenance.next_due_date, maintenance.frequency);
+        const nextDate = calculateNextDateByFrequency(maintenance.next_due_date, maintenance.frequency);
         await supabase
           .from('maintenance_plans')
           .update({
-            last_completed_date: new Date().toISOString().split('T')[0],
+            last_completed_date: getLocalToday(),
             next_due_date: nextDate,
           })
           .eq('id', maintenance.plan_id);

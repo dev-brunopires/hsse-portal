@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
+import { formatLocalDate } from '@/utils/dateFormat';
 import { ptBR, enUS } from 'date-fns/locale';
 import { CalendarIcon } from 'lucide-react';
 import {
@@ -78,7 +79,7 @@ export function MaintenancePlanDialog({ open, onOpenChange }: MaintenancePlanDia
       description: values.description || null,
       frequency: values.frequency,
       priority: values.priority,
-      next_due_date: values.next_due_date.toISOString().split('T')[0],
+      next_due_date: formatLocalDate(values.next_due_date),
       last_completed_date: null,
       created_by: null,
     });

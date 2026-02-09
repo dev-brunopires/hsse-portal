@@ -1,7 +1,8 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
+import { parseLocalDate } from '@/utils/dateFormat';
 import { ptBR, enUS } from 'date-fns/locale';
 import { addPDFHeader, addPDFFooter, addSignatureSection, SBM_BLUE, preloadLogo } from './pdfStyles';
 import type { EquipmentWithCategory } from '@/hooks/useEquipment';
@@ -111,7 +112,7 @@ export async function exportMonthlyConsolidatedPDF(
       getStatusLabel(equip.status),
       equipInspections.length.toString(),
       lastInspection 
-        ? format(parseISO(lastInspection.inspection_date), 'dd/MM/yy', { locale: dateLocale })
+        ? format(parseLocalDate(lastInspection.inspection_date)!, 'dd/MM/yy', { locale: dateLocale })
         : '—',
       lastInspection 
         ? getStatusLabel(lastInspection.status)
@@ -235,7 +236,7 @@ export function exportMonthlyConsolidatedExcel(
       [t('reports.eqStatus')]: getStatusLabel(equip.status),
       [t('reports.inspCount')]: equipInspections.length,
       [t('reports.lastInspection')]: lastInspection
-        ? format(parseISO(lastInspection.inspection_date), 'dd/MM/yyyy', { locale: dateLocale })
+        ? format(parseLocalDate(lastInspection.inspection_date)!, 'dd/MM/yyyy', { locale: dateLocale })
         : '—',
       [t('reports.inspStatus')]: lastInspection ? getStatusLabel(lastInspection.status) : '—',
       [t('reports.inspector')]: lastInspection?.profiles?.full_name || '—',

@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { addDays } from 'date-fns';
 import { useTranslation } from 'react-i18next';
+import { getLocalToday, formatLocalDate } from '@/utils/dateFormat';
 
 interface PushNotificationOptions {
   title: string;
@@ -79,8 +80,8 @@ export function usePushNotifications() {
         .from('equipment')
         .select('id, name, internal_code, next_inspection')
         .not('next_inspection', 'is', null)
-        .lte('next_inspection', sevenDaysFromNow.toISOString().split('T')[0])
-        .gte('next_inspection', today.toISOString().split('T')[0]);
+        .lte('next_inspection', formatLocalDate(sevenDaysFromNow))
+        .gte('next_inspection', formatLocalDate(today));
 
       if (equipment && equipment.length > 0) {
         // Show grouped notification
@@ -100,7 +101,7 @@ export function usePushNotifications() {
     if (!user?.id || permission !== 'granted') return;
 
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = getLocalToday();
 
       const { data: equipment } = await supabase
         .from('equipment')

@@ -2,6 +2,24 @@ import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 /**
+ * Returns today's date as YYYY-MM-DD using local timezone.
+ * ALWAYS use this instead of new Date().toISOString().split('T')[0]
+ * which shifts by -1 day in negative UTC offsets (e.g. Brazil UTC-3).
+ */
+export function getLocalToday(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
+/**
+ * Formats a Date object as YYYY-MM-DD using local timezone.
+ * ALWAYS use this instead of date.toISOString().split('T')[0].
+ */
+export function formatLocalDate(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+/**
  * Safely parses a date string, handling timezone issues by treating
  * the date as local midnight (not UTC midnight).
  *
@@ -102,4 +120,39 @@ export function formatDateTimeFull(
   if (!date || isNaN(date.getTime())) return fallback;
 
   return format(date, "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR });
+}
+
+/**
+ * Calculate next date based on a frequency string.
+ * Centralized to avoid duplicate implementations across the app.
+ */
+export function calculateNextDateByFrequency(dateString: string, frequency: string): string {
+  const date = new Date(`${dateString}T12:00:00`);
+  
+  switch (frequency) {
+    case 'daily':
+      date.setDate(date.getDate() + 1);
+      break;
+    case 'weekly':
+      date.setDate(date.getDate() + 7);
+      break;
+    case 'monthly':
+      date.setDate(date.getDate() + 30);
+      break;
+    case 'quarterly':
+      date.setDate(date.getDate() + 90);
+      break;
+    case 'semi-annual':
+    case 'semiannual':
+      date.setDate(date.getDate() + 180);
+      break;
+    case 'annual':
+    case 'yearly':
+      date.setDate(date.getDate() + 365);
+      break;
+    default:
+      date.setDate(date.getDate() + 30);
+  }
+  
+  return formatLocalDate(date);
 }

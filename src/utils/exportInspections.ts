@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
+import { getLocalToday } from '@/utils/dateFormat';
 import { ptBR, enUS } from 'date-fns/locale';
 import type { InspectionWithDetails, InspectionPhoto } from '@/hooks/useInspections';
 import { supabase } from '@/integrations/supabase/client';
@@ -70,7 +71,7 @@ const getEquipmentAlertIndicators = (
   allEquipment?: { id: string; certificate_expiry?: string | null; expiry_date?: string | null; next_inspection?: string | null }[]
 ): string[] => {
   const alertIndicators: string[] = [];
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalToday();
   const alertLabels = getAlertLabels();
   
   // If we have full equipment data, use it

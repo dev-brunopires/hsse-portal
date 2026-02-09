@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { startOfMonth, endOfMonth, subMonths, differenceInHours } from 'date-fns';
+import { formatLocalDate } from '@/utils/dateFormat';
 import { useShipFilter } from '@/contexts/ShipFilterContext';
 
 export interface InspectorStats {
@@ -32,8 +33,8 @@ export function useInspectorStats(startDate?: Date, endDate?: Date) {
   return useQuery({
     queryKey: ['inspector-stats', startDate?.toISOString(), endDate?.toISOString(), selectedShipId],
     queryFn: async (): Promise<PerformanceMetrics> => {
-      const from = (startDate || defaultStartDate).toISOString().split('T')[0];
-      const to = (endDate || defaultEndDate).toISOString().split('T')[0];
+      const from = formatLocalDate(startDate || defaultStartDate);
+      const to = formatLocalDate(endDate || defaultEndDate);
 
       // Fetch inspections with inspector profiles
       let query = supabase

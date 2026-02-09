@@ -32,9 +32,11 @@ import { addPDFHeader, addPDFFooter, addSignatureSection, preloadLogo } from '@/
 import { ReportPreviewDialog } from '@/components/reports/ReportPreviewDialog';
 import { MonthQuickFilter } from '@/components/reports/MonthQuickFilter';
 import { toast } from 'sonner';
-import { format, isAfter, isBefore, addDays, startOfDay, parseISO } from 'date-fns';
+import { format, isAfter, isBefore, addDays, startOfDay } from 'date-fns';
+import { parseLocalDate } from '@/utils/dateFormat';
 import { ptBR, enUS } from 'date-fns/locale';
 import { haptic } from '@/utils/hapticFeedback';
+import { getLocalToday } from '@/utils/dateFormat';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -466,7 +468,7 @@ export default function Reports() {
       const alertIndicators: string[] = [];
       
       if (fullEquipment) {
-        const today = new Date().toISOString().split('T')[0];
+        const today = getLocalToday();
         if (fullEquipment.certificate_expiry && fullEquipment.certificate_expiry < today) {
           alertIndicators.push(t('alerts.reportCertExpired'));
         }
@@ -543,7 +545,7 @@ export default function Reports() {
       const alertIndicators: string[] = [];
       
       if (fullEquipment) {
-        const today = new Date().toISOString().split('T')[0];
+        const today = getLocalToday();
         if (fullEquipment.certificate_expiry && fullEquipment.certificate_expiry < today) {
           alertIndicators.push(t('alerts.reportCertExpired'));
         }
@@ -757,7 +759,7 @@ export default function Reports() {
         position: currentUserProfile?.position || undefined,
         email: currentUserProfile?.email || '',
       },
-      inspectionDate: new Date().toISOString().split('T')[0],
+      inspectionDate: getLocalToday(),
       signatureData: signature,
     }, { preview });
 
@@ -970,7 +972,7 @@ export default function Reports() {
             const alertIndicators: string[] = [];
             
             if (fullEquipment) {
-              const today = new Date().toISOString().split('T')[0];
+              const today = getLocalToday();
               if (fullEquipment.certificate_expiry && fullEquipment.certificate_expiry < today) {
                 alertIndicators.push(t('alerts.reportCertExpired'));
               }
@@ -1092,7 +1094,7 @@ export default function Reports() {
               location: equip.location || '—',
               eqStatus: statusLabels[equip.status] || equip.status,
               inspCount: equipInspections.length,
-              lastInsp: lastInsp ? format(parseISO(lastInsp.inspection_date), 'dd/MM/yy', { locale: dateLocale }) : '—',
+              lastInsp: lastInsp ? format(parseLocalDate(lastInsp.inspection_date)!, 'dd/MM/yy', { locale: dateLocale }) : '—',
               inspStatus: lastInsp ? inspectionStatusLabels[lastInsp.status] || lastInsp.status : '—',
               inspector: lastInsp?.profiles?.full_name || '—',
             };

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
+import { getLocalToday } from '@/utils/dateFormat';
 import { ptBR, enUS } from 'date-fns/locale';
 import { 
   Wrench, 
@@ -74,7 +75,7 @@ export function UpcomingMaintenanceCard() {
     critical: { label: t('maintenance.priorityCritical'), color: 'text-red-500' },
   };
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalToday();
 
   // Filter active requests (not completed or rejected)
   const activeRequests = maintenanceRequests.filter(

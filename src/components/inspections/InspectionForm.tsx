@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { getLocalToday } from '@/utils/dateFormat';
 import confetti from 'canvas-confetti';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -169,7 +170,7 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
     defaultValues: {
       equipmentId: '',
       inspectorId: user?.id || '',
-      inspectionDate: new Date().toISOString().split('T')[0],
+      inspectionDate: getLocalToday(),
       actionsTaken: '',
       observations: '',
       recommendations: '',
@@ -347,7 +348,7 @@ export function InspectionForm({ onSuccess, onCancel, preSelectedEquipmentId }: 
         inspection: {
           equipment_id: selectedEquipment.id,
           inspector_id: formData.inspectorId,
-          inspection_date: formData.inspectionDate || new Date().toISOString().split('T')[0],
+          inspection_date: formData.inspectionDate || getLocalToday(),
           status: 'compliant',
           actions_taken: null,
           observations: t('inspectionForm.quickInspection'),
