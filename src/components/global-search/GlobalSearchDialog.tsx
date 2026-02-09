@@ -60,16 +60,18 @@ export function GlobalSearchDialog({ open, onOpenChange }: GlobalSearchDialogPro
     }
   }, [open]);
 
-  // Keyboard shortcut to open
+  // Keyboard shortcut to open (Ctrl+K / Cmd+K)
+  // stopImmediatePropagation prevents the second mounted instance from also firing
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
+        e.stopImmediatePropagation();
         onOpenChange(!open);
       }
     };
-    document.addEventListener('keydown', down);
-    return () => document.removeEventListener('keydown', down);
+    document.addEventListener('keydown', down, true);
+    return () => document.removeEventListener('keydown', down, true);
   }, [open, onOpenChange]);
 
   const filteredResults = useMemo(() => {
