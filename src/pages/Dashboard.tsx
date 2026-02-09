@@ -291,7 +291,7 @@ export default function Dashboard() {
         <ModernStatusChart data={stats.byStatus} totalEquipment={stats.totalEquipment} />
       </div>
 
-      {/* Charts Row 2 */}
+      {/* Charts Row 2 - Status by Category + Upcoming Inspections */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <EquipmentStatusByCategoryChart />
@@ -299,19 +299,19 @@ export default function Dashboard() {
         <UpcomingInspectionsCard />
       </div>
 
-      {/* Category Compliance Chart */}
-      <EquipmentComplianceChart />
+      {/* Category Compliance + Activity Comparison */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <EquipmentComplianceChart />
+        <ActivityComparisonChart />
+      </div>
 
-      {/* Activity Comparison Chart */}
-      <ActivityComparisonChart />
+      {/* Expiring Certificates - Equipment + Certificates Module */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ExpiringCertificatesCard />
+        <CertificatesExpiringCard />
+      </div>
 
-      {/* Expiring Certificates (Equipment field) */}
-      <ExpiringCertificatesCard />
-
-      {/* Certificates Module Expiring */}
-      <CertificatesExpiringCard />
-
-      {/* Maintenance Trend Chart */}
+      {/* Maintenance Trend + Upcoming Maintenance */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <MaintenanceTrendChart />
         <UpcomingMaintenanceCard />
@@ -323,11 +323,11 @@ export default function Dashboard() {
         <InspectionHeatmapCard />
       </div>
 
-      {/* Critical Equipment */}
-      <CriticalEquipmentCard />
-
-      {/* Alerts */}
-      <ModernAlertsList alerts={stats.recentAlerts} />
+      {/* Critical Equipment + Alerts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <CriticalEquipmentCard />
+        <ModernAlertsList alerts={stats.recentAlerts} />
+      </div>
     </div>
   );
 }
