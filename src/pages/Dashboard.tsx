@@ -299,14 +299,11 @@ export default function Dashboard() {
         <UpcomingInspectionsCard />
       </div>
 
-      {/* Equipment Compliance Chart */}
+      {/* Category Compliance Chart */}
       <EquipmentComplianceChart />
 
-      {/* Activity Comparison Chart - NEW */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <ActivityComparisonChart />
-        <UpcomingInspectionsCard />
-      </div>
+      {/* Activity Comparison Chart */}
+      <ActivityComparisonChart />
 
       {/* Expiring Certificates (Equipment field) */}
       <ExpiringCertificatesCard />

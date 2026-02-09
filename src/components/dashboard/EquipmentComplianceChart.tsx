@@ -1,11 +1,10 @@
 import { useMemo, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
-import { CheckCircle2, XCircle, AlertTriangle, Filter, Search } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertTriangle, Filter } from 'lucide-react';
 import { useInspections } from '@/hooks/useInspections';
 import { useEquipment } from '@/hooks/useEquipment';
 import { useCategories } from '@/hooks/useCategories';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -22,82 +21,61 @@ export function EquipmentComplianceChart() {
   const { data: equipment = [], isLoading: equipmentLoading } = useEquipment();
   const { data: categories = [] } = useCategories();
   
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
+  // Build a map: equipment_id -> category name
+  const equipCategoryMap = useMemo(() => {
+    const map = new Map<string, string>();
+    equipment.forEach(eq => {
+      map.set(eq.id, eq.categories?.name || t('complianceChart.noCategory'));
+    });
+    return map;
+  }, [equipment, t]);
+
   const chartData = useMemo(() => {
-    // Get latest inspection status for each equipment
-    const equipmentMap = new Map<string, {
-      id: string;
-      name: string;
-      code: string;
+    const categoryMap = new Map<string, {
       category: string;
-      categoryId: string;
       compliant: number;
       attention: number;
       nonCompliant: number;
       total: number;
     }>();
 
-    // Initialize with all equipment
-    equipment.forEach(eq => {
-      equipmentMap.set(eq.id, {
-        id: eq.id,
-        name: eq.name,
-        code: eq.internal_code,
-        category: eq.categories?.name || t('complianceChart.noCategory'),
-        categoryId: eq.category_id,
-        compliant: 0,
-        attention: 0,
-        nonCompliant: 0,
-        total: 0,
-      });
-    });
+    // Filter inspections by selected category if needed
+    const filteredInspections = selectedCategory === 'all'
+      ? inspections
+      : inspections.filter(insp => {
+          const eq = equipment.find(e => e.id === insp.equipment_id);
+          return eq?.category_id === selectedCategory;
+        });
 
-    // Count inspections per equipment
-    inspections.forEach(insp => {
-      const eq = equipmentMap.get(insp.equipment_id);
-      if (eq) {
-        eq.total++;
-        if (insp.status === 'compliant') {
-          eq.compliant++;
-        } else if (insp.status === 'attention') {
-          eq.attention++;
-        } else if (insp.status === 'non-compliant') {
-          eq.nonCompliant++;
-        }
+    filteredInspections.forEach(insp => {
+      const catName = equipCategoryMap.get(insp.equipment_id) || t('complianceChart.noCategory');
+      
+      if (!categoryMap.has(catName)) {
+        categoryMap.set(catName, {
+          category: catName,
+          compliant: 0,
+          attention: 0,
+          nonCompliant: 0,
+          total: 0,
+        });
       }
+
+      const cat = categoryMap.get(catName)!;
+      cat.total++;
+      if (insp.status === 'compliant') cat.compliant++;
+      else if (insp.status === 'attention') cat.attention++;
+      else if (insp.status === 'non-compliant') cat.nonCompliant++;
     });
 
-    // Convert to array and filter
-    let result = Array.from(equipmentMap.values())
-      .filter(eq => eq.total > 0); // Only show equipment with inspections
-
-    // Apply category filter
-    if (selectedCategory !== 'all') {
-      result = result.filter(eq => eq.categoryId === selectedCategory);
-    }
-
-    // Apply search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(eq => 
-        eq.name.toLowerCase().includes(query) ||
-        eq.code.toLowerCase().includes(query)
-      );
-    }
-
-    // Sort by total inspections descending
-    result.sort((a, b) => b.total - a.total);
-
-    // Limit to top 10 for readability
-    return result.slice(0, 10);
-  }, [inspections, equipment, selectedCategory, searchQuery, t]);
+    return Array.from(categoryMap.values()).sort((a, b) => b.total - a.total);
+  }, [inspections, equipment, equipCategoryMap, selectedCategory, t]);
 
   const totals = useMemo(() => {
-    const totalCompliant = chartData.reduce((sum, eq) => sum + eq.compliant, 0);
-    const totalAttention = chartData.reduce((sum, eq) => sum + eq.attention, 0);
-    const totalNonCompliant = chartData.reduce((sum, eq) => sum + eq.nonCompliant, 0);
+    const totalCompliant = chartData.reduce((sum, c) => sum + c.compliant, 0);
+    const totalAttention = chartData.reduce((sum, c) => sum + c.attention, 0);
+    const totalNonCompliant = chartData.reduce((sum, c) => sum + c.nonCompliant, 0);
     const total = totalCompliant + totalAttention + totalNonCompliant;
     
     return {
@@ -116,8 +94,7 @@ export function EquipmentComplianceChart() {
       
       return (
         <div className="bg-card border rounded-xl shadow-lg p-3 min-w-[180px]">
-          <p className="font-semibold text-foreground mb-1">{data.name}</p>
-          <p className="text-xs text-muted-foreground mb-2">{data.code}</p>
+          <p className="font-semibold text-foreground mb-2">{data.category}</p>
           <div className="space-y-1 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">{t('common.total')}:</span>
@@ -171,8 +148,8 @@ export function EquipmentComplianceChart() {
               <CheckCircle2 className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h3 className="font-semibold text-foreground">{t('complianceChart.title')}</h3>
-              <p className="text-sm text-muted-foreground">{t('complianceChart.subtitle')}</p>
+              <h3 className="font-semibold text-foreground">{t('complianceChart.titleByCategory', 'Conformidade por Categoria')}</h3>
+              <p className="text-sm text-muted-foreground">{t('complianceChart.subtitleByCategory', 'Resultado das inspeções agrupado por categoria')}</p>
             </div>
           </div>
           
@@ -192,19 +169,10 @@ export function EquipmentComplianceChart() {
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3 mt-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder={t('complianceChart.searchPlaceholder')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-9"
-            />
-          </div>
+        {/* Category Filter */}
+        <div className="mt-4">
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-full sm:w-[200px] h-9">
+            <SelectTrigger className="w-full sm:w-[250px] h-9">
               <Filter className="h-4 w-4 mr-2" />
               <SelectValue placeholder={t('complianceChart.allCategories')} />
             </SelectTrigger>
@@ -244,11 +212,11 @@ export function EquipmentComplianceChart() {
                 />
                 <YAxis 
                   type="category"
-                  dataKey="code"
+                  dataKey="category"
                   axisLine={false} 
                   tickLine={false} 
                   tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-                  width={80}
+                  width={120}
                 />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend 
