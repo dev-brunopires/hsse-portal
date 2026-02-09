@@ -2259,6 +2259,12 @@
       "error": "Error updating favorites",
       "notAuthenticated": "User not authenticated"
     },
+    "favoriteShip": {
+      "setSuccess": "{{name}} set as favorite ship",
+      "removedSuccess": "Favorite ship removed",
+      "error": "Error updating favorite ship",
+      "tooltip": "Set as favorite (default loading)"
+    },
     "checklistTemplate": {
       "created": "Checklist template created successfully!",
       "createError": "Error creating checklist template",

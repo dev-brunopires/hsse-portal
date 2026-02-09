@@ -20,7 +20,8 @@ import {
   Moon,
   Sun,
   Languages,
-  FileCheck
+  FileCheck,
+  Star
 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
@@ -51,6 +52,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import { useShips } from '@/hooks/useShips';
 import { useUserShips } from '@/hooks/useUserShips';
+import { useFavoriteShip, useSetFavoriteShip } from '@/hooks/useFavoriteShip';
 import { 
   useNotifications,
   useMarkNotificationAsRead,
@@ -80,6 +82,8 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
   const navigate = useNavigate();
   const { data: ships = [] } = useShips();
   const { data: userShips = [] } = useUserShips(user?.id);
+  const { data: favoriteShipId } = useFavoriteShip();
+  const setFavoriteShip = useSetFavoriteShip();
   const { data: allNotifications = [] } = useNotifications();
   const { data: allCertificates = [] } = useCertificates();
   const markAsRead = useMarkNotificationAsRead();
@@ -415,22 +419,41 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
                 <ScrollArea className="max-h-[50vh]">
                   <div className="space-y-1">
                     {ships.map((ship) => (
-                      <DrawerClose key={ship.id} asChild>
+                      <div key={ship.id} className="flex items-center gap-1">
+                        <DrawerClose asChild>
+                          <button
+                            onClick={() => setSelectedShipId(ship.id)}
+                            className={cn(
+                              "flex-1 flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors",
+                              selectedShipId === ship.id 
+                                ? "bg-primary/10 text-primary font-medium" 
+                                : "hover:bg-muted"
+                            )}
+                          >
+                            <span className="w-5 flex-shrink-0">
+                              {selectedShipId === ship.id && <Check className="h-5 w-5 text-primary" />}
+                            </span>
+                            <span>{ship.name}</span>
+                          </button>
+                        </DrawerClose>
                         <button
-                          onClick={() => setSelectedShipId(ship.id)}
-                          className={cn(
-                            "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors",
-                            selectedShipId === ship.id 
-                              ? "bg-primary/10 text-primary font-medium" 
-                              : "hover:bg-muted"
-                          )}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFavoriteShip.mutate({ shipId: ship.id, shipName: ship.name });
+                          }}
+                          className="p-2 rounded-lg hover:bg-muted transition-colors flex-shrink-0"
+                          title={t('hooks.favoriteShip.tooltip')}
                         >
-                          <span className="w-5 flex-shrink-0">
-                            {selectedShipId === ship.id && <Check className="h-5 w-5 text-primary" />}
-                          </span>
-                          <span>{ship.name}</span>
+                          <Star
+                            className={cn(
+                              "h-4 w-4 transition-colors",
+                              favoriteShipId === ship.id
+                                ? "fill-amber-400 text-amber-400"
+                                : "text-muted-foreground"
+                            )}
+                          />
                         </button>
-                      </DrawerClose>
+                      </div>
                     ))}
                   </div>
                 </ScrollArea>
@@ -491,12 +514,32 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
                   <DropdownMenuItem 
                     key={ship.id}
                     onClick={() => setSelectedShipId(ship.id)}
-                    className="gap-2"
+                    className="gap-2 justify-between"
                   >
-                    {selectedShipId === ship.id && <Check className="h-4 w-4 text-primary" />}
-                    <span className={selectedShipId === ship.id ? 'font-medium' : ''}>
-                      {ship.name}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {selectedShipId === ship.id && <Check className="h-4 w-4 text-primary" />}
+                      <span className={selectedShipId === ship.id ? 'font-medium' : ''}>
+                        {ship.name}
+                      </span>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        setFavoriteShip.mutate({ shipId: ship.id, shipName: ship.name });
+                      }}
+                      className="p-1 rounded hover:bg-muted transition-colors"
+                      title={t('hooks.favoriteShip.tooltip')}
+                    >
+                      <Star
+                        className={cn(
+                          "h-3.5 w-3.5 transition-colors",
+                          favoriteShipId === ship.id
+                            ? "fill-amber-400 text-amber-400"
+                            : "text-muted-foreground"
+                        )}
+                      />
+                    </button>
                   </DropdownMenuItem>
                 ))}
               </ScrollArea>
