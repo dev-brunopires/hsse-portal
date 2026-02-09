@@ -1,7 +1,8 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import { format, differenceInDays, parseISO } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
+import { parseLocalDate, formatDate as fmtDate } from '@/utils/dateFormat';
 import { ptBR, enUS } from 'date-fns/locale';
 import { addPDFHeader, addPDFFooter, SBM_BLUE, DARK_GRAY, preloadLogo } from './pdfStyles';
 import type { OrganizationBranding } from '@/hooks/useOrganizationBranding';
@@ -61,11 +62,11 @@ function calculateStats(equipment: EquipmentData[], certificates: CertificateDat
     expiredCertificates: certificates.filter(c => c.status === 'expired').length,
     overdueInspections: equipment.filter(e => {
       if (!e.next_inspection) return false;
-      return differenceInDays(parseISO(e.next_inspection), today) < 0;
+      return differenceInDays(parseLocalDate(e.next_inspection)!, today) < 0;
     }).length,
     upcomingInspections: equipment.filter(e => {
       if (!e.next_inspection) return false;
-      const days = differenceInDays(parseISO(e.next_inspection), today);
+      const days = differenceInDays(parseLocalDate(e.next_inspection)!, today);
       return days >= 0 && days <= 30;
     }).length,
   };
@@ -82,14 +83,14 @@ function getComplianceLevel(equipment: EquipmentData, certificates: CertificateD
   
   // Check certificate expiry
   if (equipment.certificate_expiry) {
-    const days = differenceInDays(parseISO(equipment.certificate_expiry), today);
+    const days = differenceInDays(parseLocalDate(equipment.certificate_expiry)!, today);
     if (days < 0) return '❌ ' + t('expiredCertificate');
     if (days <= 30) issues.push(t('certificateExpiringSoon'));
   }
   
   // Check inspection
   if (equipment.next_inspection) {
-    const days = differenceInDays(parseISO(equipment.next_inspection), today);
+    const days = differenceInDays(parseLocalDate(equipment.next_inspection)!, today);
     if (days < 0) issues.push(t('inspectionOverdue'));
     else if (days <= 7) issues.push(t('inspectionDueSoon'));
   }
@@ -167,8 +168,8 @@ export async function exportComplianceReportPDF(
       e.status === 'active' ? t('statusActive') : 
         e.status === 'inactive' ? t('statusInactive') :
         e.status === 'maintenance' ? t('statusMaintenance') : t('statusRejected'),
-      e.certificate_expiry ? format(parseISO(e.certificate_expiry), 'dd/MM/yyyy') : '-',
-      e.next_inspection ? format(parseISO(e.next_inspection), 'dd/MM/yyyy') : '-',
+      e.certificate_expiry ? fmtDate(e.certificate_expiry, '-') : '-',
+      e.next_inspection ? fmtDate(e.next_inspection, '-') : '-',
       getComplianceLevel(e, equipCerts),
     ];
   });
@@ -247,9 +248,9 @@ export function exportComplianceReportExcel(
       [t('headerShip')]: e.ship?.name || '-',
       [t('headerStatus')]: e.status,
       [t('headerLocation')]: e.location || '-',
-      [t('headerCertExpiry')]: e.certificate_expiry ? format(parseISO(e.certificate_expiry), 'dd/MM/yyyy') : '-',
-      [t('headerNextInsp')]: e.next_inspection ? format(parseISO(e.next_inspection), 'dd/MM/yyyy') : '-',
-      [t('headerLastInsp')]: e.last_inspection ? format(parseISO(e.last_inspection), 'dd/MM/yyyy') : '-',
+      [t('headerCertExpiry')]: fmtDate(e.certificate_expiry, '-'),
+      [t('headerNextInsp')]: fmtDate(e.next_inspection, '-'),
+      [t('headerLastInsp')]: fmtDate(e.last_inspection, '-'),
       [t('headerCompliance')]: getComplianceLevel(e, equipCerts),
     };
   });
@@ -269,7 +270,7 @@ export function exportComplianceReportExcel(
     [t('headerEquipment')]: c.equipment?.name || '-',
     [t('headerEquipCode')]: c.equipment?.internal_code || '-',
     [t('headerStatus')]: c.status,
-    [t('headerExpiry')]: c.expiry_date ? format(parseISO(c.expiry_date), 'dd/MM/yyyy') : '-',
+    [t('headerExpiry')]: fmtDate(c.expiry_date, '-'),
   }));
 
   const certWs = XLSX.utils.json_to_sheet(certData);

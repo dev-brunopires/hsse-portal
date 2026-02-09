@@ -439,7 +439,7 @@ export function EquipmentDetailDialog({
                       <span className="font-medium text-sm">{t('equipmentDetail.lastInspection')}</span>
                     </div>
                     <p className="text-xl sm:text-2xl font-bold">
-                      {equipment.lastInspection ? new Date(equipment.lastInspection).toLocaleDateString('pt-BR') : '—'}
+                      {equipment.lastInspection ? formatDate(equipment.lastInspection) : '—'}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {inspections?.[0]?.status === 'approved' ? t('equipmentDetail.approved') : 
@@ -466,7 +466,7 @@ export function EquipmentDetailDialog({
                       <span className="font-medium text-sm">{t('equipmentDetail.nextInspectionTitle')}</span>
                     </div>
                     <p className="text-xl sm:text-2xl font-bold">
-                      {equipment.nextInspection ? new Date(equipment.nextInspection).toLocaleDateString('pt-BR') : '—'}
+                      {equipment.nextInspection ? formatDate(equipment.nextInspection) : '—'}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {equipment.nextInspection ? (
@@ -497,7 +497,7 @@ export function EquipmentDetailDialog({
                       <span className="font-medium text-sm">{t('equipmentDetail.certificateValidity')}</span>
                     </div>
                     <p className="text-xl sm:text-2xl font-bold">
-                      {equipment.certificateExpiry ? new Date(equipment.certificateExpiry).toLocaleDateString('pt-BR') : '—'}
+                      {equipment.certificateExpiry ? formatDate(equipment.certificateExpiry) : '—'}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {equipment.certificateExpiry ? (
@@ -564,7 +564,7 @@ export function EquipmentDetailDialog({
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                             <p className="font-medium">
-                              {new Date(inspection.inspection_date).toLocaleDateString('pt-BR')}
+                              {formatDate(inspection.inspection_date)}
                             </p>
                             <Badge variant={
                               inspection.status === 'approved' ? 'default' :
@@ -650,7 +650,7 @@ export function EquipmentDetailDialog({
                           <div className="flex-1 min-w-0">
                             <p className="font-medium truncate">{doc.file_name}</p>
                             <p className="text-sm text-muted-foreground">
-                              {formatFileSize(doc.file_size)} • {new Date(doc.created_at).toLocaleDateString('pt-BR')}
+                              {formatFileSize(doc.file_size)} • {formatDate(doc.created_at)}
                             </p>
                           </div>
                           <div className="flex items-center gap-2">

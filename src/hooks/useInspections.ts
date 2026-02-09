@@ -6,6 +6,7 @@ import { useShipFilter } from '@/contexts/ShipFilterContext';
 import i18n from '@/i18n';
 import { getCurrentOrganizationId, generateInspectionPhotoPath } from '@/utils/storageHelpers';
 import { translateError } from '@/utils/errorTranslation';
+import { getLocalToday, calculateNextDateByFrequency } from '@/utils/dateFormat';
 
 export type Inspection = Tables<'inspections'>;
 export type InspectionInsert = TablesInsert<'inspections'>;
@@ -135,35 +136,8 @@ interface CreateInspectionData {
   photos: File[];
 }
 
-// Calculate next inspection date based on category frequency
-function calculateNextInspectionDate(inspectionDate: string, frequency: string): string {
-  // Use T12:00:00 to avoid timezone off-by-one when parsing date-only strings
-  const date = new Date(`${inspectionDate}T12:00:00`);
-  
-  switch (frequency) {
-    case 'monthly':
-      date.setDate(date.getDate() + 30);
-      break;
-    case 'quarterly':
-      date.setDate(date.getDate() + 90);
-      break;
-    case 'semi-annual':
-    case 'semiannual':
-      date.setDate(date.getDate() + 180);
-      break;
-    case 'annual':
-      date.setDate(date.getDate() + 365);
-      break;
-    default:
-      date.setDate(date.getDate() + 30); // Default to monthly
-  }
-  
-  // Format as YYYY-MM-DD using local date parts to avoid timezone shift
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
+// Re-export centralized function for backward compat
+const calculateNextInspectionDate = calculateNextDateByFrequency;
 
 // Map inspection status to equipment status
 function mapInspectionToEquipmentStatus(inspectionStatus: string): string {
@@ -197,7 +171,7 @@ export function useCreateInspection() {
       // Calculate next inspection date based on category frequency
       const frequency = (equipmentData.categories as any)?.inspection_frequency || 'monthly';
       const calculatedNextDate = calculateNextInspectionDate(
-        inspection.inspection_date || new Date().toISOString().split('T')[0],
+        inspection.inspection_date || getLocalToday(),
         frequency
       );
       

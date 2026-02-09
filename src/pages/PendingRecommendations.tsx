@@ -61,7 +61,7 @@ import { addPDFHeader, addPDFFooter, SBM_BLUE, preloadLogo } from '@/utils/pdfSt
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { PullToRefreshIndicator } from '@/components/ui/PullToRefreshIndicator';
 import { useIsMobile, useIsTabletOrMobile } from '@/hooks/use-mobile';
-
+import { getLocalToday } from '@/utils/dateFormat';
 interface PendingItem {
   equipment: EquipmentWithCategory;
   lastInspection: InspectionWithDetails;
@@ -105,7 +105,7 @@ export default function PendingRecommendations() {
 
   // Process equipment and inspections to find pending items
   const pendingItems = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalToday();
     const items: PendingItem[] = [];
 
     equipment.forEach((eq) => {

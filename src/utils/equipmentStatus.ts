@@ -5,6 +5,7 @@
  * - Equipment expiry date (hydrostatic test, etc.) has passed
  * - Stored status is already "rejected" or "expired"
  */
+import { getLocalToday, formatLocalDate } from '@/utils/dateFormat';
 
 export interface EquipmentWithDates {
   status: string;
@@ -31,7 +32,7 @@ export interface EquipmentAlerts {
 }
 
 export function getEffectiveEquipmentStatus(equipment: EquipmentWithDates): EffectiveStatusResult {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalToday();
   const reasons: string[] = [];
   const reasonKeys: string[] = [];
   let isAutoRejected = false;
@@ -76,11 +77,10 @@ export function getEffectiveEquipmentStatus(equipment: EquipmentWithDates): Effe
  * Used in reports to show notifications alongside status
  */
 export function getEquipmentAlerts(equipment: EquipmentWithDates): EquipmentAlerts {
-  const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
-  const thirtyDaysFromNow = new Date(today);
+  const todayStr = getLocalToday();
+  const thirtyDaysFromNow = new Date();
   thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-  const thirtyDaysStr = thirtyDaysFromNow.toISOString().split('T')[0];
+  const thirtyDaysStr = formatLocalDate(thirtyDaysFromNow);
   
   const alertKeys: string[] = [];
   

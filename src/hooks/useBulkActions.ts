@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import i18n from '@/i18n';
 import { addYears } from 'date-fns';
+import { formatLocalDate } from '@/utils/dateFormat';
 
 /**
  * Hook to bulk renew multiple certificates
@@ -19,7 +20,7 @@ export function useBulkRenewCertificates() {
       monthsToAdd?: number;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
-      const newExpiryDate = addYears(new Date(), monthsToAdd / 12).toISOString().split('T')[0];
+      const newExpiryDate = formatLocalDate(addYears(new Date(), monthsToAdd / 12));
 
       // Update all certificates
       const { error } = await supabase

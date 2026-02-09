@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { format, subWeeks, startOfWeek, endOfWeek, eachWeekOfInterval } from 'date-fns';
+import { formatLocalDate } from '@/utils/dateFormat';
 import { ptBR, enUS } from 'date-fns/locale';
 import { CalendarDays, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,7 +32,7 @@ export function InspectionHeatmapCard() {
       let query = supabase
         .from('inspections')
         .select('inspection_date, status')
-        .gte('inspection_date', twelveWeeksAgo.toISOString().split('T')[0]);
+        .gte('inspection_date', formatLocalDate(twelveWeeksAgo));
 
       if (isFilterEnabled && selectedShipId) {
         query = query.eq('ship_id', selectedShipId);

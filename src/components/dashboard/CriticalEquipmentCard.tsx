@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useNavigate } from 'react-router-dom';
 import { useEquipment } from '@/hooks/useEquipment';
 import { getEffectiveEquipmentStatus } from '@/utils/equipmentStatus';
+import { getLocalToday } from '@/utils/dateFormat';
 import { useTranslation } from 'react-i18next';
 
 export function CriticalEquipmentCard() {
@@ -14,7 +15,7 @@ export function CriticalEquipmentCard() {
   const { data: equipment = [], isLoading } = useEquipment();
 
   const criticalEquipment = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalToday();
 
     return equipment
       .map((eq) => {

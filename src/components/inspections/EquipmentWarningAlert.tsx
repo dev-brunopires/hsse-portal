@@ -3,6 +3,7 @@ import { AlertTriangle, Info, Calendar, MessageSquare, Clock, CheckCircle2 } fro
 import { format } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
+import { getLocalToday } from '@/utils/dateFormat';
 import type { Inspection } from '@/hooks/useInspections';
 import type { EquipmentWithCategory } from '@/hooks/useEquipment';
 
@@ -14,7 +15,7 @@ interface EquipmentWarningAlertProps {
 export function EquipmentWarningAlert({ equipment, lastInspection }: EquipmentWarningAlertProps) {
   const { t, i18n } = useTranslation();
   const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalToday();
   
   // Check if certificate is expired
   const isCertificateExpired = equipment.certificate_expiry && equipment.certificate_expiry < today;

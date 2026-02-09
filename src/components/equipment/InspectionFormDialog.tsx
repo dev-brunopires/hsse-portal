@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { getLocalToday } from '@/utils/dateFormat';
 import confetti from 'canvas-confetti';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -138,7 +139,7 @@ export function InspectionFormDialog({
     resolver: zodResolver(inspectionSchema),
     defaultValues: {
       inspectorId: '',
-      inspectionDate: new Date().toISOString().split('T')[0],
+      inspectionDate: getLocalToday(),
       overallStatus: 'approved',
       observations: '',
       recommendations: '',
@@ -166,7 +167,7 @@ export function InspectionFormDialog({
       
       form.reset({
         inspectorId: user?.id || '',
-        inspectionDate: new Date().toISOString().split('T')[0],
+        inspectionDate: getLocalToday(),
         overallStatus: 'approved',
         observations: '',
         recommendations: '',
@@ -381,7 +382,7 @@ export function InspectionFormDialog({
           inspection: {
             equipment_id: equipment.id,
             inspector_id: formData.inspectorId,
-            inspection_date: formData.inspectionDate || new Date().toISOString().split('T')[0],
+            inspection_date: formData.inspectionDate || getLocalToday(),
             status: 'compliant',
             observations: t('inspectionForm.quickInspection'),
             recommendations: null,

@@ -1,4 +1,5 @@
 import { useIsTabletOrMobile } from '@/hooks/use-mobile';
+import { getLocalToday } from '@/utils/dateFormat';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -55,7 +56,7 @@ export function PreInspectionWarningDialog({
   const { t, i18n } = useTranslation();
   const isTabletOrMobile = useIsTabletOrMobile();
   const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalToday();
   
   // Check for critical issues
   const isCertificateExpired = equipment.certificate_expiry && equipment.certificate_expiry < today;
