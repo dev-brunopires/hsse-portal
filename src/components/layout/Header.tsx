@@ -85,7 +85,9 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
   const { data: favoriteShipId } = useFavoriteShip();
   const setFavoriteShip = useSetFavoriteShip();
   const { data: allNotifications = [] } = useNotifications();
-  const { data: allCertificates = [] } = useCertificates();
+  // Perf #6: Only load certificates for admin roles
+  const isAdminRole = role === 'admin' || role === 'admin_master' || isPlatformOwner;
+  const { data: allCertificates = [] } = useCertificates({ enabled: isAdminRole });
   const markAsRead = useMarkNotificationAsRead();
   const markAllAsRead = useMarkAllNotificationsAsRead();
 
@@ -439,8 +441,14 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            setFavoriteShip.mutate({ shipId: ship.id, shipName: ship.name });
-                            setSelectedShipId(ship.id);
+                            const isUnfavoriting = favoriteShipId === ship.id;
+                            setFavoriteShip.mutate({ shipId: isUnfavoriting ? null : ship.id, shipName: ship.name });
+                            // Bug #2: When unfavoriting, go back to "All Units"
+                            if (isUnfavoriting) {
+                              setSelectedShipId(null);
+                            } else {
+                              setSelectedShipId(ship.id);
+                            }
                           }}
                           className="p-2 rounded-lg hover:bg-muted transition-colors flex-shrink-0"
                           title={t('hooks.favoriteShip.tooltip')}
@@ -527,8 +535,14 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
                       onClick={(e) => {
                         e.stopPropagation();
                         e.preventDefault();
-                        setFavoriteShip.mutate({ shipId: ship.id, shipName: ship.name });
-                        setSelectedShipId(ship.id);
+                        const isUnfavoriting = favoriteShipId === ship.id;
+                        setFavoriteShip.mutate({ shipId: isUnfavoriting ? null : ship.id, shipName: ship.name });
+                        // Bug #2: When unfavoriting, go back to "All Units"
+                        if (isUnfavoriting) {
+                          setSelectedShipId(null);
+                        } else {
+                          setSelectedShipId(ship.id);
+                        }
                       }}
                       className="p-1 rounded hover:bg-muted transition-colors"
                       title={t('hooks.favoriteShip.tooltip')}

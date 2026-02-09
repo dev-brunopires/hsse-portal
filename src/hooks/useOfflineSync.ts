@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, createContext, useContext } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -7,6 +7,16 @@ import { hapticSuccess, hapticWarning } from '@/utils/hapticFeedback';
 import * as offlineDB from '@/utils/offlineStorage';
 import { generateInspectionPhotoPath, getCurrentOrganizationId } from '@/utils/storageHelpers';
 import { useShipFilter } from '@/contexts/ShipFilterContext';
+
+// Bug #5: Safe wrapper — returns null if outside ShipFilterProvider
+function useShipFilterSafe(): { selectedShipId: string | null } {
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    return useShipFilter();
+  } catch {
+    return { selectedShipId: null };
+  }
+}
 
 // Push notification helper for sync completion
 const showSyncPushNotification = async (
@@ -96,6 +106,7 @@ const getInitialOnlineState = () => {
 // Module-level singleton guards
 let globalCacheInProgress = false;
 let globalLastCacheCheck = 0;
+let pendingShipSync: string | null = null; // Bug #4: queue for pending ship sync
 
 // Sync progress state type
 export interface SyncProgressState {
@@ -140,7 +151,7 @@ async function getUserShipIds(): Promise<string[] | null> {
 
 export function useOfflineSync() {
   const { t } = useTranslation();
-  const { selectedShipId } = useShipFilter();
+  const { selectedShipId } = useShipFilterSafe(); // Bug #5: safe access
   const [isOnline, setIsOnline] = useState(getInitialOnlineState);
   const [pendingCount, setPendingCount] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -247,6 +258,12 @@ export function useOfflineSync() {
       toast.error(t('offline.cacheError'));
     } finally {
       globalCacheInProgress = false;
+      // Bug #4: process pending ship sync after initial cache completes
+      if (pendingShipSync) {
+        const shipId = pendingShipSync;
+        pendingShipSync = null;
+        syncForShipInternal(shipId);
+      }
     }
   }, [isOnline, t, refreshStats]);
 
@@ -937,15 +954,9 @@ export function useOfflineSync() {
   }, [isOnline]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sync data for a specific ship (incremental)
-  const syncForShip = useCallback(async (shipId: string) => {
-    if (!isOnline || globalCacheInProgress) return;
-
-    // Check cooldown
-    const lastSync = syncedShipsRef.current.get(shipId);
-    if (lastSync && Date.now() - lastSync < SHIP_SYNC_COOLDOWN) {
-      console.log(`Ship ${shipId} synced recently, skipping`);
-      return;
-    }
+  // Bug #4: internal function referenced by preCacheData's finally block
+  const syncForShipInternal = async (shipId: string) => {
+    if (!isOnline) return;
 
     globalCacheInProgress = true;
     try {
@@ -959,7 +970,11 @@ export function useOfflineSync() {
         await fullSyncEquipment(shipIds);
       }
 
+      // Bug #1: Also sync categories, ships, and templates
       await Promise.all([
+        syncCategories(),
+        syncShips(),
+        syncTemplates(),
         syncMaintenancePlans(shipIds),
       ]);
 
@@ -972,14 +987,37 @@ export function useOfflineSync() {
       const equipCount = await offlineDB.getEquipmentCount();
       console.log(`Ship ${shipId} synced (${equipCount} total equipment in cache)`);
       
-      toast.success(t('offline.cacheUpdated'), {
-        description: t('offline.cacheUpdatedDesc', { count: equipCount }),
-      });
+      // Bug #3: Only show toast if there are meaningful data counts
+      if (equipCount > 0) {
+        toast(t('offline.cacheUpdated'), {
+          description: t('offline.cacheUpdatedDesc', { count: equipCount }),
+        });
+      }
     } catch (error) {
       console.error(`Error syncing ship ${shipId}:`, error);
     } finally {
       globalCacheInProgress = false;
     }
+  };
+
+  const syncForShip = useCallback(async (shipId: string) => {
+    // Bug #4: If cache is in progress, queue this ship for later
+    if (globalCacheInProgress) {
+      console.log(`Cache in progress, queuing ship ${shipId} for later`);
+      pendingShipSync = shipId;
+      return;
+    }
+    
+    if (!isOnline) return;
+
+    // Check cooldown
+    const lastSync = syncedShipsRef.current.get(shipId);
+    if (lastSync && Date.now() - lastSync < SHIP_SYNC_COOLDOWN) {
+      console.log(`Ship ${shipId} synced recently, skipping`);
+      return;
+    }
+
+    await syncForShipInternal(shipId);
   }, [isOnline, t, refreshStats]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-sync when selected ship changes
