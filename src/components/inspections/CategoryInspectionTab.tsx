@@ -57,7 +57,8 @@ import { useOrganizationBranding } from '@/hooks/useOrganizationBranding';
 
 // Calculate next inspection date based on category frequency
 function calculateNextInspectionDate(inspectionDate: string, frequency: string): string {
-  const date = new Date(inspectionDate);
+  // Use T12:00:00 to avoid timezone off-by-one when parsing date-only strings
+  const date = new Date(`${inspectionDate}T12:00:00`);
   switch (frequency) {
     case 'monthly': date.setDate(date.getDate() + 30); break;
     case 'quarterly': date.setDate(date.getDate() + 90); break;
@@ -65,7 +66,11 @@ function calculateNextInspectionDate(inspectionDate: string, frequency: string):
     case 'annual': date.setDate(date.getDate() + 365); break;
     default: date.setDate(date.getDate() + 30);
   }
-  return date.toISOString().split('T')[0];
+  // Format as YYYY-MM-DD using local date parts to avoid timezone shift
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 interface CategoryInspectionResult {
