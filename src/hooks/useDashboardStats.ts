@@ -8,6 +8,7 @@ export function useDashboardStats() {
   
   return useQuery({
     queryKey: ['dashboard-stats', selectedShipId],
+    enabled: isReady,
     retry: (failureCount, error) => {
       const errorMessage = (error as Error)?.message?.toLowerCase() || '';
       if (errorMessage.includes('jwt') || errorMessage.includes('session')) {

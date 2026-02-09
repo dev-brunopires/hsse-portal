@@ -76,6 +76,8 @@ export function useNotifications() {
     },
     enabled: !!user?.id && !isOrgLoading && (!!organization?.id || isPlatformOwnerWithoutOrg),
     refetchInterval: 30000,
+    refetchOnWindowFocus: false,
+    refetchIntervalInBackground: false,
   });
 }
 
@@ -113,12 +115,12 @@ export function useMarkNotificationAsRead() {
 
       await queryClient.cancelQueries({ queryKey: ['notifications'] });
 
-      const previous = queryClient.getQueryData<Notification[]>([
-        'notifications',
-        uid,
-      ]);
+      // Use the full queryKey that matches the actual query
+      const queryKey = ['notifications', uid];
+      const previous = queryClient.getQueriesData<Notification[]>({ queryKey });
 
-      queryClient.setQueryData<Notification[]>(['notifications'], (old) =>
+      // Update all matching queries optimistically
+      queryClient.setQueriesData<Notification[]>({ queryKey }, (old) =>
         (old ?? []).map((n) =>
           n.id === notificationId ? { ...n, is_read: true } : n
         )
@@ -127,8 +129,11 @@ export function useMarkNotificationAsRead() {
       return { previous, uid };
     },
     onError: (_err, _notificationId, ctx) => {
-      if (ctx?.previous && ctx?.uid) {
-        queryClient.setQueryData(['notifications', ctx.uid], ctx.previous);
+      if (ctx?.previous) {
+        // Restore all matched queries
+        for (const [key, data] of ctx.previous) {
+          queryClient.setQueryData(key, data);
+        }
       }
     },
     onSettled: () => {
@@ -170,20 +175,20 @@ export function useMarkAllNotificationsAsRead() {
 
       await queryClient.cancelQueries({ queryKey: ['notifications'] });
 
-      const previous = queryClient.getQueryData<Notification[]>([
-        'notifications',
-        uid,
-      ]);
+      const queryKey = ['notifications', uid];
+      const previous = queryClient.getQueriesData<Notification[]>({ queryKey });
 
-      queryClient.setQueryData<Notification[]>(['notifications'], (old) =>
+      queryClient.setQueriesData<Notification[]>({ queryKey }, (old) =>
         (old ?? []).map((n) => ({ ...n, is_read: true }))
       );
 
-      return { previous, uid };
+      return { previous };
     },
     onError: (_err, _vars, ctx) => {
-      if (ctx?.previous && ctx?.uid) {
-        queryClient.setQueryData(['notifications', ctx.uid], ctx.previous);
+      if (ctx?.previous) {
+        for (const [key, data] of ctx.previous) {
+          queryClient.setQueryData(key, data);
+        }
       }
     },
     onSettled: () => {

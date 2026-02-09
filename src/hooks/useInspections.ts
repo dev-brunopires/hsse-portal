@@ -37,7 +37,7 @@ export function useInspections() {
   
   return useQuery({
     queryKey: ['inspections', selectedShipId],
-    // Remove isReady dependency - query will rerun when selectedShipId changes
+    staleTime: 1000 * 60 * 3, // 3 minutes
     queryFn: async () => {
       let query = supabase
         .from('inspections')
