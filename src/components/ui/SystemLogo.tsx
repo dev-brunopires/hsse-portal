@@ -1,4 +1,5 @@
 import { Ship } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 
 interface SystemLogoProps {
@@ -9,12 +10,13 @@ interface SystemLogoProps {
 }
 
 export function SystemLogo({ variant = 'default', className, showText = true, size = 'md' }: SystemLogoProps) {
+  const { t } = useTranslation();
   const isWhite = variant === 'white';
 
   const sizeClasses = {
-    sm: { icon: 'h-4 w-4', text: 'text-base', padding: 'p-1' },
-    md: { icon: 'h-5 w-5', text: 'text-lg', padding: 'p-1.5' },
-    lg: { icon: 'h-7 w-7', text: 'text-xl', padding: 'p-2' },
+    sm: { icon: 'h-4 w-4', text: 'text-sm', padding: 'p-1' },
+    md: { icon: 'h-5 w-5', text: 'text-sm', padding: 'p-1.5' },
+    lg: { icon: 'h-7 w-7', text: 'text-base', padding: 'p-2' },
   };
 
   const sizes = sizeClasses[size];
@@ -33,11 +35,11 @@ export function SystemLogo({ variant = 'default', className, showText = true, si
       </div>
       {showText && (
         <span className={cn(
-          'font-bold tracking-tight',
+          'font-bold tracking-tight leading-tight',
           sizes.text,
           isWhite ? 'text-white' : 'text-foreground'
         )}>
-          SafeShip
+          {t('navigation.appTitle')}
         </span>
       )}
     </div>

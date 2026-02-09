@@ -146,6 +146,7 @@
     "foreign": "Foreign"
   },
   "navigation": {
+    "appTitle": "Equipment Management",
     "dashboard": "Dashboard",
     "equipment": "Equipment",
     "inspections": "Inspections",
