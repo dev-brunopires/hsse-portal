@@ -54,8 +54,7 @@ export function useEquipment() {
   const { selectedShipId, isFilterEnabled } = useShipFilter();
   
   const query = useQuery({
-    queryKey: ['equipment', selectedShipId ?? 'all'],
-    // Remove isReady dependency - query will rerun when selectedShipId changes
+    queryKey: ['equipment', selectedShipId],
     queryFn: async () => {
       let queryBuilder = supabase
         .from('equipment')
@@ -208,6 +207,10 @@ export function useCreateEquipment() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment-paginated'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment-counts-by-category'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment-total-count'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       queryClient.invalidateQueries({ queryKey: ['certificates'] });
       queryClient.invalidateQueries({ queryKey: ['certificate-stats'] });
       toast({
@@ -260,6 +263,10 @@ export function useUpdateEquipment() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment-paginated'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment-counts-by-category'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment-total-count'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       queryClient.invalidateQueries({ queryKey: ['certificates'] });
       queryClient.invalidateQueries({ queryKey: ['certificate-stats'] });
       toast({
@@ -293,6 +300,10 @@ export function useDeleteEquipment() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment-paginated'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment-counts-by-category'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment-total-count'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast({
         title: t('hooks.equipment.deleted'),
         description: t('hooks.equipment.deletedDesc'),

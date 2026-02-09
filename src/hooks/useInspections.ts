@@ -271,6 +271,7 @@ export function useCreateInspection() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inspections'] });
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast({
         title: i18n.t('hooks.inspection.created'),
         description: i18n.t('hooks.inspection.createdDesc'),
@@ -325,6 +326,7 @@ export function useUpdateInspection() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inspections'] });
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast({
         title: i18n.t('hooks.inspection.updated'),
         description: i18n.t('hooks.inspection.updatedDesc'),
@@ -400,6 +402,7 @@ export function useDeleteInspection() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inspections'] });
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast({
         title: i18n.t('hooks.inspection.deleted'),
         description: i18n.t('hooks.inspection.deletedDesc'),

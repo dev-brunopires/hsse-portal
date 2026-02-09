@@ -31,7 +31,7 @@ export function useEquipmentPaginated(filters: EquipmentFilters = {}) {
   const { search, status, categoryId, manufacturer, unit } = filters;
   
   return useInfiniteQuery({
-    queryKey: ['equipment-paginated', selectedShipId ?? 'all', search, status, categoryId, manufacturer, unit],
+    queryKey: ['equipment-paginated', selectedShipId, search, status, categoryId, manufacturer, unit],
     queryFn: async ({ pageParam = 0 }) => {
       let queryBuilder = supabase
         .from('equipment')
@@ -121,7 +121,7 @@ export function useEquipmentCount(categoryId?: string) {
   const { selectedShipId, isFilterEnabled } = useShipFilter();
   
   return useQuery({
-    queryKey: ['equipment-count', selectedShipId ?? 'all', categoryId],
+    queryKey: ['equipment-count', selectedShipId, categoryId],
     queryFn: async () => {
       let queryBuilder = supabase
         .from('equipment')

@@ -239,6 +239,7 @@ export function useCreateMaintenanceRequest() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-requests'] });
       queryClient.invalidateQueries({ queryKey: ['maintenance-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast({
         title: i18n.t('hooks.maintenanceRequest.created'),
         description: i18n.t('hooks.maintenanceRequest.createdDesc'),
@@ -302,10 +303,10 @@ export function useUpdateMaintenanceStatus() {
       return data;
     },
     onSuccess: (_, variables) => {
-      // Invalidate all related queries immediately to update UI
       queryClient.invalidateQueries({ queryKey: ['maintenance-requests'] });
       queryClient.invalidateQueries({ queryKey: ['maintenance-request', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['maintenance-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       
       const statusLabel = i18n.t(`hooks.maintenanceRequest.status.${variables.status}`);
 
@@ -340,6 +341,7 @@ export function useDeleteMaintenanceRequest() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-requests'] });
       queryClient.invalidateQueries({ queryKey: ['maintenance-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast({
         title: i18n.t('hooks.maintenanceRequest.deleted'),
         description: i18n.t('hooks.maintenanceRequest.deletedDesc'),
@@ -387,5 +389,6 @@ export function useMaintenanceStats() {
 
       return stats;
     },
+    staleTime: 1000 * 60 * 3,
   });
 }

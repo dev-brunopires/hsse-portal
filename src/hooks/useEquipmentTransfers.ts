@@ -112,6 +112,8 @@ export function useCreateEquipmentTransfer() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['equipment-transfers'] });
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment-paginated'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast.success(i18n.t('hooks.transfer.success'));
     },
     onError: (error) => {
