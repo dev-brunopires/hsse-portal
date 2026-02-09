@@ -1,69 +1,47 @@
 
 
-# Melhorias de Performance e Correções
+# Correção: Alertas Offline Duplicados e Deduplicação Global de Toasts
 
-## 1. Bug: syncForShip não sincroniza categorias, navios e templates
+## Problema Identificado
 
-**Problema**: Quando o usuario troca de unidade, o `syncForShip()` baixa equipamentos e planos de manutencao, mas **nao sincroniza categorias, navios nem templates de checklist**. Se o cache estiver vazio (primeiro acesso), o usuario offline nao tera essas informacoes basicas para fazer inspeçoes.
+O hook `useOfflineSync()` e chamado em **pelo menos 5 componentes simultaneamente** na tela:
+- OfflineIndicator
+- MobileBottomNav
+- SyncProgressIndicator
+- NewInspectionDialog (na pagina de Inspections)
+- InspectionFormDialog
 
-**Correção**: Adicionar `syncCategories()`, `syncShips()` e `syncTemplates()` dentro do `syncForShip()`.
+Cada instancia registra seu proprio listener de `online`/`offline` no `window`, e cada um dispara um `toast.error()` independente. Por isso voce ve 4 alertas identicos quando o celular perde conexao.
 
----
+## Solucao (2 camadas)
 
-## 2. Bug: Desfavoritar nao limpa o localStorage do ShipFilterContext
+### Camada 1: Toasts com ID fixo (deduplicacao via Sonner)
 
-**Problema**: Quando o usuario desfavorita um navio (clicando na estrela de novo), o `setFavoriteShip.mutate` remove do banco, mas o `selectedShipId` continua apontando para aquele navio via `localStorage`. No proximo login, o `ShipFilterContext` tenta ler do `localStorage` e encontra o navio antigo — mesmo sem favorito. Nao e exatamente um bug grave, mas o comportamento esperado seria voltar para "Todas as Unidades" ao desfavoritar.
+O Sonner ja suporta um parametro `id` nos toasts. Quando dois toasts tem o mesmo `id`, o segundo **substitui** o primeiro em vez de criar um novo. Vamos adicionar `id` fixo em todos os toasts do `useOfflineSync`:
 
-**Correção**: Ao desfavoritar (toggle off), chamar `setSelectedShipId(null)` para limpar a selecao.
+- `toast.error('offline', { id: 'offline-status' })` -- so aparece 1 vez
+- `toast.success('online', { id: 'online-status' })` -- so aparece 1 vez  
+- `toast.success('sync', { id: 'sync-completed' })` -- so aparece 1 vez
+- `toast.error('sync-failed', { id: 'sync-failed' })` -- so aparece 1 vez
+- `toast.success('cache', { id: 'cache-updated' })` -- so aparece 1 vez
 
----
+### Camada 2: Listeners de online/offline como singleton
 
-## 3. Performance: syncForShip dispara toast desnecessariamente
+Mover os `addEventListener('online')` / `addEventListener('offline')` para fora do hook, num modulo singleton, para que sejam registrados apenas **uma vez** independente de quantas instancias do hook existam.
 
-**Problema**: Toda vez que o usuario troca de unidade, aparece um toast "Cache atualizado" mesmo quando pouca coisa mudou. Isso polui a experiencia.
+### Camada 3: Aplicar deduplicacao em outros toasts do sistema
 
-**Correção**: Mostrar o toast apenas se houve dados novos baixados (delta > 0), e usar um toast mais discreto (sem `success`, usar `info` por exemplo).
+Revisar os toasts mais criticos de outros hooks (erro de query, sync, etc.) e adicionar `id` fixo onde faz sentido para evitar empilhamento.
 
----
-
-## 4. Bug potencial: syncForShip pode conflitar com preCacheData
-
-**Problema**: Se o `preCacheData` (sync inicial do mount) ainda esta rodando quando o usuario troca de unidade, o `syncForShip` retorna imediatamente por causa do guard `globalCacheInProgress`. Os dados da nova unidade **nao sao baixados** e o usuario nao recebe nenhum feedback.
-
-**Correção**: Adicionar uma fila simples — se `globalCacheInProgress` estiver true, guardar o `shipId` pendente e executar apos o sync atual terminar.
-
----
-
-## 5. Performance: useOfflineSync usa useShipFilter mas roda fora do Provider em alguns cenarios
-
-**Problema**: O `useOfflineSync` agora importa `useShipFilter()`. Se o hook for usado em qualquer componente que esteja **fora** do `ShipFilterProvider` (ex: `OfflinePage` montada antes do provider), vai dar crash com "useShipFilter must be used within a ShipFilterProvider".
-
-**Correção**: Adicionar um try/catch no import do `selectedShipId` ou usar um hook wrapper seguro que retorna `null` se o provider nao existir.
-
----
-
-## 6. Performance: Header carrega useCertificates para todos os usuarios
-
-**Problema**: O Header importa `useCertificates()` para calcular certificados expirando. Isso faz uma query pesada ao banco para **todos** os usuarios (incluindo tecnicos que nao veem certificados). 
-
-**Correção**: Condicionar a query de certificados ao role (admin/admin_master apenas).
-
----
-
-## Resumo de Arquivos
+## Arquivos Modificados
 
 | Arquivo | Mudanca |
 |---------|---------|
-| `src/hooks/useOfflineSync.ts` | Corrigir `syncForShip` (adicionar categories/ships/templates, fila de pendentes, toast condicional) |
-| `src/components/layout/Header.tsx` | Desfavoritar limpa selecao; condicionar `useCertificates` ao role |
-| `src/contexts/ShipFilterContext.tsx` | Nenhuma mudanca necessaria |
+| `src/hooks/useOfflineSync.ts` | Singleton para listeners online/offline; adicionar `id` em todos os toasts |
+| `src/hooks/use-toast.ts` | Suportar parametro `id` no wrapper de compatibilidade |
 
-## Prioridade
+## Impacto
 
-1. **Bug #1** (syncForShip incompleto) — impacto alto, offline quebra
-2. **Bug #4** (conflito com preCacheData) — impacto medio, race condition
-3. **Bug #2** (desfavoritar nao limpa) — impacto baixo, UX confusa
-4. **Perf #6** (Header useCertificates) — impacto medio, query desnecessaria
-5. **Perf #3** (toast excessivo) — impacto baixo, UX poluida
-6. **Bug #5** (provider missing) — impacto medio se OfflinePage rodar fora do provider
-
+- Elimina os 4 alertas duplicados de offline
+- Previne empilhamento de toasts identicos em qualquer cenario futuro
+- Zero mudanca visual -- os toasts continuam aparecendo, so que apenas 1 vez cada
