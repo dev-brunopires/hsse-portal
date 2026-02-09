@@ -16,7 +16,7 @@ export function useEquipmentCountsByCategory() {
   const { selectedShipId, isFilterEnabled } = useShipFilter();
   
   return useQuery({
-    queryKey: ['equipment-counts-by-category', selectedShipId ?? 'all'],
+    queryKey: ['equipment-counts-by-category', selectedShipId],
     queryFn: async () => {
       // Use a lightweight query that only fetches category_id for counting
       let queryBuilder = supabase
@@ -84,7 +84,7 @@ export function useTotalEquipmentCount() {
   const { selectedShipId, isFilterEnabled } = useShipFilter();
   
   return useQuery({
-    queryKey: ['equipment-total-count', selectedShipId ?? 'all'],
+    queryKey: ['equipment-total-count', selectedShipId],
     queryFn: async () => {
       let queryBuilder = supabase
         .from('equipment')
