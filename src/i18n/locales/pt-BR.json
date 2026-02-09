@@ -10,16 +10,6 @@
     "expiredCertificates": "Certificados Vencidos",
     "expiredCertificatesBody": "{{count}} equipamento(s) com certificado(s) vencido(s)"
   },
-  "pwa": {
-    "installTitle": "Instalar Aplicativo",
-    "installDescription": "Instale este app no seu dispositivo para uma melhor experiência",
-    "install": "Instalar",
-    "notNow": "Agora não",
-    "updateAvailable": "Atualização Disponível",
-    "updateDescription": "Uma nova versão está disponível. Atualize agora para obter os recursos mais recentes.",
-    "updateNow": "Atualizar Agora",
-    "later": "Depois"
-  },
   "errorBoundary": {
     "updateAvailable": "Atualização Disponível",
     "somethingWentWrong": "Algo deu errado",
@@ -2766,7 +2756,11 @@
     "installTitle": "Instalar SafeShip",
     "installDescription": "Instale o app para acesso rápido e uso offline",
     "notNow": "Agora não",
-    "install": "Instalar"
+    "install": "Instalar",
+    "updateAvailable": "Atualização Disponível",
+    "updateDescription": "Uma nova versão está disponível. Atualize agora para obter os recursos mais recentes.",
+    "updateNow": "Atualizar Agora",
+    "later": "Depois"
   },
   "onboarding": {
     "mainMenu": "Menu Principal",
