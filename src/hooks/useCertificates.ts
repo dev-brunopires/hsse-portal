@@ -99,9 +99,12 @@ export function useCertificates(filters?: {
   status?: string;
   type?: string;
   expiringDays?: number;
+  enabled?: boolean; // Perf #6: allow callers to disable the query
 }) {
   const { selectedShipId, isReady } = useShipFilter();
   const { organization } = useOrganization();
+
+  const externalEnabled = filters?.enabled ?? true;
 
   return useQuery({
     queryKey: ['certificates', selectedShipId, filters, organization?.id],
@@ -153,7 +156,7 @@ export function useCertificates(filters?: {
       if (error) throw error;
       return data as Certificate[];
     },
-    enabled: isReady && !!organization?.id,
+    enabled: isReady && !!organization?.id && externalEnabled,
   });
 }
 
