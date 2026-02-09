@@ -229,9 +229,6 @@ export default function Auth() {
                 <SystemLogo />
               </div>
             )}
-            <h2 className="text-lg font-semibold text-primary mb-2">
-              {t('authPage.equipmentManagement')}
-            </h2>
             <h1 className="text-2xl font-bold text-foreground mb-2">
               {t('authPage.welcomeBack')}
             </h1>
