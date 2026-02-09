@@ -2296,6 +2296,54 @@
       "syncStats": "{{equipment}} equipment, {{inspections}} inspections synced.",
       "syncError": "Sync error",
       "syncErrorDescription": "Could not sync with IFS."
+    },
+    "userShips": {
+      "assigned": "Ship Assigned",
+      "assignedDesc": "The user was assigned to the ship successfully.",
+      "assignError": "Error Assigning",
+      "alreadyAssigned": "The user is already assigned to this ship.",
+      "assignErrorGeneric": "Error assigning user to ship.",
+      "removed": "Ship Removed",
+      "removedDesc": "The user was removed from the ship.",
+      "removeError": "Error Removing",
+      "removeErrorGeneric": "Error removing user from ship.",
+      "updated": "Ships Updated",
+      "updatedDesc": "The user's ships were updated.",
+      "updateError": "Error Updating",
+      "updateErrorGeneric": "Error updating user's ships."
+    },
+    "notifications": {
+      "created": "Notification Created",
+      "createdDesc": "The notification was sent successfully.",
+      "createError": "Error creating notification.",
+      "deleted": "Notification Removed",
+      "deletedDesc": "The notification was removed successfully.",
+      "deleteError": "Error removing notification.",
+      "orgNotFound": "Organization not found"
+    },
+    "auth": {
+      "loginError": "Login Error",
+      "invalidCredentials": "Invalid email or password",
+      "loginSuccess": "Login Successful",
+      "welcomeMessage": "Welcome to the system!",
+      "signupError": "Error Creating Account",
+      "alreadyRegistered": "This email is already registered",
+      "signupSuccess": "Account Created Successfully",
+      "signupSuccessDesc": "You can now access the system!",
+      "logoutSuccess": "Logout Successful",
+      "logoutMessage": "See you later!",
+      "error": "Error"
+    },
+    "keyboard": {
+      "goToDashboard": "Go to Dashboard",
+      "goToEquipment": "Go to Equipment",
+      "goToInspections": "Go to Inspections",
+      "goToReports": "Go to Reports",
+      "goToAlerts": "Go to Alerts",
+      "goToUsers": "Go to Users",
+      "goToCategories": "Go to Categories",
+      "goToSettings": "Go to Settings",
+      "goToProfile": "Go to Profile"
     }
   },
   "ifsIntegration": {

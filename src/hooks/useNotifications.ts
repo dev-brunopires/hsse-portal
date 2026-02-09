@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
 
@@ -38,7 +39,6 @@ export function useNotifications() {
     queryFn: async () => {
       if (!user?.id) return [];
 
-      // Get notifications
       let query = supabase
         .from('notifications')
         .select(`
@@ -51,7 +51,6 @@ export function useNotifications() {
         .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
         .order('created_at', { ascending: false });
       
-      // Filter by organization if available (platform owners without org see all)
       if (organization?.id) {
         query = query.eq('organization_id', organization.id);
       } else if (!isPlatformOwnerWithoutOrg) {
@@ -59,10 +58,8 @@ export function useNotifications() {
       }
 
       const { data: notifications, error: notifError } = await query;
-
       if (notifError) throw notifError;
 
-      // Get read notifications for this user
       const { data: reads, error: readsError } = await supabase
         .from('notification_reads')
         .select('notification_id')
@@ -72,14 +69,13 @@ export function useNotifications() {
 
       const readIds = new Set(reads?.map(r => r.notification_id) || []);
 
-      // Mark notifications as read/unread
       return (notifications || []).map(n => ({
         ...n,
         is_read: readIds.has(n.id),
       })) as Notification[];
     },
     enabled: !!user?.id && !isOrgLoading && (!!organization?.id || isPlatformOwnerWithoutOrg),
-    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchInterval: 30000,
   });
 }
 
@@ -151,7 +147,6 @@ export function useMarkAllNotificationsAsRead() {
       if (!user?.id) throw new Error('User not authenticated');
 
       const unreadNotifications = notifications.filter((n) => !n.is_read);
-
       if (unreadNotifications.length === 0) return;
 
       const { error } = await supabase
@@ -200,13 +195,14 @@ export function useMarkAllNotificationsAsRead() {
 export function useCreateNotification() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { organization } = useOrganization();
 
   return useMutation({
     mutationFn: async (notification: NotificationInsert) => {
       if (!organization?.id) {
-        throw new Error('Organização não encontrada');
+        throw new Error(t('hooks.notifications.orgNotFound'));
       }
 
       const { data, error } = await supabase
@@ -225,14 +221,14 @@ export function useCreateNotification() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast({
-        title: 'Notificação Criada',
-        description: 'A notificação foi enviada com sucesso.',
+        title: t('hooks.notifications.created'),
+        description: t('hooks.notifications.createdDesc'),
       });
     },
     onError: (error: any) => {
       toast({
-        title: 'Erro',
-        description: error.message || 'Erro ao criar notificação.',
+        title: t('hooks.auth.error'),
+        description: error.message || t('hooks.notifications.createError'),
         variant: 'destructive',
       });
     },
@@ -242,6 +238,7 @@ export function useCreateNotification() {
 export function useDeleteNotification() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async (notificationId: string) => {
@@ -255,14 +252,14 @@ export function useDeleteNotification() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast({
-        title: 'Notificação Removida',
-        description: 'A notificação foi removida com sucesso.',
+        title: t('hooks.notifications.deleted'),
+        description: t('hooks.notifications.deletedDesc'),
       });
     },
     onError: (error: any) => {
       toast({
-        title: 'Erro',
-        description: error.message || 'Erro ao remover notificação.',
+        title: t('hooks.auth.error'),
+        description: error.message || t('hooks.notifications.deleteError'),
         variant: 'destructive',
       });
     },

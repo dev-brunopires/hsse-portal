@@ -2297,6 +2297,54 @@
       "syncStats": "{{equipment}} equipamentos, {{inspections}} inspeções sincronizados.",
       "syncError": "Erro na sincronização",
       "syncErrorDescription": "Não foi possível sincronizar com o IFS."
+    },
+    "userShips": {
+      "assigned": "Navio Atribuído",
+      "assignedDesc": "O usuário foi atribuído ao navio com sucesso.",
+      "assignError": "Erro ao Atribuir",
+      "alreadyAssigned": "O usuário já está atribuído a este navio.",
+      "assignErrorGeneric": "Erro ao atribuir usuário ao navio.",
+      "removed": "Navio Removido",
+      "removedDesc": "O usuário foi removido do navio.",
+      "removeError": "Erro ao Remover",
+      "removeErrorGeneric": "Erro ao remover usuário do navio.",
+      "updated": "Navios Atualizados",
+      "updatedDesc": "Os navios do usuário foram atualizados.",
+      "updateError": "Erro ao Atualizar",
+      "updateErrorGeneric": "Erro ao atualizar navios do usuário."
+    },
+    "notifications": {
+      "created": "Notificação Criada",
+      "createdDesc": "A notificação foi enviada com sucesso.",
+      "createError": "Erro ao criar notificação.",
+      "deleted": "Notificação Removida",
+      "deletedDesc": "A notificação foi removida com sucesso.",
+      "deleteError": "Erro ao remover notificação.",
+      "orgNotFound": "Organização não encontrada"
+    },
+    "auth": {
+      "loginError": "Erro ao fazer login",
+      "invalidCredentials": "Email ou senha incorretos",
+      "loginSuccess": "Login realizado",
+      "welcomeMessage": "Bem-vindo ao sistema!",
+      "signupError": "Erro ao criar conta",
+      "alreadyRegistered": "Este email já está cadastrado",
+      "signupSuccess": "Conta criada com sucesso",
+      "signupSuccessDesc": "Você já pode acessar o sistema!",
+      "logoutSuccess": "Logout realizado",
+      "logoutMessage": "Até logo!",
+      "error": "Erro"
+    },
+    "keyboard": {
+      "goToDashboard": "Ir para Dashboard",
+      "goToEquipment": "Ir para Equipamentos",
+      "goToInspections": "Ir para Inspeções",
+      "goToReports": "Ir para Relatórios",
+      "goToAlerts": "Ir para Alertas",
+      "goToUsers": "Ir para Usuários",
+      "goToCategories": "Ir para Categorias",
+      "goToSettings": "Ir para Configurações",
+      "goToProfile": "Ir para Perfil"
     }
   },
   "ifsIntegration": {

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
 
 export interface UserShip {
   id: string;
@@ -63,6 +64,7 @@ export function useAllUserShips() {
 export function useAssignUserToShip() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ userId, shipId }: { userId: string; shipId: string }) => {
@@ -83,16 +85,16 @@ export function useAssignUserToShip() {
       queryClient.invalidateQueries({ queryKey: ['all-user-ships'] });
       queryClient.invalidateQueries({ queryKey: ['profiles'] });
       toast({
-        title: 'Navio Atribuído',
-        description: 'O usuário foi atribuído ao navio com sucesso.',
+        title: t('hooks.userShips.assigned'),
+        description: t('hooks.userShips.assignedDesc'),
       });
     },
     onError: (error: any) => {
       toast({
-        title: 'Erro ao Atribuir',
+        title: t('hooks.userShips.assignError'),
         description: error.message?.includes('duplicate') 
-          ? 'O usuário já está atribuído a este navio.'
-          : error.message || 'Erro ao atribuir usuário ao navio.',
+          ? t('hooks.userShips.alreadyAssigned')
+          : error.message || t('hooks.userShips.assignErrorGeneric'),
         variant: 'destructive',
       });
     },
@@ -102,6 +104,7 @@ export function useAssignUserToShip() {
 export function useRemoveUserFromShip() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ userId, shipId }: { userId: string; shipId: string }) => {
@@ -118,14 +121,14 @@ export function useRemoveUserFromShip() {
       queryClient.invalidateQueries({ queryKey: ['all-user-ships'] });
       queryClient.invalidateQueries({ queryKey: ['profiles'] });
       toast({
-        title: 'Navio Removido',
-        description: 'O usuário foi removido do navio.',
+        title: t('hooks.userShips.removed'),
+        description: t('hooks.userShips.removedDesc'),
       });
     },
     onError: (error: any) => {
       toast({
-        title: 'Erro ao Remover',
-        description: error.message || 'Erro ao remover usuário do navio.',
+        title: t('hooks.userShips.removeError'),
+        description: error.message || t('hooks.userShips.removeErrorGeneric'),
         variant: 'destructive',
       });
     },
@@ -135,6 +138,7 @@ export function useRemoveUserFromShip() {
 export function useUpdateUserShips() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async ({ userId, shipIds }: { userId: string; shipIds: string[] }) => {
@@ -165,14 +169,14 @@ export function useUpdateUserShips() {
       queryClient.invalidateQueries({ queryKey: ['all-user-ships'] });
       queryClient.invalidateQueries({ queryKey: ['profiles'] });
       toast({
-        title: 'Navios Atualizados',
-        description: 'Os navios do usuário foram atualizados.',
+        title: t('hooks.userShips.updated'),
+        description: t('hooks.userShips.updatedDesc'),
       });
     },
     onError: (error: any) => {
       toast({
-        title: 'Erro ao Atualizar',
-        description: error.message || 'Erro ao atualizar navios do usuário.',
+        title: t('hooks.userShips.updateError'),
+        description: error.message || t('hooks.userShips.updateErrorGeneric'),
         variant: 'destructive',
       });
     },
