@@ -138,7 +138,7 @@ function TrendIndicator({ value }: { value: number }) {
   }
 
   return (
-    <Card className="lg:col-span-2">
+    <Card>
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex items-start gap-3">
