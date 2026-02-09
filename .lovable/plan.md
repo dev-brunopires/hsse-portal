@@ -1,47 +1,50 @@
 
+# Unificar Formulario de Inspeção: Eliminar o Formulario Offline Separado
 
-# Correção: Alertas Offline Duplicados e Deduplicação Global de Toasts
+## Problema
 
-## Problema Identificado
+Atualmente existem **dois formularios de inspeção separados**:
+1. **`InspectionFormDialog`** (online) -- formulario completo, com traduções, scroll, campos de inspetor, data, assinatura, fotos, etc.
+2. **`OfflineInspectionDialog`** (offline) -- formulario separado, com problemas de scroll, traduções faltando (chaves i18n aparecendo cruas na tela), e UX inferior.
 
-O hook `useOfflineSync()` e chamado em **pelo menos 5 componentes simultaneamente** na tela:
-- OfflineIndicator
-- MobileBottomNav
-- SyncProgressIndicator
-- NewInspectionDialog (na pagina de Inspections)
-- InspectionFormDialog
+O `InspectionFormDialog` **ja suporta modo offline** internamente (verifica `isOnline` e salva localmente via `addPendingInspection`). Porem, o `NewInspectionDialog` roteia usuarios offline para o formulario separado inferior.
 
-Cada instancia registra seu proprio listener de `online`/`offline` no `window`, e cada um dispara um `toast.error()` independente. Por isso voce ve 4 alertas identicos quando o celular perde conexao.
+## Solucao
 
-## Solucao (2 camadas)
+Eliminar o `OfflineInspectionDialog` e usar o `InspectionFormDialog` tambem quando offline. Isso garante experiencia identica em ambos os modos.
 
-### Camada 1: Toasts com ID fixo (deduplicacao via Sonner)
+## Alteracoes
 
-O Sonner ja suporta um parametro `id` nos toasts. Quando dois toasts tem o mesmo `id`, o segundo **substitui** o primeiro em vez de criar um novo. Vamos adicionar `id` fixo em todos os toasts do `useOfflineSync`:
+### 1. `src/components/inspections/NewInspectionDialog.tsx`
+- Quando offline e o usuario seleciona um equipamento, em vez de abrir `OfflineInspectionDialog`, converter o `CachedEquipment` para o tipo `Equipment` e abrir o `InspectionFormDialog` normalmente.
+- Remover toda a logica separada de `selectedOfflineEquipment`, `offlineInspectionDialogOpen`, e `handleOfflineInspectionClose`.
+- Remover o import de `OfflineInspectionDialog`.
+- Unificar o fluxo: tanto online quanto offline usam `setSelectedEquipment` + `setInspectionDialogOpen` + `InspectionFormDialog`.
 
-- `toast.error('offline', { id: 'offline-status' })` -- so aparece 1 vez
-- `toast.success('online', { id: 'online-status' })` -- so aparece 1 vez  
-- `toast.success('sync', { id: 'sync-completed' })` -- so aparece 1 vez
-- `toast.error('sync-failed', { id: 'sync-failed' })` -- so aparece 1 vez
-- `toast.success('cache', { id: 'cache-updated' })` -- so aparece 1 vez
+### 2. `src/components/equipment/InspectionFormDialog.tsx`
+- Ja tem suporte offline, mas precisa de pequenos ajustes:
+  - O botao de submit mostra `inspectionForm.saveOffline` sempre -- ajustar para mostrar texto diferente conforme `isOnline` (ex: "Registrar Inspeção" quando online, "Salvar Offline" quando offline).
+  - O campo de Inspetor (`inspectorId`) usa `useTechniciansAndAdmins()` que depende de rede. Quando offline, pre-preencher com o usuario logado e desabilitar o campo (ja que nao ha lista de inspetores disponivel offline).
+  - O campo de `next_inspection_date` pode permanecer, sera ignorado no sync offline se vazio.
 
-### Camada 2: Listeners de online/offline como singleton
+### 3. Remover `src/components/offline/OfflineInspectionDialog.tsx`
+- O arquivo inteiro pode ser removido pois nao sera mais utilizado.
 
-Mover os `addEventListener('online')` / `addEventListener('offline')` para fora do hook, num modulo singleton, para que sejam registrados apenas **uma vez** independente de quantas instancias do hook existam.
+## Detalhes Tecnicos
 
-### Camada 3: Aplicar deduplicacao em outros toasts do sistema
+A conversao de `CachedEquipment` para `Equipment` no fluxo offline ja existe parcialmente no `NewInspectionDialog` (funcao `convertToEquipmentType`). O ajuste e fazer o path offline tambem passar por essa conversao:
 
-Revisar os toasts mais criticos de outros hooks (erro de query, sync, etc.) e adicionar `id` fixo onde faz sentido para evitar empilhamento.
+```text
+Offline Equipment Selected
+  -> Convert CachedEquipment to EquipmentWithCategory (ja feito no equipmentList useMemo)
+  -> convertToEquipmentType()
+  -> InspectionFormDialog (mesmo componente do online)
+  -> isOnline check interno salva via addPendingInspection
+```
 
-## Arquivos Modificados
+O `InspectionFormDialog` ja carrega checklist via `useDefaultChecklistTemplate` que faz query ao banco. Quando offline, essa query retornara vazio/erro, e o fallback para checklist padrao ja existe (linhas 150-166). Para garantir que o template correto do cache seja usado offline, podemos adicionar uma prop opcional `offlineTemplateItems` ao `InspectionFormDialog`.
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/hooks/useOfflineSync.ts` | Singleton para listeners online/offline; adicionar `id` em todos os toasts |
-| `src/hooks/use-toast.ts` | Suportar parametro `id` no wrapper de compatibilidade |
-
-## Impacto
-
-- Elimina os 4 alertas duplicados de offline
-- Previne empilhamento de toasts identicos em qualquer cenario futuro
-- Zero mudanca visual -- os toasts continuam aparecendo, so que apenas 1 vez cada
+### Resumo de arquivos alterados:
+- **`src/components/inspections/NewInspectionDialog.tsx`** -- simplificar fluxo, remover path offline separado
+- **`src/components/equipment/InspectionFormDialog.tsx`** -- adicionar prop `offlineTemplateItems`, ajustar texto botao submit, tratar inspetor offline
+- **Remover `src/components/offline/OfflineInspectionDialog.tsx`** -- nao mais necessario
