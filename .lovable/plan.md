@@ -1,116 +1,45 @@
 
-# Navio Favorito -- Carregamento Inteligente
 
-## Conceito
+# Download Offline Dinamico ao Trocar de Unidade
 
-Admins e admin_masters (ou qualquer usuario com mais de 1 navio) podem marcar **um** navio como favorito (estrela). Esse navio vira o filtro padrao ao acessar o sistema e tambem e o unico baixado para uso offline, otimizando performance.
+## Situacao Atual
 
-## Como Funciona
+- O download offline e feito com base no **navio favorito** (estrela)
+- Se o admin troca o filtro para outra unidade (sem mudar o favorito), os dados offline continuam sendo apenas do navio favoritado
+- O sync offline so roda no mount inicial ou quando o usuario clica em "Sincronizar"
 
-1. **Estrela no seletor de navios** -- No dropdown/drawer de navios do Header, cada navio ganha um icone de estrela ao lado
-2. **Um favorito por vez** -- Ao favoritar um navio, o anterior e desfavoritado automaticamente (toggle simples)
-3. **Filtro padrao ao login** -- O `ShipFilterContext` carrega o navio favorito como `selectedShipId` inicial (ao inves de "Todas as Unidades")
-4. **Offline otimizado** -- O `useOfflineSync` usa o navio favorito como filtro de download, mesmo para admins (que hoje baixam tudo)
-5. **Sem favorito = comportamento atual** -- Se nenhum navio estiver favoritado, o sistema funciona como hoje (todas as unidades, download completo)
+## Mudanca Proposta
+
+Quando o admin troca de unidade no seletor, o sistema deve:
+1. Manter o favorito como default ao logar
+2. Ao trocar para outra unidade, disparar um sync incremental automatico dos dados dessa unidade
+3. Armazenar os dados da unidade ativa no storage offline (substituindo ou acumulando)
 
 ## Detalhes Tecnicos
 
-### 1. Tabela no banco (ja existe parcialmente)
+### 1. Reagir a mudanca de `selectedShipId` no `useOfflineSync`
 
-A tabela `user_favorites` ja existe com `entity_type` e `entity_id`. Vamos reutiliza-la com `entity_type = 'ship'`. Precisamos apenas de uma constraint para garantir no maximo 1 navio favorito por usuario:
+Adicionar um `useEffect` que observa o `selectedShipId` do `ShipFilterContext`. Quando muda para um navio diferente, dispara um sync parcial apenas daquela unidade.
 
-```text
--- Funcao para garantir max 1 ship favorito por usuario
--- Antes de inserir, remove qualquer favorito ship existente do mesmo usuario
-CREATE OR REPLACE FUNCTION enforce_single_favorite_ship()
-RETURNS trigger LANGUAGE plpgsql AS $$
-BEGIN
-  IF NEW.entity_type = 'ship' THEN
-    DELETE FROM public.user_favorites
-    WHERE user_id = NEW.user_id
-      AND entity_type = 'ship'
-      AND id != NEW.id;
-  END IF;
-  RETURN NEW;
-END;
-$$;
+### 2. Funcao `syncForShip(shipId)` 
 
-CREATE TRIGGER trg_single_favorite_ship
-  AFTER INSERT ON public.user_favorites
-  FOR EACH ROW EXECUTE FUNCTION enforce_single_favorite_ship();
-```
+Criar uma funcao dedicada que faz download incremental dos dados de um navio especifico, reutilizando a logica existente de `downloadEquipmentData`, `downloadInspections`, etc., mas passando o `shipId` como filtro.
 
-### 2. Hook `useFavoriteShip` (novo)
+### 3. Evitar syncs duplicados
 
-Hook dedicado que encapsula a logica de navio favorito:
+Usar um ref para guardar o ultimo `shipId` sincronizado e um timestamp, evitando re-downloads desnecessarios se o usuario trocar e voltar rapidamente.
 
-- `useFavoriteShip()` -- retorna o `ship_id` favorito (ou `null`)
-- `useSetFavoriteShip()` -- mutation para favoritar/desfavoritar
-- Internamente usa a tabela `user_favorites` com `entity_type = 'ship'`
+### 4. Arquivos a modificar
 
-### 3. Integrar no `ShipFilterContext`
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/hooks/useOfflineSync.ts` | Adicionar `useEffect` observando `selectedShipId`, criar `syncForShip()` |
+| `src/components/layout/Header.tsx` | Nenhuma mudanca necessaria (ja seta o `selectedShipId`) |
 
-No `useEffect` de inicializacao:
+### 5. Fluxo do usuario
 
-```text
-// Prioridade: localStorage > navio favorito > null (todas)
-if (isFilterEnabled) {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored) {
-    setSelectedShipId(stored);
-  } else if (favoriteShipId) {
-    setSelectedShipId(favoriteShipId);
-  }
-}
-```
+1. Admin loga -> navio favorito "Alpha" ja selecionado -> dados de "Alpha" baixados offline
+2. Admin troca para "Beta" no seletor -> sync automatico baixa dados de "Beta"
+3. Admin volta para "Alpha" -> dados ja estao em cache, nao precisa re-baixar
+4. Proximo login -> volta para "Alpha" (favorito) automaticamente
 
-### 4. UI no Header -- Estrela nos navios
-
-No dropdown e drawer de selecao de navios, cada item ganha um botao de estrela (Star/StarOff do Lucide). Clicar na estrela favorita aquele navio. O navio favoritado mostra a estrela preenchida.
-
-```text
-[* Navio Alpha]     <-- favoritado (estrela preenchida)
-[  Navio Beta ]     <-- nao favoritado (estrela vazia)
-[  Navio Gamma]
-```
-
-### 5. Offline -- Download filtrado pelo favorito
-
-No `getUserShipIds()` do `useOfflineSync.ts`:
-
-```text
-if (role === 'admin' || role === 'admin_master') {
-  // Verificar se tem navio favorito
-  const { data: fav } = await supabase
-    .from('user_favorites')
-    .select('entity_id')
-    .eq('user_id', user.id)
-    .eq('entity_type', 'ship')
-    .maybeSingle();
-
-  if (fav?.entity_id) {
-    return [fav.entity_id]; // Baixar apenas o favorito
-  }
-  return null; // Sem favorito = baixar tudo
-}
-```
-
-### 6. Arquivos a criar/modificar
-
-| Arquivo | Acao |
-|---------|------|
-| Migracao SQL | Criar trigger `enforce_single_favorite_ship` |
-| `src/hooks/useFavoriteShip.ts` | Novo hook dedicado |
-| `src/contexts/ShipFilterContext.tsx` | Usar favorito como default |
-| `src/components/layout/Header.tsx` | Adicionar estrela nos itens de navio |
-| `src/hooks/useOfflineSync.ts` | Filtrar download pelo favorito |
-| `src/i18n/locales/en.json` e `pt-BR.json` | Traducoes ("Navio favorito", "Favoritar navio") |
-
-### 7. Fluxo do usuario
-
-1. Admin faz login -> ve "Todas as Unidades" (sem favorito ainda)
-2. Abre o seletor de navios -> clica na estrela do "Navio Alpha"
-3. Toast: "Navio Alpha definido como favorito"
-4. Na proxima vez que acessar, "Navio Alpha" ja esta selecionado automaticamente
-5. Offline: so baixa dados do "Navio Alpha"
-6. Para mudar: clica na estrela de outro navio (ou remove a estrela do atual)
