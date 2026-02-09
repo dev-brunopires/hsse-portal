@@ -10,16 +10,6 @@
     "expiredCertificates": "Expired Certificates",
     "expiredCertificatesBody": "{{count}} equipment(s) with expired certificate(s)"
   },
-  "pwa": {
-    "installTitle": "Install App",
-    "installDescription": "Install this app on your device for a better experience",
-    "install": "Install",
-    "notNow": "Not now",
-    "updateAvailable": "Update Available",
-    "updateDescription": "A new version is available. Update now to get the latest features and improvements.",
-    "updateNow": "Update Now",
-    "later": "Later"
-  },
   "errorBoundary": {
     "updateAvailable": "Update Available",
     "somethingWentWrong": "Something went wrong",
@@ -2765,7 +2755,11 @@
     "installTitle": "Install SafeShip",
     "installDescription": "Install the app for quick access and offline use",
     "notNow": "Not now",
-    "install": "Install"
+    "install": "Install",
+    "updateAvailable": "Update Available",
+    "updateDescription": "A new version is available. Update now to get the latest features and improvements.",
+    "updateNow": "Update Now",
+    "later": "Later"
   },
   "onboarding": {
     "mainMenu": "Main Menu",
