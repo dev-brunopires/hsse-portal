@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { hapticSuccess, hapticWarning } from '@/utils/hapticFeedback';
 import * as offlineDB from '@/utils/offlineStorage';
 import { generateInspectionPhotoPath, getCurrentOrganizationId } from '@/utils/storageHelpers';
+import { useShipFilter } from '@/contexts/ShipFilterContext';
 
 // Push notification helper for sync completion
 const showSyncPushNotification = async (
@@ -139,6 +140,7 @@ async function getUserShipIds(): Promise<string[] | null> {
 
 export function useOfflineSync() {
   const { t } = useTranslation();
+  const { selectedShipId } = useShipFilter();
   const [isOnline, setIsOnline] = useState(getInitialOnlineState);
   const [pendingCount, setPendingCount] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -154,6 +156,8 @@ export function useOfflineSync() {
   const queryClient = useQueryClient();
   const syncInProgressRef = useRef(false);
   const mountedRef = useRef(true);
+  const syncedShipsRef = useRef<Map<string, number>>(new Map()); // shipId -> timestamp of last sync
+  const SHIP_SYNC_COOLDOWN = 1000 * 60 * 5; // 5 min cooldown before re-syncing same ship
 
   // Load initial pending count
   useEffect(() => {
@@ -931,6 +935,63 @@ export function useOfflineSync() {
       checkAndRefreshCache();
     }
   }, [isOnline]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sync data for a specific ship (incremental)
+  const syncForShip = useCallback(async (shipId: string) => {
+    if (!isOnline || globalCacheInProgress) return;
+
+    // Check cooldown
+    const lastSync = syncedShipsRef.current.get(shipId);
+    if (lastSync && Date.now() - lastSync < SHIP_SYNC_COOLDOWN) {
+      console.log(`Ship ${shipId} synced recently, skipping`);
+      return;
+    }
+
+    globalCacheInProgress = true;
+    try {
+      console.log(`Syncing data for ship ${shipId}...`);
+      const shipIds = [shipId];
+      const lastSyncTs = await offlineDB.getLastSyncTimestamp();
+
+      if (lastSyncTs) {
+        await deltaSyncEquipment(shipIds, lastSyncTs);
+      } else {
+        await fullSyncEquipment(shipIds);
+      }
+
+      await Promise.all([
+        syncMaintenancePlans(shipIds),
+      ]);
+
+      await syncLastInspections(lastSyncTs);
+      await offlineDB.setCacheTimestamp();
+      await refreshStats();
+
+      syncedShipsRef.current.set(shipId, Date.now());
+
+      const equipCount = await offlineDB.getEquipmentCount();
+      console.log(`Ship ${shipId} synced (${equipCount} total equipment in cache)`);
+      
+      toast.success(t('offline.cacheUpdated'), {
+        description: t('offline.cacheUpdatedDesc', { count: equipCount }),
+      });
+    } catch (error) {
+      console.error(`Error syncing ship ${shipId}:`, error);
+    } finally {
+      globalCacheInProgress = false;
+    }
+  }, [isOnline, t, refreshStats]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-sync when selected ship changes
+  useEffect(() => {
+    if (!selectedShipId || !isOnline) return;
+
+    // Skip if this ship was already synced recently
+    const lastSync = syncedShipsRef.current.get(selectedShipId);
+    if (lastSync && Date.now() - lastSync < SHIP_SYNC_COOLDOWN) return;
+
+    syncForShip(selectedShipId);
+  }, [selectedShipId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-retry failed sync every 30 seconds when online with pending actions
   useEffect(() => {
