@@ -1,6 +1,4 @@
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useAuth } from '@/contexts/AuthContext';
 import { AppSidebar } from './AppSidebar';
 import { MobileSidebar } from './MobileSidebar';
 import { MobileBottomNav } from './MobileBottomNav';
@@ -10,30 +8,16 @@ import { PWAInstallPrompt } from './PWAInstallPrompt';
 import { PWAUpdatePrompt } from './PWAUpdatePrompt';
 import { SyncProgressIndicator } from './SyncProgressIndicator';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
-import { Loader2 } from 'lucide-react';
 
 interface AppLayoutProps {
   children: React.ReactNode;
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
-  const { t } = useTranslation();
-  const { loading } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   // Enable global keyboard shortcuts
   useKeyboardShortcuts();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">{t('common.loading')}</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
