@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import type { User, Session, AuthTokenResponsePassword } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
 import { getOrganizationUrl } from '@/utils/organizationUrl';
 import { telemetry } from '@/utils/clientTelemetry';
 
@@ -55,6 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const profileRef = useRef<Profile | null>(null);
   const roleRef = useRef<AppRole | null>(null);
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const fetchUserData = async (userId: string, force = false) => {
     // Prevent concurrent fetch storms (especially around token refresh)
@@ -306,9 +308,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error) {
         toast({
-          title: 'Erro ao fazer login',
+          title: t('hooks.auth.loginError'),
           description: error.message === 'Invalid login credentials' 
-            ? 'Email ou senha incorretos' 
+            ? t('hooks.auth.invalidCredentials')
             : error.message,
           variant: 'destructive',
         });
@@ -316,8 +318,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       toast({
-        title: 'Login realizado',
-        description: 'Bem-vindo ao sistema!',
+        title: t('hooks.auth.loginSuccess'),
+        description: t('hooks.auth.welcomeMessage'),
       });
 
       return { error: null, data };
@@ -344,11 +346,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) {
         let message = error.message;
         if (error.message.includes('already registered')) {
-          message = 'Este email já está cadastrado';
+          message = t('hooks.auth.alreadyRegistered');
         }
         
         toast({
-          title: 'Erro ao criar conta',
+          title: t('hooks.auth.signupError'),
           description: message,
           variant: 'destructive',
         });
@@ -356,8 +358,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       toast({
-        title: 'Conta criada com sucesso',
-        description: 'Você já pode acessar o sistema!',
+        title: t('hooks.auth.signupSuccess'),
+        description: t('hooks.auth.signupSuccessDesc'),
       });
 
       return { error: null };
@@ -402,8 +404,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     roleRef.current = null;
     
     toast({
-      title: 'Logout realizado',
-      description: 'Até logo!',
+      title: t('hooks.auth.logoutSuccess'),
+      description: t('hooks.auth.logoutMessage'),
     });
 
     // Redirect to organization's login page

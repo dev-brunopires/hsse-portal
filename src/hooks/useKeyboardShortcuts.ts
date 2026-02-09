@@ -1,5 +1,7 @@
 import { useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n';
 
 interface ShortcutConfig {
   key: string;
@@ -14,6 +16,7 @@ const shortcuts: ShortcutConfig[] = [];
 
 export function useKeyboardShortcuts() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const registerShortcut = useCallback((config: ShortcutConfig) => {
     shortcuts.push(config);
@@ -31,15 +34,15 @@ export function useKeyboardShortcuts() {
   useEffect(() => {
     // Register default navigation shortcuts
     const defaultShortcuts: ShortcutConfig[] = [
-      { key: 'd', alt: true, action: () => navigate('/'), description: 'Ir para Dashboard' },
-      { key: 'e', alt: true, action: () => navigate('/equipment'), description: 'Ir para Equipamentos' },
-      { key: 'i', alt: true, action: () => navigate('/inspections'), description: 'Ir para Inspeções' },
-      { key: 'r', alt: true, action: () => navigate('/reports'), description: 'Ir para Relatórios' },
-      { key: 'a', alt: true, action: () => navigate('/alerts'), description: 'Ir para Alertas' },
-      { key: 'u', alt: true, action: () => navigate('/users'), description: 'Ir para Usuários' },
-      { key: 'c', alt: true, action: () => navigate('/categories'), description: 'Ir para Categorias' },
-      { key: 's', alt: true, action: () => navigate('/settings'), description: 'Ir para Configurações' },
-      { key: 'p', alt: true, action: () => navigate('/profile'), description: 'Ir para Perfil' },
+      { key: 'd', alt: true, action: () => navigate('/'), description: t('hooks.keyboard.goToDashboard') },
+      { key: 'e', alt: true, action: () => navigate('/equipment'), description: t('hooks.keyboard.goToEquipment') },
+      { key: 'i', alt: true, action: () => navigate('/inspections'), description: t('hooks.keyboard.goToInspections') },
+      { key: 'r', alt: true, action: () => navigate('/reports'), description: t('hooks.keyboard.goToReports') },
+      { key: 'a', alt: true, action: () => navigate('/alerts'), description: t('hooks.keyboard.goToAlerts') },
+      { key: 'u', alt: true, action: () => navigate('/users'), description: t('hooks.keyboard.goToUsers') },
+      { key: 'c', alt: true, action: () => navigate('/categories'), description: t('hooks.keyboard.goToCategories') },
+      { key: 's', alt: true, action: () => navigate('/settings'), description: t('hooks.keyboard.goToSettings') },
+      { key: 'p', alt: true, action: () => navigate('/profile'), description: t('hooks.keyboard.goToProfile') },
     ];
 
     defaultShortcuts.forEach(s => shortcuts.push(s));
@@ -73,21 +76,22 @@ export function useKeyboardShortcuts() {
         if (index > -1) shortcuts.splice(index, 1);
       });
     };
-  }, [navigate]);
+  }, [navigate, t]);
 
   return { registerShortcut, shortcuts };
 }
 
 export function getShortcutsList(): { key: string; description: string }[] {
+  const t = i18n.t.bind(i18n);
   return [
-    { key: 'Alt + D', description: 'Ir para Dashboard' },
-    { key: 'Alt + E', description: 'Ir para Equipamentos' },
-    { key: 'Alt + I', description: 'Ir para Inspeções' },
-    { key: 'Alt + R', description: 'Ir para Relatórios' },
-    { key: 'Alt + A', description: 'Ir para Alertas' },
-    { key: 'Alt + U', description: 'Ir para Usuários' },
-    { key: 'Alt + C', description: 'Ir para Categorias' },
-    { key: 'Alt + S', description: 'Ir para Configurações' },
-    { key: 'Alt + P', description: 'Ir para Perfil' },
+    { key: 'Alt + D', description: t('hooks.keyboard.goToDashboard') },
+    { key: 'Alt + E', description: t('hooks.keyboard.goToEquipment') },
+    { key: 'Alt + I', description: t('hooks.keyboard.goToInspections') },
+    { key: 'Alt + R', description: t('hooks.keyboard.goToReports') },
+    { key: 'Alt + A', description: t('hooks.keyboard.goToAlerts') },
+    { key: 'Alt + U', description: t('hooks.keyboard.goToUsers') },
+    { key: 'Alt + C', description: t('hooks.keyboard.goToCategories') },
+    { key: 'Alt + S', description: t('hooks.keyboard.goToSettings') },
+    { key: 'Alt + P', description: t('hooks.keyboard.goToProfile') },
   ];
 }
