@@ -11,6 +11,7 @@ export type ToastInput = {
   title?: React.ReactNode;
   description?: React.ReactNode;
   variant?: ToastVariant;
+  id?: string;
 };
 
 function normalizeToString(node: React.ReactNode): string {
@@ -19,18 +20,20 @@ function normalizeToString(node: React.ReactNode): string {
   return "";
 }
 
-export function toast({ title, description, variant }: ToastInput) {
+export function toast({ title, description, variant, id }: ToastInput) {
   const titleStr = normalizeToString(title);
   const descriptionStr = normalizeToString(description);
 
   const message = title ?? description ?? "";
-  const opts = title ? { description: descriptionStr || undefined } : undefined;
+  const opts: Record<string, any> = {};
+  if (title && descriptionStr) opts.description = descriptionStr;
+  if (id) opts.id = id;
 
   if (variant === "destructive") {
-    return sonnerToast.error(message, opts);
+    return sonnerToast.error(message, Object.keys(opts).length ? opts : undefined);
   }
 
-  return sonnerToast(message, opts);
+  return sonnerToast(message, Object.keys(opts).length ? opts : undefined);
 }
 
 export function useToast() {

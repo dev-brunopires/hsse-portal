@@ -108,6 +108,28 @@ let globalCacheInProgress = false;
 let globalLastCacheCheck = 0;
 let pendingShipSync: string | null = null; // Bug #4: queue for pending ship sync
 
+// ===== Singleton online/offline listener =====
+// Registered once globally, notifies all hook instances via callbacks set.
+type NetworkCallback = (online: boolean) => void;
+const networkCallbacks = new Set<NetworkCallback>();
+let networkListenersRegistered = false;
+
+function registerNetworkListeners() {
+  if (networkListenersRegistered) return;
+  networkListenersRegistered = true;
+
+  window.addEventListener('online', () => {
+    networkCallbacks.forEach(cb => cb(true));
+  });
+  window.addEventListener('offline', () => {
+    networkCallbacks.forEach(cb => cb(false));
+  });
+}
+
+// Singleton toast guard: only the first callback in the set fires the toast
+let lastNetworkToastFired = 0;
+const NETWORK_TOAST_DEBOUNCE = 500; // ms
+
 // Sync progress state type
 export interface SyncProgressState {
   currentItem: string | null;
@@ -250,12 +272,13 @@ export function useOfflineSync() {
       const isFirstCache = !sessionStorage.getItem(SESSION_CACHE_KEY);
       if (isFirstCache) {
         toast.success(t('offline.cacheUpdated'), {
+          id: 'cache-updated',
           description: t('offline.cacheUpdatedDesc', { count: equipCount }),
         });
       }
     } catch (error) {
       console.error('Error pre-caching data:', error);
-      toast.error(t('offline.cacheError'));
+      toast.error(t('offline.cacheError'), { id: 'cache-error' });
     } finally {
       globalCacheInProgress = false;
       // Bug #4: process pending ship sync after initial cache completes
@@ -765,6 +788,7 @@ export function useOfflineSync() {
     if (syncedCount > 0) {
       hapticSuccess();
       toast.success(t('offline.syncCompleted'), {
+        id: 'sync-completed',
         description: t('offline.syncCompletedDesc', { count: syncedCount }),
       });
       
@@ -784,6 +808,7 @@ export function useOfflineSync() {
     if (failedActions.length > 0) {
       hapticWarning();
       toast.error(t('offline.syncFailed'), {
+        id: 'sync-failed',
         description: t('offline.syncFailedDesc', { count: failedActions.length }),
       });
     }
@@ -895,6 +920,7 @@ export function useOfflineSync() {
     if (syncedCount > 0) {
       hapticSuccess();
       toast.success(t('offline.maintenanceSyncCompleted'), {
+        id: 'maintenance-sync-completed',
         description: t('offline.maintenanceSyncCompletedDesc', { count: syncedCount }),
       });
       
@@ -912,36 +938,41 @@ export function useOfflineSync() {
     if (failedActions.length > 0) {
       hapticWarning();
       toast.error(t('offline.syncFailed'), {
+        id: 'maintenance-sync-failed',
         description: t('offline.syncFailedDesc', { count: failedActions.length }),
       });
     }
   }, [isOnline, queryClient, t, refreshStats]);
 
-  // Online/offline event listeners
+  // Online/offline event listeners — singleton pattern
   useEffect(() => {
-    const handleOnline = () => {
-      setIsOnline(true);
-      hapticSuccess();
-      toast.success(t('offline.connectionRestored'), {
-        description: t('offline.connectionRestoredDesc'),
-      });
+    registerNetworkListeners();
+
+    const callback: NetworkCallback = (online) => {
+      setIsOnline(online);
+
+      // Debounce: only the first hook instance within the window fires the toast
+      const now = Date.now();
+      if (now - lastNetworkToastFired < NETWORK_TOAST_DEBOUNCE) return;
+      lastNetworkToastFired = now;
+
+      if (online) {
+        hapticSuccess();
+        toast.success(t('offline.connectionRestored'), {
+          id: 'network-status',
+          description: t('offline.connectionRestoredDesc'),
+        });
+      } else {
+        hapticWarning();
+        toast.error(t('offline.offlineMode'), {
+          id: 'network-status',
+          description: t('offline.offlineModeDesc'),
+        });
+      }
     };
 
-    const handleOffline = () => {
-      setIsOnline(false);
-      hapticWarning();
-      toast.error(t('offline.offlineMode'), {
-        description: t('offline.offlineModeDesc'),
-      });
-    };
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
+    networkCallbacks.add(callback);
+    return () => { networkCallbacks.delete(callback); };
   }, [t]);
 
   // Auto-sync when coming online and refresh cache
@@ -990,6 +1021,7 @@ export function useOfflineSync() {
       // Bug #3: Only show toast if there are meaningful data counts
       if (equipCount > 0) {
         toast(t('offline.cacheUpdated'), {
+          id: 'ship-cache-updated',
           description: t('offline.cacheUpdatedDesc', { count: equipCount }),
         });
       }
@@ -1075,6 +1107,7 @@ export function useOfflineSync() {
     await refreshStats();
     
     toast.info(t('offline.savedLocally'), {
+      id: 'saved-locally',
       description: t('offline.savedLocallyDesc'),
     });
     
