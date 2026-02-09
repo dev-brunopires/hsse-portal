@@ -38,7 +38,10 @@ export function UpcomingInspectionsCard() {
   const stats = useMemo(() => {
     const now = new Date();
     const weekFromNow = addDays(now, 7);
-    const monthFromNow = addDays(now, 30);
+    
+    // "Este mês" = only inspections within the current calendar month
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
     
     const thisWeek = inspections.filter(insp => {
       if (!insp.next_inspection_date) return false;
@@ -51,7 +54,8 @@ export function UpcomingInspectionsCard() {
       if (!insp.next_inspection_date) return false;
       const nextDate = parseLocalDate(insp.next_inspection_date);
       if (!nextDate) return false;
-      return isAfter(nextDate, now) && isBefore(nextDate, monthFromNow);
+      return (isAfter(nextDate, currentMonthStart) || nextDate.getTime() === currentMonthStart.getTime()) && 
+             (isBefore(nextDate, currentMonthEnd) || nextDate.getTime() === currentMonthEnd.getTime());
     }).length;
 
     return { thisWeek, thisMonth };
