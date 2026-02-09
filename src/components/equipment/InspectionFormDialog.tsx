@@ -133,6 +133,9 @@ export function InspectionFormDialog({
   const createInspection = useCreateInspection();
   const { isOnline, addPendingInspection } = useOfflineSync();
 
+  // When offline, pre-fill inspector with logged-in user since the list won't be available
+  const isInspectorDisabledOffline = !isOnline && inspectors.length === 0;
+
   const inspectionSchema = createInspectionSchema(t);
   
   const form = useForm<InspectionFormData>({
@@ -488,23 +491,39 @@ export function InspectionFormDialog({
                         <User className="h-4 w-4" />
                         {t('inspectionForm.responsibleInspector')} *
                       </FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value} disabled={inspectorsLoading}>
+                      <Select onValueChange={field.onChange} value={field.value} disabled={inspectorsLoading || isInspectorDisabledOffline}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder={inspectorsLoading ? t('common.loading') : t('inspectionForm.selectInspector')} />
+                            <SelectValue placeholder={
+                              isInspectorDisabledOffline 
+                                ? (inspectors.length === 0 ? t('inspectionForm.offlineInspector') : t('inspectionForm.selectInspector'))
+                                : inspectorsLoading ? t('common.loading') : t('inspectionForm.selectInspector')
+                            } />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent className="bg-popover border border-border shadow-lg z-50">
-                          {inspectors.map((inspector) => (
-                            <SelectItem key={inspector.user_id} value={inspector.user_id}>
+                          {/* When offline with no inspectors list, show current user */}
+                          {isInspectorDisabledOffline && user ? (
+                            <SelectItem key={user.id} value={user.id}>
                               <div className="flex items-center gap-2">
                                 <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
-                                  {inspector.full_name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()}
+                                  <WifiOff className="h-3 w-3" />
                                 </div>
-                                <span>{inspector.full_name}</span>
+                                <span>{t('inspectionForm.currentUser')}</span>
                               </div>
                             </SelectItem>
-                          ))}
+                          ) : (
+                            inspectors.map((inspector) => (
+                              <SelectItem key={inspector.user_id} value={inspector.user_id}>
+                                <div className="flex items-center gap-2">
+                                  <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
+                                    {inspector.full_name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()}
+                                  </div>
+                                  <span>{inspector.full_name}</span>
+                                </div>
+                              </SelectItem>
+                            ))
+                          )}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -861,6 +880,11 @@ export function InspectionFormDialog({
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
                   <span className="hidden sm:inline">{t('inspectionForm.registering')}</span>
+                </>
+              ) : !isOnline ? (
+                <>
+                  <WifiOff className="h-4 w-4" />
+                  {t('inspectionForm.saveOffline')}
                 </>
               ) : (
                 <>

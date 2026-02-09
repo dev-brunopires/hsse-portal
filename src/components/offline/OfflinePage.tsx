@@ -9,7 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
 import { useOfflineSync, CachedEquipment, CachedCategory, CachedShip, CachedTemplate, PendingInspection, StorageStats } from '@/hooks/useOfflineSync';
-import { OfflineInspectionDialog } from './OfflineInspectionDialog';
+import { InspectionFormDialog } from '@/components/equipment/InspectionFormDialog';
+import type { Equipment } from '@/types/equipment';
 import { OfflinePhotoPreview } from './OfflinePhotoPreview';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -521,14 +522,31 @@ export function OfflinePage() {
         </TabsContent>
       </Tabs>
 
-      {/* Inspection Dialog */}
+      {/* Inspection Dialog - uses the unified form */}
       {selectedEquipment && (
-        <OfflineInspectionDialog
+        <InspectionFormDialog
           open={inspectionDialogOpen}
           onOpenChange={setInspectionDialogOpen}
-          equipment={selectedEquipment}
-          categories={categories}
-          templates={templates}
+          equipment={{
+            id: selectedEquipment.id,
+            internalCode: selectedEquipment.internal_code,
+            name: selectedEquipment.name,
+            type: '',
+            categoryId: selectedEquipment.category_id,
+            categoryName: categories.find(c => c.id === selectedEquipment.category_id)?.name || '',
+            manufacturer: '',
+            model: '',
+            serialNumber: selectedEquipment.serial_number,
+            manufacturingDate: '',
+            acquisitionDate: '',
+            expiryDate: '',
+            certificateExpiry: '',
+            location: selectedEquipment.location,
+            unit: '',
+            status: selectedEquipment.status as any,
+            lastInspection: '',
+            nextInspection: '',
+          } as Equipment}
           onSuccess={handleInspectionSuccess}
         />
       )}
