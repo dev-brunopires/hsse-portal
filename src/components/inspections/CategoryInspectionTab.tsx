@@ -41,7 +41,6 @@ import {
 import { useCategories } from '@/hooks/useCategories';
 import { useEquipment, type EquipmentWithCategory } from '@/hooks/useEquipment';
 import { useShips } from '@/hooks/useShips';
-import { useCreateInspection } from '@/hooks/useInspections';
 import { useUserSignature } from '@/hooks/useUserSignature';
 import { useUserShips } from '@/hooks/useUserShips';
 import { useDefaultChecklistTemplate } from '@/hooks/useChecklistTemplates';
@@ -52,9 +51,22 @@ import { SignaturePad } from './SignaturePad';
 import { exportCategoryInspectionPDF } from '@/utils/exportCategoryInspection';
 import { formatDate } from '@/utils/dateFormat';
 import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useOrganizationBranding } from '@/hooks/useOrganizationBranding';
+
+// Calculate next inspection date based on category frequency
+function calculateNextInspectionDate(inspectionDate: string, frequency: string): string {
+  const date = new Date(inspectionDate);
+  switch (frequency) {
+    case 'monthly': date.setDate(date.getDate() + 30); break;
+    case 'quarterly': date.setDate(date.getDate() + 90); break;
+    case 'semi-annual': case 'semiannual': date.setDate(date.getDate() + 180); break;
+    case 'annual': date.setDate(date.getDate() + 365); break;
+    default: date.setDate(date.getDate() + 30);
+  }
+  return date.toISOString().split('T')[0];
+}
 
 interface CategoryInspectionResult {
   equipment: EquipmentWithCategory;
@@ -67,6 +79,7 @@ export function CategoryInspectionTab() {
   const { selectedShipId } = useShipFilter();
   const branding = useOrganizationBranding();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   // Fetch full profile with position
   const { data: fullProfile } = useQuery({
@@ -89,7 +102,6 @@ export function CategoryInspectionTab() {
   const { data: allShips = [] } = useShips();
   const { data: userSignatureSettings, isLoading: signatureLoading } = useUserSignature();
   const { data: userShips = [] } = useUserShips(user?.id);
-  const createInspection = useCreateInspection();
   
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedShip, setSelectedShip] = useState<string>('');
@@ -233,40 +245,100 @@ export function CategoryInspectionTab() {
         selectedEquipmentIds.has(eq.id)
       );
 
+      const inspectionDate = new Date().toISOString().split('T')[0];
+
+      // Fetch category frequency to calculate next inspection date
+      const category = categories.find(c => c.id === selectedCategory);
+      const frequency = category?.inspection_frequency || 'monthly';
+      const nextDate = calculateNextInspectionDate(inspectionDate, frequency);
+
+      // Build all inspection records
+      const inspectionRecords = selectedEquipments.map(eq => {
+        const eqStatus = equipmentStatuses[eq.id] || 'compliant';
+        return {
+          equipment_id: eq.id,
+          inspector_id: user.id,
+          status: eqStatus === 'compliant' ? 'compliant' : 
+                  eqStatus === 'attention' ? 'attention' : 'non-compliant',
+          inspection_date: inspectionDate,
+          next_inspection_date: nextDate,
+          ship_id: eq.ship_id,
+          observations: `${t('categoryInspection.batchInspectionNote')}: ${selectedCategory$?.name}`,
+          signature_data: signature,
+          signed_at: new Date().toISOString(),
+        };
+      });
+
+      // Batch insert all inspections at once
+      const { data: createdInspections, error: inspError } = await supabase
+        .from('inspections')
+        .insert(inspectionRecords)
+        .select();
+
+      if (inspError) throw inspError;
+
+      // Batch insert checklist items for all inspections if template exists
+      if (defaultChecklist?.items && defaultChecklist.items.length > 0 && createdInspections) {
+        const allChecklistItems = createdInspections.flatMap(insp => {
+          const eqStatus = equipmentStatuses[insp.equipment_id] || 'compliant';
+          return defaultChecklist.items!.map(item => ({
+            inspection_id: insp.id,
+            description: item.description,
+            status: eqStatus === 'compliant' ? 'ok' : 
+                    eqStatus === 'attention' ? 'attention' : 'fail',
+            notes: '',
+          }));
+        });
+
+        const { error: checklistError } = await supabase
+          .from('inspection_checklist_items')
+          .insert(allChecklistItems);
+
+        if (checklistError) throw checklistError;
+      }
+
+      // Batch update equipment statuses
+      const statusMapping: Record<string, string> = {
+        compliant: 'active',
+        attention: 'maintenance',
+        'non-compliant': 'rejected',
+      };
+
+      // Group by status for batch updates
+      const statusGroups = new Map<string, string[]>();
       for (const eq of selectedEquipments) {
         const eqStatus = equipmentStatuses[eq.id] || 'compliant';
-        
-        // Map status to inspection status
-        const inspectionStatus = eqStatus === 'compliant' ? 'compliant' : 
-                                  eqStatus === 'attention' ? 'attention' : 'non-compliant';
-        
-        // Prepare checklist items based on status
-        const checklistItems = defaultChecklist?.items?.map(item => ({
-          description: item.description,
-          status: eqStatus === 'compliant' ? 'conforme' : 
-                  eqStatus === 'attention' ? 'atenção' : 'não conforme',
-          notes: '',
-        })) || [];
+        const equipStatus = statusMapping[eqStatus] || 'active';
+        if (!statusGroups.has(equipStatus)) statusGroups.set(equipStatus, []);
+        statusGroups.get(equipStatus)!.push(eq.id);
+      }
 
-        await createInspection.mutateAsync({
-          inspection: {
-            equipment_id: eq.id,
-            inspector_id: user.id,
-            status: inspectionStatus,
-            inspection_date: new Date().toISOString().split('T')[0],
-            observations: `${t('categoryInspection.batchInspectionNote')}: ${selectedCategory$?.name}`,
-            signature_data: signature,
-            signed_at: new Date().toISOString(),
-          },
-          checklistItems,
-          photos: [],
-        });
+      // Execute batch updates per status group
+      await Promise.all(
+        Array.from(statusGroups.entries()).map(([status, ids]) =>
+          supabase
+            .from('equipment')
+            .update({
+              status,
+              last_inspection: inspectionDate,
+              next_inspection: nextDate,
+            })
+            .in('id', ids)
+        )
+      );
 
+      // Build results
+      for (const eq of selectedEquipments) {
         results.push({
           equipment: eq,
-          status: eqStatus,
+          status: equipmentStatuses[eq.id] || 'compliant',
         });
       }
+
+      // Invalidate queries once
+      queryClient.invalidateQueries({ queryKey: ['inspections'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
 
       setInspectionResults(results);
       setShowResultsDialog(true);
