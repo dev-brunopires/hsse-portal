@@ -1293,6 +1293,7 @@ export type Database = {
     Functions: {
       can_manage_users: { Args: { _user_id: string }; Returns: boolean }
       generate_equipment_short_code: { Args: never; Returns: string }
+      get_dashboard_stats: { Args: { p_ship_id?: string }; Returns: Json }
       get_org_branding_by_subdomain: {
         Args: { _subdomain: string }
         Returns: {

@@ -98,29 +98,30 @@ export function ActivityComparisonChart() {
     };
   }, [data]);
 
-  const TrendIndicator = ({ value }: { value: number }) => {
-    if (value > 0) {
-      return (
-        <span className="flex items-center gap-1 text-green-600 text-xs font-medium">
-          <TrendingUp className="h-3 w-3" />
-          +{value}%
-        </span>
-      );
-    } else if (value < 0) {
-      return (
-        <span className="flex items-center gap-1 text-red-600 text-xs font-medium">
-          <TrendingDown className="h-3 w-3" />
-          {value}%
-        </span>
-      );
-    }
+// Moved outside component to avoid ref warnings and re-creation on each render
+function TrendIndicator({ value }: { value: number }) {
+  if (value > 0) {
     return (
-      <span className="flex items-center gap-1 text-muted-foreground text-xs font-medium">
-        <Minus className="h-3 w-3" />
-        0%
+      <span className="flex items-center gap-1 text-green-600 text-xs font-medium">
+        <TrendingUp className="h-3 w-3" />
+        +{value}%
       </span>
     );
-  };
+  } else if (value < 0) {
+    return (
+      <span className="flex items-center gap-1 text-red-600 text-xs font-medium">
+        <TrendingDown className="h-3 w-3" />
+        {value}%
+      </span>
+    );
+  }
+  return (
+    <span className="flex items-center gap-1 text-muted-foreground text-xs font-medium">
+      <Minus className="h-3 w-3" />
+      0%
+    </span>
+  );
+}
 
   if (isLoading) {
     return (

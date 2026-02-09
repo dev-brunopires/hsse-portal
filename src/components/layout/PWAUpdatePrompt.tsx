@@ -16,7 +16,9 @@ export function PWAUpdatePrompt() {
     if (!('serviceWorker' in navigator)) return;
 
     const handleControllerChange = () => {
-      // New service worker has taken control, reload
+      // Guard against reload loops in preview/dev environments
+      if (sessionStorage.getItem('sw-reloaded')) return;
+      sessionStorage.setItem('sw-reloaded', '1');
       window.location.reload();
     };
 
