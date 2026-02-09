@@ -14,9 +14,9 @@ export function SystemLogo({ variant = 'default', className, showText = true, si
   const isWhite = variant === 'white';
 
   const sizeClasses = {
-    sm: { icon: 'h-4 w-4', text: 'text-sm', padding: 'p-1' },
-    md: { icon: 'h-5 w-5', text: 'text-sm', padding: 'p-1.5' },
-    lg: { icon: 'h-7 w-7', text: 'text-base', padding: 'p-2' },
+    sm: { icon: 'h-5 w-5', text: 'text-sm', padding: 'p-1' },
+    md: { icon: 'h-6 w-6', text: 'text-base font-bold', padding: 'p-1.5' },
+    lg: { icon: 'h-8 w-8', text: 'text-lg', padding: 'p-2' },
   };
 
   const sizes = sizeClasses[size];
