@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
@@ -120,7 +120,7 @@ export function useEquipmentPaginated(filters: EquipmentFilters = {}) {
 export function useEquipmentCount(categoryId?: string) {
   const { selectedShipId, isFilterEnabled } = useShipFilter();
   
-  return useInfiniteQuery({
+  return useQuery({
     queryKey: ['equipment-count', selectedShipId ?? 'all', categoryId],
     queryFn: async () => {
       let queryBuilder = supabase
@@ -139,10 +139,8 @@ export function useEquipmentCount(categoryId?: string) {
       
       if (error) throw error;
       
-      return { count: count || 0 };
+      return count || 0;
     },
-    getNextPageParam: () => undefined,
-    initialPageParam: 0,
     staleTime: 1000 * 60 * 5,
   });
 }

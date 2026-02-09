@@ -14,15 +14,16 @@ export function useRoutePrefetch() {
     if (!isReady) return;
 
     // Prefetch equipment data (most accessed)
+    // Use the same queryKey format as the actual hooks
     const prefetchEquipment = async () => {
       await queryClient.prefetchQuery({
-        queryKey: ['equipment', selectedShipId ?? 'all'],
+        queryKey: ['equipment', selectedShipId],
         queryFn: async () => {
           let queryBuilder = supabase
             .from('equipment')
             .select('id, name, internal_code, status, category_id, ship_id, certificate_expiry, next_inspection')
             .order('created_at', { ascending: false })
-            .limit(50); // Prefetch first 50 only
+            .limit(50);
           
           if (isFilterEnabled && selectedShipId) {
             queryBuilder = queryBuilder.eq('ship_id', selectedShipId);
@@ -31,7 +32,7 @@ export function useRoutePrefetch() {
           const { data } = await queryBuilder;
           return data || [];
         },
-        staleTime: 1000 * 60 * 5, // 5 minutes
+        staleTime: 1000 * 60 * 5,
       });
     };
 
@@ -89,19 +90,19 @@ export function usePrefetchOnHover(route: 'equipment' | 'inspections' | 'mainten
     switch (route) {
       case 'equipment':
         await queryClient.prefetchQuery({
-          queryKey: ['equipment', selectedShipId ?? 'all'],
+          queryKey: ['equipment', selectedShipId],
           staleTime: 1000 * 60 * 2,
         });
         break;
       case 'inspections':
         await queryClient.prefetchQuery({
-          queryKey: ['inspections', selectedShipId ?? 'all'],
+          queryKey: ['inspections', selectedShipId],
           staleTime: 1000 * 60 * 2,
         });
         break;
       case 'maintenance':
         await queryClient.prefetchQuery({
-          queryKey: ['maintenance-requests', selectedShipId ?? 'all'],
+          queryKey: ['maintenance-requests', selectedShipId],
           staleTime: 1000 * 60 * 2,
         });
         break;

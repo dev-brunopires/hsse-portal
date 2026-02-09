@@ -98,6 +98,7 @@ export function useMaintenanceRequests() {
 
   return useQuery({
     queryKey: ['maintenance-requests', selectedShipId],
+    staleTime: 1000 * 60 * 3, // 3 minutes
     queryFn: async () => {
       let query = supabase
         .from('maintenance_requests')
