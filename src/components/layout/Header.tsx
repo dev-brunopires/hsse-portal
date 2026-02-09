@@ -440,6 +440,7 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
                           onClick={(e) => {
                             e.stopPropagation();
                             setFavoriteShip.mutate({ shipId: ship.id, shipName: ship.name });
+                            setSelectedShipId(ship.id);
                           }}
                           className="p-2 rounded-lg hover:bg-muted transition-colors flex-shrink-0"
                           title={t('hooks.favoriteShip.tooltip')}
@@ -527,6 +528,7 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
                         e.stopPropagation();
                         e.preventDefault();
                         setFavoriteShip.mutate({ shipId: ship.id, shipName: ship.name });
+                        setSelectedShipId(ship.id);
                       }}
                       className="p-1 rounded hover:bg-muted transition-colors"
                       title={t('hooks.favoriteShip.tooltip')}
