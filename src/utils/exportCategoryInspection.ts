@@ -172,6 +172,9 @@ export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFDat
     String(index + 1),
     result.equipment.internal_code,
     result.equipment.name,
+    result.equipment.serial_number || '—',
+    result.equipment.location || '—',
+    result.equipment.type || '—',
     result.lastInspectionDate ? format(new Date(result.lastInspectionDate), 'dd/MM/yy', { locale: dateLocale }) : '—',
     result.lastInspectorName || '—',
     statusLabels[result.status] || result.status,
@@ -184,6 +187,9 @@ export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFDat
       '#', 
       t('exportCategoryInspection.code'), 
       t('exportCategoryInspection.equipment'), 
+      t('reports.serialNumber'),
+      t('common.location'),
+      t('reports.type'),
       t('exportCategoryInspection.lastInspection'), 
       t('exportCategoryInspection.inspector'), 
       t('exportCategoryInspection.status'), 
@@ -194,32 +200,35 @@ export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFDat
     headStyles: {
       fillColor: [0, 82, 147],
       textColor: [255, 255, 255],
-      fontSize: 9,
+      fontSize: 8,
       fontStyle: 'bold',
-      cellPadding: 4,
+      cellPadding: 3,
     },
     bodyStyles: {
-      fontSize: 9,
+      fontSize: 8,
       textColor: [33, 37, 41],
-      cellPadding: 3,
-      minCellHeight: 10,
+      cellPadding: 2.5,
+      minCellHeight: 9,
     },
     alternateRowStyles: {
       fillColor: [248, 249, 250],
     },
     columnStyles: {
-      0: { cellWidth: 10, halign: 'center' }, // #
-      1: { cellWidth: 26 }, // Code
+      0: { cellWidth: 8, halign: 'center' }, // #
+      1: { cellWidth: 22 }, // Code
       2: { cellWidth: 'auto' }, // Equipment
-      3: { cellWidth: 24, halign: 'center' }, // Last Inspection
-      4: { cellWidth: 34 }, // Inspector
-      5: { cellWidth: 26, halign: 'center' }, // Status
-      6: { cellWidth: 30, halign: 'center' }, // Expiry
+      3: { cellWidth: 22 }, // Serial
+      4: { cellWidth: 22 }, // Location
+      5: { cellWidth: 18 }, // Type
+      6: { cellWidth: 18, halign: 'center' }, // Last Inspection
+      7: { cellWidth: 24 }, // Inspector
+      8: { cellWidth: 20, halign: 'center' }, // Status
+      9: { cellWidth: 22, halign: 'center' }, // Expiry
     },
     didParseCell: (hookData) => {
       if (hookData.section === 'body') {
         // Status column styling
-        if (hookData.column.index === 5) {
+        if (hookData.column.index === 8) {
           const status = data.results[hookData.row.index]?.status;
           if (status === 'compliant') {
             hookData.cell.styles.textColor = [40, 167, 69];
@@ -233,7 +242,7 @@ export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFDat
           }
         }
         // Expiry column styling
-        if (hookData.column.index === 6) {
+        if (hookData.column.index === 9) {
           const expiryStatus = data.results[hookData.row.index]?.expiryStatus;
           if (expiryStatus && expiryStatus !== 'ok') {
             hookData.cell.styles.textColor = [220, 53, 69];

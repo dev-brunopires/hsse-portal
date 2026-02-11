@@ -850,7 +850,10 @@
     "certificateExpiringSoon": "Certificate Expiring Soon",
     "inspectionOverdue": "Inspection Overdue",
     "expiredCertificates": "Expired Certificates",
-    "rejected": "Rejected"
+    "rejected": "Rejected",
+    "serialNumber": "Serial No.",
+    "unit": "Unit",
+    "recommendations": "Recommendations"
   },
   "importEquipment": {
     "title": "Import Equipment",

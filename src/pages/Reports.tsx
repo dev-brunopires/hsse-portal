@@ -352,12 +352,15 @@ export default function Reports() {
       const today = new Date();
       const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
       const status = daysUntilExpiry < 0 ? t('reports.expired') : `${daysUntilExpiry} ${t('reports.days')}`;
+      const ship = item.ship_id ? ships.find(s => s.id === item.ship_id) : null;
 
       return [
         item.internal_code,
         item.name,
+        item.serial_number || '—',
         item.categories?.name || '—',
         item.location,
+        ship?.name || '—',
         format(expiryDate, 'dd/MM/yyyy', { locale: dateLocale }),
         status,
       ];
@@ -365,27 +368,29 @@ export default function Reports() {
 
     autoTable(doc, {
       startY: startY,
-      head: [[t('reports.code'), t('reports.equipment'), t('reports.category'), t('common.location'), t('reports.expiry'), t('reports.status')]],
+      head: [[t('reports.code'), t('reports.equipment'), t('reports.serialNumber'), t('reports.category'), t('common.location'), t('reports.unit'), t('reports.expiry'), t('reports.status')]],
       body: tableData,
       styles: { 
-        fontSize: 9, 
+        fontSize: 8, 
         cellPadding: 3,
         minCellHeight: 10,
       },
       headStyles: { 
         fillColor: [220, 38, 38],
-        fontSize: 9,
+        fontSize: 8,
         fontStyle: 'bold',
-        cellPadding: 4,
+        cellPadding: 3,
       },
       alternateRowStyles: { fillColor: [254, 242, 242] },
       columnStyles: {
-        0: { cellWidth: 26 }, // Code
+        0: { cellWidth: 22 }, // Code
         1: { cellWidth: 'auto' }, // Equipment
-        2: { cellWidth: 32 }, // Category
-        3: { cellWidth: 38 }, // Location
-        4: { cellWidth: 26 }, // Expiry
-        5: { cellWidth: 26 }, // Status
+        2: { cellWidth: 24 }, // Serial
+        3: { cellWidth: 28 }, // Category
+        4: { cellWidth: 28 }, // Location
+        5: { cellWidth: 24 }, // Ship
+        6: { cellWidth: 24 }, // Expiry
+        7: { cellWidth: 24 }, // Status
       },
     });
 
@@ -421,12 +426,15 @@ export default function Reports() {
       const expiryDate = new Date(item.certificate_expiry!);
       const today = new Date();
       const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      const ship = item.ship_id ? ships.find(s => s.id === item.ship_id) : null;
 
       return {
         [t('reports.code')]: item.internal_code,
         [t('common.name')]: item.name,
+        [t('reports.serialNumber')]: item.serial_number || '—',
         [t('reports.category')]: item.categories?.name || '—',
         [t('common.location')]: item.location,
+        [t('reports.unit')]: ship?.name || '—',
         [t('reports.expiry')]: format(expiryDate, 'dd/MM/yyyy', { locale: dateLocale }),
         [t('reports.daysRemaining')]: daysUntilExpiry,
         [t('reports.status')]: daysUntilExpiry < 0 ? t('reports.statusExpired') : t('reports.toExpire'),
@@ -463,7 +471,6 @@ export default function Reports() {
     );
 
     const tableData = nonConformities.map(item => {
-      // Find full equipment data to check alerts
       const fullEquipment = equipment.find(e => e.id === item.equipment_id);
       const alertIndicators: string[] = [];
       
@@ -486,28 +493,34 @@ export default function Reports() {
         format(new Date(item.inspection_date), 'dd/MM/yyyy', { locale: dateLocale }),
         item.equipment?.name || '—',
         item.equipment?.internal_code || '—',
+        fullEquipment?.serial_number || '—',
+        fullEquipment?.location || '—',
         item.profiles?.full_name || '—',
         item.status === 'attention' ? t('reports.attention') : t('reports.nonCompliant'),
         alertsText,
-        item.observations?.substring(0, 35) || '—',
+        item.observations?.substring(0, 30) || '—',
+        item.recommendations?.substring(0, 30) || '—',
       ];
     });
 
     autoTable(doc, {
       startY: startY,
-      head: [[t('reports.date'), t('reports.equipment'), t('reports.code'), t('reports.inspector'), t('reports.status'), t('reports.equipmentAlerts'), t('reports.observations')]],
+      head: [[t('reports.date'), t('reports.equipment'), t('reports.code'), t('reports.serialNumber'), t('common.location'), t('reports.inspector'), t('reports.status'), t('reports.equipmentAlerts'), t('reports.observations'), t('reports.recommendations')]],
       body: tableData,
-      styles: { fontSize: 8, cellPadding: 3 },
-      headStyles: { fillColor: [234, 88, 12], fontStyle: 'bold', cellPadding: 4 },
+      styles: { fontSize: 7, cellPadding: 2.5 },
+      headStyles: { fillColor: [234, 88, 12], fontStyle: 'bold', fontSize: 7, cellPadding: 3 },
       alternateRowStyles: { fillColor: [255, 247, 237] },
       columnStyles: {
-        0: { cellWidth: 24 }, // Date
+        0: { cellWidth: 20 }, // Date
         1: { cellWidth: 'auto' }, // Equipment
-        2: { cellWidth: 22 }, // Code
-        3: { cellWidth: 32 }, // Inspector
-        4: { cellWidth: 28 }, // Status
-        5: { cellWidth: 38 }, // Alerts column
-        6: { cellWidth: 38 }, // Observations
+        2: { cellWidth: 20 }, // Code
+        3: { cellWidth: 22 }, // Serial
+        4: { cellWidth: 22 }, // Location
+        5: { cellWidth: 26 }, // Inspector
+        6: { cellWidth: 22 }, // Status
+        7: { cellWidth: 28 }, // Alerts
+        8: { cellWidth: 28 }, // Observations
+        9: { cellWidth: 28 }, // Recommendations
       },
     });
 
@@ -892,19 +905,35 @@ export default function Reports() {
         return {
           title: t('reports.previewInspections'),
           description: `${filteredInspections.length} ${t('reports.inspectionsFound')}`,
-          data: filteredInspections.map(i => ({
-            date: format(new Date(i.inspection_date), 'dd/MM/yyyy', { locale: dateLocale }),
-            equipment: i.equipment?.name || '—',
-            code: i.equipment?.internal_code || '—',
-            inspector: i.profiles?.full_name || '—',
-            status: inspectionStatusLabels[i.status] || i.status,
-          })),
+        data: filteredInspections.map(i => {
+            const eq = equipment.find(e => e.id === i.equipment_id);
+            const ship = eq?.ship_id ? ships.find(s => s.id === eq.ship_id) : null;
+            return {
+              date: format(new Date(i.inspection_date), 'dd/MM/yyyy', { locale: dateLocale }),
+              equipment: i.equipment?.name || '—',
+              code: i.equipment?.internal_code || '—',
+              serialNumber: eq?.serial_number || '—',
+              category: eq?.categories?.name || '—',
+              location: eq?.location || '—',
+              ship: ship?.name || '—',
+              inspector: i.profiles?.full_name || '—',
+              status: inspectionStatusLabels[i.status] || i.status,
+              nextInspection: i.next_inspection_date 
+                ? format(new Date(i.next_inspection_date), 'dd/MM/yyyy', { locale: dateLocale }) 
+                : '—',
+            };
+          }),
           columns: [
             { key: 'date', label: t('reports.date') },
             { key: 'equipment', label: t('reports.equipment') },
             { key: 'code', label: t('reports.code') },
+            { key: 'serialNumber', label: t('reports.serialNumber') },
+            { key: 'category', label: t('reports.category') },
+            { key: 'location', label: t('common.location') },
+            { key: 'ship', label: t('reports.unit') },
             { key: 'inspector', label: t('reports.inspector') },
             { key: 'status', label: t('reports.status') },
+            { key: 'nextInspection', label: t('reports.nextInspection') },
           ],
           onExportPDF: handleInspectionReportPDF,
           onExportExcel: handleInspectionReportExcel,
@@ -944,10 +973,14 @@ export default function Reports() {
           data: expiringEquipment.map(e => {
             const expiryDate = new Date(e.certificate_expiry!);
             const daysUntilExpiry = Math.ceil((expiryDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+            const ship = e.ship_id ? ships.find(s => s.id === e.ship_id) : null;
             return {
               code: e.internal_code,
               name: e.name,
+              serialNumber: e.serial_number || '—',
               category: e.categories?.name || '—',
+              location: e.location || '—',
+              ship: ship?.name || '—',
               expiry: format(expiryDate, 'dd/MM/yyyy', { locale: dateLocale }),
               days: daysUntilExpiry < 0 ? t('reports.expired') : `${daysUntilExpiry} ${t('reports.days')}`,
             };
@@ -955,7 +988,10 @@ export default function Reports() {
           columns: [
             { key: 'code', label: t('reports.code') },
             { key: 'name', label: t('reports.equipment') },
+            { key: 'serialNumber', label: t('reports.serialNumber') },
             { key: 'category', label: t('reports.category') },
+            { key: 'location', label: t('common.location') },
+            { key: 'ship', label: t('reports.unit') },
             { key: 'expiry', label: t('reports.expiry') },
             { key: 'days', label: t('reports.daysRemaining') },
           ],
@@ -967,7 +1003,6 @@ export default function Reports() {
           title: t('reports.previewNonConformity'),
           description: `${nonConformities.length} ${t('reports.nonConformitiesFound')}`,
           data: nonConformities.map(i => {
-            // Find full equipment data to check alerts
             const fullEquipment = equipment.find(e => e.id === i.equipment_id);
             const alertIndicators: string[] = [];
             
@@ -988,18 +1023,26 @@ export default function Reports() {
               date: format(new Date(i.inspection_date), 'dd/MM/yyyy', { locale: dateLocale }),
               equipment: i.equipment?.name || '—',
               code: i.equipment?.internal_code || '—',
+              serialNumber: fullEquipment?.serial_number || '—',
+              location: fullEquipment?.location || '—',
+              inspector: i.profiles?.full_name || '—',
               status: i.status === 'attention' ? t('reports.attention') : t('reports.nonCompliant'),
               alerts: alertIndicators.length > 0 ? alertIndicators.join(' ') : '—',
               observations: i.observations?.substring(0, 40) || '—',
+              recommendations: i.recommendations?.substring(0, 40) || '—',
             };
           }),
           columns: [
             { key: 'date', label: t('reports.date') },
             { key: 'equipment', label: t('reports.equipment') },
             { key: 'code', label: t('reports.code') },
+            { key: 'serialNumber', label: t('reports.serialNumber') },
+            { key: 'location', label: t('common.location') },
+            { key: 'inspector', label: t('reports.inspector') },
             { key: 'status', label: t('reports.status') },
             { key: 'alerts', label: t('reports.equipmentAlerts') },
             { key: 'observations', label: t('reports.observations') },
+            { key: 'recommendations', label: t('reports.recommendations') },
           ],
           onExportPDF: handleNonConformitiesReportPDF,
           onExportExcel: handleNonConformitiesReportExcel,
@@ -1053,7 +1096,10 @@ export default function Reports() {
               num: index + 1,
               code: item.equipment.internal_code,
               name: item.equipment.name,
+              serialNumber: item.equipment.serial_number || '—',
               category: item.equipment.categories?.name || '—',
+              location: item.equipment.location || '—',
+              type: item.equipment.type || '—',
               lastInspection: format(new Date(item.inspectionDate), 'dd/MM/yyyy', { locale: dateLocale }),
               inspector: item.lastInspectorName,
               status: inspectionStatusLabels[item.status] || item.status,
@@ -1064,7 +1110,10 @@ export default function Reports() {
             { key: 'num', label: '#' },
             { key: 'code', label: t('reports.code') },
             { key: 'name', label: t('reports.equipment') },
+            { key: 'serialNumber', label: t('reports.serialNumber') },
             { key: 'category', label: t('reports.category') },
+            { key: 'location', label: t('common.location') },
+            { key: 'type', label: t('reports.type') },
             { key: 'lastInspection', label: t('reports.lastInspection') },
             { key: 'inspector', label: t('reports.inspector') },
             { key: 'status', label: t('reports.status') },
