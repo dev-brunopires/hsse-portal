@@ -110,6 +110,9 @@ export function exportInspectionsToExcel(
       [t('exportInspections.inspectionDate')]: format(new Date(item.inspection_date), 'dd/MM/yyyy', { locale: dateLocale }),
       [t('exportInspections.equipment')]: item.equipment?.name || '—',
       [t('exportInspections.code')]: item.equipment?.internal_code || '—',
+      [t('reports.serialNumber')]: (item.equipment as any)?.serial_number || '—',
+      [t('reports.category')]: (item.equipment as any)?.categories?.name || '—',
+      [t('common.location')]: (item.equipment as any)?.location || '—',
       [t('exportInspections.inspector')]: item.profiles?.full_name || '—',
       [t('exportInspections.inspectorEmail')]: item.profiles?.email || '—',
       [t('exportInspections.status')]: statusLabels[item.status] || item.status,
@@ -178,15 +181,17 @@ export async function exportInspectionsToPDF(
   const tableData = inspections.map(item => {
     const alertIndicators = getEquipmentAlertIndicators(item, allEquipment);
     const alertsText = alertIndicators.length > 0 ? alertIndicators.join(' ') : '—';
+    const fullEquip = allEquipment?.find(e => e.id === item.equipment_id) as any;
     
     return [
       format(new Date(item.inspection_date), 'dd/MM/yyyy', { locale: dateLocale }),
       item.equipment?.name || '—',
       item.equipment?.internal_code || '—',
+      (item.equipment as any)?.serial_number || fullEquip?.serial_number || '—',
+      (item.equipment as any)?.categories?.name || fullEquip?.categories?.name || '—',
+      (item.equipment as any)?.location || fullEquip?.location || '—',
       item.profiles?.full_name || '—',
       statusLabels[item.status] || item.status,
-      alertsText,
-      item.observations?.substring(0, 35) || '—',
       item.next_inspection_date 
         ? format(new Date(item.next_inspection_date), 'dd/MM/yyyy', { locale: dateLocale }) 
         : '—',
@@ -199,34 +204,36 @@ export async function exportInspectionsToPDF(
       t('exportInspections.date'),
       t('exportInspections.equipment'),
       t('exportInspections.code'),
+      t('reports.serialNumber'),
+      t('reports.category'),
+      t('common.location'),
       t('exportInspections.inspector'),
       t('exportInspections.status'),
-      t('reports.equipmentAlerts'),
-      t('exportInspections.observations'),
       t('exportInspections.next')
     ]],
     body: tableData,
     styles: { 
-      fontSize: 9, 
-      cellPadding: 4,
+      fontSize: 8, 
+      cellPadding: 3,
       minCellHeight: 10,
     },
     headStyles: { 
       fillColor: SBM_BLUE,
-      fontSize: 9,
+      fontSize: 8,
       fontStyle: 'bold',
-      cellPadding: 4,
+      cellPadding: 3,
     },
     alternateRowStyles: { fillColor: [248, 250, 252] },
     columnStyles: {
-      0: { cellWidth: 24 }, // Date
+      0: { cellWidth: 22 }, // Date
       1: { cellWidth: 'auto' }, // Equipment
-      2: { cellWidth: 22 }, // Code
-      3: { cellWidth: 32 }, // Inspector
-      4: { cellWidth: 24 }, // Status
-      5: { cellWidth: 35 }, // Alerts column
-      6: { cellWidth: 38 }, // Observations
-      7: { cellWidth: 24 }, // Next
+      2: { cellWidth: 20 }, // Code
+      3: { cellWidth: 24 }, // Serial
+      4: { cellWidth: 24 }, // Category
+      5: { cellWidth: 26 }, // Location
+      6: { cellWidth: 28 }, // Inspector
+      7: { cellWidth: 22 }, // Status
+      8: { cellWidth: 22 }, // Next
     }
   });
 

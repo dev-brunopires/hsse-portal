@@ -850,7 +850,10 @@
     "certificateExpiringSoon": "Certificado a Vencer",
     "inspectionOverdue": "Inspeção Atrasada",
     "expiredCertificates": "Certificados Vencidos",
-    "rejected": "Reprovados"
+    "rejected": "Reprovados",
+    "serialNumber": "Nº Série",
+    "unit": "Unidade",
+    "recommendations": "Recomendações"
   },
   "importEquipment": {
     "title": "Importar Equipamentos",
