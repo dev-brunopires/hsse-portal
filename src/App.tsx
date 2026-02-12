@@ -34,6 +34,7 @@ const PlatformAdmin = lazyWithRetry(() => import("./pages/PlatformAdmin"));
 const OfflineData = lazyWithRetry(() => import("./pages/OfflineData"));
 const Diagnostics = lazyWithRetry(() => import("./pages/Diagnostics"));
 const HealthCheck = lazyWithRetry(() => import("./pages/HealthCheck"));
+const Supervisor = lazyWithRetry(() => import("./pages/Supervisor"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -235,6 +236,16 @@ function App() {
                     <ProtectedRoute>
                       <AppLayout>
                         <HealthCheck />
+                      </AppLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/supervisor"
+                  element={
+                    <ProtectedRoute>
+                      <AppLayout>
+                        <Supervisor />
                       </AppLayout>
                     </ProtectedRoute>
                   }

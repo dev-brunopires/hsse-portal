@@ -111,6 +111,7 @@ export function AppSidebar() {
           <NavItem to="/alerts" icon={<Bell size={20} />} label={t('navigation.alerts')} collapsed={collapsed} />
         </div>
         <NavItem to="/categories" icon={<FolderOpen size={20} />} label={t('navigation.categories')} collapsed={collapsed} />
+        <NavItem to="/supervisor" icon={<Users size={20} />} label={t('navigation.supervisor')} collapsed={collapsed} />
       </nav>
 
       {/* Bottom Section - Admin only items */}

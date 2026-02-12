@@ -30,12 +30,15 @@ import { InspectionHeatmapCard } from '@/components/dashboard/InspectionHeatmapC
 import { MaintenanceTrendChart } from '@/components/dashboard/MaintenanceTrendChart';
 import { CriticalEquipmentCard } from '@/components/dashboard/CriticalEquipmentCard';
 import { ActivityComparisonChart } from '@/components/dashboard/ActivityComparisonChart';
+import { ComplianceTrendChart } from '@/components/dashboard/ComplianceTrendChart';
+import { ShipComparisonChart } from '@/components/dashboard/ShipComparisonChart';
+import { NonConformityResolutionCard } from '@/components/dashboard/NonConformityResolutionCard';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useShips } from '@/hooks/useShips';
 import { useCategories } from '@/hooks/useCategories';
 import { useRoutePrefetch } from '@/hooks/useRoutePrefetch';
 
-import { CardSkeleton, ChartSkeleton, ListSkeleton } from '@/components/ui/table-skeleton';
+import { DashboardSkeleton } from '@/components/ui/SmartSkeletons';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { exportDashboardPDF } from '@/utils/exportDashboardPDF';
@@ -95,39 +98,7 @@ export default function Dashboard() {
   };
 
   if (isLoading) {
-    return (
-      <div className="space-y-6 animate-fade-in">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">{t('dashboard.title')}</h1>
-            <p className="text-muted-foreground">{t('dashboard.subtitle')}</p>
-          </div>
-        </div>
-        
-        {/* KPI Cards Skeleton */}
-        <CardSkeleton count={4} />
-        
-        {/* Compliance Skeleton */}
-        <div className="bg-card rounded-xl border border-border p-6">
-          <div className="flex items-center justify-between">
-            <div className="space-y-2">
-              <div className="h-5 w-40 bg-muted rounded animate-pulse" />
-              <div className="h-4 w-60 bg-muted rounded animate-pulse" />
-            </div>
-            <div className="h-24 w-24 bg-muted rounded-full animate-pulse" />
-          </div>
-        </div>
-        
-        {/* Charts Grid Skeleton */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <ChartSkeleton />
-            <ChartSkeleton />
-          </div>
-          <ListSkeleton rows={6} />
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   if (error || !stats) {
@@ -303,6 +274,15 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <EquipmentComplianceChart />
         <ActivityComparisonChart />
+      </div>
+
+      {/* Compliance Trend */}
+      <ComplianceTrendChart />
+
+      {/* Ship Comparison + NC Resolution */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ShipComparisonChart />
+        <NonConformityResolutionCard />
       </div>
 
       {/* Expiring Certificates - Equipment + Certificates Module */}

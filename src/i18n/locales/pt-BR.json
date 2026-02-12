@@ -144,7 +144,8 @@
     "collapse": "Recolher",
     "expand": "Expandir",
     "healthCheck": "Health Check",
-    "platformAdmin": "Admin Plataforma"
+    "platformAdmin": "Admin Plataforma",
+    "supervisor": "Supervisor"
   },
   "healthCheck": {
     "title": "Health Check do Sistema",
@@ -336,7 +337,40 @@
     "statusMaintenance": "Em Manutenção",
     "statusExpired": "Vencido",
     "statusRejected": "Reprovado",
-    "statusInactive": "Inativo"
+    "statusInactive": "Inativo",
+    "complianceTrend": "Tendência de Conformidade",
+    "complianceTrendDesc": "Evolução da taxa de conformidade nos últimos 6 meses",
+    "equipmentCompliance": "Conformidade Equipamentos",
+    "inspectionCompliance": "Conformidade Inspeções",
+    "shipComparison": "Comparativo entre Unidades",
+    "shipComparisonDesc": "Taxa de conformidade por embarcação",
+    "compliance": "Conformidade",
+    "ncResolution": "Resolução de Não Conformidades",
+    "ncResolutionDesc": "Taxa de resolução e tempo médio nos últimos 6 meses",
+    "resolutionRate": "Taxa de Resolução",
+    "totalNC": "Total NC",
+    "resolved": "Resolvidas",
+    "pendingNC": "Pendentes",
+    "avgDays": "Dias (média)"
+  },
+  "supervisor": {
+    "title": "Painel do Supervisor",
+    "subtitle": "Visão de equipe, produtividade e pendências",
+    "inspections30d": "Inspeções (30 dias)",
+    "overdueInspections": "Inspeções Atrasadas",
+    "pendingMaintenance": "Manutenções Pendentes",
+    "criticalItems": "Itens Críticos",
+    "teamProductivity": "Produtividade da Equipe",
+    "teamProductivityDesc": "Inspeções realizadas por técnico nos últimos 30 dias",
+    "compliant": "Conforme",
+    "nonCompliant": "Não Conforme",
+    "inspectorRanking": "Ranking de Inspetores",
+    "inspectorRankingDesc": "Últimos 3 meses",
+    "approvalRate": "Taxa de Aprovação",
+    "maintenanceQueue": "Fila de Manutenções Prioritárias",
+    "maintenanceQueueDesc": "Manutenções ordenadas por prioridade",
+    "overdue": "Atrasada",
+    "noUrgent": "Nenhuma manutenção urgente pendente"
   },
   "equipment": {
     "title": "Equipamentos",
