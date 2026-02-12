@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
   Package, 
@@ -37,6 +37,7 @@ import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useShips } from '@/hooks/useShips';
 import { useCategories } from '@/hooks/useCategories';
 import { useRoutePrefetch } from '@/hooks/useRoutePrefetch';
+import { useShipFilter } from '@/contexts/ShipFilterContext';
 
 import { DashboardSkeleton } from '@/components/ui/SmartSkeletons';
 import { Button } from '@/components/ui/button';
@@ -51,6 +52,7 @@ export default function Dashboard() {
   const { t, i18n } = useTranslation();
   const dateLocale = i18n.language === 'en' ? enUS : ptBR;
   const queryClient = useQueryClient();
+  const { selectedShipId, setSelectedShipId, isFilterEnabled } = useShipFilter();
   const { data: stats, isLoading, error, refetch, isFetching } = useDashboardStats();
   const { data: ships = [] } = useShips();
   const { data: categories = [] } = useCategories();
@@ -58,12 +60,25 @@ export default function Dashboard() {
   
   // Prefetch data for common routes
   useRoutePrefetch();
-  const [filters, setFilters] = useState<DashboardFiltersState>({
-    shipId: 'all',
+
+  // Sync dashboard filters with global ship filter
+  const [filters, setFiltersState] = useState<DashboardFiltersState>({
+    shipId: selectedShipId || 'all',
     categoryId: 'all',
     startDate: undefined,
     endDate: undefined,
   });
+
+  const setFilters = useCallback((newFilters: DashboardFiltersState) => {
+    setFiltersState(newFilters);
+    // Sync ship filter with global context so data actually re-fetches
+    if (isFilterEnabled) {
+      const newShipId = newFilters.shipId === 'all' ? null : newFilters.shipId;
+      if (newShipId !== selectedShipId) {
+        setSelectedShipId(newShipId);
+      }
+    }
+  }, [isFilterEnabled, selectedShipId, setSelectedShipId]);
 
   // Get filter names for export
   const selectedShipName = useMemo(() => {
