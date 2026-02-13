@@ -2089,7 +2089,9 @@
     "manualInputDescription": "Enter the short code (6 digits) or equipment ID to find it.",
     "manualInputPlaceholder": "E.g.: 123456 or UUID",
     "searchEquipment": "Search",
-    "invalidManualCode": "Invalid code. Enter a 6-digit code or a valid UUID."
+    "invalidManualCode": "Invalid code. Enter a 6-digit code or a valid UUID.",
+    "flashOn": "Turn on flash",
+    "flashOff": "Turn off flash"
   },
   "statusBadge": {
     "autoRejected": "Automatically rejected due to expiration"

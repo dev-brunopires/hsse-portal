@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Camera, CameraOff, Loader2, QrCode, CheckCircle2, AlertCircle, Scan, SwitchCamera, Keyboard, Search } from 'lucide-react';
+import { Camera, CameraOff, Loader2, QrCode, CheckCircle2, AlertCircle, Scan, SwitchCamera, Keyboard, Search, Flashlight, FlashlightOff } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
@@ -83,6 +83,8 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
   const [permissionChecked, setPermissionChecked] = useState(false);
   const [showManualInput, setShowManualInput] = useState(false);
   const [manualCode, setManualCode] = useState('');
+  const [torchOn, setTorchOn] = useState(false);
+  const [torchSupported, setTorchSupported] = useState(false);
 
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const isMountedRef = useRef(true);
@@ -246,10 +248,23 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       markCameraPermissionGranted();
       setPermissionChecked(true);
 
+      // Check torch/flash support
+      try {
+        const videoElement = document.querySelector(`#${containerId} video`) as HTMLVideoElement;
+        if (videoElement && videoElement.srcObject) {
+          const track = (videoElement.srcObject as MediaStream).getVideoTracks()[0];
+          const capabilities = track.getCapabilities?.() as any;
+          if (capabilities?.torch) {
+            setTorchSupported(true);
+          }
+        }
+      } catch {
+        // Torch not supported
+      }
+
       if (isMountedRef.current) {
         setScannerState('scanning');
         setIsSwitchingCamera(false);
-        // Removed progress interval - using CSS animation instead
       }
     } catch (err: unknown) {
       if (isMountedRef.current) {
@@ -306,6 +321,8 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       setContainerId(`qr-reader-${Date.now()}`);
       setShowManualInput(false);
       setManualCode('');
+      setTorchOn(false);
+      setTorchSupported(false);
       // Reset debounce refs when dialog opens
       lastScannedRef.current = null;
       lastScanTimeRef.current = 0;
@@ -412,6 +429,8 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
     setPermissionChecked(true);
     setShowManualInput(false);
     setManualCode('');
+    setTorchOn(false);
+    setTorchSupported(false);
 
     await cleanupScanner();
     setContainerId(`qr-reader-${Date.now()}`);
@@ -544,9 +563,9 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
               className="absolute inset-0 [&_#qr-shaded-region]:hidden [&>div>div]:border-none"
             />
 
-            {/* Camera switch button - only show when scanning */}
+            {/* Camera controls - only show when scanning */}
             {scannerState === 'scanning' && !isSwitchingCamera && (
-              <div className="absolute top-3 right-3 z-20">
+              <div className="absolute top-3 right-3 z-20 flex flex-col gap-2">
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -560,6 +579,50 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                   </TooltipTrigger>
                   <TooltipContent side="left">
                     <p>{t('qrScanner.switchToCamera')} {facingMode === 'environment' ? t('qrScanner.front') : t('qrScanner.back')}</p>
+                  </TooltipContent>
+                </Tooltip>
+                {torchSupported && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        className={cn(
+                          "h-10 w-10 rounded-full backdrop-blur-sm shadow-lg border border-border/50",
+                          torchOn ? "bg-yellow-400/90 hover:bg-yellow-400 text-black" : "bg-background/80 hover:bg-background/90"
+                        )}
+                        onClick={async () => {
+                          try {
+                            const videoElement = document.querySelector(`#${containerId} video`) as HTMLVideoElement;
+                            if (videoElement && videoElement.srcObject) {
+                              const track = (videoElement.srcObject as MediaStream).getVideoTracks()[0];
+                              await track.applyConstraints({ advanced: [{ torch: !torchOn } as any] });
+                              setTorchOn(!torchOn);
+                            }
+                          } catch {}
+                        }}
+                      >
+                        {torchOn ? <FlashlightOff className="h-5 w-5" /> : <Flashlight className="h-5 w-5" />}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="left">
+                      <p>{torchOn ? t('qrScanner.flashOff') : t('qrScanner.flashOn')}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="h-10 w-10 rounded-full bg-background/80 backdrop-blur-sm shadow-lg hover:bg-background/90 border border-border/50"
+                      onClick={() => setShowManualInput(true)}
+                    >
+                      <Keyboard className="h-5 w-5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">
+                    <p>{t('qrScanner.enterManually')}</p>
                   </TooltipContent>
                 </Tooltip>
               </div>
