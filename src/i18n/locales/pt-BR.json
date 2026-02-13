@@ -3246,5 +3246,19 @@
     "clearBuffer": "Limpar",
     "noEvents": "Nenhum evento registrado",
     "debugInfo": "Informações de Debug"
+  },
+  "equipmentByCategoryReport": {
+    "title": "Relatório de Equipamentos por Categoria",
+    "description": "Lista completa de equipamentos agrupados por categoria com última inspeção",
+    "preview": "Pré-visualização: Equipamentos por Categoria",
+    "fileName": "equipamentos-por-categoria",
+    "sheetName": "Equipamentos",
+    "exportedPDF": "Relatório de equipamentos por categoria exportado em PDF",
+    "exportedExcel": "Relatório de equipamentos por categoria exportado em Excel",
+    "shipName": "Embarcação",
+    "model": "Modelo",
+    "manufacturer": "Fabricante",
+    "capacity": "Capacidade",
+    "expiryDate": "Validade"
   }
 }

@@ -3245,5 +3245,19 @@
     "clearBuffer": "Clear",
     "noEvents": "No events recorded",
     "debugInfo": "Debug Info"
+  },
+  "equipmentByCategoryReport": {
+    "title": "Equipment by Category Report",
+    "description": "Complete equipment list grouped by category with last inspection",
+    "preview": "Preview: Equipment by Category",
+    "fileName": "equipment-by-category",
+    "sheetName": "Equipment",
+    "exportedPDF": "Equipment by category report exported to PDF",
+    "exportedExcel": "Equipment by category report exported to Excel",
+    "shipName": "Ship",
+    "model": "Model",
+    "manufacturer": "Manufacturer",
+    "capacity": "Capacity",
+    "expiryDate": "Expiry Date"
   }
 }

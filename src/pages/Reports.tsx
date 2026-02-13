@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FileText, Download, Calendar, Filter, AlertTriangle, Loader2, BarChart3, Wrench, ClipboardCheck, Eye, FileSpreadsheet, X, RefreshCw, ShieldCheck } from 'lucide-react';
+import { FileText, Download, Calendar, Filter, AlertTriangle, Loader2, BarChart3, Wrench, ClipboardCheck, Eye, FileSpreadsheet, X, RefreshCw, ShieldCheck, ListChecks } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,6 +29,7 @@ import { exportCategoryInspectionPDF } from '@/utils/exportCategoryInspection';
 import { exportMonthlyConsolidatedPDF, exportMonthlyConsolidatedExcel } from '@/utils/exportMonthlyConsolidated';
 import { exportComplianceReportPDF, exportComplianceReportExcel } from '@/utils/exportComplianceReport';
 import { addPDFHeader, addPDFFooter, addSignatureSection, preloadLogo } from '@/utils/pdfStyles';
+import { exportEquipmentByCategoryPDF, exportEquipmentByCategoryExcel } from '@/utils/exportEquipmentByCategory';
 import { ReportPreviewDialog } from '@/components/reports/ReportPreviewDialog';
 import { MonthQuickFilter } from '@/components/reports/MonthQuickFilter';
 import { toast } from 'sonner';
@@ -41,7 +42,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
-type ReportType = 'inspections' | 'maintenance' | 'category' | 'expiry' | 'non-conformities' | 'category-inspection' | 'monthly-consolidated' | 'compliance' | null;
+type ReportType = 'inspections' | 'maintenance' | 'category' | 'expiry' | 'non-conformities' | 'category-inspection' | 'monthly-consolidated' | 'compliance' | 'equipment-by-category' | null;
 
 export default function Reports() {
   const { t, i18n } = useTranslation();
@@ -898,7 +899,55 @@ export default function Reports() {
     toast.success(t('reports.complianceExportedExcel'));
   };
 
-  // Preview data configurations
+  // Equipment by Category Report - build inspection map
+  const equipmentInspectionMap = useMemo(() => {
+    const map = new Map<string, { equipmentId: string; lastInspectionDate: string | null; lastInspectorName: string; lastInspectionStatus: string }>();
+    
+    for (const eq of filteredEquipment) {
+      const eqInspections = inspections
+        .filter(i => i.equipment_id === eq.id)
+        .sort((a, b) => new Date(b.inspection_date).getTime() - new Date(a.inspection_date).getTime());
+      
+      const lastInsp = eqInspections[0];
+      map.set(eq.internal_code, {
+        equipmentId: eq.id,
+        lastInspectionDate: lastInsp?.inspection_date || null,
+        lastInspectorName: lastInsp?.profiles?.full_name || '—',
+        lastInspectionStatus: lastInsp?.status || '',
+      });
+    }
+    return map;
+  }, [filteredEquipment, inspections]);
+
+  const handleEquipmentByCategoryPDF = async (preview = false) => {
+    if (filteredEquipment.length === 0) {
+      toast.error(t('reports.noEquipmentFound'));
+      return;
+    }
+    await exportEquipmentByCategoryPDF(
+      filteredEquipment,
+      equipmentInspectionMap,
+      categories,
+      branding,
+      {
+        preview,
+        inspector: currentUserProfile ? { name: currentUserProfile.full_name, position: currentUserProfile.position || undefined } : undefined,
+        signature,
+      }
+    );
+    toast.success(preview ? t('common.pdfPreviewOpened') : t('equipmentByCategoryReport.exportedPDF'));
+  };
+
+  const handleEquipmentByCategoryExcel = () => {
+    if (filteredEquipment.length === 0) {
+      toast.error(t('reports.noEquipmentFound'));
+      return;
+    }
+    exportEquipmentByCategoryExcel(filteredEquipment, equipmentInspectionMap, categories);
+    toast.success(t('equipmentByCategoryReport.exportedExcel'));
+  };
+
+
   const getPreviewData = () => {
     switch (previewReport) {
       case 'inspections':
@@ -1223,6 +1272,56 @@ export default function Reports() {
             { label: t('reports.expiredCertificates'), value: expiredCertsCount, color: 'bg-amber-100 text-amber-700' },
           ],
         };
+      case 'equipment-by-category': {
+        const sortedForPreview = [...filteredEquipment].sort((a, b) => {
+          const order: Record<string, number> = { active: 0, maintenance: 1, expired: 2, rejected: 3, inactive: 4 };
+          const oa = order[a.status] ?? 3;
+          const ob = order[b.status] ?? 3;
+          if (oa !== ob) return oa - ob;
+          return a.name.localeCompare(b.name);
+        });
+        
+        return {
+          title: t('equipmentByCategoryReport.preview'),
+          description: `${filteredEquipment.length} ${t('reports.equipmentPlural')}`,
+          data: sortedForPreview.map(eq => {
+            const insp = equipmentInspectionMap.get(eq.internal_code);
+            return {
+              code: eq.internal_code,
+              name: eq.name,
+              category: eq.categories?.name || '—',
+              serialNumber: eq.serial_number || '—',
+              type: eq.type || '—',
+              location: eq.location,
+              status: statusLabels[eq.status] || eq.status,
+              certExpiry: eq.certificate_expiry ? format(new Date(eq.certificate_expiry), 'dd/MM/yyyy', { locale: dateLocale }) : '—',
+              lastInspection: insp?.lastInspectionDate ? format(new Date(insp.lastInspectionDate), 'dd/MM/yyyy', { locale: dateLocale }) : '—',
+              inspector: insp?.lastInspectorName || '—',
+              inspStatus: insp?.lastInspectionStatus ? (inspectionStatusLabels[insp.lastInspectionStatus] || insp.lastInspectionStatus) : '—',
+            };
+          }),
+          columns: [
+            { key: 'code', label: t('reports.code') },
+            { key: 'name', label: t('reports.equipment') },
+            { key: 'category', label: t('reports.category') },
+            { key: 'serialNumber', label: t('reports.serialNumber') },
+            { key: 'type', label: t('reports.type') },
+            { key: 'location', label: t('common.location') },
+            { key: 'status', label: t('reports.status') },
+            { key: 'certExpiry', label: t('reports.certExpiry') },
+            { key: 'lastInspection', label: t('reports.lastInspection') },
+            { key: 'inspector', label: t('reports.inspector') },
+            { key: 'inspStatus', label: t('reports.inspStatus') },
+          ],
+          onExportPDF: handleEquipmentByCategoryPDF,
+          onExportExcel: handleEquipmentByCategoryExcel,
+          summary: [
+            { label: t('reports.active'), value: filteredEquipment.filter(e => e.status === 'active').length, color: 'bg-emerald-100 text-emerald-700' },
+            { label: t('reports.statusMaintenance'), value: filteredEquipment.filter(e => e.status === 'maintenance').length, color: 'bg-amber-100 text-amber-700' },
+            { label: t('reports.statusInactive'), value: filteredEquipment.filter(e => e.status === 'inactive').length, color: 'bg-slate-100 text-slate-700' },
+          ],
+        };
+      }
       default:
         return null;
     }
@@ -1308,6 +1407,15 @@ export default function Reports() {
       count: filteredEquipment.length,
       iconColor: 'text-white',
       bgColor: 'bg-cyan-600',
+    },
+    {
+      id: 'equipment-by-category' as ReportType,
+      title: t('equipmentByCategoryReport.title'),
+      description: t('equipmentByCategoryReport.description'),
+      icon: ListChecks,
+      count: filteredEquipment.length,
+      iconColor: 'text-white',
+      bgColor: 'bg-sky-600',
     },
   ];
 
