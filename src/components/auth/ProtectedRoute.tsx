@@ -1,7 +1,10 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2 } from 'lucide-react';
+import { Loader2, LogIn, MonitorSmartphone } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { SystemLogo } from '@/components/ui/SystemLogo';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -10,7 +13,7 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
   const { t } = useTranslation();
-  const { user, role, loading, isPlatformOwner } = useAuth();
+  const { user, role, loading, isPlatformOwner, sessionExpired } = useAuth();
   const location = useLocation();
 
   // Wait for auth to load - platform owners may not have a role
@@ -21,6 +24,41 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p className="text-muted-foreground">{t('common.loading')}</p>
         </div>
+      </div>
+    );
+  }
+
+  // Show friendly session-expired screen instead of white page
+  if (!user && sessionExpired) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="pt-8 pb-8 text-center space-y-6">
+            <div className="flex justify-center">
+              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                <MonitorSmartphone className="h-8 w-8 text-primary" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-xl font-semibold text-foreground">
+                {t('auth.sessionExpiredTitle', 'Sessão encerrada')}
+              </h2>
+              <p className="text-muted-foreground text-sm">
+                {t('auth.sessionExpiredMessage', 'Sua sessão foi encerrada, possivelmente porque você acessou sua conta em outro navegador ou dispositivo. Por segurança, faça login novamente.')}
+              </p>
+            </div>
+            <div className="flex justify-center pt-2">
+              <SystemLogo size="sm" />
+            </div>
+            <Button 
+              onClick={() => window.location.href = '/auth'} 
+              className="w-full gap-2"
+            >
+              <LogIn className="h-4 w-4" />
+              {t('auth.loginAgain', 'Entrar novamente')}
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -36,13 +74,11 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
 
   // Check role if required
   if (requiredRole === 'admin') {
-    // Only admin and admin_master can access admin-required routes
     const isAdminUser = role === 'admin' || role === 'admin_master';
     if (!isAdminUser) {
       return <Navigate to="/" replace />;
     }
   } else if (requiredRole) {
-    // For other role requirements, use hierarchy
     const roleHierarchy: Record<string, number> = {
       admin_master: 5,
       admin: 4,

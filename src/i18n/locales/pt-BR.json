@@ -123,7 +123,10 @@
     "fullName": "Nome completo",
     "nationality": "Nacionalidade",
     "brazilian": "Brasileiro",
-    "foreign": "Estrangeiro"
+    "foreign": "Estrangeiro",
+    "sessionExpiredTitle": "Sessão encerrada",
+    "sessionExpiredMessage": "Sua sessão foi encerrada, possivelmente porque você acessou sua conta em outro navegador ou dispositivo. Por segurança, faça login novamente.",
+    "loginAgain": "Entrar novamente"
   },
   "navigation": {
     "appTitle": "Gestão de Equipamentos",
