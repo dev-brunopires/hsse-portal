@@ -122,8 +122,8 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
     const baseUrl = window.location.origin;
 
     const logoHtml = logoBase64
-      ? `<img src="${logoBase64}" style="height: 10px; width: auto;" alt="${organizationName}" />`
-      : `<span style="color: white; font-weight: bold; font-size: 8px;">${organizationName}</span>`;
+      ? `<img src="${logoBase64}" style="height: 20px; width: auto;" alt="${organizationName}" />`
+      : `<span style="color: white; font-weight: bold; font-size: 14px;">${organizationName}</span>`;
 
     // Get SVGs for each equipment
     const qrHtmls = selectedEquipment.map(eq => {
@@ -134,7 +134,7 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
           <div class="content">
             <div class="qr-container">
               <div class="qr-code">
-                <svg viewBox="0 0 256 256" style="width: 28mm; height: 28mm;">
+                <svg viewBox="0 0 256 256" style="width: 56mm; height: 56mm;">
                   <!-- QR will be replaced -->
                 </svg>
               </div>
@@ -185,36 +185,36 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
             }
             .grid {
               display: grid;
-              grid-template-columns: repeat(3, 1fr);
-              gap: 5mm;
+              grid-template-columns: repeat(2, 1fr);
+              gap: 8mm;
             }
             .label {
               display: flex;
               flex-direction: column;
               border: 1.5px dashed ${BRAND_COLOR};
-              border-radius: 3px;
+              border-radius: 4px;
               overflow: hidden;
               page-break-inside: avoid;
-              width: 60mm;
-              height: 45mm;
+              width: 90mm;
+              height: 68mm;
             }
             .header {
               background: ${BRAND_COLOR};
-              padding: 2px 6px;
+              padding: 4px 10px;
               display: flex;
               align-items: center;
               justify-content: center;
-              min-height: 14px;
+              min-height: 24px;
             }
             .header img {
-              height: 10px;
+              height: 18px;
               width: auto;
             }
             .content {
               display: flex;
               align-items: center;
-              gap: 3px;
-              padding: 2px 3px;
+              gap: 6px;
+              padding: 4px 6px;
               flex: 1;
             }
             .qr-container {
@@ -222,8 +222,8 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
               position: relative;
             }
             .qr-container svg {
-              width: 28mm !important;
-              height: 28mm !important;
+              width: 42mm !important;
+              height: 42mm !important;
               display: block;
             }
             .short-code-overlay {
@@ -232,11 +232,11 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
               left: 50%;
               transform: translate(-50%, -50%);
               background: white;
-              padding: 1px 3px;
-              border-radius: 2px;
+              padding: 2px 6px;
+              border-radius: 3px;
             }
             .short-code {
-              font-size: 6pt;
+              font-size: 10pt;
               font-weight: bold;
               font-family: monospace;
             }
@@ -248,25 +248,25 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
               overflow: hidden;
             }
             .code {
-              font-size: 7pt;
+              font-size: 11pt;
               font-weight: bold;
-              margin-bottom: 1px;
+              margin-bottom: 2px;
               white-space: nowrap;
               overflow: hidden;
               text-overflow: ellipsis;
               color: #333;
             }
             .name {
-              font-size: 5pt;
+              font-size: 8pt;
               color: #333;
-              margin-bottom: 1px;
+              margin-bottom: 2px;
               display: -webkit-box;
               -webkit-line-clamp: 2;
               -webkit-box-orient: vertical;
               overflow: hidden;
             }
             .location {
-              font-size: 4pt;
+              font-size: 7pt;
               color: #666;
               white-space: nowrap;
               overflow: hidden;
@@ -274,9 +274,9 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
             }
             .footer {
               background: #f0f0f0;
-              padding: 1.5px;
+              padding: 3px;
               text-align: center;
-              font-size: 4pt;
+              font-size: 7pt;
               color: ${BRAND_COLOR};
               font-weight: bold;
             }
@@ -373,7 +373,7 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
                   >
                     <QRCodeSVG
                       value={`${window.location.origin}/inspections?scan=${eq.id}`}
-                      size={200}
+                      size={400}
                       level="H"
                     />
                   </div>
