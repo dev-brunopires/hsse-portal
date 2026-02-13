@@ -545,30 +545,88 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Scanner container */}
-          <div
-            key={containerId}
-            className={cn(
-              "relative w-full rounded-xl overflow-hidden transition-all duration-300 border-2",
-              "aspect-[4/3] sm:aspect-square",
-              scannerState === 'scanning' && "border-primary/50 shadow-lg shadow-primary/10",
-              scannerState === 'success' && "border-green-500/50 shadow-lg shadow-green-500/20",
-              scannerState === 'error' && "border-destructive/50",
-              scannerState === 'permission-denied' && "border-amber-500/50",
-              (scannerState === 'initializing') && "border-muted bg-muted"
-            )}
-          >
-            {/* Camera feed container - hide library's built-in qrbox */}
-            <div 
-              id={containerId} 
-              className="absolute inset-0 [&_#qr-shaded-region]:hidden [&>div>div]:border-none"
-            />
+          {/* Manual input mode - replaces scanner entirely */}
+          {showManualInput ? (
+            <div className="w-full rounded-xl border-2 border-primary/30 bg-background p-6 flex flex-col items-center">
+              <div className="rounded-full p-3 mb-3 bg-primary/10">
+                <Keyboard className="h-10 w-10 text-primary" />
+              </div>
+              <p className="text-base font-semibold mb-1 text-foreground">
+                {t('qrScanner.manualInputTitle')}
+              </p>
+              <p className="text-xs text-center text-muted-foreground max-w-xs mb-4">
+                {t('qrScanner.manualInputDescription')}
+              </p>
+              <div className="w-full max-w-xs space-y-3">
+                <Input
+                  placeholder={t('qrScanner.manualInputPlaceholder')}
+                  value={manualCode}
+                  onChange={(e) => {
+                    setManualCode(e.target.value);
+                    setErrorMessage(null);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleManualSubmit();
+                    }
+                  }}
+                  className="text-center font-mono text-lg tracking-wider"
+                  autoFocus
+                />
+                {errorMessage && (
+                  <p className="text-xs text-destructive text-center">{errorMessage}</p>
+                )}
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => {
+                      setShowManualInput(false);
+                      setManualCode('');
+                      setErrorMessage(null);
+                      handleRetry();
+                    }}
+                  >
+                    <Camera className="h-4 w-4 mr-2" />
+                    {t('qrScanner.retry')}
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="flex-1"
+                    onClick={handleManualSubmit}
+                    disabled={!manualCode.trim()}
+                  >
+                    <Search className="h-4 w-4 mr-2" />
+                    {t('qrScanner.searchEquipment')}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Scanner container */}
+              <div
+                key={containerId}
+                className={cn(
+                  "relative w-full rounded-xl overflow-hidden transition-all duration-300 border-2",
+                  "aspect-[4/3] sm:aspect-square",
+                  scannerState === 'scanning' && "border-primary/50 shadow-lg shadow-primary/10",
+                  scannerState === 'success' && "border-green-500/50 shadow-lg shadow-green-500/20",
+                  scannerState === 'error' && "border-destructive/50",
+                  scannerState === 'permission-denied' && "border-amber-500/50",
+                  (scannerState === 'initializing') && "border-muted bg-muted"
+                )}
+              >
+                {/* Camera feed container */}
+                <div 
+                  id={containerId} 
+                  className="absolute inset-0 [&_#qr-shaded-region]:hidden [&>div>div]:border-none"
+                />
 
-            {/* Camera controls - only show when scanning */}
-            {scannerState === 'scanning' && !isSwitchingCamera && (
-              <div className="absolute top-3 right-3 z-20 flex flex-col gap-2">
-                <Tooltip>
-                  <TooltipTrigger asChild>
+                {/* Camera controls - top right */}
+                {scannerState === 'scanning' && !isSwitchingCamera && (
+                  <div className="absolute top-3 right-3 z-20 flex flex-col gap-2">
                     <Button
                       variant="secondary"
                       size="icon"
@@ -577,14 +635,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                     >
                       <SwitchCamera className="h-5 w-5" />
                     </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="left">
-                    <p>{t('qrScanner.switchToCamera')} {facingMode === 'environment' ? t('qrScanner.front') : t('qrScanner.back')}</p>
-                  </TooltipContent>
-                </Tooltip>
-                {torchSupported && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
+                    {torchSupported && (
                       <Button
                         variant="secondary"
                         size="icon"
@@ -605,216 +656,144 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                       >
                         {torchOn ? <FlashlightOff className="h-5 w-5" /> : <Flashlight className="h-5 w-5" />}
                       </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="left">
-                      <p>{torchOn ? t('qrScanner.flashOff') : t('qrScanner.flashOn')}</p>
-                    </TooltipContent>
-                  </Tooltip>
+                    )}
+                  </div>
                 )}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="secondary"
-                      size="icon"
-                      className="h-10 w-10 rounded-full bg-background/80 backdrop-blur-sm shadow-lg hover:bg-background/90 border border-border/50"
-                      onClick={() => setShowManualInput(true)}
-                    >
-                      <Keyboard className="h-5 w-5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="left">
-                    <p>{t('qrScanner.enterManually')}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            )}
 
-            {/* Camera indicator badge */}
-            {scannerState === 'scanning' && (
-              <div className="absolute top-3 left-3 z-20">
-                <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-background/80 backdrop-blur-sm text-xs font-medium border border-border/50">
-                  <Camera className="h-3 w-3" />
-                  {facingMode === 'environment' ? t('qrScanner.backCamera') : t('qrScanner.frontCamera')}
-                </div>
-              </div>
-            )}
-
-            {/* Scanning frame overlay - only show when scanning */}
-            {scannerState === 'scanning' && !isSwitchingCamera && (
-              <div className="absolute inset-0 pointer-events-none z-10">
-                {/* Corner brackets - static, no animation */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="relative w-56 h-56">
-                    {/* Top-left corner */}
-                    <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-primary rounded-tl-lg" />
-                    {/* Top-right corner */}
-                    <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-primary rounded-tr-lg" />
-                    {/* Bottom-left corner */}
-                    <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-primary rounded-bl-lg" />
-                    {/* Bottom-right corner */}
-                    <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-primary rounded-br-lg" />
-                    
-                    {/* Scanning line - CSS animation only, no JS state updates */}
-                    <div 
-                      className="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent animate-scan-line"
-                      style={{ 
-                        opacity: 0.8,
-                        boxShadow: '0 0 8px hsl(var(--primary))'
-                      }}
-                    />
+                {/* Camera indicator badge */}
+                {scannerState === 'scanning' && (
+                  <div className="absolute top-3 left-3 z-20">
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-background/80 backdrop-blur-sm text-xs font-medium border border-border/50">
+                      <Camera className="h-3 w-3" />
+                      {facingMode === 'environment' ? t('qrScanner.backCamera') : t('qrScanner.frontCamera')}
+                    </div>
                   </div>
-                </div>
-                
-                {/* Semi-transparent overlay outside scanning area */}
-                <div className="absolute inset-0 bg-black/40">
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 bg-transparent" 
-                       style={{ boxShadow: '0 0 0 9999px rgba(0,0,0,0.4)' }} />
-                </div>
-              </div>
-            )}
+                )}
 
-            {/* Switching camera overlay */}
-            {isSwitchingCamera && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center z-20 bg-background/80 backdrop-blur-sm">
-                <SwitchCamera className="h-12 w-12 text-primary animate-pulse" />
-                <p className="mt-3 text-sm font-medium text-muted-foreground">
-                  {t('qrScanner.switchingTo')} {facingMode === 'environment' ? t('qrScanner.back') : t('qrScanner.front')}...
-                </p>
-                <Loader2 className="h-5 w-5 animate-spin mt-2 text-primary" />
-              </div>
-            )}
-
-            {/* Success overlay */}
-            {scannerState === 'success' && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center z-20 bg-green-500/20 backdrop-blur-sm animate-in fade-in duration-300">
-                <div className="bg-white dark:bg-gray-900 rounded-full p-4 shadow-xl animate-in zoom-in duration-300">
-                  <CheckCircle2 className="h-16 w-16 text-green-500 animate-in spin-in-180 duration-500" />
-                </div>
-                <p className="mt-4 text-lg font-semibold text-white drop-shadow-lg">
-                  {t('qrScanner.qrCodeDetected')}
-                </p>
-              </div>
-            )}
-
-            {/* Initializing overlay */}
-            {scannerState === 'initializing' && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-muted">
-                <div className="relative">
-                  <Camera className="h-16 w-16 text-muted-foreground animate-pulse" />
-                  <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-1">
-                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                {/* Scanning frame overlay */}
+                {scannerState === 'scanning' && !isSwitchingCamera && (
+                  <div className="absolute inset-0 pointer-events-none z-10">
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="relative w-56 h-56">
+                        <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-primary rounded-tl-lg" />
+                        <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-primary rounded-tr-lg" />
+                        <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-primary rounded-bl-lg" />
+                        <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-primary rounded-br-lg" />
+                        <div 
+                          className="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent animate-scan-line"
+                          style={{ opacity: 0.8, boxShadow: '0 0 8px hsl(var(--primary))' }}
+                        />
+                      </div>
+                    </div>
+                    <div className="absolute inset-0 bg-black/40">
+                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 bg-transparent" 
+                           style={{ boxShadow: '0 0 0 9999px rgba(0,0,0,0.4)' }} />
+                    </div>
                   </div>
-                </div>
-                <p className="text-sm text-muted-foreground mt-4 font-medium">
-                  {t('qrScanner.initializingCamera')}
-                </p>
-                <div className="mt-2 w-32 h-1 bg-muted-foreground/20 rounded-full overflow-hidden">
-                  <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '60%' }} />
-                </div>
-              </div>
-            )}
+                )}
 
-            {/* Error/Permission denied overlay - with manual input option */}
-            {(scannerState === 'error' || scannerState === 'permission-denied') && !showManualInput && (
-              <div className={cn(
-                "absolute inset-0 flex flex-col items-center justify-center z-10 p-4 overflow-y-auto",
-                stateConfig.bgColor
-              )}>
-                <div className={cn(
-                  "rounded-full p-3 mb-3 shrink-0",
-                  scannerState === 'error' ? 'bg-destructive/20' : 'bg-amber-500/20'
-                )}>
-                  <StateIcon className={cn("h-10 w-10", stateConfig.color)} />
-                </div>
-                <p className={cn("text-base font-semibold mb-1 text-center", stateConfig.color)}>
-                  {stateConfig.title}
-                </p>
-                <p className="text-xs text-center text-muted-foreground max-w-[90%] mb-4 leading-relaxed">
-                  {stateConfig.subtitle}
-                </p>
-                <div className="flex flex-col gap-2 w-full max-w-[200px]">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    onClick={handleRetry}
-                  >
-                    <Camera className="h-4 w-4 mr-2" />
-                    {t('qrScanner.retry')}
-                  </Button>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => setShowManualInput(true)}
-                  >
-                    <Keyboard className="h-4 w-4 mr-2" />
-                    {t('qrScanner.enterManually')}
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* Manual input overlay */}
-            {showManualInput && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center z-10 p-6 bg-background">
-                <div className="rounded-full p-4 mb-4 bg-primary/10">
-                  <Keyboard className="h-12 w-12 text-primary" />
-                </div>
-                <p className="text-lg font-semibold mb-2 text-foreground">
-                  {t('qrScanner.manualInputTitle')}
-                </p>
-                <p className="text-sm text-center text-muted-foreground max-w-xs mb-4">
-                  {t('qrScanner.manualInputDescription')}
-                </p>
-                <div className="w-full max-w-xs space-y-3">
-                  <Input
-                    placeholder={t('qrScanner.manualInputPlaceholder')}
-                    value={manualCode}
-                    onChange={(e) => {
-                      setManualCode(e.target.value);
-                      setErrorMessage(null);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        handleManualSubmit();
-                      }
-                    }}
-                    className="text-center font-mono text-lg tracking-wider"
-                    autoFocus
-                  />
-                  {errorMessage && (
-                    <p className="text-xs text-destructive text-center">{errorMessage}</p>
-                  )}
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => {
-                        setShowManualInput(false);
-                        setManualCode('');
-                        setErrorMessage(null);
-                      }}
-                    >
-                      {t('common.cancel')}
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="flex-1"
-                      onClick={handleManualSubmit}
-                      disabled={!manualCode.trim()}
-                    >
-                      <Search className="h-4 w-4 mr-2" />
-                      {t('qrScanner.searchEquipment')}
-                    </Button>
+                {/* Switching camera overlay */}
+                {isSwitchingCamera && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center z-20 bg-background/80 backdrop-blur-sm">
+                    <SwitchCamera className="h-12 w-12 text-primary animate-pulse" />
+                    <p className="mt-3 text-sm font-medium text-muted-foreground">
+                      {t('qrScanner.switchingTo')} {facingMode === 'environment' ? t('qrScanner.back') : t('qrScanner.front')}...
+                    </p>
+                    <Loader2 className="h-5 w-5 animate-spin mt-2 text-primary" />
                   </div>
-                </div>
-              </div>
-            )}
-          </div>
+                )}
 
-          {/* Status indicator bar - simplified, fewer animations */}
+                {/* Success overlay */}
+                {scannerState === 'success' && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center z-20 bg-green-500/20 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-white dark:bg-gray-900 rounded-full p-4 shadow-xl animate-in zoom-in duration-300">
+                      <CheckCircle2 className="h-16 w-16 text-green-500 animate-in spin-in-180 duration-500" />
+                    </div>
+                    <p className="mt-4 text-lg font-semibold text-white drop-shadow-lg">
+                      {t('qrScanner.qrCodeDetected')}
+                    </p>
+                  </div>
+                )}
+
+                {/* Initializing overlay */}
+                {scannerState === 'initializing' && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-muted">
+                    <div className="relative">
+                      <Camera className="h-16 w-16 text-muted-foreground animate-pulse" />
+                      <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-1">
+                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-4 font-medium">
+                      {t('qrScanner.initializingCamera')}
+                    </p>
+                    <div className="mt-2 w-32 h-1 bg-muted-foreground/20 rounded-full overflow-hidden">
+                      <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '60%' }} />
+                    </div>
+                  </div>
+                )}
+
+                {/* Error/Permission denied overlay */}
+                {(scannerState === 'error' || scannerState === 'permission-denied') && (
+                  <div className={cn(
+                    "absolute inset-0 flex flex-col items-center justify-center z-10 p-4 overflow-y-auto",
+                    stateConfig.bgColor
+                  )}>
+                    <div className={cn(
+                      "rounded-full p-3 mb-3 shrink-0",
+                      scannerState === 'error' ? 'bg-destructive/20' : 'bg-amber-500/20'
+                    )}>
+                      <StateIcon className={cn("h-10 w-10", stateConfig.color)} />
+                    </div>
+                    <p className={cn("text-base font-semibold mb-1 text-center", stateConfig.color)}>
+                      {stateConfig.title}
+                    </p>
+                    <p className="text-xs text-center text-muted-foreground max-w-[90%] mb-4 leading-relaxed">
+                      {stateConfig.subtitle}
+                    </p>
+                    <div className="flex flex-col gap-2 w-full max-w-[200px]">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={handleRetry}
+                      >
+                        <Camera className="h-4 w-4 mr-2" />
+                        {t('qrScanner.retry')}
+                      </Button>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => setShowManualInput(true)}
+                      >
+                        <Keyboard className="h-4 w-4 mr-2" />
+                        {t('qrScanner.enterManually')}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Action button below scanner - enter code manually */}
+              {scannerState === 'scanning' && !isSwitchingCamera && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => {
+                    cleanupScanner();
+                    setShowManualInput(true);
+                  }}
+                >
+                  <Keyboard className="h-4 w-4 mr-2" />
+                  {t('qrScanner.enterManually')}
+                </Button>
+              )}
+            </>
+          )}
+
+          {/* Status indicator bar */}
           <div className={cn(
             "flex items-center gap-3 p-3 rounded-lg transition-colors duration-300",
             stateConfig.bgColor
