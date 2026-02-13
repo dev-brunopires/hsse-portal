@@ -102,6 +102,7 @@ export function useDefaultChecklistTemplate(categoryId?: string) {
       } as unknown as ChecklistTemplate;
     },
     enabled: !!categoryId && !isOrgLoading && (!!organization?.id || isPlatformOwnerWithoutOrg),
+    staleTime: 0, // Always refetch to get latest checklist items
   });
 }
 
