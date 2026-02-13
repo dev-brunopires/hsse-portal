@@ -63,6 +63,7 @@ export function useChecklistTemplates(categoryId?: string) {
       })) as unknown as ChecklistTemplate[];
     },
     enabled: !isOrgLoading && (!!organization?.id || isPlatformOwnerWithoutOrg),
+    staleTime: 0, // Always refetch to get latest after edits
   });
 }
 
