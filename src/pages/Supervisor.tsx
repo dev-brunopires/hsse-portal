@@ -281,10 +281,10 @@ export default function Supervisor() {
                           <Badge variant="secondary">{inspector.totalInspections}</Badge>
                         </div>
                         <div className="flex items-center justify-between text-xs mb-1">
-                          <span className="text-muted-foreground">{t('supervisor.approvalRate')}</span>
-                          <span className="font-medium">{inspector.approvalRate.toFixed(0)}%</span>
+                          <span className="text-muted-foreground">{t('inspectorPerformance.inspections')}</span>
+                          <span className="font-medium">{inspector.totalInspections}</span>
                         </div>
-                        <Progress value={inspector.approvalRate} className="h-1.5" />
+                        <Progress value={inspectorData?.inspectorStats[0] ? (inspector.totalInspections / inspectorData.inspectorStats[0].totalInspections) * 100 : 0} className="h-1.5" />
                       </div>
                     )) || (
                       <div className="text-center py-8 text-muted-foreground text-sm">{t('common.noData')}</div>
