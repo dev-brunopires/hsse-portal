@@ -2089,7 +2089,9 @@
     "manualInputDescription": "Digite o código curto (6 dígitos) ou o ID do equipamento para localizá-lo.",
     "manualInputPlaceholder": "Ex: 123456 ou UUID",
     "searchEquipment": "Buscar",
-    "invalidManualCode": "Código inválido. Digite um código de 6 dígitos ou um UUID válido."
+    "invalidManualCode": "Código inválido. Digite um código de 6 dígitos ou um UUID válido.",
+    "flashOn": "Ligar flash",
+    "flashOff": "Desligar flash"
   },
   "statusBadge": {
     "autoRejected": "Reprovado automaticamente devido a vencimento"
