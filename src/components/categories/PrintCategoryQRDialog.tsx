@@ -348,8 +348,8 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{t('common.all')}</SelectItem>
-                  <SelectItem value="active">{t('equipmentStatus.active')}</SelectItem>
-                  <SelectItem value="inactive">{t('equipmentStatus.inactive')}</SelectItem>
+                  <SelectItem value="active">{t('equipment.statusActive')}</SelectItem>
+                  <SelectItem value="inactive">{t('equipment.statusInactive')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
