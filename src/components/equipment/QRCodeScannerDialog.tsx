@@ -549,7 +549,8 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
           <div
             key={containerId}
             className={cn(
-              "relative w-full aspect-square rounded-xl overflow-hidden transition-all duration-300 border-2",
+              "relative w-full rounded-xl overflow-hidden transition-all duration-300 border-2",
+              "aspect-[4/3] sm:aspect-square",
               scannerState === 'scanning' && "border-primary/50 shadow-lg shadow-primary/10",
               scannerState === 'success' && "border-green-500/50 shadow-lg shadow-green-500/20",
               scannerState === 'error' && "border-destructive/50",
@@ -716,25 +717,26 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
             {/* Error/Permission denied overlay - with manual input option */}
             {(scannerState === 'error' || scannerState === 'permission-denied') && !showManualInput && (
               <div className={cn(
-                "absolute inset-0 flex flex-col items-center justify-center z-10 p-6",
+                "absolute inset-0 flex flex-col items-center justify-center z-10 p-4 overflow-y-auto",
                 stateConfig.bgColor
               )}>
                 <div className={cn(
-                  "rounded-full p-4 mb-4",
+                  "rounded-full p-3 mb-3 shrink-0",
                   scannerState === 'error' ? 'bg-destructive/20' : 'bg-amber-500/20'
                 )}>
-                  <StateIcon className={cn("h-12 w-12", stateConfig.color)} />
+                  <StateIcon className={cn("h-10 w-10", stateConfig.color)} />
                 </div>
-                <p className={cn("text-lg font-semibold mb-2", stateConfig.color)}>
+                <p className={cn("text-base font-semibold mb-1 text-center", stateConfig.color)}>
                   {stateConfig.title}
                 </p>
-                <p className="text-sm text-center text-muted-foreground max-w-xs">
+                <p className="text-xs text-center text-muted-foreground max-w-[90%] mb-4 leading-relaxed">
                   {stateConfig.subtitle}
                 </p>
-                <div className="flex gap-2 mt-4">
+                <div className="flex flex-col gap-2 w-full max-w-[200px]">
                   <Button
                     variant="outline"
                     size="sm"
+                    className="w-full"
                     onClick={handleRetry}
                   >
                     <Camera className="h-4 w-4 mr-2" />
@@ -743,6 +745,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                   <Button
                     variant="default"
                     size="sm"
+                    className="w-full"
                     onClick={() => setShowManualInput(true)}
                   >
                     <Keyboard className="h-4 w-4 mr-2" />
