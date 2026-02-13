@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Printer, QrCode, Loader2 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -49,6 +50,7 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [logoBase64, setLogoBase64] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const qrRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const organizationName = organization?.name || 'SafeShip';
@@ -59,7 +61,7 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
       setLoading(true);
       let query = supabase
         .from('equipment')
-        .select('id, name, internal_code, short_code, location')
+        .select('id, name, internal_code, short_code, location, status')
         .eq('category_id', category.id)
         .order('internal_code', { ascending: true });
 
@@ -69,13 +71,17 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
 
       query.then(({ data, error }) => {
         if (!error && data) {
-          setEquipment(data);
+          setEquipment(data as any);
           setSelectedIds(new Set(data.map(e => e.id)));
         }
         setLoading(false);
       });
     }
   }, [open, category, selectedShipId, isFilterEnabled]);
+
+  const filteredEquipment = statusFilter === 'all'
+    ? equipment
+    : equipment.filter(e => (e as any).status === statusFilter);
 
   // Load logo as base64
   useEffect(() => {
@@ -266,11 +272,11 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
               overflow: hidden;
             }
             .location {
-              font-size: 10pt;
+              font-size: 8pt;
               color: #666;
-              white-space: nowrap;
-              overflow: hidden;
-              text-overflow: ellipsis;
+              word-break: break-word;
+              overflow-wrap: break-word;
+              line-height: 1.2;
             }
             .footer {
               background: #f0f0f0;
@@ -334,8 +340,18 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-2">
               <Badge variant="secondary">
-                {selectedIds.size} / {equipment.length} {t('common.selected')}
+                {selectedIds.size} / {filteredEquipment.length} {t('common.selected')}
               </Badge>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="h-8 w-[130px] text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('common.all')}</SelectItem>
+                  <SelectItem value="active">{t('equipmentStatus.active')}</SelectItem>
+                  <SelectItem value="inactive">{t('equipmentStatus.inactive')}</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="sm" onClick={selectAll}>
@@ -349,7 +365,7 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
 
           <ScrollArea className="h-[300px] border rounded-lg">
             <div className="p-2 space-y-1">
-              {equipment.map(eq => (
+              {filteredEquipment.map(eq => (
                 <label
                   key={eq.id}
                   className="flex items-center gap-3 p-2 hover:bg-muted/50 rounded-md cursor-pointer"
@@ -361,7 +377,7 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm truncate">{eq.internal_code} - {eq.name}</p>
                     {eq.location && (
-                      <p className="text-xs text-muted-foreground truncate">📍 {eq.location}</p>
+                      <p className="text-xs text-muted-foreground break-words whitespace-normal leading-tight">📍 {eq.location}</p>
                     )}
                   </div>
                   {/* Hidden QR code for printing */}
