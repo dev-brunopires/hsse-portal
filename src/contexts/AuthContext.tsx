@@ -36,6 +36,7 @@ interface AuthContextType {
   canEdit: boolean;
   isPlatformOwner: boolean;
   sessionUnstable: boolean;
+  sessionExpired: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -49,6 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(true);
   const [sessionUnstable, setSessionUnstable] = useState(false);
+  const [sessionExpired, setSessionExpired] = useState(false);
   const refreshFailuresRef = useRef(0);
   const fetchUserDataInFlightRef = useRef(false);
   const fetchUserDataAbortRef = useRef<AbortController | null>(null);
@@ -169,6 +171,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }, 0);
           }
         } else {
+          // If we had a user before and now session is gone, mark as expired
+          if (event === 'SIGNED_OUT' && profileRef.current) {
+            setSessionExpired(true);
+          }
           setProfile(null);
           setRole(null);
           profileRef.current = null;
@@ -212,8 +218,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const MIN_ATTEMPT_INTERVAL_MS = 60_000; // 1 min
 
     const redirectToAuth = () => {
-      const search = window.location.search || '';
-      window.location.href = `/auth${search}`;
+      setSessionExpired(true);
+      setUser(null);
+      setSession(null);
     };
 
     const refreshIfNeeded = async () => {
@@ -472,6 +479,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         canEdit,
         isPlatformOwner,
         sessionUnstable,
+        sessionExpired,
       }}
     >
       {children}

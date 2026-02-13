@@ -123,7 +123,10 @@
     "fullName": "Full name",
     "nationality": "Nationality",
     "brazilian": "Brazilian",
-    "foreign": "Foreign"
+    "foreign": "Foreign",
+    "sessionExpiredTitle": "Session ended",
+    "sessionExpiredMessage": "Your session was ended, possibly because you signed in from another browser or device. For security, please log in again.",
+    "loginAgain": "Log in again"
   },
   "navigation": {
     "appTitle": "Equipment Management",
