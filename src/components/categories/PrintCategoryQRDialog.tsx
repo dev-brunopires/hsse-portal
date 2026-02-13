@@ -415,11 +415,11 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <QrCode className="h-5 w-5 text-primary" />
-            {t('qrCode.printMultiple')} - {category?.name}
+      <DialogContent className="max-w-xl">
+        <DialogHeader className="pr-8">
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <QrCode className="h-5 w-5 text-primary shrink-0" />
+            <span className="truncate">{t('qrCode.printMultiple')} - {category?.name}</span>
           </DialogTitle>
         </DialogHeader>
         {content}
