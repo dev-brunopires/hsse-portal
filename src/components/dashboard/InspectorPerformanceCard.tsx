@@ -101,10 +101,10 @@ export function InspectorPerformanceCard() {
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">{t('inspectorPerformance.approvalRate')}</span>
-                    <span className="font-medium">{inspector.approvalRate.toFixed(1)}%</span>
+                    <span className="text-muted-foreground">{t('inspectorPerformance.inspections')}</span>
+                    <span className="font-medium">{inspector.totalInspections}</span>
                   </div>
-                  <Progress value={inspector.approvalRate} className="h-2" />
+                  <Progress value={data.inspectorStats.length > 0 ? (inspector.totalInspections / data.inspectorStats[0].totalInspections) * 100 : 0} className="h-2" />
 
                   <div className="grid grid-cols-3 gap-2 mt-2 text-xs">
                     <div className="text-center p-1 rounded bg-green-500/10">
