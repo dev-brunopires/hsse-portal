@@ -166,7 +166,7 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
           // Location
           if (equipment.location) {
             ctx.fillStyle = '#666666';
-            ctx.font = '24px Arial';
+            ctx.font = '32px Arial';
             ctx.fillText(`📍 ${equipment.location}`, width / 2, qrY + qrSize + 85);
           }
 
@@ -319,7 +319,7 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
               overflow: hidden;
             }
             .location {
-              font-size: 9pt;
+              font-size: 12pt;
               color: #666;
               white-space: nowrap;
               overflow: hidden;
@@ -435,7 +435,7 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
               font-weight: 500;
             }
             .location { 
-              font-size: 11px; 
+              font-size: 14px; 
               color: #666; 
               margin-bottom: 12px;
             }
