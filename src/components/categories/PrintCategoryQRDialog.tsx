@@ -266,7 +266,7 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
               overflow: hidden;
             }
             .location {
-              font-size: 7pt;
+              font-size: 10pt;
               color: #666;
               white-space: nowrap;
               overflow: hidden;
