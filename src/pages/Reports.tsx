@@ -20,6 +20,7 @@ import { useShips } from '@/hooks/useShips';
 import { useMaintenanceRequests } from '@/hooks/useMaintenanceRequests';
 import { useCertificates } from '@/hooks/useCertificates';
 import { useAuth } from '@/contexts/AuthContext';
+import { useShipFilter } from '@/contexts/ShipFilterContext';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useUserSignature } from '@/hooks/useUserSignature';
 import { useOrganizationBranding } from '@/hooks/useOrganizationBranding';
@@ -124,8 +125,14 @@ export default function Reports() {
     return profiles.find(p => p.user_id === user?.id);
   }, [profiles, user?.id]);
 
+  // Sync ship filter with global ShipFilterContext
+  const { selectedShipId, setSelectedShipId, isFilterEnabled } = useShipFilter();
+  const shipFilter = selectedShipId ?? 'all';
+  const handleShipFilterChange = (value: string) => {
+    setSelectedShipId(value === 'all' ? null : value);
+  };
+
   // Filters
-  const [shipFilter, setShipFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [startDateStr, setStartDateStr] = useState<string>('');
   const [endDateStr, setEndDateStr] = useState<string>('');
@@ -814,7 +821,7 @@ export default function Reports() {
   };
 
   const clearFilters = () => {
-    setShipFilter('all');
+    handleShipFilterChange('all');
     setCategoryFilter('all');
     setStartDateStr('');
     setEndDateStr('');
@@ -1490,7 +1497,7 @@ export default function Reports() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div className="space-y-2">
                   <Label>{t('reports.ship')}</Label>
-                  <Select value={shipFilter} onValueChange={setShipFilter}>
+                  <Select value={shipFilter} onValueChange={handleShipFilterChange}>
                     <SelectTrigger>
                       <SelectValue placeholder={t('reports.allShips')} />
                     </SelectTrigger>
