@@ -75,9 +75,9 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const width = 400;
-    const height = 480;
-    const padding = 20;
+    const width = 800;
+    const height = 960;
+    const padding = 40;
     
     canvas.width = width;
     canvas.height = height;
@@ -94,14 +94,14 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
 
     // Logo header bar
     ctx.fillStyle = BRAND_COLOR;
-    ctx.fillRect(padding, padding, width - padding * 2, 50);
+    ctx.fillRect(padding, padding, width - padding * 2, 100);
 
     // Load and draw logo (organization logo or fallback to text)
     const drawLogoAndContent = () => {
       if (logoBase64) {
         const logoImg = new Image();
         logoImg.onload = () => {
-          ctx.drawImage(logoImg, width / 2 - 50, padding + 8, 100, 34);
+          ctx.drawImage(logoImg, width / 2 - 100, padding + 16, 200, 68);
           drawContent();
         };
         logoImg.onerror = () => {
@@ -117,10 +117,10 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
 
     const drawFallbackLogo = () => {
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 16px Arial';
+      ctx.font = 'bold 32px Arial';
       ctx.textAlign = 'center';
       const displayName = organizationName.length > 20 ? organizationName.substring(0, 17) + '...' : organizationName;
-      ctx.fillText(displayName, width / 2, padding + 32);
+      ctx.fillText(displayName, width / 2, padding + 64);
     };
 
     drawLogoAndContent();
@@ -128,9 +128,9 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
     const drawContent = () => {
       // Internal code
       ctx.fillStyle = '#666666';
-      ctx.font = '14px Arial';
+      ctx.font = '28px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText(equipment.internalCode, width / 2, padding + 90);
+      ctx.fillText(equipment.internalCode, width / 2, padding + 160);
 
       // QR Code
       const qrSvg = qrRef.current?.querySelector('svg');
@@ -138,9 +138,9 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
         const qrData = new XMLSerializer().serializeToString(qrSvg);
         const qrImg = new Image();
         qrImg.onload = () => {
-          const qrSize = 230;
+          const qrSize = 460;
           const qrX = (width - qrSize) / 2;
-          const qrY = padding + 110;
+          const qrY = padding + 190;
 
           // White background for QR
           ctx.fillStyle = '#ffffff';
@@ -151,37 +151,37 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
           // Short code in center of QR (only place we show it)
           if (equipment.shortCode) {
             ctx.fillStyle = '#ffffff';
-            ctx.fillRect(qrX + qrSize / 2 - 46, qrY + qrSize / 2 - 16, 92, 32);
+            ctx.fillRect(qrX + qrSize / 2 - 92, qrY + qrSize / 2 - 24, 184, 48);
             ctx.fillStyle = '#000000';
-            ctx.font = 'bold 18px monospace';
-            ctx.fillText(equipment.shortCode, width / 2, qrY + qrSize / 2 + 7);
+            ctx.font = 'bold 36px monospace';
+            ctx.fillText(equipment.shortCode, width / 2, qrY + qrSize / 2 + 12);
           }
 
           // Equipment name
           ctx.fillStyle = '#333333';
-          ctx.font = '14px Arial';
+          ctx.font = '28px Arial';
           const name = equipment.name.length > 40 ? equipment.name.substring(0, 37) + '...' : equipment.name;
-          ctx.fillText(name, width / 2, qrY + qrSize + 28);
+          ctx.fillText(name, width / 2, qrY + qrSize + 50);
 
           // Location
           if (equipment.location) {
             ctx.fillStyle = '#666666';
-            ctx.font = '12px Arial';
-            ctx.fillText(`📍 ${equipment.location}`, width / 2, qrY + qrSize + 48);
+            ctx.font = '24px Arial';
+            ctx.fillText(`📍 ${equipment.location}`, width / 2, qrY + qrSize + 85);
           }
 
           // Footer instruction
           ctx.fillStyle = BRAND_COLOR;
-          ctx.fillRect(padding, height - padding - 40, width - padding * 2, 40);
+          ctx.fillRect(padding, height - padding - 80, width - padding * 2, 80);
           ctx.fillStyle = '#ffffff';
-          ctx.font = 'bold 12px Arial';
-          ctx.fillText(`📱 ${t('qrCode.scanToInspect')}`, width / 2, height - padding - 15);
+          ctx.font = 'bold 24px Arial';
+          ctx.fillText(`📱 ${t('qrCode.scanToInspect')}`, width / 2, height - padding - 30);
 
           // Download with organization name in filename
           const orgSlug = organizationName.toLowerCase().replace(/\s+/g, '_');
           const link = document.createElement('a');
           link.download = `qrcode_${orgSlug}_${equipment.shortCode || equipment.internalCode}.png`;
-          link.href = canvas.toDataURL('image/png');
+          link.href = canvas.toDataURL('image/png', 1.0);
           link.click();
 
           toast({
@@ -215,8 +215,8 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
     
     // Generate logo HTML based on organization
     const logoHtml = logoBase64 
-      ? `<img src="${logoBase64}" style="height: 12px; width: auto;" alt="${organizationName}" />`
-      : `<span style="color: white; font-weight: bold; font-size: 10px;">${organizationName}</span>`;
+      ? `<img src="${logoBase64}" style="height: 24px; width: auto;" alt="${organizationName}" />`
+      : `<span style="color: white; font-weight: bold; font-size: 18px;">${organizationName}</span>`;
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -225,7 +225,7 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
           <title>Etiqueta ${organizationName} - ${equipment.shortCode || equipment.internalCode}</title>
           <style>
             @page {
-              size: 60mm 45mm;
+              size: 120mm 90mm;
               margin: 0;
             }
             * {
@@ -237,8 +237,8 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
               display: flex; 
               align-items: center; 
               justify-content: center; 
-              width: 60mm;
-              height: 45mm;
+              width: 120mm;
+              height: 90mm;
               font-family: Arial, sans-serif;
               -webkit-print-color-adjust: exact;
               print-color-adjust: exact;
@@ -254,21 +254,21 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
             }
             .header {
               background: ${BRAND_COLOR};
-              padding: 3px 8px;
+              padding: 6px 16px;
               display: flex;
               align-items: center;
               justify-content: center;
-              min-height: 18px;
+              min-height: 36px;
             }
             .header img {
-              height: 12px;
+              height: 24px;
               width: auto;
             }
             .content {
               display: flex;
               align-items: center;
-              gap: 4px;
-              padding: 3px 4px;
+              gap: 8px;
+              padding: 6px 8px;
               flex: 1;
             }
             .qr-container {
@@ -276,8 +276,8 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
               position: relative;
             }
             .qr-container svg {
-              width: 30mm !important;
-              height: 30mm !important;
+              width: 60mm !important;
+              height: 60mm !important;
             }
             .short-code-overlay {
               position: absolute;
@@ -285,11 +285,11 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
               left: 50%;
               transform: translate(-50%, -50%);
               background: white;
-              padding: 1px 4px;
-              border-radius: 2px;
+              padding: 2px 8px;
+              border-radius: 3px;
             }
             .short-code {
-              font-size: 7pt;
+              font-size: 14pt;
               font-weight: bold;
               font-family: monospace;
             }
@@ -301,35 +301,35 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
               overflow: hidden;
             }
             .code {
-              font-size: 8pt;
+              font-size: 14pt;
               font-weight: bold;
-              margin-bottom: 2px;
+              margin-bottom: 4px;
               white-space: nowrap;
               overflow: hidden;
               text-overflow: ellipsis;
               color: #333;
             }
             .name {
-              font-size: 6pt;
+              font-size: 11pt;
               color: #333;
-              margin-bottom: 2px;
+              margin-bottom: 4px;
               display: -webkit-box;
               -webkit-line-clamp: 2;
               -webkit-box-orient: vertical;
               overflow: hidden;
             }
             .location {
-              font-size: 5pt;
+              font-size: 9pt;
               color: #666;
               white-space: nowrap;
               overflow: hidden;
               text-overflow: ellipsis;
             }
             .footer {
-              background: #f5f5f5;
-              padding: 2px;
+              background: #f0f0f0;
+              padding: 4px;
               text-align: center;
-              font-size: 5pt;
+              font-size: 9pt;
               color: ${BRAND_COLOR};
               font-weight: bold;
             }
@@ -404,7 +404,7 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
               border: 2px dashed ${BRAND_COLOR};
               border-radius: 12px;
               overflow: hidden;
-              width: 280px;
+              width: 560px;
               background: white;
             }
             .header {
@@ -416,7 +416,7 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
               min-height: 48px;
             }
             .header img {
-              height: 28px;
+              height: 56px;
               width: auto;
             }
             .body {
@@ -449,8 +449,8 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
             }
             .qr-wrapper svg { 
               display: block;
-              width: 200px;
-              height: 200px;
+              width: 400px;
+              height: 400px;
             }
             .qr-center-code {
               position: absolute;
@@ -536,7 +536,7 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
             <div ref={qrRef} className="bg-white p-3 sm:p-4 rounded-lg border mt-3 relative">
               <QRCodeSVG 
                 value={inspectionUrl} 
-                size={isMobile ? 160 : 190}
+                size={isMobile ? 280 : 380}
                 level="H"
                 includeMargin
               />
