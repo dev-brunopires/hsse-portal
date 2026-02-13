@@ -84,7 +84,7 @@ export function ModernStatusChart({ data, totalEquipment }: ModernStatusChartPro
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip content={<CustomTooltip />} />
+                <Tooltip content={<CustomTooltip />} wrapperStyle={{ zIndex: 50, pointerEvents: 'none' }} position={{ x: 0, y: -80 }} />
               </PieChart>
             </ResponsiveContainer>
             
