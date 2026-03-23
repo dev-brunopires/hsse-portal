@@ -214,16 +214,16 @@ export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFDat
       fillColor: [248, 249, 250],
     },
     columnStyles: {
-      0: { cellWidth: 8, halign: 'center' }, // #
-      1: { cellWidth: 22 }, // Code
+      0: { cellWidth: 10, halign: 'center' }, // #
+      1: { cellWidth: 26 }, // Code
       2: { cellWidth: 'auto' }, // Equipment
-      3: { cellWidth: 22 }, // Serial
-      4: { cellWidth: 22 }, // Location
-      5: { cellWidth: 18 }, // Type
-      6: { cellWidth: 18, halign: 'center' }, // Last Inspection
-      7: { cellWidth: 24 }, // Inspector
-      8: { cellWidth: 20, halign: 'center' }, // Status
-      9: { cellWidth: 22, halign: 'center' }, // Expiry
+      3: { cellWidth: 28 }, // Serial
+      4: { cellWidth: 30 }, // Location
+      5: { cellWidth: 24 }, // Type
+      6: { cellWidth: 22, halign: 'center' }, // Last Inspection
+      7: { cellWidth: 30 }, // Inspector
+      8: { cellWidth: 24, halign: 'center' }, // Status
+      9: { cellWidth: 26, halign: 'center' }, // Expiry
     },
     didParseCell: (hookData) => {
       if (hookData.section === 'body') {
