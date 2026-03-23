@@ -321,9 +321,10 @@ export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFDat
   doc.text(t('exportCategoryInspection.digitalSignature'), signatureBoxX + signatureBoxWidth / 2, yPosition + 5, { align: 'center' });
 
   // Footer
+  const companyName = data.branding?.name || 'SafeShip';
   addPDFFooter(
     doc, 
-    data.branding?.name || `SafeShip © ${new Date().getFullYear()}`,
+    `${companyName} © ${new Date().getFullYear()}`,
     `${t('exportCategoryInspection.categoryInspection')} - ${data.category.name}`
   );
 
