@@ -54,7 +54,7 @@ export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFDat
   // Preload logo with branding
   await preloadLogo(data.branding);
   
-  const doc = new jsPDF();
+  const doc = new jsPDF('landscape');
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 14;
@@ -214,16 +214,16 @@ export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFDat
       fillColor: [248, 249, 250],
     },
     columnStyles: {
-      0: { cellWidth: 8, halign: 'center' }, // #
-      1: { cellWidth: 22 }, // Code
+      0: { cellWidth: 10, halign: 'center' }, // #
+      1: { cellWidth: 26 }, // Code
       2: { cellWidth: 'auto' }, // Equipment
-      3: { cellWidth: 22 }, // Serial
-      4: { cellWidth: 22 }, // Location
-      5: { cellWidth: 18 }, // Type
-      6: { cellWidth: 18, halign: 'center' }, // Last Inspection
-      7: { cellWidth: 24 }, // Inspector
-      8: { cellWidth: 20, halign: 'center' }, // Status
-      9: { cellWidth: 22, halign: 'center' }, // Expiry
+      3: { cellWidth: 28 }, // Serial
+      4: { cellWidth: 30 }, // Location
+      5: { cellWidth: 24 }, // Type
+      6: { cellWidth: 22, halign: 'center' }, // Last Inspection
+      7: { cellWidth: 30 }, // Inspector
+      8: { cellWidth: 24, halign: 'center' }, // Status
+      9: { cellWidth: 26, halign: 'center' }, // Expiry
     },
     didParseCell: (hookData) => {
       if (hookData.section === 'body') {
@@ -321,9 +321,10 @@ export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFDat
   doc.text(t('exportCategoryInspection.digitalSignature'), signatureBoxX + signatureBoxWidth / 2, yPosition + 5, { align: 'center' });
 
   // Footer
+  const companyName = data.branding?.name || 'SafeShip';
   addPDFFooter(
     doc, 
-    data.branding?.name || `SafeShip © ${new Date().getFullYear()}`,
+    `${companyName} © ${new Date().getFullYear()}`,
     `${t('exportCategoryInspection.categoryInspection')} - ${data.category.name}`
   );
 

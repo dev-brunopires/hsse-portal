@@ -782,6 +782,7 @@ export default function Reports() {
       },
       inspectionDate: getLocalToday(),
       signatureData: signature,
+      branding,
     }, { preview });
 
     toast.success(preview ? t('common.pdfPreviewOpened') : t('reports.categoryInspectionExportedPDF'));

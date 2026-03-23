@@ -102,8 +102,8 @@ export async function exportAuditLogsPDF(
   });
 
   // Add footer
-  const companyName = branding?.name || t('footerCompany');
-  addPDFFooter(doc, companyName, t('title'));
+  const companyName = branding?.name || 'SafeShip';
+  addPDFFooter(doc, `${companyName} © ${new Date().getFullYear()}`, t('title'));
 
   const pdfFileName = `${t('fileName')}-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
   
