@@ -854,7 +854,7 @@ export function VirtualizedEquipmentTable({
                         </TableRow>
                       );
                     })}
-                    <tr style={{ height: rowVirtualizer.getTotalSize() - (rowVirtualizer.getVirtualItems().at(-1)?.end || 0) }} />
+                    <tr style={{ height: rowVirtualizer.getTotalSize() - (rowVirtualizer.getVirtualItems()[rowVirtualizer.getVirtualItems().length - 1]?.end || 0) }} />
                   </>
                 )}
               </TableBody>
