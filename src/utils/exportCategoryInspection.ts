@@ -54,7 +54,7 @@ export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFDat
   // Preload logo with branding
   await preloadLogo(data.branding);
   
-  const doc = new jsPDF();
+  const doc = new jsPDF('landscape');
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 14;
