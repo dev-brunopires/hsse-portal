@@ -659,7 +659,10 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                 {/* Camera feed container */}
                 <div 
                   id={containerId} 
-                  className="absolute inset-0 [&_#qr-shaded-region]:hidden [&>div>div]:border-none"
+                  className={cn(
+                    "absolute inset-0 [&_#qr-shaded-region]:hidden [&>div>div]:border-none transition-[filter] duration-200",
+                    highContrast && "[&_video]:[filter:contrast(1.8)_brightness(1.15)_grayscale(1)]"
+                  )}
                 />
 
                 {/* Camera controls - top right */}
@@ -695,6 +698,18 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                         {torchOn ? <FlashlightOff className="h-5 w-5" /> : <Flashlight className="h-5 w-5" />}
                       </Button>
                     )}
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className={cn(
+                        "h-10 w-10 rounded-full backdrop-blur-sm shadow-lg border border-border/50",
+                        highContrast ? "bg-primary/90 hover:bg-primary text-primary-foreground" : "bg-background/80 hover:bg-background/90"
+                      )}
+                      onClick={() => setHighContrast((v) => !v)}
+                      aria-label={t('qrScanner.highContrast')}
+                    >
+                      <Contrast className="h-5 w-5" />
+                    </Button>
                   </div>
                 )}
 
