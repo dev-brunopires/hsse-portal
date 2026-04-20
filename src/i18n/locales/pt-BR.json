@@ -2097,6 +2097,11 @@
     "clear": "Limpar",
     "backspace": "Apagar"
   },
+  "qrCodeSizes": {
+    "labelSize": "Tamanho da etiqueta",
+    "sizeSmall": "Pequena",
+    "sizeMedium": "Média",
+    "sizeLarge": "Grande"
   "statusBadge": {
     "autoRejected": "Reprovado automaticamente devido a vencimento"
   },

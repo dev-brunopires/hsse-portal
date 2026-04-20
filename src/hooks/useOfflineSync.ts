@@ -1025,13 +1025,9 @@ export function useOfflineSync() {
       const equipCount = await offlineDB.getEquipmentCount();
       console.log(`Ship ${shipId} synced (${equipCount} total equipment in cache)`);
       
-      // Bug #3: Only show toast if there are meaningful data counts
-      if (equipCount > 0) {
-        toast(t('offline.cacheUpdated'), {
-          id: 'ship-cache-updated',
-          description: t('offline.cacheUpdatedDesc', { count: equipCount }),
-        });
-      }
+      // Silent: only logs to console, no toast pollution
+      // Toast only appears via manual refresh in the header sync button
+
     } catch (error) {
       console.error(`Error syncing ship ${shipId}:`, error);
     } finally {
