@@ -221,17 +221,17 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
             .short-code-box {
               background: ${BRAND_COLOR};
               color: white;
-              padding: 1.5mm 2mm;
+              padding: ${Math.round(cfg.height * 0.02)}mm ${Math.round(cfg.width * 0.02)}mm;
               border-radius: 1.5mm;
               text-align: center;
               font-family: 'Courier New', monospace;
-              font-size: 13pt;
+              font-size: ${cfg.shortCode}pt;
               font-weight: 900;
-              letter-spacing: 0.12em;
+              letter-spacing: 0.15em;
               line-height: 1.1;
             }
             .code {
-              font-size: 10pt;
+              font-size: ${cfg.titleSize}pt;
               font-weight: bold;
               white-space: nowrap;
               overflow: hidden;
@@ -239,7 +239,7 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
               color: #222;
             }
             .name {
-              font-size: 8pt;
+              font-size: ${cfg.locSize}pt;
               color: #333;
               display: -webkit-box;
               -webkit-line-clamp: 2;
@@ -248,7 +248,7 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
               line-height: 1.2;
             }
             .location {
-              font-size: 7.5pt;
+              font-size: ${Math.max(6, cfg.locSize - 1)}pt;
               color: #666;
               word-break: break-word;
               line-height: 1.2;
@@ -257,7 +257,7 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
               background: #f0f0f0;
               padding: 1.5mm;
               text-align: center;
-              font-size: 6.5pt;
+              font-size: ${Math.max(6, cfg.locSize - 2)}pt;
               color: ${BRAND_COLOR};
               font-weight: bold;
             }
