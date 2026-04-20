@@ -312,7 +312,7 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="small">{t('labelSize.small')}</SelectItem>
-                  <SelectItem value="medium">{t('labelSize.medium')}></SelectItem>
+                  <SelectItem value="medium">{t('labelSize.medium')}</SelectItem>
                   <SelectItem value="large">{t('labelSize.large')}</SelectItem>
                 </SelectContent>
               </Select>
