@@ -531,24 +531,22 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
           {/* Content */}
           <div className="bg-white p-4 flex flex-col items-center">
             <p className="font-mono text-xs text-muted-foreground">{equipment.internalCode}</p>
-            
-            <div ref={qrRef} className="bg-white p-3 sm:p-4 rounded-lg border mt-3 relative">
-              <QRCodeSVG 
-                value={inspectionUrl} 
-                size={isMobile ? 280 : 380}
+
+            <div ref={qrRef} className="bg-white p-4 sm:p-5 rounded-lg border mt-3">
+              <QRCodeSVG
+                value={inspectionUrl}
+                size={isMobile ? 260 : 360}
                 level="H"
                 includeMargin
+                marginSize={4}
               />
-              {equipment.shortCode && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="bg-white px-3 py-1 rounded border shadow-sm">
-                    <span className="font-mono text-sm font-bold text-foreground">
-                      {equipment.shortCode}
-                    </span>
-                  </div>
-                </div>
-              )}
             </div>
+
+            {equipment.shortCode && (
+              <div className="mt-3 bg-primary text-primary-foreground px-4 py-2 rounded-md font-mono font-black text-xl tracking-[0.2em] shadow-sm">
+                {equipment.shortCode}
+              </div>
+            )}
 
             <p className="text-sm text-foreground text-center mt-2 font-medium">{equipment.name}</p>
             {equipment.location && (
