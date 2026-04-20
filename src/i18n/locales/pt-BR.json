@@ -2119,6 +2119,7 @@
     "medium": "Médio (120×90mm)",
     "large": "Grande (150×120mm)",
     "label": "Tamanho da etiqueta"
+  },
   "statusBadge": {
     "autoRejected": "Reprovado automaticamente devido a vencimento"
   },

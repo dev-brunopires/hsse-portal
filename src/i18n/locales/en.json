@@ -2119,6 +2119,7 @@
     "medium": "Medium (120×90mm)",
     "large": "Large (150×120mm)",
     "label": "Label size"
+  },
   "statusBadge": {
     "autoRejected": "Automatically rejected due to expiration"
   },
