@@ -51,6 +51,7 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
   const isMobile = useIsMobile();
   const qrRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
+  const [labelSize, setLabelSize] = useState<LabelSizeKey>('medium');
   const { toast } = useToast();
   const { organization, logoWhiteUrl } = useOrganization();
   const [logoBase64, setLogoBase64] = useState<string | null>(null);
