@@ -585,14 +585,14 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
         <div className="space-y-4">
           {/* Manual input mode - replaces scanner entirely */}
           {showManualInput ? (
-            <div className="w-full rounded-xl border-2 border-primary/30 bg-background p-6 flex flex-col items-center">
-              <div className="rounded-full p-3 mb-3 bg-primary/10">
-                <Keyboard className="h-10 w-10 text-primary" />
+            <div className="w-full rounded-xl border-2 border-primary/30 bg-background p-4 flex flex-col items-center">
+              <div className="rounded-full p-2 mb-2 bg-primary/10">
+                <Keyboard className="h-7 w-7 text-primary" />
               </div>
               <p className="text-base font-semibold mb-1 text-foreground">
                 {t('qrScanner.manualInputTitle')}
               </p>
-              <p className="text-xs text-center text-muted-foreground max-w-xs mb-4">
+              <p className="text-xs text-center text-muted-foreground max-w-xs mb-3">
                 {t('qrScanner.manualInputDescription')}
               </p>
               <div className="w-full max-w-xs space-y-3">
@@ -604,21 +604,70 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                     setErrorMessage(null);
                   }}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handleManualSubmit();
-                    }
+                    if (e.key === 'Enter') handleManualSubmit();
                   }}
-                  className="text-center font-mono text-lg tracking-wider"
+                  inputMode="numeric"
+                  className="text-center font-mono text-2xl tracking-[0.3em] h-14"
                   autoFocus
                 />
+                {/* Large numeric keypad - glove-friendly */}
+                <div className="grid grid-cols-3 gap-2">
+                  {['1','2','3','4','5','6','7','8','9'].map((digit) => (
+                    <Button
+                      key={digit}
+                      type="button"
+                      variant="outline"
+                      className="h-14 text-2xl font-semibold touch-manipulation active:scale-95"
+                      onClick={() => {
+                        setErrorMessage(null);
+                        setManualCode((prev) => (prev + digit).slice(0, 36));
+                      }}
+                    >
+                      {digit}
+                    </Button>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-14 text-base touch-manipulation active:scale-95"
+                    onClick={() => {
+                      setErrorMessage(null);
+                      setManualCode('');
+                    }}
+                  >
+                    {t('qrScanner.clear')}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-14 text-2xl font-semibold touch-manipulation active:scale-95"
+                    onClick={() => {
+                      setErrorMessage(null);
+                      setManualCode((prev) => (prev + '0').slice(0, 36));
+                    }}
+                  >
+                    0
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-14 touch-manipulation active:scale-95"
+                    onClick={() => {
+                      setErrorMessage(null);
+                      setManualCode((prev) => prev.slice(0, -1));
+                    }}
+                    aria-label={t('qrScanner.backspace')}
+                  >
+                    <Delete className="h-6 w-6" />
+                  </Button>
+                </div>
                 {errorMessage && (
                   <p className="text-xs text-destructive text-center">{errorMessage}</p>
                 )}
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
-                    size="sm"
-                    className="flex-1"
+                    className="flex-1 h-12"
                     onClick={() => {
                       setShowManualInput(false);
                       setManualCode('');
@@ -630,8 +679,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                     {t('qrScanner.retry')}
                   </Button>
                   <Button
-                    size="sm"
-                    className="flex-1"
+                    className="flex-1 h-12"
                     onClick={handleManualSubmit}
                     disabled={!manualCode.trim()}
                   >
