@@ -187,9 +187,9 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
               display: flex;
               align-items: center;
               justify-content: center;
-              min-height: 20px;
+              min-height: ${Math.round(cfg.height * 0.13)}mm;
             }
-            .header img { height: 14px; width: auto; }
+            .header img { height: ${Math.round(cfg.height * 0.12)}px; width: auto; }
             .content {
               display: flex;
               align-items: center;
