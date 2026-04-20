@@ -13,6 +13,8 @@ import {
   DrawerTitle,
 } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { Download, Printer, QrCode, Copy, Check } from 'lucide-react';
 import { useRef, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -32,6 +34,14 @@ interface QRCodeDialogProps {
     location?: string;
   } | null;
 }
+
+// Available label sizes (mm)
+type LabelSizeKey = 'small' | 'medium' | 'large';
+const LABEL_SIZES: Record<LabelSizeKey, { width: number; height: number; qr: number; shortCode: number; titleSize: number; locSize: number }> = {
+  small:  { width: 90,  height: 70,  qr: 50, shortCode: 12, titleSize: 11, locSize: 9 },
+  medium: { width: 120, height: 90,  qr: 65, shortCode: 16, titleSize: 14, locSize: 11 },
+  large:  { width: 150, height: 120, qr: 85, shortCode: 20, titleSize: 18, locSize: 13 },
+};
 
 // Primary brand color - navy blue matching the app theme
 const BRAND_COLOR = '#003366';
