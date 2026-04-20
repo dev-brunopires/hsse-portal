@@ -785,7 +785,7 @@ export function VirtualizedEquipmentTable({
                               <p className="text-xs text-muted-foreground">{item.serial_number}</p>
                             </div>
                           </TableCell>
-                          <TableCell className="text-sm">
+                          <TableCell className="text-sm hidden xl:table-cell">
                             {item.capacity || '—'}
                           </TableCell>
                           <TableCell>
@@ -803,10 +803,10 @@ export function VirtualizedEquipmentTable({
                           <TableCell className="text-sm">
                             {formatDate(item.next_inspection)}
                           </TableCell>
-                          <TableCell className="text-sm">
+                          <TableCell className="text-sm hidden xl:table-cell">
                             {formatDate(item.certificate_expiry)}
                           </TableCell>
-                          <TableCell className="text-sm hidden lg:table-cell">
+                          <TableCell className="text-sm hidden 2xl:table-cell">
                             {(item as any).created_by_profile?.full_name || '—'}
                           </TableCell>
                           <TableCell onClick={(e) => e.stopPropagation()}>
