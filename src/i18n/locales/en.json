@@ -2091,7 +2091,11 @@
     "searchEquipment": "Search",
     "invalidManualCode": "Invalid code. Enter a 6-digit code or a valid UUID.",
     "flashOn": "Turn on flash",
-    "flashOff": "Turn off flash"
+    "flashOff": "Turn off flash",
+    "highContrast": "High contrast (dirty/faded QR)",
+    "zoom": "Zoom",
+    "clear": "Clear",
+    "backspace": "Backspace"
   },
   "statusBadge": {
     "autoRejected": "Automatically rejected due to expiration"

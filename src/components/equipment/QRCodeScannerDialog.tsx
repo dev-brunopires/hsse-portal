@@ -9,7 +9,8 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Camera, CameraOff, Loader2, QrCode, CheckCircle2, AlertCircle, Scan, SwitchCamera, Keyboard, Search, Flashlight, FlashlightOff } from 'lucide-react';
+import { Camera, CameraOff, Loader2, QrCode, CheckCircle2, AlertCircle, Scan, SwitchCamera, Keyboard, Search, Flashlight, FlashlightOff, ZoomIn, Contrast, Delete } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
@@ -85,6 +86,9 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
   const [manualCode, setManualCode] = useState('');
   const [torchOn, setTorchOn] = useState(false);
   const [torchSupported, setTorchSupported] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [zoomCapabilities, setZoomCapabilities] = useState<{ min: number; max: number; step: number } | null>(null);
+  const [highContrast, setHighContrast] = useState(false);
 
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const isMountedRef = useRef(true);
@@ -231,10 +235,15 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       await scannerRef.current.start(
         { facingMode: cameraFacingMode },
         {
-          fps: 10, // Reduced from 20 to 10 for better mobile performance
-          qrbox: { width: 200, height: 200 },
+          fps: 15,
+          qrbox: { width: 250, height: 250 },
           aspectRatio: 1.0,
           disableFlip: false,
+          videoConstraints: {
+            facingMode: cameraFacingMode,
+            // @ts-expect-error advanced constraints not in types
+            advanced: [{ focusMode: 'continuous' }],
+          },
         },
         (decodedText) => {
           handleScanSuccess(decodedText);
@@ -248,7 +257,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       markCameraPermissionGranted();
       setPermissionChecked(true);
 
-      // Check torch/flash support
+      // Detect torch and zoom capabilities
       try {
         const videoElement = document.querySelector(`#${containerId} video`) as HTMLVideoElement;
         if (videoElement && videoElement.srcObject) {
@@ -257,9 +266,18 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
           if (capabilities?.torch) {
             setTorchSupported(true);
           }
+          if (capabilities?.zoom) {
+            setZoomCapabilities({
+              min: capabilities.zoom.min ?? 1,
+              max: capabilities.zoom.max ?? 1,
+              step: capabilities.zoom.step ?? 0.1,
+            });
+            const settings = track.getSettings?.() as any;
+            if (settings?.zoom) setZoom(settings.zoom);
+          }
         }
       } catch {
-        // Torch not supported
+        // Capabilities not supported
       }
 
       if (isMountedRef.current) {
@@ -323,6 +341,9 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       setManualCode('');
       setTorchOn(false);
       setTorchSupported(false);
+      setZoom(1);
+      setZoomCapabilities(null);
+      setHighContrast(false);
       // Reset debounce refs when dialog opens
       lastScannedRef.current = null;
       lastScanTimeRef.current = 0;
@@ -417,6 +438,20 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
     };
   }, [cleanupScanner]);
 
+  // Apply zoom to camera track when zoom changes
+  useEffect(() => {
+    if (!zoomCapabilities || scannerState !== 'scanning') return;
+    try {
+      const videoElement = document.querySelector(`#${containerId} video`) as HTMLVideoElement;
+      if (videoElement && videoElement.srcObject) {
+        const track = (videoElement.srcObject as MediaStream).getVideoTracks()[0];
+        track.applyConstraints({ advanced: [{ zoom } as any] }).catch(() => {});
+      }
+    } catch {
+      // ignore
+    }
+  }, [zoom, zoomCapabilities, scannerState, containerId]);
+
   const handleRetry = async () => {
     // Clear permission state from localStorage to allow re-prompting
     localStorage.removeItem(CAMERA_PERMISSION_KEY);
@@ -431,6 +466,9 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
     setManualCode('');
     setTorchOn(false);
     setTorchSupported(false);
+    setZoom(1);
+    setZoomCapabilities(null);
+    setHighContrast(false);
 
     await cleanupScanner();
     setContainerId(`qr-reader-${Date.now()}`);
@@ -547,14 +585,14 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
         <div className="space-y-4">
           {/* Manual input mode - replaces scanner entirely */}
           {showManualInput ? (
-            <div className="w-full rounded-xl border-2 border-primary/30 bg-background p-6 flex flex-col items-center">
-              <div className="rounded-full p-3 mb-3 bg-primary/10">
-                <Keyboard className="h-10 w-10 text-primary" />
+            <div className="w-full rounded-xl border-2 border-primary/30 bg-background p-4 flex flex-col items-center">
+              <div className="rounded-full p-2 mb-2 bg-primary/10">
+                <Keyboard className="h-7 w-7 text-primary" />
               </div>
               <p className="text-base font-semibold mb-1 text-foreground">
                 {t('qrScanner.manualInputTitle')}
               </p>
-              <p className="text-xs text-center text-muted-foreground max-w-xs mb-4">
+              <p className="text-xs text-center text-muted-foreground max-w-xs mb-3">
                 {t('qrScanner.manualInputDescription')}
               </p>
               <div className="w-full max-w-xs space-y-3">
@@ -566,21 +604,70 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                     setErrorMessage(null);
                   }}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handleManualSubmit();
-                    }
+                    if (e.key === 'Enter') handleManualSubmit();
                   }}
-                  className="text-center font-mono text-lg tracking-wider"
+                  inputMode="numeric"
+                  className="text-center font-mono text-2xl tracking-[0.3em] h-14"
                   autoFocus
                 />
+                {/* Large numeric keypad - glove-friendly */}
+                <div className="grid grid-cols-3 gap-2">
+                  {['1','2','3','4','5','6','7','8','9'].map((digit) => (
+                    <Button
+                      key={digit}
+                      type="button"
+                      variant="outline"
+                      className="h-14 text-2xl font-semibold touch-manipulation active:scale-95"
+                      onClick={() => {
+                        setErrorMessage(null);
+                        setManualCode((prev) => (prev + digit).slice(0, 36));
+                      }}
+                    >
+                      {digit}
+                    </Button>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-14 text-base touch-manipulation active:scale-95"
+                    onClick={() => {
+                      setErrorMessage(null);
+                      setManualCode('');
+                    }}
+                  >
+                    {t('qrScanner.clear')}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-14 text-2xl font-semibold touch-manipulation active:scale-95"
+                    onClick={() => {
+                      setErrorMessage(null);
+                      setManualCode((prev) => (prev + '0').slice(0, 36));
+                    }}
+                  >
+                    0
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-14 touch-manipulation active:scale-95"
+                    onClick={() => {
+                      setErrorMessage(null);
+                      setManualCode((prev) => prev.slice(0, -1));
+                    }}
+                    aria-label={t('qrScanner.backspace')}
+                  >
+                    <Delete className="h-6 w-6" />
+                  </Button>
+                </div>
                 {errorMessage && (
                   <p className="text-xs text-destructive text-center">{errorMessage}</p>
                 )}
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
-                    size="sm"
-                    className="flex-1"
+                    className="flex-1 h-12"
                     onClick={() => {
                       setShowManualInput(false);
                       setManualCode('');
@@ -592,8 +679,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                     {t('qrScanner.retry')}
                   </Button>
                   <Button
-                    size="sm"
-                    className="flex-1"
+                    className="flex-1 h-12"
                     onClick={handleManualSubmit}
                     disabled={!manualCode.trim()}
                   >
@@ -621,7 +707,10 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                 {/* Camera feed container */}
                 <div 
                   id={containerId} 
-                  className="absolute inset-0 [&_#qr-shaded-region]:hidden [&>div>div]:border-none"
+                  className={cn(
+                    "absolute inset-0 [&_#qr-shaded-region]:hidden [&>div>div]:border-none transition-[filter] duration-200",
+                    highContrast && "[&_video]:[filter:contrast(1.8)_brightness(1.15)_grayscale(1)]"
+                  )}
                 />
 
                 {/* Camera controls - top right */}
@@ -657,6 +746,18 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                         {torchOn ? <FlashlightOff className="h-5 w-5" /> : <Flashlight className="h-5 w-5" />}
                       </Button>
                     )}
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className={cn(
+                        "h-10 w-10 rounded-full backdrop-blur-sm shadow-lg border border-border/50",
+                        highContrast ? "bg-primary/90 hover:bg-primary text-primary-foreground" : "bg-background/80 hover:bg-background/90"
+                      )}
+                      onClick={() => setHighContrast((v) => !v)}
+                      aria-label={t('qrScanner.highContrast')}
+                    >
+                      <Contrast className="h-5 w-5" />
+                    </Button>
                   </div>
                 )}
 
@@ -774,6 +875,25 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                   </div>
                 )}
               </div>
+
+              {/* Zoom slider - shown when zoom is supported */}
+              {scannerState === 'scanning' && !isSwitchingCamera && zoomCapabilities && zoomCapabilities.max > zoomCapabilities.min && (
+                <div className="flex items-center gap-3 px-1">
+                  <ZoomIn className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <Slider
+                    value={[zoom]}
+                    min={zoomCapabilities.min}
+                    max={zoomCapabilities.max}
+                    step={zoomCapabilities.step || 0.1}
+                    onValueChange={(v) => setZoom(v[0])}
+                    className="flex-1"
+                    aria-label={t('qrScanner.zoom')}
+                  />
+                  <span className="text-xs font-mono text-muted-foreground w-10 text-right tabular-nums">
+                    {zoom.toFixed(1)}x
+                  </span>
+                </div>
+              )}
 
               {/* Action button below scanner - enter code manually */}
               {scannerState === 'scanning' && !isSwitchingCamera && (
