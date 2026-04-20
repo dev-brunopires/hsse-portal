@@ -235,10 +235,15 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       await scannerRef.current.start(
         { facingMode: cameraFacingMode },
         {
-          fps: 10, // Reduced from 20 to 10 for better mobile performance
-          qrbox: { width: 200, height: 200 },
+          fps: 15,
+          qrbox: { width: 250, height: 250 },
           aspectRatio: 1.0,
           disableFlip: false,
+          videoConstraints: {
+            facingMode: cameraFacingMode,
+            // @ts-expect-error advanced constraints not in types
+            advanced: [{ focusMode: 'continuous' }],
+          },
         },
         (decodedText) => {
           handleScanSuccess(decodedText);
@@ -252,7 +257,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       markCameraPermissionGranted();
       setPermissionChecked(true);
 
-      // Check torch/flash support
+      // Detect torch and zoom capabilities
       try {
         const videoElement = document.querySelector(`#${containerId} video`) as HTMLVideoElement;
         if (videoElement && videoElement.srcObject) {
@@ -261,9 +266,18 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
           if (capabilities?.torch) {
             setTorchSupported(true);
           }
+          if (capabilities?.zoom) {
+            setZoomCapabilities({
+              min: capabilities.zoom.min ?? 1,
+              max: capabilities.zoom.max ?? 1,
+              step: capabilities.zoom.step ?? 0.1,
+            });
+            const settings = track.getSettings?.() as any;
+            if (settings?.zoom) setZoom(settings.zoom);
+          }
         }
       } catch {
-        // Torch not supported
+        // Capabilities not supported
       }
 
       if (isMountedRef.current) {
