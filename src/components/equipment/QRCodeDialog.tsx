@@ -578,15 +578,15 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
 
       <div className="space-y-3">
         <div className="space-y-1.5">
-          <Label className="text-xs">{t('qrCode.labelSize')}</Label>
+          <Label className="text-xs">{t('labelSize.label')}</Label>
           <Select value={labelSize} onValueChange={(v) => setLabelSize(v as LabelSizeKey)}>
             <SelectTrigger className="h-9">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="small">{t('qrCode.sizeSmall')} (90×70mm)</SelectItem>
-              <SelectItem value="medium">{t('qrCode.sizeMedium')} (120×90mm)</SelectItem>
-              <SelectItem value="large">{t('qrCode.sizeLarge')} (150×120mm)</SelectItem>
+              <SelectItem value="small">{t('labelSize.small')}</SelectItem>
+              <SelectItem value="medium">{t('labelSize.medium')}</SelectItem>
+              <SelectItem value="large">{t('labelSize.large')}</SelectItem>
             </SelectContent>
           </Select>
         </div>

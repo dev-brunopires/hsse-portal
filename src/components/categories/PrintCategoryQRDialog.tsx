@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { Printer, QrCode, Loader2 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -39,6 +40,14 @@ interface Equipment {
   location: string;
 }
 
+// Available label sizes (mm)
+type LabelSizeKey = 'small' | 'medium' | 'large';
+const LABEL_SIZES: Record<LabelSizeKey, { width: number; height: number; qr: number; shortCode: number; titleSize: number; locSize: number }> = {
+  small:  { width: 90,  height: 70,  qr: 50, shortCode: 12, titleSize: 11, locSize: 9 },
+  medium: { width: 120, height: 90,  qr: 65, shortCode: 16, titleSize: 14, locSize: 11 },
+  large:  { width: 150, height: 120, qr: 85, shortCode: 20, titleSize: 18, locSize: 13 },
+};
+
 const BRAND_COLOR = '#003366';
 
 export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCategoryQRDialogProps) {
@@ -51,6 +60,7 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
   const [loading, setLoading] = useState(false);
   const [logoBase64, setLogoBase64] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [labelSize, setLabelSize] = useState<LabelSizeKey>('medium');
   const qrRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const organizationName = organization?.name || 'SafeShip';
@@ -125,10 +135,11 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
     if (!printWindow) return;
 
     const scanText = t('qrCode.scanToInspect').toUpperCase();
+    const cfg = LABEL_SIZES[labelSize];
 
     const logoHtml = logoBase64
-      ? `<img src="${logoBase64}" style="height: 16px; width: auto;" alt="${organizationName}" />`
-      : `<span style="color: white; font-weight: bold; font-size: 12px;">${organizationName}</span>`;
+      ? `<img src="${logoBase64}" style="height: ${Math.round(cfg.height * 0.18)}px; width: auto;" alt="${organizationName}" />`
+      : `<span style="color: white; font-weight: bold; font-size: ${cfg.titleSize}pt;">${organizationName}</span>`;
 
     // Build QR SVGs using the refs
     const qrSvgs: string[] = [];
@@ -167,8 +178,8 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
               border-radius: 4px;
               overflow: hidden;
               page-break-inside: avoid;
-              width: 90mm;
-              height: 70mm;
+              width: ${cfg.width}mm;
+              height: ${cfg.height}mm;
             }
             .header {
               background: ${BRAND_COLOR};
@@ -176,26 +187,26 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
               display: flex;
               align-items: center;
               justify-content: center;
-              min-height: 20px;
+              min-height: ${Math.round(cfg.height * 0.13)}mm;
             }
-            .header img { height: 14px; width: auto; }
+            .header img { height: ${Math.round(cfg.height * 0.12)}px; width: auto; }
             .content {
               display: flex;
               align-items: center;
-              gap: 3mm;
-              padding: 2.5mm;
+              gap: ${Math.round(cfg.width * 0.03)}mm;
+              padding: ${Math.round(cfg.width * 0.025)}mm;
               flex: 1;
               min-height: 0;
             }
             .qr-container {
               flex-shrink: 0;
               background: white;
-              padding: 2mm;
+              padding: ${Math.round(cfg.width * 0.02)}mm;
               border-radius: 1.5mm;
             }
             .qr-container svg {
-              width: 48mm !important;
-              height: 48mm !important;
+              width: ${cfg.qr}mm !important;
+              height: ${cfg.qr}mm !important;
               display: block;
             }
             .info {
@@ -210,17 +221,17 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
             .short-code-box {
               background: ${BRAND_COLOR};
               color: white;
-              padding: 1.5mm 2mm;
+              padding: ${Math.round(cfg.height * 0.02)}mm ${Math.round(cfg.width * 0.02)}mm;
               border-radius: 1.5mm;
               text-align: center;
               font-family: 'Courier New', monospace;
-              font-size: 13pt;
+              font-size: ${cfg.shortCode}pt;
               font-weight: 900;
-              letter-spacing: 0.12em;
+              letter-spacing: 0.15em;
               line-height: 1.1;
             }
             .code {
-              font-size: 10pt;
+              font-size: ${cfg.titleSize}pt;
               font-weight: bold;
               white-space: nowrap;
               overflow: hidden;
@@ -228,7 +239,7 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
               color: #222;
             }
             .name {
-              font-size: 8pt;
+              font-size: ${cfg.locSize}pt;
               color: #333;
               display: -webkit-box;
               -webkit-line-clamp: 2;
@@ -237,7 +248,7 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
               line-height: 1.2;
             }
             .location {
-              font-size: 7.5pt;
+              font-size: ${Math.max(6, cfg.locSize - 1)}pt;
               color: #666;
               word-break: break-word;
               line-height: 1.2;
@@ -246,7 +257,7 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
               background: #f0f0f0;
               padding: 1.5mm;
               text-align: center;
-              font-size: 6.5pt;
+              font-size: ${Math.max(6, cfg.locSize - 2)}pt;
               color: ${BRAND_COLOR};
               font-weight: bold;
             }
@@ -293,6 +304,22 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
         </div>
       ) : (
         <>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">{t('labelSize.label')}</Label>
+              <Select value={labelSize} onValueChange={(v) => setLabelSize(v as LabelSizeKey)}>
+                <SelectTrigger className="h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="small">{t('labelSize.small')}</SelectItem>
+                  <SelectItem value="medium">{t('labelSize.medium')}</SelectItem>
+                  <SelectItem value="large">{t('labelSize.large')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-2">
               <Badge variant="secondary">
@@ -315,7 +342,7 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
               </Button>
               <Button variant="ghost" size="sm" onClick={deselectAll}>
                 {t('common.deselectAll')}
-              </Button>
+  </Button>
             </div>
           </div>
 
