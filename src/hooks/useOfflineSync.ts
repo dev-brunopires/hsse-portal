@@ -508,10 +508,10 @@ export function useOfflineSync() {
     }
   }
 
-  async function syncLastInspections(lastSyncTs: string | undefined) {
+  async function syncLastInspections(lastSyncTs: string | undefined): Promise<number> {
     // Get equipment IDs from local cache
     const equipmentIds = await offlineDB.getEquipmentIds();
-    if (equipmentIds.length === 0) return;
+    if (equipmentIds.length === 0) return 0;
 
     const lastInspections: offlineDB.CachedLastInspection[] = [];
     const INSPECTION_BATCH_SIZE = 200;
@@ -568,6 +568,8 @@ export function useOfflineSync() {
       // Full sync: replace all
       await offlineDB.cacheLastInspections(lastInspections);
     }
+
+    return lastInspections.length;
   }
 
   // Check if cache is stale and notify/refresh (with throttling)
