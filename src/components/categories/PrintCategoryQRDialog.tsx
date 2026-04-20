@@ -178,8 +178,8 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
               border-radius: 4px;
               overflow: hidden;
               page-break-inside: avoid;
-              width: 90mm;
-              height: 70mm;
+              width: ${cfg.width}mm;
+              height: ${cfg.height}mm;
             }
             .header {
               background: ${BRAND_COLOR};
