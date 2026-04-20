@@ -66,6 +66,7 @@ import {
   readSystemNotificationsRead,
   type SystemNotificationId,
 } from '@/utils/systemNotificationsRead';
+import { SyncButton } from '@/components/layout/SyncButton';
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -562,6 +563,9 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
             </DropdownMenuContent>
           </DropdownMenu>
         )}
+
+        {/* Sync / Cache Button */}
+        <SyncButton />
 
         {/* Notifications Dropdown */}
         <DropdownMenu>
