@@ -438,6 +438,20 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
     };
   }, [cleanupScanner]);
 
+  // Apply zoom to camera track when zoom changes
+  useEffect(() => {
+    if (!zoomCapabilities || scannerState !== 'scanning') return;
+    try {
+      const videoElement = document.querySelector(`#${containerId} video`) as HTMLVideoElement;
+      if (videoElement && videoElement.srcObject) {
+        const track = (videoElement.srcObject as MediaStream).getVideoTracks()[0];
+        track.applyConstraints({ advanced: [{ zoom } as any] }).catch(() => {});
+      }
+    } catch {
+      // ignore
+    }
+  }, [zoom, zoomCapabilities, scannerState, containerId]);
+
   const handleRetry = async () => {
     // Clear permission state from localStorage to allow re-prompting
     localStorage.removeItem(CAMERA_PERMISSION_KEY);
@@ -452,6 +466,9 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
     setManualCode('');
     setTorchOn(false);
     setTorchSupported(false);
+    setZoom(1);
+    setZoomCapabilities(null);
+    setHighContrast(false);
 
     await cleanupScanner();
     setContainerId(`qr-reader-${Date.now()}`);
