@@ -60,6 +60,7 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
   const [loading, setLoading] = useState(false);
   const [logoBase64, setLogoBase64] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [labelSize, setLabelSize] = useState<LabelSizeKey>('medium');
   const qrRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const organizationName = organization?.name || 'SafeShip';
