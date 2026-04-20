@@ -341,6 +341,9 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       setManualCode('');
       setTorchOn(false);
       setTorchSupported(false);
+      setZoom(1);
+      setZoomCapabilities(null);
+      setHighContrast(false);
       // Reset debounce refs when dialog opens
       lastScannedRef.current = null;
       lastScanTimeRef.current = 0;
