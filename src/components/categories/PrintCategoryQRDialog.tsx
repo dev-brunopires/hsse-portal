@@ -135,10 +135,11 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
     if (!printWindow) return;
 
     const scanText = t('qrCode.scanToInspect').toUpperCase();
+    const cfg = LABEL_SIZES[labelSize];
 
     const logoHtml = logoBase64
-      ? `<img src="${logoBase64}" style="height: 16px; width: auto;" alt="${organizationName}" />`
-      : `<span style="color: white; font-weight: bold; font-size: 12px;">${organizationName}</span>`;
+      ? `<img src="${logoBase64}" style="height: ${Math.round(cfg.height * 0.18)}px; width: auto;" alt="${organizationName}" />`
+      : `<span style="color: white; font-weight: bold; font-size: ${cfg.titleSize}pt;">${organizationName}</span>`;
 
     // Build QR SVGs using the refs
     const qrSvgs: string[] = [];
