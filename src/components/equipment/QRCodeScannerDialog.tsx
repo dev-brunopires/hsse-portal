@@ -452,6 +452,56 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
     }
   }, [zoom, zoomCapabilities, scannerState, containerId]);
 
+  // Ambient Light Sensor: auto-enable torch in low-light (industrial environments)
+  // Only triggers once per scan session to avoid annoyance
+  useEffect(() => {
+    if (scannerState !== 'scanning' || !torchSupported || torchOn) return;
+    if (typeof window === 'undefined' || !('AmbientLightSensor' in window)) return;
+
+    let sensor: any = null;
+    let triggered = false;
+
+    try {
+      // @ts-expect-error - AmbientLightSensor experimental API
+      sensor = new window.AmbientLightSensor({ frequency: 1 });
+
+      sensor.addEventListener('reading', async () => {
+        if (triggered || torchOn) return;
+        // Threshold: < 15 lux is considered dark (typical industrial dim area)
+        if (sensor.illuminance != null && sensor.illuminance < 15) {
+          triggered = true;
+          try {
+            const videoElement = document.querySelector(`#${containerId} video`) as HTMLVideoElement;
+            if (videoElement?.srcObject) {
+              const track = (videoElement.srcObject as MediaStream).getVideoTracks()[0];
+              await track.applyConstraints({ advanced: [{ torch: true } as any] });
+              setTorchOn(true);
+            }
+          } catch {
+            // Torch couldn't be activated automatically
+          }
+        }
+      });
+
+      sensor.addEventListener('error', () => {
+        // Permission denied or sensor unavailable - silent fail
+      });
+
+      sensor.start();
+    } catch {
+      // AmbientLightSensor not supported or blocked
+    }
+
+    return () => {
+      try {
+        sensor?.stop();
+      } catch {
+        // ignore
+      }
+    };
+  }, [scannerState, torchSupported, torchOn, containerId]);
+
+
   const handleRetry = async () => {
     // Clear permission state from localStorage to allow re-prompting
     localStorage.removeItem(CAMERA_PERMISSION_KEY);

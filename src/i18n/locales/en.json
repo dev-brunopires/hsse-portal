@@ -2095,7 +2095,30 @@
     "highContrast": "High contrast (dirty/faded QR)",
     "zoom": "Zoom",
     "clear": "Clear",
-    "backspace": "Backspace"
+    "backspace": "Backspace",
+    "ambientLightAutoTorch": "Flashlight auto-enabled (dark environment)"
+  },
+  "syncButton": {
+    "title": "Sync & Cache",
+    "status": "Status",
+    "online": "Online",
+    "offline": "Offline",
+    "cachedItems": "Cached equipment",
+    "pending": "Pending",
+    "lastSync": "Last sync",
+    "never": "Never",
+    "syncNow": "Sync now",
+    "syncing": "Syncing...",
+    "starting": "Starting sync...",
+    "error": "Sync failed",
+    "offlineCannotSync": "No connection. Connect to sync.",
+    "hint": "Cache only refreshes when there are changes. Use this button to force an update."
+  },
+  "labelSize": {
+    "small": "Small (90×70mm)",
+    "medium": "Medium (120×90mm)",
+    "large": "Large (150×120mm)",
+    "label": "Label size"
   },
   "statusBadge": {
     "autoRejected": "Automatically rejected due to expiration"
