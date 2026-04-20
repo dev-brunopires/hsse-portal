@@ -578,7 +578,7 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
 
       <div className="space-y-3">
         <div className="space-y-1.5">
-          <Label className="text-xs">{t('qrCode.labelSize')}</Label>
+          <Label className="text-xs">{t('labelSize.label')}</Label>
           <Select value={labelSize} onValueChange={(v) => setLabelSize(v as LabelSizeKey)}>
             <SelectTrigger className="h-9">
               <SelectValue />
