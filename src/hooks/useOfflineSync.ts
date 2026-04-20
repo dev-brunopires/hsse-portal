@@ -306,7 +306,7 @@ export function useOfflineSync() {
 
   // ===== Sync helper functions =====
 
-  async function fullSyncEquipment(shipIds: string[] | null) {
+  async function fullSyncEquipment(shipIds: string[] | null): Promise<number> {
     // Get total count with ship filter
     let countQuery = supabase
       .from('equipment')
@@ -349,9 +349,10 @@ export function useOfflineSync() {
 
     // Full replace on first sync
     await offlineDB.cacheEquipment(allEquipment);
+    return allEquipment.length;
   }
 
-  async function deltaSyncEquipment(shipIds: string[] | null, lastSyncTs: string) {
+  async function deltaSyncEquipment(shipIds: string[] | null, lastSyncTs: string): Promise<number> {
     // Fetch only records updated since last sync
     let query = supabase
       .from('equipment')
@@ -399,6 +400,8 @@ export function useOfflineSync() {
       await checkDeletedEquipment(shipIds);
       await offlineDB.setMetadata('last_delete_check', Date.now());
     }
+
+    return updatedEquipment.length;
   }
 
   async function checkDeletedEquipment(shipIds: string[] | null) {
