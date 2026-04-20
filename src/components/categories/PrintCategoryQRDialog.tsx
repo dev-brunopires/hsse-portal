@@ -303,6 +303,22 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
         </div>
       ) : (
         <>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">{t('labelSize.label')}</Label>
+              <Select value={labelSize} onValueChange={(v) => setLabelSize(v as LabelSizeKey)}>
+                <SelectTrigger className="h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="small">{t('labelSize.small')}</SelectItem>
+                  <SelectItem value="medium">{t('labelSize.medium')}></SelectItem>
+                  <SelectItem value="large">{t('labelSize.large')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-2">
               <Badge variant="secondary">
@@ -325,7 +341,7 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
               </Button>
               <Button variant="ghost" size="sm" onClick={deselectAll}>
                 {t('common.deselectAll')}
-              </Button>
+  </Button>
             </div>
           </div>
 
