@@ -666,7 +666,7 @@ export function VirtualizedEquipmentTable({
             className="overflow-auto"
             style={{ height: 'calc(100vh - 350px)', minHeight: '400px' }}
           >
-            <Table>
+            <Table className="min-w-[1100px]">
               <TableHeader className="sticky top-0 bg-card z-10">
                 <TableRow className="bg-muted/50">
                   <TableHead className="w-12">
@@ -691,7 +691,7 @@ export function VirtualizedEquipmentTable({
                       {t('equipmentTable.equipmentName')} {getSortIcon('name')}
                     </div>
                   </TableHead>
-                  <TableHead className="font-semibold">
+                  <TableHead className="font-semibold hidden xl:table-cell">
                     <div 
                       className="flex items-center gap-1 cursor-pointer hover:text-foreground"
                       onClick={() => handleSort('capacity')}
@@ -731,7 +731,7 @@ export function VirtualizedEquipmentTable({
                       {t('equipmentTable.nextInsp')} {getSortIcon('next_inspection')}
                     </div>
                   </TableHead>
-                  <TableHead className="font-semibold">
+                  <TableHead className="font-semibold hidden xl:table-cell">
                     <div 
                       className="flex items-center gap-1 cursor-pointer hover:text-foreground"
                       onClick={() => handleSort('certificate_expiry')}
@@ -739,7 +739,7 @@ export function VirtualizedEquipmentTable({
                       {t('equipmentTable.certExpiry')} {getSortIcon('certificate_expiry')}
                     </div>
                   </TableHead>
-                  <TableHead className="font-semibold hidden lg:table-cell">
+                  <TableHead className="font-semibold hidden 2xl:table-cell">
                     {t('equipmentTable.createdBy')}
                   </TableHead>
                   <TableHead className="w-12"></TableHead>
