@@ -86,6 +86,9 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
   const [manualCode, setManualCode] = useState('');
   const [torchOn, setTorchOn] = useState(false);
   const [torchSupported, setTorchSupported] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [zoomCapabilities, setZoomCapabilities] = useState<{ min: number; max: number; step: number } | null>(null);
+  const [highContrast, setHighContrast] = useState(false);
 
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const isMountedRef = useRef(true);
