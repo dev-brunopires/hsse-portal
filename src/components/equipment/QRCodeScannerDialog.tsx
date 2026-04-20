@@ -828,6 +828,25 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                 )}
               </div>
 
+              {/* Zoom slider - shown when zoom is supported */}
+              {scannerState === 'scanning' && !isSwitchingCamera && zoomCapabilities && zoomCapabilities.max > zoomCapabilities.min && (
+                <div className="flex items-center gap-3 px-1">
+                  <ZoomIn className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <Slider
+                    value={[zoom]}
+                    min={zoomCapabilities.min}
+                    max={zoomCapabilities.max}
+                    step={zoomCapabilities.step || 0.1}
+                    onValueChange={(v) => setZoom(v[0])}
+                    className="flex-1"
+                    aria-label={t('qrScanner.zoom')}
+                  />
+                  <span className="text-xs font-mono text-muted-foreground w-10 text-right tabular-nums">
+                    {zoom.toFixed(1)}x
+                  </span>
+                </div>
+              )}
+
               {/* Action button below scanner - enter code manually */}
               {scannerState === 'scanning' && !isSwitchingCamera && (
                 <Button
