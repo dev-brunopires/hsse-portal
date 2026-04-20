@@ -2095,8 +2095,30 @@
     "highContrast": "Alto contraste (QR sujo/desbotado)",
     "zoom": "Zoom",
     "clear": "Limpar",
-    "backspace": "Apagar"
+    "backspace": "Apagar",
+    "ambientLightAutoTorch": "Lanterna ativada automaticamente (ambiente escuro)"
   },
+  "syncButton": {
+    "title": "Sincronização & Cache",
+    "status": "Status",
+    "online": "Online",
+    "offline": "Offline",
+    "cachedItems": "Equipamentos em cache",
+    "pending": "Pendentes",
+    "lastSync": "Última sync",
+    "never": "Nunca",
+    "syncNow": "Sincronizar agora",
+    "syncing": "Sincronizando...",
+    "starting": "Iniciando sincronização...",
+    "error": "Erro ao sincronizar",
+    "offlineCannotSync": "Sem conexão. Conecte-se para sincronizar.",
+    "hint": "O cache é atualizado apenas quando há mudanças. Use este botão para forçar a atualização."
+  },
+  "labelSize": {
+    "small": "Pequeno (90×70mm)",
+    "medium": "Médio (120×90mm)",
+    "large": "Grande (150×120mm)",
+    "label": "Tamanho da etiqueta"
   "statusBadge": {
     "autoRejected": "Reprovado automaticamente devido a vencimento"
   },
