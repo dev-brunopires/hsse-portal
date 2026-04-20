@@ -982,12 +982,17 @@ export function useOfflineSync() {
     return () => { networkCallbacks.delete(callback); };
   }, [t]);
 
-  // Auto-sync when coming online and refresh cache
+  // Auto-sync pending actions when coming online (does NOT re-download cache)
+  // Cache refresh only happens once per session via checkAndRefreshCache (throttled to 5min + session flag)
   useEffect(() => {
     if (isOnline) {
       syncPendingInspections();
       syncPendingMaintenance();
-      checkAndRefreshCache();
+      // Only check cache on first mount if not yet checked this session
+      const sessionChecked = sessionStorage.getItem(SESSION_CACHE_KEY);
+      if (!sessionChecked) {
+        checkAndRefreshCache();
+      }
     }
   }, [isOnline]); // eslint-disable-line react-hooks/exhaustive-deps
 
