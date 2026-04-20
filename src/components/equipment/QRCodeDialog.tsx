@@ -576,7 +576,21 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
         </Button>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
+        <div className="space-y-1.5">
+          <Label className="text-xs">{t('qrCode.labelSize')}</Label>
+          <Select value={labelSize} onValueChange={(v) => setLabelSize(v as LabelSizeKey)}>
+            <SelectTrigger className="h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="small">{t('qrCode.sizeSmall')} (90×70mm)</SelectItem>
+              <SelectItem value="medium">{t('qrCode.sizeMedium')} (120×90mm)</SelectItem>
+              <SelectItem value="large">{t('qrCode.sizeLarge')} (150×120mm)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         <p className="text-sm font-medium text-muted-foreground">{t('reports.printOptions')}:</p>
         <div className="grid grid-cols-2 gap-2">
           <Button variant="outline" className="gap-2 text-xs sm:text-sm" onClick={handlePrintLabel}>
