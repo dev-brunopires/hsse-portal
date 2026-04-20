@@ -391,6 +391,10 @@ export function ImportEquipmentDialog({ open, onOpenChange }: ImportEquipmentDia
     setStep('importing');
     setImportProgress({ current: 0, total: itemsToProcess.length, created: 0, updated: 0, skipped: 0, errors: [] });
 
+    // Get current user to set as creator on imported equipment
+    const { data: { user } } = await supabase.auth.getUser();
+    const currentUserId = user?.id;
+
     const errors: string[] = [];
     let created = 0;
     let updated = 0;
@@ -444,6 +448,7 @@ export function ImportEquipmentDialog({ open, onOpenChange }: ImportEquipmentDia
             expiry_date: item.expiry_date || null,
             certificate_expiry: item.certificate_expiry || null,
             observations: item.observations || null,
+            created_by: currentUserId,
           });
           created++;
         } else if (match.action === 'update' && match.existingId) {
