@@ -2091,7 +2091,11 @@
     "searchEquipment": "Buscar",
     "invalidManualCode": "Código inválido. Digite um código de 6 dígitos ou um UUID válido.",
     "flashOn": "Ligar flash",
-    "flashOff": "Desligar flash"
+    "flashOff": "Desligar flash",
+    "highContrast": "Alto contraste (QR sujo/desbotado)",
+    "zoom": "Zoom",
+    "clear": "Limpar",
+    "backspace": "Apagar"
   },
   "statusBadge": {
     "autoRejected": "Reprovado automaticamente devido a vencimento"
