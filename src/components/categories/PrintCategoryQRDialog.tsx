@@ -193,20 +193,20 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
             .content {
               display: flex;
               align-items: center;
-              gap: 3mm;
-              padding: 2.5mm;
+              gap: ${Math.round(cfg.width * 0.03)}mm;
+              padding: ${Math.round(cfg.width * 0.025)}mm;
               flex: 1;
               min-height: 0;
             }
             .qr-container {
               flex-shrink: 0;
               background: white;
-              padding: 2mm;
+              padding: ${Math.round(cfg.width * 0.02)}mm;
               border-radius: 1.5mm;
             }
             .qr-container svg {
-              width: 48mm !important;
-              height: 48mm !important;
+              width: ${cfg.qr}mm !important;
+              height: ${cfg.qr}mm !important;
               display: block;
             }
             .info {
