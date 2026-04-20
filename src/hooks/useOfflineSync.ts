@@ -223,9 +223,10 @@ export function useOfflineSync() {
    * - First sync: full download filtered by user's ships
    * - Subsequent syncs: delta sync using updated_at timestamp
    */
-  const preCacheData = useCallback(async () => {
+  const preCacheData = useCallback(async (options?: { silent?: boolean; force?: boolean }) => {
     if (!isOnline || globalCacheInProgress) return;
     
+    const silent = options?.silent ?? true; // Default: silent (no toast)
     globalCacheInProgress = true;
 
     try {
@@ -242,13 +243,15 @@ export function useOfflineSync() {
         console.log(`Filtering by ${userShipIds.length} user ships`);
       }
 
+      let equipmentChanged = 0;
+
       // ===== Equipment sync =====
       if (isFullSync) {
         // Full sync: clear and download all
-        await fullSyncEquipment(userShipIds);
+        equipmentChanged = await fullSyncEquipment(userShipIds);
       } else {
         // Delta sync: only fetch updated/new records
-        await deltaSyncEquipment(userShipIds, lastSyncTs);
+        equipmentChanged = await deltaSyncEquipment(userShipIds, lastSyncTs);
       }
 
       // ===== Other data (small datasets, always full refresh) =====
@@ -260,7 +263,7 @@ export function useOfflineSync() {
       ]);
 
       // ===== Last inspections (delta-aware) =====
-      await syncLastInspections(lastSyncTs);
+      const inspectionsChanged = await syncLastInspections(lastSyncTs);
 
       // Save sync timestamp
       await offlineDB.setLastSyncTimestamp(syncStartTime);
@@ -268,18 +271,28 @@ export function useOfflineSync() {
       await refreshStats();
 
       const equipCount = await offlineDB.getEquipmentCount();
-      console.log(`Offline data cached successfully (${equipCount} equipment)`);
+      console.log(`Offline data cached successfully (${equipCount} equipment, ${equipmentChanged} changed, ${inspectionsChanged} inspection updates)`);
       
-      const isFirstCache = !sessionStorage.getItem(SESSION_CACHE_KEY);
-      if (isFirstCache) {
+      // Only show toast if explicitly forced (user-triggered) AND there were changes
+      // OR on first cache (no prior sync)
+      const hadChanges = equipmentChanged > 0 || inspectionsChanged > 0;
+      const shouldNotify = !silent && (hadChanges || isFullSync);
+      
+      if (shouldNotify) {
         toast.success(t('offline.cacheUpdated'), {
           id: 'cache-updated',
-          description: t('offline.cacheUpdatedDesc', { count: equipCount }),
+          description: hadChanges
+            ? t('offline.cacheUpdatedDesc', { count: equipCount })
+            : t('offline.cacheAlreadyUpToDate', { defaultValue: 'Cache já está atualizado' }),
         });
       }
+      
+      sessionStorage.setItem(SESSION_CACHE_KEY, 'true');
     } catch (error) {
       console.error('Error pre-caching data:', error);
-      toast.error(t('offline.cacheError'), { id: 'cache-error' });
+      if (!options?.silent) {
+        toast.error(t('offline.cacheError'), { id: 'cache-error' });
+      }
     } finally {
       globalCacheInProgress = false;
       // Bug #4: process pending ship sync after initial cache completes
@@ -293,7 +306,7 @@ export function useOfflineSync() {
 
   // ===== Sync helper functions =====
 
-  async function fullSyncEquipment(shipIds: string[] | null) {
+  async function fullSyncEquipment(shipIds: string[] | null): Promise<number> {
     // Get total count with ship filter
     let countQuery = supabase
       .from('equipment')
@@ -336,9 +349,10 @@ export function useOfflineSync() {
 
     // Full replace on first sync
     await offlineDB.cacheEquipment(allEquipment);
+    return allEquipment.length;
   }
 
-  async function deltaSyncEquipment(shipIds: string[] | null, lastSyncTs: string) {
+  async function deltaSyncEquipment(shipIds: string[] | null, lastSyncTs: string): Promise<number> {
     // Fetch only records updated since last sync
     let query = supabase
       .from('equipment')
@@ -386,6 +400,8 @@ export function useOfflineSync() {
       await checkDeletedEquipment(shipIds);
       await offlineDB.setMetadata('last_delete_check', Date.now());
     }
+
+    return updatedEquipment.length;
   }
 
   async function checkDeletedEquipment(shipIds: string[] | null) {
@@ -492,10 +508,10 @@ export function useOfflineSync() {
     }
   }
 
-  async function syncLastInspections(lastSyncTs: string | undefined) {
+  async function syncLastInspections(lastSyncTs: string | undefined): Promise<number> {
     // Get equipment IDs from local cache
     const equipmentIds = await offlineDB.getEquipmentIds();
-    if (equipmentIds.length === 0) return;
+    if (equipmentIds.length === 0) return 0;
 
     const lastInspections: offlineDB.CachedLastInspection[] = [];
     const INSPECTION_BATCH_SIZE = 200;
@@ -552,6 +568,8 @@ export function useOfflineSync() {
       // Full sync: replace all
       await offlineDB.cacheLastInspections(lastInspections);
     }
+
+    return lastInspections.length;
   }
 
   // Check if cache is stale and notify/refresh (with throttling)
@@ -1007,13 +1025,9 @@ export function useOfflineSync() {
       const equipCount = await offlineDB.getEquipmentCount();
       console.log(`Ship ${shipId} synced (${equipCount} total equipment in cache)`);
       
-      // Bug #3: Only show toast if there are meaningful data counts
-      if (equipCount > 0) {
-        toast(t('offline.cacheUpdated'), {
-          id: 'ship-cache-updated',
-          description: t('offline.cacheUpdatedDesc', { count: equipCount }),
-        });
-      }
+      // Silent: only logs to console, no toast pollution
+      // Toast only appears via manual refresh in the header sync button
+
     } catch (error) {
       console.error(`Error syncing ship ${shipId}:`, error);
     } finally {

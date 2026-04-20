@@ -125,37 +125,10 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
     if (!printWindow) return;
 
     const scanText = t('qrCode.scanToInspect').toUpperCase();
-    const baseUrl = window.location.origin;
 
     const logoHtml = logoBase64
-      ? `<img src="${logoBase64}" style="height: 20px; width: auto;" alt="${organizationName}" />`
-      : `<span style="color: white; font-weight: bold; font-size: 14px;">${organizationName}</span>`;
-
-    // Get SVGs for each equipment
-    const qrHtmls = selectedEquipment.map(eq => {
-      const inspectionUrl = `${baseUrl}/inspections?scan=${eq.id}`;
-      return `
-        <div class="label">
-          <div class="header">${logoHtml}</div>
-          <div class="content">
-            <div class="qr-container">
-              <div class="qr-code">
-                <svg viewBox="0 0 256 256" style="width: 56mm; height: 56mm;">
-                  <!-- QR will be replaced -->
-                </svg>
-              </div>
-              ${eq.short_code ? `<div class="short-code-overlay"><span class="short-code">${eq.short_code}</span></div>` : ''}
-            </div>
-            <div class="info">
-              <div class="code">${eq.internal_code}</div>
-              <div class="name">${eq.name}</div>
-              ${eq.location ? `<div class="location">📍 ${eq.location}</div>` : ''}
-            </div>
-          </div>
-          <div class="footer">📱 ${scanText}</div>
-        </div>
-      `;
-    }).join('');
+      ? `<img src="${logoBase64}" style="height: 16px; width: auto;" alt="${organizationName}" />`
+      : `<span style="color: white; font-weight: bold; font-size: 12px;">${organizationName}</span>`;
 
     // Build QR SVGs using the refs
     const qrSvgs: string[] = [];
@@ -175,15 +148,8 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
         <head>
           <title>${t('qrCode.printMultiple')} - ${category?.name}</title>
           <style>
-            @page {
-              size: A4;
-              margin: 10mm;
-            }
-            * {
-              margin: 0;
-              padding: 0;
-              box-sizing: border-box;
-            }
+            @page { size: A4; margin: 10mm; }
+            * { margin: 0; padding: 0; box-sizing: border-box; }
             body {
               font-family: Arial, sans-serif;
               -webkit-print-color-adjust: exact;
@@ -202,87 +168,85 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
               overflow: hidden;
               page-break-inside: avoid;
               width: 90mm;
-              height: 68mm;
+              height: 70mm;
             }
             .header {
               background: ${BRAND_COLOR};
-              padding: 4px 10px;
+              padding: 3px 8px;
               display: flex;
               align-items: center;
               justify-content: center;
-              min-height: 24px;
+              min-height: 20px;
             }
-            .header img {
-              height: 18px;
-              width: auto;
-            }
+            .header img { height: 14px; width: auto; }
             .content {
               display: flex;
               align-items: center;
-              gap: 6px;
-              padding: 4px 6px;
+              gap: 3mm;
+              padding: 2.5mm;
               flex: 1;
+              min-height: 0;
             }
             .qr-container {
               flex-shrink: 0;
-              position: relative;
+              background: white;
+              padding: 2mm;
+              border-radius: 1.5mm;
             }
             .qr-container svg {
-              width: 42mm !important;
-              height: 42mm !important;
+              width: 48mm !important;
+              height: 48mm !important;
               display: block;
-            }
-            .short-code-overlay {
-              position: absolute;
-              top: 50%;
-              left: 50%;
-              transform: translate(-50%, -50%);
-              background: white;
-              padding: 2px 6px;
-              border-radius: 3px;
-            }
-            .short-code {
-              font-size: 10pt;
-              font-weight: bold;
-              font-family: monospace;
             }
             .info {
               flex: 1;
               display: flex;
               flex-direction: column;
               justify-content: center;
+              gap: 1mm;
               overflow: hidden;
+              min-width: 0;
+            }
+            .short-code-box {
+              background: ${BRAND_COLOR};
+              color: white;
+              padding: 1.5mm 2mm;
+              border-radius: 1.5mm;
+              text-align: center;
+              font-family: 'Courier New', monospace;
+              font-size: 13pt;
+              font-weight: 900;
+              letter-spacing: 0.12em;
+              line-height: 1.1;
             }
             .code {
-              font-size: 11pt;
+              font-size: 10pt;
               font-weight: bold;
-              margin-bottom: 2px;
               white-space: nowrap;
               overflow: hidden;
               text-overflow: ellipsis;
-              color: #333;
+              color: #222;
             }
             .name {
               font-size: 8pt;
               color: #333;
-              margin-bottom: 2px;
               display: -webkit-box;
               -webkit-line-clamp: 2;
               -webkit-box-orient: vertical;
               overflow: hidden;
+              line-height: 1.2;
             }
             .location {
-              font-size: 8pt;
+              font-size: 7.5pt;
               color: #666;
               word-break: break-word;
-              overflow-wrap: break-word;
               line-height: 1.2;
             }
             .footer {
               background: #f0f0f0;
-              padding: 3px;
+              padding: 1.5mm;
               text-align: center;
-              font-size: 7pt;
+              font-size: 6.5pt;
               color: ${BRAND_COLOR};
               font-weight: bold;
             }
@@ -290,33 +254,25 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
         </head>
         <body>
           <div class="grid">
-            ${selectedEquipment.map((eq, index) => {
-              const inspectionUrl = `${baseUrl}/inspections?scan=${eq.id}`;
-              return `
-                <div class="label">
-                  <div class="header">${logoHtml}</div>
-                  <div class="content">
-                    <div class="qr-container">
-                      ${qrSvgs[index] || ''}
-                      ${eq.short_code ? `<div class="short-code-overlay"><span class="short-code">${eq.short_code}</span></div>` : ''}
-                    </div>
-                    <div class="info">
-                      <div class="code">${eq.internal_code}</div>
-                      <div class="name">${eq.name}</div>
-                      ${eq.location ? `<div class="location">📍 ${eq.location}</div>` : ''}
-                    </div>
+            ${selectedEquipment.map((eq, index) => `
+              <div class="label">
+                <div class="header">${logoHtml}</div>
+                <div class="content">
+                  <div class="qr-container">${qrSvgs[index] || ''}</div>
+                  <div class="info">
+                    ${eq.short_code ? `<div class="short-code-box">${eq.short_code}</div>` : ''}
+                    <div class="code">${eq.internal_code}</div>
+                    <div class="name">${eq.name}</div>
+                    ${eq.location ? `<div class="location">📍 ${eq.location}</div>` : ''}
                   </div>
-                  <div class="footer">📱 ${scanText}</div>
                 </div>
-              `;
-            }).join('')}
+                <div class="footer">📱 ${scanText}</div>
+              </div>
+            `).join('')}
           </div>
           <script>
             window.onload = () => {
-              setTimeout(() => {
-                window.print();
-                window.close();
-              }, 200);
+              setTimeout(() => { window.print(); window.close(); }, 200);
             };
           </script>
         </body>
@@ -389,8 +345,9 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
                   >
                     <QRCodeSVG
                       value={`${window.location.origin}/inspections?scan=${eq.id}`}
-                      size={400}
+                      size={500}
                       level="H"
+                      marginSize={4}
                     />
                   </div>
                 </label>

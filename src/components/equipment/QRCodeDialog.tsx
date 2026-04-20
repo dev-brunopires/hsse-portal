@@ -13,6 +13,8 @@ import {
   DrawerTitle,
 } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { Download, Printer, QrCode, Copy, Check } from 'lucide-react';
 import { useRef, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -33,6 +35,14 @@ interface QRCodeDialogProps {
   } | null;
 }
 
+// Available label sizes (mm)
+type LabelSizeKey = 'small' | 'medium' | 'large';
+const LABEL_SIZES: Record<LabelSizeKey, { width: number; height: number; qr: number; shortCode: number; titleSize: number; locSize: number }> = {
+  small:  { width: 90,  height: 70,  qr: 50, shortCode: 12, titleSize: 11, locSize: 9 },
+  medium: { width: 120, height: 90,  qr: 65, shortCode: 16, titleSize: 14, locSize: 11 },
+  large:  { width: 150, height: 120, qr: 85, shortCode: 20, titleSize: 18, locSize: 13 },
+};
+
 // Primary brand color - navy blue matching the app theme
 const BRAND_COLOR = '#003366';
 
@@ -41,6 +51,7 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
   const isMobile = useIsMobile();
   const qrRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
+  const [labelSize, setLabelSize] = useState<LabelSizeKey>('medium');
   const { toast } = useToast();
   const { organization, logoWhiteUrl } = useOrganization();
   const [logoBase64, setLogoBase64] = useState<string | null>(null);
@@ -212,11 +223,12 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
     if (!svg) return;
 
     const scanText = t('qrCode.scanToInspect').toUpperCase();
-    
+    const cfg = LABEL_SIZES[labelSize];
+
     // Generate logo HTML based on organization
-    const logoHtml = logoBase64 
-      ? `<img src="${logoBase64}" style="height: 24px; width: auto;" alt="${organizationName}" />`
-      : `<span style="color: white; font-weight: bold; font-size: 18px;">${organizationName}</span>`;
+    const logoHtml = logoBase64
+      ? `<img src="${logoBase64}" style="height: ${Math.round(cfg.height * 0.18)}px; width: auto;" alt="${organizationName}" />`
+      : `<span style="color: white; font-weight: bold; font-size: ${cfg.titleSize}pt;">${organizationName}</span>`;
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -225,20 +237,16 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
           <title>Etiqueta ${organizationName} - ${equipment.shortCode || equipment.internalCode}</title>
           <style>
             @page {
-              size: 120mm 90mm;
+              size: ${cfg.width}mm ${cfg.height}mm;
               margin: 0;
             }
-            * {
-              margin: 0;
-              padding: 0;
-              box-sizing: border-box;
-            }
-            body { 
-              display: flex; 
-              align-items: center; 
-              justify-content: center; 
-              width: 120mm;
-              height: 90mm;
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              width: ${cfg.width}mm;
+              height: ${cfg.height}mm;
               font-family: Arial, sans-serif;
               -webkit-print-color-adjust: exact;
               print-color-adjust: exact;
@@ -254,82 +262,80 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
             }
             .header {
               background: ${BRAND_COLOR};
-              padding: 6px 16px;
+              padding: 4px 10px;
               display: flex;
               align-items: center;
               justify-content: center;
-              min-height: 36px;
-            }
-            .header img {
-              height: 24px;
-              width: auto;
+              min-height: ${Math.round(cfg.height * 0.13)}mm;
             }
             .content {
               display: flex;
               align-items: center;
-              gap: 8px;
-              padding: 6px 8px;
+              gap: 4mm;
+              padding: 3mm 3mm;
               flex: 1;
+              min-height: 0;
             }
             .qr-container {
               flex-shrink: 0;
-              position: relative;
+              background: white;
+              padding: 3mm;
+              border-radius: 2mm;
             }
             .qr-container svg {
-              width: 60mm !important;
-              height: 60mm !important;
-            }
-            .short-code-overlay {
-              position: absolute;
-              top: 50%;
-              left: 50%;
-              transform: translate(-50%, -50%);
-              background: white;
-              padding: 2px 8px;
-              border-radius: 3px;
-            }
-            .short-code {
-              font-size: 14pt;
-              font-weight: bold;
-              font-family: monospace;
+              width: ${cfg.qr}mm !important;
+              height: ${cfg.qr}mm !important;
+              display: block;
             }
             .info {
               flex: 1;
               display: flex;
               flex-direction: column;
               justify-content: center;
+              gap: 1.5mm;
               overflow: hidden;
+              min-width: 0;
+            }
+            .short-code-box {
+              background: ${BRAND_COLOR};
+              color: white;
+              padding: 2mm 3mm;
+              border-radius: 2mm;
+              text-align: center;
+              font-family: 'Courier New', monospace;
+              font-size: ${cfg.shortCode}pt;
+              font-weight: 900;
+              letter-spacing: 0.15em;
+              line-height: 1.1;
             }
             .code {
-              font-size: 14pt;
+              font-size: ${cfg.titleSize}pt;
               font-weight: bold;
-              margin-bottom: 4px;
               white-space: nowrap;
               overflow: hidden;
               text-overflow: ellipsis;
-              color: #333;
+              color: #222;
             }
             .name {
-              font-size: 11pt;
+              font-size: ${cfg.locSize}pt;
               color: #333;
-              margin-bottom: 4px;
               display: -webkit-box;
               -webkit-line-clamp: 2;
               -webkit-box-orient: vertical;
               overflow: hidden;
+              line-height: 1.2;
             }
             .location {
-              font-size: 12pt;
+              font-size: ${cfg.locSize - 1}pt;
               color: #666;
-              white-space: nowrap;
-              overflow: hidden;
-              text-overflow: ellipsis;
+              word-break: break-word;
+              line-height: 1.2;
             }
             .footer {
               background: #f0f0f0;
-              padding: 4px;
+              padding: 1.5mm;
               text-align: center;
-              font-size: 9pt;
+              font-size: ${Math.max(7, cfg.locSize - 2)}pt;
               color: ${BRAND_COLOR};
               font-weight: bold;
             }
@@ -337,15 +343,11 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
         </head>
         <body>
           <div class="label">
-            <div class="header">
-              ${logoHtml}
-            </div>
+            <div class="header">${logoHtml}</div>
             <div class="content">
-              <div class="qr-container">
-                ${svg.outerHTML}
-                ${equipment.shortCode ? `<div class="short-code-overlay"><span class="short-code">${equipment.shortCode}</span></div>` : ''}
-              </div>
+              <div class="qr-container">${svg.outerHTML}</div>
               <div class="info">
+                ${equipment.shortCode ? `<div class="short-code-box">${equipment.shortCode}</div>` : ''}
                 <div class="code">${equipment.internalCode}</div>
                 <div class="name">${equipment.name}</div>
                 ${equipment.location ? `<div class="location">📍 ${equipment.location}</div>` : ''}
@@ -355,10 +357,7 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
           </div>
           <script>
             window.onload = () => {
-              setTimeout(() => {
-                window.print();
-                window.close();
-              }, 100);
+              setTimeout(() => { window.print(); window.close(); }, 100);
             };
           </script>
         </body>
@@ -532,24 +531,22 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
           {/* Content */}
           <div className="bg-white p-4 flex flex-col items-center">
             <p className="font-mono text-xs text-muted-foreground">{equipment.internalCode}</p>
-            
-            <div ref={qrRef} className="bg-white p-3 sm:p-4 rounded-lg border mt-3 relative">
-              <QRCodeSVG 
-                value={inspectionUrl} 
-                size={isMobile ? 280 : 380}
+
+            <div ref={qrRef} className="bg-white p-4 sm:p-5 rounded-lg border mt-3">
+              <QRCodeSVG
+                value={inspectionUrl}
+                size={isMobile ? 260 : 360}
                 level="H"
                 includeMargin
+                marginSize={4}
               />
-              {equipment.shortCode && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="bg-white px-3 py-1 rounded border shadow-sm">
-                    <span className="font-mono text-sm font-bold text-foreground">
-                      {equipment.shortCode}
-                    </span>
-                  </div>
-                </div>
-              )}
             </div>
+
+            {equipment.shortCode && (
+              <div className="mt-3 bg-primary text-primary-foreground px-4 py-2 rounded-md font-mono font-black text-xl tracking-[0.2em] shadow-sm">
+                {equipment.shortCode}
+              </div>
+            )}
 
             <p className="text-sm text-foreground text-center mt-2 font-medium">{equipment.name}</p>
             {equipment.location && (
@@ -579,7 +576,21 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
         </Button>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
+        <div className="space-y-1.5">
+          <Label className="text-xs">{t('qrCode.labelSize')}</Label>
+          <Select value={labelSize} onValueChange={(v) => setLabelSize(v as LabelSizeKey)}>
+            <SelectTrigger className="h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="small">{t('qrCode.sizeSmall')} (90×70mm)</SelectItem>
+              <SelectItem value="medium">{t('qrCode.sizeMedium')} (120×90mm)</SelectItem>
+              <SelectItem value="large">{t('qrCode.sizeLarge')} (150×120mm)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         <p className="text-sm font-medium text-muted-foreground">{t('reports.printOptions')}:</p>
         <div className="grid grid-cols-2 gap-2">
           <Button variant="outline" className="gap-2 text-xs sm:text-sm" onClick={handlePrintLabel}>
