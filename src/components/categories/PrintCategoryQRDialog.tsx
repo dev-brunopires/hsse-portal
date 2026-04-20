@@ -345,8 +345,9 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
                   >
                     <QRCodeSVG
                       value={`${window.location.origin}/inspections?scan=${eq.id}`}
-                      size={400}
+                      size={500}
                       level="H"
+                      marginSize={4}
                     />
                   </div>
                 </label>
