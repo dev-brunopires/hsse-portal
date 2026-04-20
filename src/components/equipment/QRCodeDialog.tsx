@@ -584,9 +584,9 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="small">{t('qrCode.sizeSmall')} (90×70mm)</SelectItem>
-              <SelectItem value="medium">{t('qrCode.sizeMedium')} (120×90mm)</SelectItem>
-              <SelectItem value="large">{t('qrCode.sizeLarge')} (150×120mm)</SelectItem>
+              <SelectItem value="small">{t('labelSize.small')}</SelectItem>
+              <SelectItem value="medium">{t('labelSize.medium')}</SelectItem>
+              <SelectItem value="large">{t('labelSize.large')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
