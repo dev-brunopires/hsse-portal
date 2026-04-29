@@ -11,6 +11,7 @@ import {
   SUCCESS_GREEN,
   WARNING_YELLOW,
   DANGER_RED,
+  addPDFHeader,
   addPDFFooter,
   addSectionHeader,
   preloadLogo,
@@ -91,46 +92,13 @@ const formatDate = (date: string | null | undefined): string => {
   }
 };
 
-// Cache for organization logos
-const logoCache = new Map<string, string>();
-
-async function loadOrganizationLogo(logoUrl: string | null): Promise<string | null> {
-  if (!logoUrl) return null;
-  
-  // Check cache first
-  if (logoCache.has(logoUrl)) {
-    return logoCache.get(logoUrl) || null;
-  }
-  
-  try {
-    const response = await fetch(logoUrl);
-    const blob = await response.blob();
-    
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64 = reader.result as string;
-        logoCache.set(logoUrl, base64);
-        resolve(base64);
-      };
-      reader.onerror = () => resolve(null);
-      reader.readAsDataURL(blob);
-    });
-  } catch {
-    return null;
-  }
-}
-
 export async function generateInspectionPDF(data: InspectionPDFData, options?: { preview?: boolean }) {
   const t = i18n.t;
   const dateLocale = getDateLocale();
   const statusLabels = getStatusLabels();
-  const companyName = data.branding?.name || 'SafeShip';
   
-  // Preload logos - prioritize white logo, fallback to colored logo
+  // Preload logo for standardized header
   await preloadLogo(data.branding);
-  const logoUrl = data.branding?.logoWhiteUrl || data.branding?.logoUrl || null;
-  const logoBase64 = await loadOrganizationLogo(logoUrl);
   
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -138,40 +106,18 @@ export async function generateInspectionPDF(data: InspectionPDFData, options?: {
   const margin = 15;
   let yPos = 0;
 
-  // === HEADER WITH BRANDING ===
-  doc.setFillColor(...SBM_BLUE);
-  doc.rect(0, 0, pageWidth, 32, 'F');
-  
-  // Add organization logo or fallback to text
-  if (logoBase64) {
-    try {
-      doc.addImage(logoBase64, 'PNG', margin, 6, 32, 20);
-    } catch {
-      // Fallback to organization name
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(18);
-      doc.setFont('helvetica', 'bold');
-      doc.text(companyName, margin, 18);
-    }
-  } else {
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(18);
-    doc.setFont('helvetica', 'bold');
-    doc.text(companyName, margin, 18);
-  }
-  
-  // Report title
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.text(t('generateInspectionPDF.reportTitle'), pageWidth - margin, 16, { align: 'right' });
-  
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`${t('generateInspectionPDF.document')}: ${formatInspectionId(data.inspection.id)}`, pageWidth - margin, 24, { align: 'right' });
-  doc.text(`${t('generateInspectionPDF.issued')}: ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: dateLocale })}`, pageWidth - margin, 30, { align: 'right' });
-  
-  yPos = 42;
+  // === STANDARDIZED HEADER WITH BRANDING ===
+  yPos = await addPDFHeader(
+    doc,
+    t('generateInspectionPDF.reportTitle'),
+    undefined,
+    [
+      `${t('generateInspectionPDF.document')}: ${formatInspectionId(data.inspection.id)}`,
+      `${t('generateInspectionPDF.issued')}: ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: dateLocale })}`,
+    ],
+    { branding: data.branding }
+  );
+  yPos += 2;
 
   // === UNIT AND STATUS ROW ===
   doc.setFillColor(...LIGHT_GRAY);
