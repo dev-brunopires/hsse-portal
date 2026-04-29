@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { DashboardStats } from '@/types/equipment';
 import { useShipFilter } from '@/contexts/ShipFilterContext';
@@ -9,6 +9,7 @@ export function useDashboardStats() {
   return useQuery({
     queryKey: ['dashboard-stats', selectedShipId],
     enabled: isReady,
+    placeholderData: keepPreviousData,
     retry: (failureCount, error) => {
       const errorMessage = (error as Error)?.message?.toLowerCase() || '';
       if (errorMessage.includes('jwt') || errorMessage.includes('session')) {
