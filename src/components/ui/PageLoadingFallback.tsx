@@ -1,54 +1,33 @@
+import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { Skeleton } from './skeleton';
 
 interface PageLoadingFallbackProps {
   message?: string;
+  /** Delay (ms) before showing UI to avoid flicker on cached chunks */
+  delay?: number;
 }
 
-export function PageLoadingFallback({ message }: PageLoadingFallbackProps) {
+/**
+ * Lightweight Suspense fallback.
+ * - Renders nothing for `delay` ms (default 200ms) so cached pages don't flash
+ * - After delay, shows a minimal centered spinner instead of a full skeleton
+ *   to avoid the heavy "skeleton -> empty -> data" double-flash.
+ */
+export function PageLoadingFallback({ message, delay = 200 }: PageLoadingFallbackProps) {
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShow(true), delay);
+    return () => clearTimeout(timer);
+  }, [delay]);
+
+  if (!show) return null;
+
   return (
-    <div className="flex flex-col gap-6 animate-in fade-in duration-300">
-      {/* Header skeleton */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-4 w-64" />
-        </div>
-        <Skeleton className="h-10 w-32" />
-      </div>
-
-      {/* Content skeleton */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {[...Array(4)].map((_, i) => (
-          <Skeleton key={i} className="h-32 rounded-xl" />
-        ))}
-      </div>
-
-      {/* Table skeleton */}
-      <div className="border rounded-xl overflow-hidden">
-        <div className="bg-muted/50 p-4">
-          <div className="flex gap-4">
-            <Skeleton className="h-10 flex-1" />
-            <Skeleton className="h-10 w-32" />
-          </div>
-        </div>
-        <div className="divide-y">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="p-4 flex items-center gap-4">
-              <Skeleton className="h-4 w-4" />
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-4 flex-1" />
-              <Skeleton className="h-6 w-20 rounded-full" />
-              <Skeleton className="h-4 w-24" />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Loading indicator */}
-      <div className="fixed bottom-24 lg:bottom-8 left-1/2 -translate-x-1/2 bg-card border shadow-lg rounded-full px-4 py-2 flex items-center gap-2 z-50">
+    <div className="flex items-center justify-center py-16 animate-in fade-in duration-200">
+      <div className="flex items-center gap-2 text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin text-primary" />
-        <span className="text-sm text-muted-foreground">{message || 'Carregando...'}</span>
+        {message && <span className="text-sm">{message}</span>}
       </div>
     </div>
   );

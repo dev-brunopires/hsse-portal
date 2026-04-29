@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
@@ -112,6 +112,7 @@ export function useEquipmentPaginated(filters: EquipmentFilters = {}) {
     },
     getNextPageParam: (lastPage) => lastPage.nextPage,
     initialPageParam: 0,
+    placeholderData: keepPreviousData,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 }
@@ -141,6 +142,7 @@ export function useEquipmentCount(categoryId?: string) {
       
       return count || 0;
     },
+    placeholderData: keepPreviousData,
     staleTime: 1000 * 60 * 5,
   });
 }

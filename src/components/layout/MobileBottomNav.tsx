@@ -7,6 +7,7 @@ import { QRCodeScannerDialog } from '@/components/equipment/QRCodeScannerDialog'
 import { hapticButton, hapticSuccess } from '@/utils/hapticFeedback';
 import { Badge } from '@/components/ui/badge';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
+import { prefetchRouteChunk } from '@/utils/routeChunkPrefetch';
 
 interface NavItem {
   icon: React.ElementType;
@@ -66,6 +67,8 @@ export function MobileBottomNav() {
                 <button
                   key={item.path}
                   onClick={() => handleNavigation(item.path)}
+                  onTouchStart={() => prefetchRouteChunk(item.path)}
+                  onMouseEnter={() => prefetchRouteChunk(item.path)}
                   className={cn(
                     "relative flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[64px] min-h-[48px] touch-manipulation active:scale-95",
                     isActive(item.path) 
@@ -103,6 +106,8 @@ export function MobileBottomNav() {
                 <button
                   key={item.path}
                   onClick={() => handleNavigation(item.path)}
+                  onTouchStart={() => prefetchRouteChunk(item.path)}
+                  onMouseEnter={() => prefetchRouteChunk(item.path)}
                   className={cn(
                     "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[64px] min-h-[48px] touch-manipulation active:scale-95",
                     isActive(item.path) 

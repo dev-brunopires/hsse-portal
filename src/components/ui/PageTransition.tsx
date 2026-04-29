@@ -6,15 +6,15 @@ interface PageTransitionProps {
 }
 
 const pageVariants = {
-  initial: { opacity: 0, y: 12 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -8 },
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  exit: { opacity: 0 },
 };
 
 const pageTransition = {
   type: 'tween' as const,
   ease: 'easeOut' as const,
-  duration: 0.25,
+  duration: 0.12,
 };
 
 export function PageTransition({ children }: PageTransitionProps) {
