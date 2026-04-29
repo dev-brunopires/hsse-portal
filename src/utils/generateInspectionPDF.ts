@@ -92,46 +92,13 @@ const formatDate = (date: string | null | undefined): string => {
   }
 };
 
-// Cache for organization logos
-const logoCache = new Map<string, string>();
-
-async function loadOrganizationLogo(logoUrl: string | null): Promise<string | null> {
-  if (!logoUrl) return null;
-  
-  // Check cache first
-  if (logoCache.has(logoUrl)) {
-    return logoCache.get(logoUrl) || null;
-  }
-  
-  try {
-    const response = await fetch(logoUrl);
-    const blob = await response.blob();
-    
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64 = reader.result as string;
-        logoCache.set(logoUrl, base64);
-        resolve(base64);
-      };
-      reader.onerror = () => resolve(null);
-      reader.readAsDataURL(blob);
-    });
-  } catch {
-    return null;
-  }
-}
-
 export async function generateInspectionPDF(data: InspectionPDFData, options?: { preview?: boolean }) {
   const t = i18n.t;
   const dateLocale = getDateLocale();
   const statusLabels = getStatusLabels();
-  const companyName = data.branding?.name || 'SafeShip';
   
-  // Preload logos - prioritize white logo, fallback to colored logo
+  // Preload logo for standardized header
   await preloadLogo(data.branding);
-  const logoUrl = data.branding?.logoWhiteUrl || data.branding?.logoUrl || null;
-  const logoBase64 = await loadOrganizationLogo(logoUrl);
   
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
