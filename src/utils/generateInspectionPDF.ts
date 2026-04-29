@@ -11,6 +11,7 @@ import {
   SUCCESS_GREEN,
   WARNING_YELLOW,
   DANGER_RED,
+  addPDFHeader,
   addPDFFooter,
   addSectionHeader,
   preloadLogo,
