@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { AppSidebar } from './AppSidebar';
@@ -11,6 +11,8 @@ import { PageTransition } from '@/components/ui/PageTransition';
 import { PWAUpdatePrompt } from './PWAUpdatePrompt';
 import { SyncProgressIndicator } from './SyncProgressIndicator';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useRoutePrefetch } from '@/hooks/useRoutePrefetch';
+import { prefetchRouteChunk } from '@/utils/routeChunkPrefetch';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -22,6 +24,26 @@ export function AppLayout({ children }: AppLayoutProps) {
   
   // Enable global keyboard shortcuts
   useKeyboardShortcuts();
+  // Prefetch common queries (equipment, categories, ships) once auth/ship is ready
+  useRoutePrefetch();
+
+  // Pre-warm all lazy route chunks during browser idle time so subsequent
+  // navigations skip the dynamic-import wait entirely.
+  useEffect(() => {
+    const paths = [
+      '/', '/equipment', '/inspections', '/maintenance', '/certificates',
+      '/reports', '/alerts', '/pending', '/categories', '/profile',
+    ];
+    const idle = (cb: () => void) => {
+      const w = window as unknown as { requestIdleCallback?: (cb: () => void) => number };
+      if (typeof w.requestIdleCallback === 'function') {
+        w.requestIdleCallback(cb);
+      } else {
+        setTimeout(cb, 1500);
+      }
+    };
+    idle(() => paths.forEach(prefetchRouteChunk));
+  }, []);
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
