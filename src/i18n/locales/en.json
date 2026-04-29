@@ -20,6 +20,7 @@
     "export": "Export",
     "import": "Import",
     "close": "Close",
+    "clear": "Clear",
     "confirm": "Confirm",
     "back": "Back",
     "next": "Next",
