@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { SystemLogo } from '@/components/ui/SystemLogo';
+import { prefetchRouteChunk } from '@/utils/routeChunkPrefetch';
 
 interface NavItemProps {
   to: string;
@@ -36,8 +37,16 @@ const NavItem = forwardRef<HTMLAnchorElement, NavItemProps>(
     const location = useLocation();
     const isActive = location.pathname === to;
 
+    const handlePrefetch = () => prefetchRouteChunk(to);
+
     return (
-      <NavLink to={to} ref={ref}>
+      <NavLink
+        to={to}
+        ref={ref}
+        onMouseEnter={handlePrefetch}
+        onFocus={handlePrefetch}
+        onTouchStart={handlePrefetch}
+      >
         <div
           className={cn(
             'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group',
