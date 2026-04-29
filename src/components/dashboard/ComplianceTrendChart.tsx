@@ -94,7 +94,7 @@ export function ComplianceTrendChart() {
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted))" />
             <XAxis
               dataKey="month"
               tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
