@@ -112,6 +112,7 @@ export function useEquipmentPaginated(filters: EquipmentFilters = {}) {
     },
     getNextPageParam: (lastPage) => lastPage.nextPage,
     initialPageParam: 0,
+    placeholderData: keepPreviousData,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 }
