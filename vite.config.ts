@@ -70,7 +70,7 @@ export default defineConfig(({ mode }) => ({
         
         // Navigation fallback for SPA
         navigateFallback: "/index.html",
-        navigateFallbackDenylist: [/^\/api/, /^\/supabase/],
+        navigateFallbackDenylist: [/^\/api/, /^\/supabase/, /^\/~oauth/],
         
         runtimeCaching: [
           // Cache page chunks with StaleWhileRevalidate for faster navigation
