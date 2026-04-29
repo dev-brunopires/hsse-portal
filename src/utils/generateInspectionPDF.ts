@@ -139,40 +139,18 @@ export async function generateInspectionPDF(data: InspectionPDFData, options?: {
   const margin = 15;
   let yPos = 0;
 
-  // === HEADER WITH BRANDING ===
-  doc.setFillColor(...SBM_BLUE);
-  doc.rect(0, 0, pageWidth, 32, 'F');
-  
-  // Add organization logo or fallback to text
-  if (logoBase64) {
-    try {
-      doc.addImage(logoBase64, 'PNG', margin, 6, 32, 20);
-    } catch {
-      // Fallback to organization name
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(18);
-      doc.setFont('helvetica', 'bold');
-      doc.text(companyName, margin, 18);
-    }
-  } else {
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(18);
-    doc.setFont('helvetica', 'bold');
-    doc.text(companyName, margin, 18);
-  }
-  
-  // Report title
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.text(t('generateInspectionPDF.reportTitle'), pageWidth - margin, 16, { align: 'right' });
-  
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`${t('generateInspectionPDF.document')}: ${formatInspectionId(data.inspection.id)}`, pageWidth - margin, 24, { align: 'right' });
-  doc.text(`${t('generateInspectionPDF.issued')}: ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: dateLocale })}`, pageWidth - margin, 30, { align: 'right' });
-  
-  yPos = 42;
+  // === STANDARDIZED HEADER WITH BRANDING ===
+  yPos = await addPDFHeader(
+    doc,
+    t('generateInspectionPDF.reportTitle'),
+    undefined,
+    [
+      `${t('generateInspectionPDF.document')}: ${formatInspectionId(data.inspection.id)}`,
+      `${t('generateInspectionPDF.issued')}: ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: dateLocale })}`,
+    ],
+    { branding: data.branding }
+  );
+  yPos += 2;
 
   // === UNIT AND STATUS ROW ===
   doc.setFillColor(...LIGHT_GRAY);
