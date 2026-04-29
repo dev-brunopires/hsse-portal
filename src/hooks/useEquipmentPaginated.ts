@@ -142,6 +142,7 @@ export function useEquipmentCount(categoryId?: string) {
       
       return count || 0;
     },
+    placeholderData: keepPreviousData,
     staleTime: 1000 * 60 * 5,
   });
 }
