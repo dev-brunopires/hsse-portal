@@ -127,6 +127,12 @@ export default function Certificates() {
 
   const { data: stats } = useCertificateStats();
 
+  // Derive selected certificate from the live list so it always reflects latest data after edits
+  const selectedCertificate = useMemo(
+    () => certificates.find((c) => c.id === selectedCertificateId) ?? null,
+    [certificates, selectedCertificateId]
+  );
+
   const filteredCertificates = useMemo(() => {
     let result = certificates;
 
