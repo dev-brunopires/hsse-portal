@@ -76,6 +76,7 @@ interface HeaderProps {
 
 export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
   const { t, i18n } = useTranslation();
+  const isMobile = useIsMobile();
   const { user, profile, role, signOut, isPlatformOwner, sessionUnstable, forceRefreshSession, profileLoading } = useAuth();
   const [isReconnecting, setIsReconnecting] = useState(false);
   const { selectedShipId, setSelectedShipId, isFilterEnabled } = useShipFilter();
