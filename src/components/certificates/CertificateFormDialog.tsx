@@ -41,18 +41,30 @@ import {
   type CertificateFormData,
 } from '@/hooks/useCertificates';
 
-const formSchema = z.object({
-  equipment_id: z.string().min(1, 'Equipment is required'),
-  name: z.string().min(1, 'Name is required'),
-  type: z.string().min(1, 'Type is required'),
-  certificate_number: z.string().optional(),
-  issuer: z.string().optional(),
-  issue_date: z.string().optional(),
-  expiry_date: z.string().optional(),
-  notes: z.string().optional(),
-});
+const buildFormSchema = (t: (key: string) => string) =>
+  z
+    .object({
+      equipment_id: z.string().min(1, t('certificates.equipmentRequired')),
+      name: z.string().trim().min(1, t('certificates.nameRequired')).max(200),
+      type: z.string().min(1, t('certificates.typeRequired')),
+      certificate_number: z.string().max(100).optional(),
+      issuer: z.string().max(200).optional(),
+      issue_date: z.string().min(1, t('certificates.issueDateRequired')),
+      expiry_date: z.string().min(1, t('certificates.expiryDateRequired')),
+      notes: z.string().max(2000).optional(),
+    })
+    .refine(
+      (data) => {
+        if (!data.issue_date || !data.expiry_date) return true;
+        return new Date(data.expiry_date) > new Date(data.issue_date);
+      },
+      {
+        message: t('certificates.expiryAfterIssue'),
+        path: ['expiry_date'],
+      }
+    );
 
-type FormData = z.infer<typeof formSchema>;
+type FormData = z.infer<ReturnType<typeof buildFormSchema>>;
 
 interface CertificateFormDialogProps {
   open: boolean;
