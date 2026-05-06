@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Camera, CameraOff, Loader2, QrCode, CheckCircle2, AlertCircle, Scan, SwitchCamera, Keyboard, Search, Flashlight, FlashlightOff, ZoomIn, Contrast, Delete } from 'lucide-react';
+import { Camera, CameraOff, Loader2, QrCode, CheckCircle2, AlertCircle, Scan, SwitchCamera, Keyboard, Search, Flashlight, FlashlightOff, ZoomIn, Contrast, Delete, Lightbulb } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -626,8 +626,9 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
           </DialogTitle>
           <DialogDescription>
             {t('qrScanner.dialogDescription')}
-            <span className="block text-xs mt-1 text-muted-foreground/80">
-              💡 {t('qrScanner.screenTip')}
+            <span className="flex items-center gap-1.5 text-xs mt-1 text-muted-foreground/80">
+              <Lightbulb className="h-3.5 w-3.5" />
+              {t('qrScanner.screenTip')}
             </span>
           </DialogDescription>
         </DialogHeader>

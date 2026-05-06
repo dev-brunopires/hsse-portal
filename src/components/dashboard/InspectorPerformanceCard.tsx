@@ -85,14 +85,10 @@ export function InspectorPerformanceCard() {
               <div key={inspector.inspectorId} className="p-3 rounded-lg border bg-card">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    {index === 0 && (
-                      <span className="text-lg">🥇</span>
-                    )}
-                    {index === 1 && (
-                      <span className="text-lg">🥈</span>
-                    )}
-                    {index === 2 && (
-                      <span className="text-lg">🥉</span>
+                    {index < 3 && (
+                      <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-muted text-[10px] font-semibold text-muted-foreground">
+                        {index + 1}
+                      </span>
                     )}
                     <span className="font-medium text-sm">{inspector.inspectorName}</span>
                   </div>

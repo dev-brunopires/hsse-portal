@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { RefreshCw, Check, AlertCircle, Cloud, CloudOff, Image, X } from 'lucide-react';
+import { RefreshCw, Check, AlertCircle, Cloud, CloudOff, Image, X, Upload } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
@@ -153,8 +153,9 @@ export function SyncProgressIndicator() {
         
         {/* Current item being synced */}
         {syncStatus === 'syncing' && currentItem && (
-          <p className="text-xs text-muted-foreground truncate mb-2 bg-muted/50 px-2 py-1 rounded">
-            📤 {currentItem}
+          <p className="text-xs text-muted-foreground truncate mb-2 bg-muted/50 px-2 py-1 rounded flex items-center gap-1.5">
+            <Upload className="h-3 w-3 flex-shrink-0" />
+            <span className="truncate">{currentItem}</span>
           </p>
         )}
         

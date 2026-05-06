@@ -273,9 +273,11 @@ export default function Supervisor() {
                       <div key={inspector.inspectorId} className="p-3 rounded-lg border bg-card">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
-                            {index === 0 && <span className="text-lg">🥇</span>}
-                            {index === 1 && <span className="text-lg">🥈</span>}
-                            {index === 2 && <span className="text-lg">🥉</span>}
+                            {index < 3 && (
+                              <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-muted text-[10px] font-semibold text-muted-foreground">
+                                {index + 1}
+                              </span>
+                            )}
                             <span className="font-medium text-sm">{inspector.inspectorName}</span>
                           </div>
                           <Badge variant="secondary">{inspector.totalInspections}</Badge>
@@ -320,8 +322,9 @@ export default function Supervisor() {
                           <div className="min-w-0">
                             <p className="font-medium text-sm truncate">{maint.title}</p>
                             {maint.due_date && (
-                              <p className={`text-xs ${isOverdue ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
-                                {isOverdue ? `⚠ ${t('supervisor.overdue')}` : ''} {format(new Date(maint.due_date), 'dd/MM/yyyy', { locale: dateLocale })}
+                              <p className={`text-xs flex items-center gap-1 ${isOverdue ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
+                                {isOverdue && <AlertTriangle className="h-3 w-3" />}
+                                {isOverdue ? `${t('supervisor.overdue')} ` : ''}{format(new Date(maint.due_date), 'dd/MM/yyyy', { locale: dateLocale })}
                               </p>
                             )}
                           </div>

@@ -148,7 +148,7 @@ export function useOnboarding() {
     },
     {
       popover: {
-        title: `✍️ ${t('onboarding.digitalSignature')}`,
+        title: t('onboarding.digitalSignature'),
         description: t('onboarding.digitalSignatureDesc'),
         side: 'over',
         align: 'center',
