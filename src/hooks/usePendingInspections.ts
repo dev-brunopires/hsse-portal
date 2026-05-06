@@ -31,7 +31,7 @@ export function usePendingInspections() {
         .eq('status', 'pending')
         .order('due_date', { ascending: true });
 
-      if (selectedShipId && selectedShipId !== 'all') {
+      if (selectedShipId) {
         query = query.eq('ship_id', selectedShipId);
       }
 
