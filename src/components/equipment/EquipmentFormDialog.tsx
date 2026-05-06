@@ -1206,7 +1206,7 @@ export function EquipmentFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[95vh] overflow-hidden flex flex-col bg-card border border-border" hideCloseButton>
+      <DialogContent className="max-w-3xl h-[95vh] sm:h-auto sm:max-h-[90vh] sm:min-h-[600px] overflow-hidden flex flex-col bg-card border border-border" hideCloseButton>
         <DialogHeader className="pb-4 border-b border-border flex-shrink-0">
           <DialogTitle>{headerContent}</DialogTitle>
           <DialogDescription className="sr-only">{mode === 'edit' ? t('equipment.editEquipment') : t('equipment.newEquipment')}</DialogDescription>
