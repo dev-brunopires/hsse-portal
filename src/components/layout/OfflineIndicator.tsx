@@ -1,6 +1,6 @@
 // Offline indicator component with sync status and debug panel
 import { useState, useEffect } from 'react';
-import { WifiOff, Cloud, RefreshCw, ChevronUp, ChevronDown, ClipboardCheck, Wifi, Database, Trash2, ExternalLink } from 'lucide-react';
+import { WifiOff, Cloud, RefreshCw, ChevronUp, ChevronDown, ClipboardCheck, Wifi, Database, Trash2, ExternalLink, Package, HardDrive, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
