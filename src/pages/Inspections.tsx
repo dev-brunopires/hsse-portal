@@ -25,6 +25,8 @@ import {
   MoreHorizontal,
   Trash2,
   Layers,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { StatCard } from '@/components/ui/stat-card';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -116,6 +118,7 @@ export default function Inspections() {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [showNewInspectionForm, setShowNewInspectionForm] = useState(false);
+  const [upcomingCollapsed, setUpcomingCollapsed] = useState(false);
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'calendar' | 'timeline' | 'category'>('list');
   const [preselectedEquipmentId, setPreselectedEquipmentId] = useState<string | null>(null);
@@ -371,6 +374,69 @@ export default function Inspections() {
           isLoading={isLoading}
         />
       </div>
+
+      {/* Upcoming Inspections (movido para o topo, minimizável) */}
+      {upcomingInspections.length > 0 && (
+        <Card>
+          <CardHeader
+            className="cursor-pointer select-none"
+            onClick={() => setUpcomingCollapsed((v) => !v)}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-primary" />
+                  {t('inspectionsPage.upcomingTitle')}
+                  <Badge variant="secondary" className="ml-1">{upcomingInspections.length}</Badge>
+                </CardTitle>
+                {!upcomingCollapsed && (
+                  <CardDescription className="mt-1">{t('inspectionsPage.upcomingSubtitle')}</CardDescription>
+                )}
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={upcomingCollapsed ? t('common.expand') : t('common.collapse')}
+                onClick={(e) => { e.stopPropagation(); setUpcomingCollapsed((v) => !v); }}
+              >
+                {upcomingCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+              </Button>
+            </div>
+          </CardHeader>
+          {!upcomingCollapsed && (
+            <CardContent>
+              <div className="space-y-3">
+                {upcomingInspections.slice(0, 5).map((inspection) => (
+                  <div
+                    key={inspection.id}
+                    className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+                    onClick={() => openDetailDialog(inspection)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <ClipboardCheck className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{inspection.equipment?.name}</p>
+                        <p className="text-sm text-muted-foreground">{inspection.equipment?.internal_code}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium">
+                        {formatDate(inspection.next_inspection_date!)}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {formatWeekday(inspection.next_inspection_date!)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          )}
+        </Card>
+      )}
 
       {/* View Mode Tabs */}
       <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'list' | 'calendar' | 'timeline' | 'category')}>
@@ -719,48 +785,6 @@ export default function Inspections() {
           <CategoryInspectionTab />
         </TabsContent>
       </Tabs>
-
-      {/* Upcoming Inspections */}
-      {upcomingInspections.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-primary" />
-              {t('inspectionsPage.upcomingTitle')}
-            </CardTitle>
-            <CardDescription>{t('inspectionsPage.upcomingSubtitle')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {upcomingInspections.slice(0, 5).map((inspection) => (
-                <div 
-                  key={inspection.id} 
-                  className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
-                  onClick={() => openDetailDialog(inspection)}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <ClipboardCheck className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-medium">{inspection.equipment?.name}</p>
-                      <p className="text-sm text-muted-foreground">{inspection.equipment?.internal_code}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium">
-                      {formatDate(inspection.next_inspection_date!)}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {formatWeekday(inspection.next_inspection_date!)}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Detail Dialog */}
       <InspectionDetailDialog
