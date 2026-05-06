@@ -31,11 +31,18 @@ import { useCreateChecklistTemplate, useUpdateChecklistTemplate, useDefaultCheck
 import { categoryIconOptions, getCategoryIcon } from '@/utils/categoryIcons';
 import { ChecklistItemsEditor, type ChecklistItemData } from './ChecklistItemsEditor';
 
+type BlockingExpiryKey =
+  | 'certificate_expiry'
+  | 'expiry_date'
+  | 'next_hydrostatic_test'
+  | 'next_calibration';
+
 type CategoryFormData = {
   name: string;
   description?: string;
   icon: string;
   inspection_frequency: string;
+  blocking_expiries: BlockingExpiryKey[];
 };
 
 interface CategoryFormDialogProps {
