@@ -333,15 +333,15 @@ export function PreInspectionWarningDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
-        <AlertDialogHeader className="pb-2">
+      <AlertDialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+        <AlertDialogHeader className="pb-2 flex-shrink-0">
           <AlertDialogTitle>{headerContent}</AlertDialogTitle>
           <AlertDialogDescription asChild>{descriptionContent}</AlertDialogDescription>
         </AlertDialogHeader>
 
         {alertsContent}
 
-        <Separator className="my-2" />
+        <Separator className="my-2 flex-shrink-0" />
 
         <AlertDialogFooter className="gap-2">
           <AlertDialogCancel className="flex-1 sm:flex-none">
