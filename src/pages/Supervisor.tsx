@@ -322,8 +322,9 @@ export default function Supervisor() {
                           <div className="min-w-0">
                             <p className="font-medium text-sm truncate">{maint.title}</p>
                             {maint.due_date && (
-                              <p className={`text-xs ${isOverdue ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
-                                {isOverdue ? `⚠ ${t('supervisor.overdue')}` : ''} {format(new Date(maint.due_date), 'dd/MM/yyyy', { locale: dateLocale })}
+                              <p className={`text-xs flex items-center gap-1 ${isOverdue ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
+                                {isOverdue && <AlertTriangle className="h-3 w-3" />}
+                                {isOverdue ? `${t('supervisor.overdue')} ` : ''}{format(new Date(maint.due_date), 'dd/MM/yyyy', { locale: dateLocale })}
                               </p>
                             )}
                           </div>
