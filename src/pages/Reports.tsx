@@ -1624,9 +1624,7 @@ export default function Reports() {
 
       {/* Loading State */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
+        <Spinner size="lg" className="py-12" />
       ) : (
         <>
           {/* Summary Stats - Mobile optimized */}
