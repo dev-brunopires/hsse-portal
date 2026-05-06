@@ -786,48 +786,6 @@ export default function Inspections() {
         </TabsContent>
       </Tabs>
 
-      {/* Upcoming Inspections */}
-      {upcomingInspections.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-primary" />
-              {t('inspectionsPage.upcomingTitle')}
-            </CardTitle>
-            <CardDescription>{t('inspectionsPage.upcomingSubtitle')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {upcomingInspections.slice(0, 5).map((inspection) => (
-                <div 
-                  key={inspection.id} 
-                  className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
-                  onClick={() => openDetailDialog(inspection)}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <ClipboardCheck className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-medium">{inspection.equipment?.name}</p>
-                      <p className="text-sm text-muted-foreground">{inspection.equipment?.internal_code}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium">
-                      {formatDate(inspection.next_inspection_date!)}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {formatWeekday(inspection.next_inspection_date!)}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Detail Dialog */}
       <InspectionDetailDialog
         open={detailDialogOpen}
