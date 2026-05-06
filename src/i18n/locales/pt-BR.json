@@ -1632,7 +1632,10 @@
     "quarterly": "Trimestral",
     "semiannual": "Semestral",
     "annual": "Anual",
-    "custom": "Personalizada"
+    "custom": "Personalizada",
+    "dueDayLabel": "Dia do mês para inspeção (opcional)",
+    "dueDayPlaceholder": "Ex: 15",
+    "dueDayDescription": "Quando preenchido, a próxima inspeção será gerada automaticamente sempre neste dia do mês."
   },
   "usersPage": {
     "title": "Gestão de Usuários",
@@ -1850,7 +1853,10 @@
     "statusCompliant": "Conforme",
     "statusAttention": "Atenção",
     "statusNonCompliant": "Não Conforme",
-    "statusPending": "Pendente"
+    "statusPending": "Pendente",
+    "pendingAuto": "Pendência",
+    "pendingAutoDesc": "Inspeção pendente gerada automaticamente",
+    "carryoverItems": "Pendências da última inspeção"
   },
   "inspectionTimeline": {
     "noInspections": "Nenhuma inspeção registrada",

@@ -1632,7 +1632,10 @@
     "quarterly": "Quarterly",
     "semiannual": "Semi-annual",
     "annual": "Annual",
-    "custom": "Custom"
+    "custom": "Custom",
+    "dueDayLabel": "Day of month for inspection (optional)",
+    "dueDayPlaceholder": "Ex: 15",
+    "dueDayDescription": "When set, the next inspection will be auto-generated on this day of the month."
   },
   "usersPage": {
     "title": "User Management",
@@ -1850,7 +1853,10 @@
     "statusCompliant": "Compliant",
     "statusAttention": "Attention",
     "statusNonCompliant": "Non-Compliant",
-    "statusPending": "Pending"
+    "statusPending": "Pending",
+    "pendingAuto": "Pending",
+    "pendingAutoDesc": "Auto-generated pending inspection",
+    "carryoverItems": "Items pending from last inspection"
   },
   "inspectionTimeline": {
     "noInspections": "No inspections registered",
