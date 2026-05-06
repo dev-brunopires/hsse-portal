@@ -1,50 +1,29 @@
+## Objetivo
 
-# Unificar Formulario de Inspeção: Eliminar o Formulario Offline Separado
+Eliminar os erros `ERR_INTERNET_DISCONNECTED` / `Failed to fetch` que poluem o console quando o app está offline, pausando as tentativas automáticas de refresh do token Supabase enquanto não houver rede.
 
-## Problema
+## Mudanças
 
-Atualmente existem **dois formularios de inspeção separados**:
-1. **`InspectionFormDialog`** (online) -- formulario completo, com traduções, scroll, campos de inspetor, data, assinatura, fotos, etc.
-2. **`OfflineInspectionDialog`** (offline) -- formulario separado, com problemas de scroll, traduções faltando (chaves i18n aparecendo cruas na tela), e UX inferior.
+### 1. `src/contexts/AuthContext.tsx`
+Adicionar um `useEffect` que escuta os eventos `online` / `offline` do navegador:
 
-O `InspectionFormDialog` **ja suporta modo offline** internamente (verifica `isOnline` e salva localmente via `addPendingInspection`). Porem, o `NewInspectionDialog` roteia usuarios offline para o formulario separado inferior.
+- Ao montar: se `navigator.onLine === false`, chamar `supabase.auth.stopAutoRefresh()`.
+- Listener `offline`: `supabase.auth.stopAutoRefresh()`.
+- Listener `online`: `supabase.auth.startAutoRefresh()` e disparar um refresh imediato (a lógica de `refreshIfNeeded` já existente cuida disso via evento `online` que já está registrado).
+- Cleanup: remover listeners.
 
-## Solucao
+Isso evita que o cliente Supabase fique tentando POST no endpoint `/auth/v1/token?grant_type=refresh_token` enquanto offline, eliminando os erros do console. Quando a rede volta, o auto-refresh é retomado e o token é renovado normalmente.
 
-Eliminar o `OfflineInspectionDialog` e usar o `InspectionFormDialog` tambem quando offline. Isso garante experiencia identica em ambos os modos.
+### 2. `src/main.tsx` (opcional, defensivo)
+No handler `unhandledrejection`, ignorar silenciosamente rejeições cuja mensagem inclui `Failed to fetch` **e** `navigator.onLine === false`. Isso cobre qualquer outro fetch que falhe durante períodos offline (não só o auth).
 
-## Alteracoes
+## Detalhes técnicos
 
-### 1. `src/components/inspections/NewInspectionDialog.tsx`
-- Quando offline e o usuario seleciona um equipamento, em vez de abrir `OfflineInspectionDialog`, converter o `CachedEquipment` para o tipo `Equipment` e abrir o `InspectionFormDialog` normalmente.
-- Remover toda a logica separada de `selectedOfflineEquipment`, `offlineInspectionDialogOpen`, e `handleOfflineInspectionClose`.
-- Remover o import de `OfflineInspectionDialog`.
-- Unificar o fluxo: tanto online quanto offline usam `setSelectedEquipment` + `setInspectionDialogOpen` + `InspectionFormDialog`.
+- `supabase.auth.startAutoRefresh()` / `stopAutoRefresh()` fazem parte da API pública do `@supabase/supabase-js` e são seguros de chamar múltiplas vezes.
+- A sessão persiste em `localStorage` (já configurado), então ao voltar online o refresh recupera tudo.
+- Não há mudança de UI nem de comportamento funcional — apenas redução de ruído no console e menos requisições inúteis.
 
-### 2. `src/components/equipment/InspectionFormDialog.tsx`
-- Ja tem suporte offline, mas precisa de pequenos ajustes:
-  - O botao de submit mostra `inspectionForm.saveOffline` sempre -- ajustar para mostrar texto diferente conforme `isOnline` (ex: "Registrar Inspeção" quando online, "Salvar Offline" quando offline).
-  - O campo de Inspetor (`inspectorId`) usa `useTechniciansAndAdmins()` que depende de rede. Quando offline, pre-preencher com o usuario logado e desabilitar o campo (ja que nao ha lista de inspetores disponivel offline).
-  - O campo de `next_inspection_date` pode permanecer, sera ignorado no sync offline se vazio.
+## Fora de escopo
 
-### 3. Remover `src/components/offline/OfflineInspectionDialog.tsx`
-- O arquivo inteiro pode ser removido pois nao sera mais utilizado.
-
-## Detalhes Tecnicos
-
-A conversao de `CachedEquipment` para `Equipment` no fluxo offline ja existe parcialmente no `NewInspectionDialog` (funcao `convertToEquipmentType`). O ajuste e fazer o path offline tambem passar por essa conversao:
-
-```text
-Offline Equipment Selected
-  -> Convert CachedEquipment to EquipmentWithCategory (ja feito no equipmentList useMemo)
-  -> convertToEquipmentType()
-  -> InspectionFormDialog (mesmo componente do online)
-  -> isOnline check interno salva via addPendingInspection
-```
-
-O `InspectionFormDialog` ja carrega checklist via `useDefaultChecklistTemplate` que faz query ao banco. Quando offline, essa query retornara vazio/erro, e o fallback para checklist padrao ja existe (linhas 150-166). Para garantir que o template correto do cache seja usado offline, podemos adicionar uma prop opcional `offlineTemplateItems` ao `InspectionFormDialog`.
-
-### Resumo de arquivos alterados:
-- **`src/components/inspections/NewInspectionDialog.tsx`** -- simplificar fluxo, remover path offline separado
-- **`src/components/equipment/InspectionFormDialog.tsx`** -- adicionar prop `offlineTemplateItems`, ajustar texto botao submit, tratar inspetor offline
-- **Remover `src/components/offline/OfflineInspectionDialog.tsx`** -- nao mais necessario
+- Não alterar `OfflineIndicator`, `SyncButton` ou fluxo de sync de dados — esses já funcionam.
+- Não tocar em `client.ts` (arquivo auto-gerado).

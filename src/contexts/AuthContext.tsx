@@ -290,8 +290,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     };
 
+    // Pause Supabase auto-refresh when offline to avoid noisy ERR_INTERNET_DISCONNECTED errors
+    const handleOffline = () => {
+      try { void supabase.auth.stopAutoRefresh(); } catch {}
+    };
+    const handleOnline = () => {
+      try { void supabase.auth.startAutoRefresh(); } catch {}
+      void refreshIfNeeded();
+    };
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      try { void supabase.auth.stopAutoRefresh(); } catch {}
+    }
+
     window.addEventListener('focus', onFocus);
-    window.addEventListener('online', onFocus);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
     document.addEventListener('visibilitychange', onVisibilityChange);
 
     // Light watchdog (much less frequent)
@@ -304,7 +317,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
       window.removeEventListener('focus', onFocus);
-      window.removeEventListener('online', onFocus);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
       document.removeEventListener('visibilitychange', onVisibilityChange);
       window.clearInterval(interval);
     };
