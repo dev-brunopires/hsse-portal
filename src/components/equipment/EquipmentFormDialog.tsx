@@ -185,6 +185,10 @@ export function EquipmentFormDialog({
       acquisitionDate: initialData?.acquisitionDate || '',
       expiryDate: initialData?.expiryDate || '',
       certificateExpiry: initialData?.certificateExpiry || '',
+      lastHydrostaticTest: (initialData as any)?.lastHydrostaticTest || '',
+      nextHydrostaticTest: (initialData as any)?.nextHydrostaticTest || '',
+      lastCalibration: (initialData as any)?.lastCalibration || '',
+      nextCalibration: (initialData as any)?.nextCalibration || '',
       observations: initialData?.observations || '',
     },
   });
