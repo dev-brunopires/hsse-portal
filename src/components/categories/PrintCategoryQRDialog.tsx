@@ -168,8 +168,9 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
             }
             .grid {
               display: grid;
-              grid-template-columns: repeat(2, 1fr);
-              gap: 8mm;
+              grid-template-columns: repeat(${cfg.width > 95 ? 1 : 2}, ${cfg.width}mm);
+              gap: 6mm;
+              justify-content: center;
             }
             .label {
               display: flex;
