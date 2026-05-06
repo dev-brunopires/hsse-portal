@@ -64,6 +64,11 @@ export default defineConfig(({ mode }) => ({
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2,woff,ttf,json}"],
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024, // 8MB limit for larger chunks
         cleanupOutdatedCaches: true,
+        // Inline the Workbox runtime into sw.js so the SW does NOT importScripts()
+        // a separate workbox-*.js file. That extra request can fail on mobile
+        // network handoffs / viewport toggles and break the entire SW with
+        // "Failed to execute 'importScripts'".
+        inlineWorkboxRuntime: true,
         
         // Skip waiting and claim clients immediately for faster updates
         skipWaiting: true,

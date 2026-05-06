@@ -118,22 +118,18 @@ let networkListenersRegistered = false;
 // Verify connectivity with a tiny no-cors fetch before trusting the offline event.
 // Chrome DevTools (and viewport toggles) can momentarily fire 'offline' even when online.
 async function verifyOnline(): Promise<boolean> {
-  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-    // Double-check with a real request — navigator.onLine can lie
-    try {
-      const ctrl = new AbortController();
-      const timeout = setTimeout(() => ctrl.abort(), 2500);
-      await fetch('https://www.google.com/generate_204', {
-        method: 'HEAD',
-        mode: 'no-cors',
-        cache: 'no-store',
-        signal: ctrl.signal,
-      });
-      clearTimeout(timeout);
-      return true;
-    } catch {
-      return false;
-    }
+  if (typeof navigator === 'undefined') return true;
+  if (navigator.onLine === false) {
+    // Double-check with a same-origin request — navigator.onLine can lie
+    // (DevTools viewport toggle, mobile network handoff, etc.).
+    // Using same-origin avoids cross-origin console noise like ERR_INTERNET_DISCONNECTED on google.com.
+    return await new Promise<boolean>((resolve) => {
+      const img = new Image();
+      const timer = setTimeout(() => { img.src = ''; resolve(false); }, 2500);
+      img.onload = () => { clearTimeout(timer); resolve(true); };
+      img.onerror = () => { clearTimeout(timer); resolve(false); };
+      img.src = `/favicon.ico?_=${Date.now()}`;
+    });
   }
   return true;
 }
