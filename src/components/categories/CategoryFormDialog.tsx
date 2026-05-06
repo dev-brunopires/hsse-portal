@@ -70,6 +70,9 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
     description: z.string().optional(),
     icon: z.string().min(1, t('validation.selectIcon')),
     inspection_frequency: z.string().min(1, t('validation.selectFrequency')),
+    blocking_expiries: z.array(
+      z.enum(['certificate_expiry', 'expiry_date', 'next_hydrostatic_test', 'next_calibration'])
+    ).default([]),
   });
 
   const frequencyOptions = [
@@ -80,6 +83,13 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
     { value: 'custom', label: t('categoryForm.custom') },
   ];
 
+  const blockingExpiryOptions: { value: BlockingExpiryKey; label: string }[] = [
+    { value: 'certificate_expiry', label: t('categoryForm.blockingCertificate', 'Validade do certificado') },
+    { value: 'expiry_date', label: t('categoryForm.blockingEquipment', 'Validade do equipamento') },
+    { value: 'next_hydrostatic_test', label: t('categoryForm.blockingHydrostatic', 'Próximo teste hidrostático') },
+    { value: 'next_calibration', label: t('categoryForm.blockingCalibration', 'Próxima calibração') },
+  ];
+
   const form = useForm<CategoryFormData>({
     resolver: zodResolver(categorySchema),
     defaultValues: {
@@ -87,16 +97,21 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
       description: '',
       icon: 'package',
       inspection_frequency: 'monthly',
+      blocking_expiries: ['certificate_expiry', 'expiry_date'],
     },
   });
 
   useEffect(() => {
     if (open && category && mode === 'edit') {
+      const existing = Array.isArray((category as any).blocking_expiries)
+        ? ((category as any).blocking_expiries as BlockingExpiryKey[])
+        : ['certificate_expiry', 'expiry_date'];
       form.reset({
         name: category.name,
         description: category.description || '',
         icon: category.icon || 'package',
         inspection_frequency: category.inspection_frequency,
+        blocking_expiries: existing,
       });
       // Load existing checklist items from default template
       if (defaultTemplate?.items) {
@@ -114,6 +129,7 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
         description: '',
         icon: 'package',
         inspection_frequency: 'monthly',
+        blocking_expiries: ['certificate_expiry', 'expiry_date'],
       });
       setChecklistItems([]);
     }
