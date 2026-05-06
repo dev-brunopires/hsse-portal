@@ -305,6 +305,43 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
 
             <Separator className="my-2" />
 
+            <FormField
+              control={form.control}
+              name="blocking_expiries"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('categoryForm.blockingExpiriesLabel', 'Vencimentos que reprovam o equipamento')}</FormLabel>
+                  <FormDescription className="text-xs">
+                    {t('categoryForm.blockingExpiriesDescription', 'Marque quais vencimentos, ao expirar, devem reprovar automaticamente o equipamento desta categoria.')}
+                  </FormDescription>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                    {blockingExpiryOptions.map((opt) => {
+                      const checked = field.value?.includes(opt.value) ?? false;
+                      return (
+                        <label
+                          key={opt.value}
+                          className="flex items-center gap-2 rounded-md border border-border p-2 cursor-pointer hover:bg-muted/50"
+                        >
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={(v) => {
+                              const current = field.value ?? [];
+                              if (v) field.onChange([...current, opt.value]);
+                              else field.onChange(current.filter((x) => x !== opt.value));
+                            }}
+                          />
+                          <span className="text-sm">{opt.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <Separator className="my-2" />
+
             {/* Checklist Items Editor */}
             <ChecklistItemsEditor
               items={checklistItems}
