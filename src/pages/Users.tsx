@@ -773,6 +773,11 @@ export default function Users() {
         onOpenChange={setShipsDialogOpen}
         user={selectedUser}
       />
+      <ResetPasswordDialog
+        open={resetPasswordDialogOpen}
+        onOpenChange={setResetPasswordDialogOpen}
+        user={selectedUser}
+      />
 
       {/* Ship Dialogs */}
       <ShipFormDialog
