@@ -39,6 +39,7 @@ function writeBuffer(events: TelemetryEvent[]) {
 
 async function flushNow() {
   if (queue.length === 0) return;
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
 
   const batch = queue.splice(0, queue.length);
 
@@ -57,6 +58,7 @@ async function flushNow() {
 }
 
 function scheduleFlush() {
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
   if (flushTimer !== null) return;
   flushTimer = window.setTimeout(async () => {
     flushTimer = null;
