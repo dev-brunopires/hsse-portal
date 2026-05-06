@@ -112,7 +112,9 @@ export default function Dashboard() {
     toast.success(t('common.refresh'));
   };
 
-  if (isLoading) {
+  // While auth/ship filter is still initializing, the query is disabled and returns
+  // no data — show skeleton instead of falling through to the error UI.
+  if (isLoading || !isShipFilterReady) {
     return <DashboardSkeleton />;
   }
 
