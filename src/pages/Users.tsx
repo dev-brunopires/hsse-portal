@@ -375,6 +375,12 @@ export default function Users() {
                                   <Anchor className="h-4 w-4 mr-2" />
                                   {t('usersPage.manageShips')}
                                 </DropdownMenuItem>
+                                {canResetPassword && !isCurrentUser && (
+                                  <DropdownMenuItem onClick={() => handleResetPassword(user)}>
+                                    <KeyRound className="h-4 w-4 mr-2" />
+                                    {t('usersPage.resetPassword', 'Redefinir Senha')}
+                                  </DropdownMenuItem>
+                                )}
                                 {!isCurrentUser && (
                                   <>
                                     <DropdownMenuSeparator />
