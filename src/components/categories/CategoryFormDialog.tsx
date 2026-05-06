@@ -165,6 +165,7 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
         description: data.description || null,
         icon: data.icon,
         inspection_frequency: data.inspection_frequency,
+        blocking_expiries: data.blocking_expiries as any,
       });
       
       // Update or create default checklist template
