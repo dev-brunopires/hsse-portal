@@ -361,7 +361,9 @@ export function useOfflineSync() {
       .select(`
         id, name, internal_code, status, category_id, ship_id, location, serial_number, short_code,
         type, manufacturer, model, capacity, manufacturing_date, acquisition_date,
-        expiry_date, certificate_expiry, last_inspection, next_inspection, observations, updated_at
+        expiry_date, certificate_expiry, last_inspection, next_inspection,
+        last_hydrostatic_test, next_hydrostatic_test, last_calibration, next_calibration,
+        observations, updated_at
       `)
       .gte('updated_at', lastSyncTs)
       .order('internal_code', { ascending: true });
