@@ -850,8 +850,14 @@ export function useOfflineSync() {
   }, [isOnline, queryClient, t, uploadPendingPhotos, refreshStats, checkDuplicateInspection]);
 
   // Sync pending maintenance when online
-  const syncPendingMaintenance = useCallback(async () => {
-    if (!isOnline || syncInProgressRef.current) return;
+  const syncPendingMaintenance = useCallback(async (options?: { silent?: boolean }) => {
+    if (!isOnline) return;
+    if (syncInProgressRef.current) {
+      for (let i = 0; i < 30 && syncInProgressRef.current; i++) {
+        await new Promise((r) => setTimeout(r, 200));
+      }
+      if (syncInProgressRef.current) return;
+    }
 
     const pendingActions = await offlineDB.getPendingActions();
     const maintenanceActions = pendingActions.filter(a => a.type === 'complete_maintenance');
@@ -872,6 +878,7 @@ export function useOfflineSync() {
     
     let syncedCount = 0;
     const failedActions: string[] = [];
+    const silent = options?.silent ?? false;
 
     for (let i = 0; i < maintenanceActions.length; i++) {
       const action = maintenanceActions[i];
