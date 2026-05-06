@@ -1235,11 +1235,11 @@
     "msgMaintenancePreventiveOverdue": "Preventive maintenance overdue",
     "msgMaintenanceCriticalPending": "Critical maintenance pending",
     "msgMaintenanceHighPending": "High priority maintenance pending",
-    "reportCertExpired": "⚠️ Cert. Expired",
-    "reportCertExpiring": "⏰ Cert. Expiring",
-    "reportEquipExpired": "⚠️ Validity Expired",
-    "reportInspOverdue": "⚠️ Insp. Overdue",
-    "reportInspDueSoon": "⏰ Insp. Due Soon"
+    "reportCertExpired": "Cert. Expired",
+    "reportCertExpiring": "Cert. Expiring",
+    "reportEquipExpired": "Validity Expired",
+    "reportInspOverdue": "Insp. Overdue",
+    "reportInspDueSoon": "Insp. Due Soon"
   },
   "auditLog": {
     "title": "Audit Log",

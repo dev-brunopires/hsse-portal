@@ -77,14 +77,14 @@ function getComplianceLevel(equipment: EquipmentData, certificates: CertificateD
   const issues: string[] = [];
   
   // Check equipment status
-  if (equipment.status === 'rejected') return '❌ ' + t('nonCompliant');
+  if (equipment.status === 'rejected') return t('nonCompliant');
   if (equipment.status === 'inactive') issues.push(t('inactive'));
   if (equipment.status === 'maintenance') issues.push(t('inMaintenance'));
   
   // Check certificate expiry
   if (equipment.certificate_expiry) {
     const days = differenceInDays(parseLocalDate(equipment.certificate_expiry)!, today);
-    if (days < 0) return '❌ ' + t('expiredCertificate');
+    if (days < 0) return t('expiredCertificate');
     if (days <= 30) issues.push(t('certificateExpiringSoon'));
   }
   
@@ -95,9 +95,9 @@ function getComplianceLevel(equipment: EquipmentData, certificates: CertificateD
     else if (days <= 7) issues.push(t('inspectionDueSoon'));
   }
   
-  if (issues.length === 0) return '✅ ' + t('compliant');
-  if (issues.length === 1) return '⚠️ ' + issues[0];
-  return '⚠️ ' + t('multipleIssues', { count: issues.length });
+  if (issues.length === 0) return t('compliant');
+  if (issues.length === 1) return issues[0];
+  return t('multipleIssues', { count: issues.length });
 }
 
 export async function exportComplianceReportPDF(

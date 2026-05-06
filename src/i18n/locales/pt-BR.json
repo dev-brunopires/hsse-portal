@@ -1235,11 +1235,11 @@
     "msgMaintenancePreventiveOverdue": "Manutenção preventiva atrasada",
     "msgMaintenanceCriticalPending": "Manutenção crítica pendente",
     "msgMaintenanceHighPending": "Manutenção alta prioridade pendente",
-    "reportCertExpired": "⚠️ Cert. Vencido",
-    "reportCertExpiring": "⏰ Cert. a Vencer",
-    "reportEquipExpired": "⚠️ Validade Vencida",
-    "reportInspOverdue": "⚠️ Insp. Atrasada",
-    "reportInspDueSoon": "⏰ Insp. Próxima"
+    "reportCertExpired": "Cert. Vencido",
+    "reportCertExpiring": "Cert. a Vencer",
+    "reportEquipExpired": "Validade Vencida",
+    "reportInspOverdue": "Insp. Atrasada",
+    "reportInspDueSoon": "Insp. Próxima"
   },
   "auditLog": {
     "title": "Log de Auditoria",
