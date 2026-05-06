@@ -184,7 +184,7 @@ export async function exportToPDF(
 
   // Table 2: Dates and Status
   addSectionHeader(doc, yPos, t('exportEquipment.datesSection'));
-  yPos += 8;
+  yPos += 14;
 
   const datesStatusData = equipment.map(item => {
     // Get status with alerts for PDF
