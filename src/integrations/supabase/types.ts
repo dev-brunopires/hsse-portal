@@ -60,6 +60,7 @@ export type Database = {
           description: string | null
           icon: string | null
           id: string
+          inspection_due_day: number | null
           inspection_frequency: string
           name: string
           organization_id: string | null
@@ -71,6 +72,7 @@ export type Database = {
           description?: string | null
           icon?: string | null
           id?: string
+          inspection_due_day?: number | null
           inspection_frequency?: string
           name: string
           organization_id?: string | null
@@ -82,6 +84,7 @@ export type Database = {
           description?: string | null
           icon?: string | null
           id?: string
+          inspection_due_day?: number | null
           inspection_frequency?: string
           name?: string
           organization_id?: string | null
@@ -1105,6 +1108,57 @@ export type Database = {
         }
         Relationships: []
       }
+      pending_inspections: {
+        Row: {
+          carryover_items: Json
+          carryover_recommendations: string | null
+          completed_at: string | null
+          completed_inspection_id: string | null
+          created_at: string
+          due_date: string
+          equipment_id: string
+          id: string
+          organization_id: string | null
+          previous_inspection_id: string | null
+          ship_id: string | null
+          source: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          carryover_items?: Json
+          carryover_recommendations?: string | null
+          completed_at?: string | null
+          completed_inspection_id?: string | null
+          created_at?: string
+          due_date: string
+          equipment_id: string
+          id?: string
+          organization_id?: string | null
+          previous_inspection_id?: string | null
+          ship_id?: string | null
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          carryover_items?: Json
+          carryover_recommendations?: string | null
+          completed_at?: string | null
+          completed_inspection_id?: string | null
+          created_at?: string
+          due_date?: string
+          equipment_id?: string
+          id?: string
+          organization_id?: string | null
+          previous_inspection_id?: string | null
+          ship_id?: string | null
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       platform_owners: {
         Row: {
           created_at: string | null
@@ -1352,7 +1406,12 @@ export type Database = {
     }
     Functions: {
       can_manage_users: { Args: { _user_id: string }; Returns: boolean }
+      compute_next_inspection_date: {
+        Args: { _base: string; _due_day: number; _frequency: string }
+        Returns: string
+      }
       generate_equipment_short_code: { Args: never; Returns: string }
+      generate_pending_inspections: { Args: never; Returns: number }
       get_dashboard_stats: { Args: { p_ship_id?: string }; Returns: Json }
       get_org_branding_by_subdomain: {
         Args: { _subdomain: string }
