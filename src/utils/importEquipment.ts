@@ -122,7 +122,23 @@ const columnMapping: Record<string, keyof ImportedEquipment> = {
   'validade certificado': 'certificate_expiry',
   'val. certificado': 'certificate_expiry',
   'certificate expiry': 'certificate_expiry',
-  
+
+  // Hydrostatic test
+  'último teste hidrostático': 'last_hydrostatic_test',
+  'ultimo teste hidrostatico': 'last_hydrostatic_test',
+  'last hydrostatic test': 'last_hydrostatic_test',
+  'próximo teste hidrostático': 'next_hydrostatic_test',
+  'proximo teste hidrostatico': 'next_hydrostatic_test',
+  'next hydrostatic test': 'next_hydrostatic_test',
+
+  // Calibration
+  'última calibração': 'last_calibration',
+  'ultima calibracao': 'last_calibration',
+  'last calibration': 'last_calibration',
+  'próxima calibração': 'next_calibration',
+  'proxima calibracao': 'next_calibration',
+  'next calibration': 'next_calibration',
+
   // Observations
   'observações': 'observations',
   'observacoes': 'observations',
