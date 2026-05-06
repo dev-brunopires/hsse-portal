@@ -84,6 +84,17 @@ window.addEventListener('unhandledrejection', (event) => {
   const reason = event.reason;
   const message = typeof reason === 'string' ? reason : (reason?.message ?? 'unknown');
 
+  // Silence expected network failures while offline (e.g. Supabase auth refresh)
+  const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
+  const looksLikeNetwork =
+    message.toLowerCase().includes('failed to fetch') ||
+    message.toLowerCase().includes('networkerror') ||
+    message.toLowerCase().includes('err_internet_disconnected');
+  if (isOffline && looksLikeNetwork) {
+    event.preventDefault();
+    return;
+  }
+
   if (shouldRecoverFromError(message, undefined)) {
     event.preventDefault();
     void handleChunkError({ message });
