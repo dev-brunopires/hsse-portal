@@ -1411,6 +1411,10 @@ export type Database = {
         Returns: string
       }
       generate_equipment_short_code: { Args: never; Returns: string }
+      generate_pending_for_equipment: {
+        Args: { _equipment_id: string; _months_ahead?: number }
+        Returns: number
+      }
       generate_pending_inspections: { Args: never; Returns: number }
       get_dashboard_stats: { Args: { p_ship_id?: string }; Returns: Json }
       get_org_branding_by_subdomain: {
@@ -1442,6 +1446,10 @@ export type Database = {
       is_admin_master: { Args: { _user_id: string }; Returns: boolean }
       is_admin_or_technician: { Args: { _user_id: string }; Returns: boolean }
       is_platform_owner: { Args: { _user_id: string }; Returns: boolean }
+      regenerate_pending_for_category: {
+        Args: { _category_id: string }
+        Returns: number
+      }
       user_belongs_to_organization: {
         Args: { _organization_id: string; _user_id: string }
         Returns: boolean
