@@ -24,6 +24,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, FolderOpen } from 'lucide-react';
 import { useCreateCategory, useUpdateCategory, type Category } from '@/hooks/useCategories';
 import { useCreateChecklistTemplate, useUpdateChecklistTemplate, useDefaultChecklistTemplate } from '@/hooks/useChecklistTemplates';
