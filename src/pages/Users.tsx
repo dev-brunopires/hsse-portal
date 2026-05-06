@@ -145,6 +145,11 @@ export default function Users() {
     setShipsDialogOpen(true);
   };
 
+  const handleResetPassword = (user: ProfileWithRole) => {
+    setSelectedUser(user);
+    setResetPasswordDialogOpen(true);
+  };
+
   const handleEditShip = (ship: ShipType) => {
     setSelectedShip(ship);
     setShipFormDialogOpen(true);
