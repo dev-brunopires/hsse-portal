@@ -674,8 +674,15 @@ export function useOfflineSync() {
   }, []);
 
   // Sync pending inspections when online
-  const syncPendingInspections = useCallback(async () => {
-    if (!isOnline || syncInProgressRef.current) return;
+  const syncPendingInspections = useCallback(async (options?: { silent?: boolean }) => {
+    if (!isOnline) return;
+    // Wait briefly if another sync is in progress instead of bailing out
+    if (syncInProgressRef.current) {
+      for (let i = 0; i < 30 && syncInProgressRef.current; i++) {
+        await new Promise((r) => setTimeout(r, 200));
+      }
+      if (syncInProgressRef.current) return;
+    }
 
     const pendingActions = await offlineDB.getPendingActions();
     const inspectionActions = pendingActions.filter(a => a.type === 'create_inspection');
@@ -698,6 +705,7 @@ export function useOfflineSync() {
     let skippedCount = 0;
     const failedActions: string[] = [];
     const processedActionIds = new Set<string>();
+    const silent = options?.silent ?? false;
 
     for (let i = 0; i < inspectionActions.length; i++) {
       const action = inspectionActions[i];
