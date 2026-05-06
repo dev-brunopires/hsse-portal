@@ -509,6 +509,10 @@ export function ImportEquipmentDialog({ open, onOpenChange }: ImportEquipmentDia
           if (item.acquisition_date) updateData.acquisition_date = item.acquisition_date;
           if (item.expiry_date) updateData.expiry_date = item.expiry_date;
           if (item.certificate_expiry) updateData.certificate_expiry = item.certificate_expiry;
+          if (item.last_hydrostatic_test) updateData.last_hydrostatic_test = item.last_hydrostatic_test;
+          if (item.next_hydrostatic_test) updateData.next_hydrostatic_test = item.next_hydrostatic_test;
+          if (item.last_calibration) updateData.last_calibration = item.last_calibration;
+          if (item.next_calibration) updateData.next_calibration = item.next_calibration;
           if (item.observations) updateData.observations = item.observations;
           
           // Update category if provided and matched
