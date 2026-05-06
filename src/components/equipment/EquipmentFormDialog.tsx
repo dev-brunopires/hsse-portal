@@ -575,7 +575,7 @@ export function EquipmentFormDialog({
                     )}
                   />
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                     <FormField
                       control={form.control}
                       name="type"
@@ -754,7 +754,7 @@ export function EquipmentFormDialog({
 
                 {/* Dates Tab */}
                 <TabsContent value="dates" className="space-y-4 mt-0">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                     <FormField
                       control={form.control}
                       name="manufacturingDate"
@@ -796,7 +796,7 @@ export function EquipmentFormDialog({
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                     <FormField
                       control={form.control}
                       name="expiryDate"
@@ -844,7 +844,7 @@ export function EquipmentFormDialog({
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                     <FormField
                       control={form.control}
                       name="lastHydrostaticTest"
@@ -888,7 +888,7 @@ export function EquipmentFormDialog({
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                     <FormField
                       control={form.control}
                       name="lastCalibration"
