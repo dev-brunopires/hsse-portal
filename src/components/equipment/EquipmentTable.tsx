@@ -822,6 +822,10 @@ export function EquipmentTable({
           expiryDate: selectedEquipment.expiry_date || '',
           certificateExpiry: selectedEquipment.certificate_expiry || '',
           nextInspection: selectedEquipment.next_inspection || '',
+          lastHydrostaticTest: (selectedEquipment as any).last_hydrostatic_test || '',
+          nextHydrostaticTest: (selectedEquipment as any).next_hydrostatic_test || '',
+          lastCalibration: (selectedEquipment as any).last_calibration || '',
+          nextCalibration: (selectedEquipment as any).next_calibration || '',
         } : null}
         onEdit={() => {
           setDetailDialogOpen(false);
