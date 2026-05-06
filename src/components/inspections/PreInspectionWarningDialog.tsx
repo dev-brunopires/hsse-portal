@@ -306,11 +306,11 @@ export function PreInspectionWarningDialog({
             <DrawerTitle>{headerContent}</DrawerTitle>
             <DrawerDescription asChild>{descriptionContent}</DrawerDescription>
           </DrawerHeader>
-          <div className="flex-1 min-h-0 overflow-y-auto px-4 py-2">
+          <div className="flex-1 min-h-0 flex flex-col px-4 py-2">
             {alertsContent}
           </div>
-          <Separator />
-          <DrawerFooter className="flex-row gap-2">
+          <Separator className="flex-shrink-0" />
+          <DrawerFooter className="flex-row gap-2 flex-shrink-0">
             <Button 
               variant="outline" 
               onClick={() => onOpenChange(false)}
