@@ -626,8 +626,9 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
           </DialogTitle>
           <DialogDescription>
             {t('qrScanner.dialogDescription')}
-            <span className="block text-xs mt-1 text-muted-foreground/80">
-              💡 {t('qrScanner.screenTip')}
+            <span className="flex items-center gap-1.5 text-xs mt-1 text-muted-foreground/80">
+              <Lightbulb className="h-3.5 w-3.5" />
+              {t('qrScanner.screenTip')}
             </span>
           </DialogDescription>
         </DialogHeader>
