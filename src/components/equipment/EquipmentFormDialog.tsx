@@ -87,6 +87,10 @@ const createEquipmentSchema = (t: (key: string) => string) => z.object({
   acquisitionDate: z.string().optional(),
   expiryDate: z.string().optional(),
   certificateExpiry: z.string().optional(),
+  lastHydrostaticTest: z.string().optional(),
+  nextHydrostaticTest: z.string().optional(),
+  lastCalibration: z.string().optional(),
+  nextCalibration: z.string().optional(),
   // Observações
   observations: z.string().optional(),
 });
