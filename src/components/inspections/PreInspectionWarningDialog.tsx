@@ -218,7 +218,36 @@ export function PreInspectionWarningDialog({
                     {lastInspection?.inspection_date && formatDateShort(lastInspection.inspection_date)}
                   </span>
                 </div>
-                <p className="mt-2 font-medium">
+                {(() => {
+                  const items = ((lastInspection as any)?.inspection_checklist_items || [])
+                    .filter((i: any) => i.status === 'attention' || i.status === 'fail');
+                  if (items.length === 0) return null;
+                  return (
+                    <div className="mt-3 space-y-2">
+                      <p className="text-xs font-semibold uppercase tracking-wide">
+                        {t('preInspectionWarning.nonConformItems', 'Itens não conformes')} ({items.length}):
+                      </p>
+                      <ul className="space-y-1.5">
+                        {items.map((it: any, idx: number) => (
+                          <li key={idx} className="flex items-start gap-2 text-sm">
+                            {it.status === 'fail' ? (
+                              <XCircle className="h-4 w-4 mt-0.5 flex-shrink-0 text-destructive" />
+                            ) : (
+                              <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0 text-warning" />
+                            )}
+                            <div className="flex-1">
+                              <span className="font-medium">{it.description}</span>
+                              {it.notes && (
+                                <p className="text-xs text-muted-foreground mt-0.5 whitespace-pre-wrap">{it.notes}</p>
+                              )}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })()}
+                <p className="mt-3 font-medium">
                   {t('preInspectionWarning.lastInspectionIssuesWarning')}
                 </p>
               </AlertDescription>
