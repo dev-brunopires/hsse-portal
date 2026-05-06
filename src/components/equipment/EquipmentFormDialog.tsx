@@ -385,6 +385,10 @@ export function EquipmentFormDialog({
         acquisition_date: data.acquisitionDate || null,
         expiry_date: data.expiryDate || null,
         certificate_expiry: data.certificateExpiry || null,
+        last_hydrostatic_test: data.lastHydrostaticTest || null,
+        next_hydrostatic_test: data.nextHydrostaticTest || null,
+        last_calibration: data.lastCalibration || null,
+        next_calibration: data.nextCalibration || null,
         observations: data.observations || null,
         created_by: user?.id,
       };
