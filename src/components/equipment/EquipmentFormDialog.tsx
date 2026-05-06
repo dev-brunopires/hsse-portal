@@ -1148,7 +1148,7 @@ export function EquipmentFormDialog({
                   <Button
                     type="button"
                     onClick={async () => {
-                      const tabs = ['general', 'location', 'dates', 'documents'] as const;
+                      const tabs = ['general', 'location', 'dates', 'links', 'documents'] as const;
                       const currentIndex = tabs.indexOf(activeTab as (typeof tabs)[number]);
                       const currentTab = tabs[currentIndex] ?? 'general';
 
