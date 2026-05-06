@@ -657,7 +657,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                     if (e.key === 'Enter') handleManualSubmit();
                   }}
                   inputMode="numeric"
-                  className="text-center font-mono text-2xl tracking-[0.3em] h-14"
+                  className="text-center font-mono text-xl sm:text-2xl tracking-[0.2em] sm:tracking-[0.3em] h-12 sm:h-14"
                   autoFocus
                 />
                 {/* Large numeric keypad - glove-friendly */}
