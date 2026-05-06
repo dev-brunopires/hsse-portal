@@ -42,9 +42,10 @@ interface NewInspectionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   preSelectedEquipmentId?: string | null;
+  pendingInspectionId?: string | null;
 }
 
-export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId }: NewInspectionDialogProps) {
+export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId, pendingInspectionId }: NewInspectionDialogProps) {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
