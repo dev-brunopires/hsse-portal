@@ -225,7 +225,7 @@ export function parseCSV(file: File): Promise<ImportResult> {
             if (mappedKey && row[colIndex] !== undefined && row[colIndex] !== null) {
               const value = row[colIndex];
               
-              if (mappedKey.includes('date') || mappedKey === 'certificate_expiry') {
+              if (mappedKey.includes('date') || mappedKey === 'certificate_expiry' || mappedKey === 'last_hydrostatic_test' || mappedKey === 'next_hydrostatic_test' || mappedKey === 'last_calibration' || mappedKey === 'next_calibration') {
                 item[mappedKey] = parseDate(value) || '';
               } else if (mappedKey === 'status') {
                 item[mappedKey] = parseStatus(value) || 'active';
