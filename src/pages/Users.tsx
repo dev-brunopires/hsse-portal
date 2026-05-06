@@ -76,7 +76,8 @@ export default function Users() {
   const { data: profiles, isLoading } = useProfiles();
   const { data: ships, isLoading: shipsLoading } = useShips();
   const { data: allUserShips } = useAllUserShips();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, isAdminMaster, isPlatformOwner } = useAuth();
+  const canResetPassword = isAdminMaster || isPlatformOwner;
   
   const [searchTerm, setSearchTerm] = useState('');
   const [shipSearchTerm, setShipSearchTerm] = useState('');
