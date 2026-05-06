@@ -302,7 +302,7 @@ export function CertificateFormDialog({
                 name="expiry_date"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('certificates.expiryDate')}</FormLabel>
+                    <FormLabel>{t('certificates.expiryDate')} *</FormLabel>
                     <DatePicker
                       value={field.value}
                       onChange={field.onChange}
