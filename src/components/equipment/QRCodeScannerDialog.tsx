@@ -309,23 +309,26 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
 
   const handleSwitchCamera = useCallback(async () => {
     if (isSwitchingCamera || scannerState !== 'scanning') return;
-    
+
     setIsSwitchingCamera(true);
     const newFacingMode = facingMode === 'environment' ? 'user' : 'environment';
     setFacingMode(newFacingMode);
-    
-    // Save preference to localStorage
     saveFacingMode(newFacingMode);
-    
-    // Cleanup current scanner and restart with new camera
-    await cleanupScanner();
-    setContainerId(`qr-reader-${Date.now()}`);
-    
-    // Small delay to ensure DOM is ready
-    setTimeout(() => {
-      startScanning(newFacingMode);
-    }, 100);
-  }, [facingMode, isSwitchingCamera, scannerState, cleanupScanner, startScanning]);
+
+    try {
+      // Cleanup current scanner — keep the SAME containerId so the DOM
+      // node still exists when we restart. Recreating the id leads to a
+      // stale-closure race where attemptStartScanning looks up the old id.
+      await cleanupScanner();
+      // Small delay to let html5-qrcode release the MediaStream fully
+      await new Promise((r) => setTimeout(r, 150));
+      await attemptStartScanning(0, newFacingMode);
+    } catch {
+      setIsSwitchingCamera(false);
+      setScannerState('error');
+      setErrorMessage(t('qrScanner.cameraStartError'));
+    }
+  }, [facingMode, isSwitchingCamera, scannerState, cleanupScanner, attemptStartScanning, t]);
 
   // Handle dialog open/close - check permission first
   useEffect(() => {
