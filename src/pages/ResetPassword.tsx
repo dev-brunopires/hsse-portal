@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from 'sonner';
 import { Eye, EyeOff, Lock, CheckCircle, ArrowLeft } from 'lucide-react';
 import { SystemLogo } from '@/components/ui/SystemLogo';
+import { Spinner } from '@/components/ui/spinner';
 
 const ResetPassword = () => {
   const { t } = useTranslation();
