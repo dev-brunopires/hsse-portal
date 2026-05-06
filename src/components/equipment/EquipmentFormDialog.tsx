@@ -843,14 +843,113 @@ export function EquipmentFormDialog({
                     />
                   </div>
 
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                    <FormField
+                      control={form.control}
+                      name="lastHydrostaticTest"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>{t('equipmentForm.lastHydrostaticTest', 'Último teste hidrostático')}</FormLabel>
+                          <FormControl>
+                            <DatePickerField
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder={t('equipmentForm.selectDate')}
+                              fromYear={1990}
+                              toYear={new Date().getFullYear() + 1}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="nextHydrostaticTest"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>{t('equipmentForm.nextHydrostaticTest', 'Próximo teste hidrostático')}</FormLabel>
+                          <FormControl>
+                            <DatePickerField
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder={t('equipmentForm.selectDate')}
+                              fromYear={new Date().getFullYear()}
+                              toYear={new Date().getFullYear() + 30}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            {t('equipmentForm.nextHydrostaticDescription', 'Define expirações que podem reprovar o equipamento se a categoria for configurada para isso.')}
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                    <FormField
+                      control={form.control}
+                      name="lastCalibration"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>{t('equipmentForm.lastCalibration', 'Última calibração')}</FormLabel>
+                          <FormControl>
+                            <DatePickerField
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder={t('equipmentForm.selectDate')}
+                              fromYear={1990}
+                              toYear={new Date().getFullYear() + 1}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="nextCalibration"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>{t('equipmentForm.nextCalibration', 'Próxima calibração')}</FormLabel>
+                          <FormControl>
+                            <DatePickerField
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder={t('equipmentForm.selectDate')}
+                              fromYear={new Date().getFullYear()}
+                              toYear={new Date().getFullYear() + 30}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            {t('equipmentForm.nextCalibrationDescription', 'Define expirações que podem reprovar o equipamento se a categoria for configurada para isso.')}
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
                   <div className="p-4 bg-muted/50 rounded-lg border border-border">
-                    <h4 className="font-medium text-sm mb-2">Informações Importantes</h4>
+                    <h4 className="font-medium text-sm mb-2">{t('equipmentForm.importantInfo', 'Informações Importantes')}</h4>
                     <ul className="text-sm text-muted-foreground space-y-1">
-                      <li>• A data de validade determina quando o equipamento precisa ser substituído</li>
-                      <li>• A validade do certificado indica quando a recertificação é necessária</li>
-                      <li>• Alertas serão gerados automaticamente antes do vencimento</li>
+                      <li>• {t('equipmentForm.importantInfoLine1', 'A data de validade determina quando o equipamento precisa ser substituído')}</li>
+                      <li>• {t('equipmentForm.importantInfoLine2', 'A validade do certificado indica quando a recertificação é necessária')}</li>
+                      <li>• {t('equipmentForm.importantInfoLine3', 'Alertas serão gerados automaticamente antes do vencimento')}</li>
                     </ul>
                   </div>
+                </TabsContent>
+
+                {/* Links Tab */}
+                <TabsContent value="links" className="space-y-4 mt-0">
+                  {mode === 'edit' && initialData?.id ? (
+                    <EquipmentRelationshipsEditor equipmentId={initialData.id} />
+                  ) : (
+                    <div className="p-6 text-center text-sm text-muted-foreground border border-dashed rounded-lg">
+                      {t('equipmentForm.linksAvailableAfterCreate', 'Os vínculos podem ser adicionados após salvar o equipamento.')}
+                    </div>
+                  )}
                 </TabsContent>
 
                 {/* Documents Tab */}
