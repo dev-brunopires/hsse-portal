@@ -612,6 +612,117 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
                   </Badge>
                 )}
               </div>
+        {/* Notifications - Mobile = Drawer */}
+        {isMobile ? (
+          <Drawer>
+            <DrawerTrigger asChild>
+              <Button variant="ghost" size="icon" className="relative">
+                <Bell className="h-5 w-5" />
+                {unreadCount > 0 && (
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-status-danger text-status-danger-foreground text-xs">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </Badge>
+                )}
+              </Button>
+            </DrawerTrigger>
+            <DrawerContent>
+              <DrawerHeader className="text-left">
+                <DrawerTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Bell className="h-5 w-5 text-primary" />
+                    <span>{t('header.notifications')}</span>
+                    {unreadCount > 0 && (
+                      <Badge variant="secondary" className="text-xs">
+                        {unreadCount} {t('header.unreadNotifications')}
+                      </Badge>
+                    )}
+                  </div>
+                  {unreadCount > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-auto py-1 px-2 text-xs gap-1"
+                      onClick={handleMarkAllAsRead}
+                    >
+                      <CheckCheck className="h-3 w-3" />
+                      {t('header.markAll')}
+                    </Button>
+                  )}
+                </DrawerTitle>
+              </DrawerHeader>
+              <div className="px-4 pb-6">
+                <ScrollArea className="max-h-[60vh]">
+                  {combinedNotifications.length === 0 ? (
+                    <div className="p-6 text-center text-muted-foreground">
+                      <Bell className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                      <p className="text-sm font-medium">{t('header.noNotifications')}</p>
+                      <p className="text-xs mt-1">{t('header.upToDate')}</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {combinedNotifications.slice(0, 10).map((notification) => (
+                        <div
+                          key={notification.id}
+                          className={`p-3 rounded-lg border transition-all ${getNotificationBg(notification.type, notification.isRead)}`}
+                          onClick={() => {
+                            if (!notification.isRead && notification.canMarkRead) {
+                              handleMarkAsRead(notification.id, notification.isSystem || false);
+                            }
+                          }}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="mt-0.5">{getNotificationIcon(notification.type)}</div>
+                            <div className="flex-1 min-w-0">
+                              <p className={`font-medium text-sm ${notification.isRead ? 'text-muted-foreground' : ''}`}>
+                                {notification.title}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {notification.message}
+                              </p>
+                            </div>
+                            {!notification.isRead && (
+                              <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0 mt-1.5" />
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
+                <DrawerClose asChild>
+                  <Button
+                    variant="ghost"
+                    className="w-full mt-3 text-primary"
+                    onClick={() => navigate('/alerts')}
+                  >
+                    {t('header.viewAllAlerts')}
+                  </Button>
+                </DrawerClose>
+              </div>
+            </DrawerContent>
+          </Drawer>
+        ) : (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="relative">
+              <Bell className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-status-danger text-status-danger-foreground text-xs">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </Badge>
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-80 sm:w-96 bg-popover border border-border shadow-lg z-50">
+            <DropdownMenuLabel className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span>{t('header.notifications')}</span>
+                {unreadCount > 0 && (
+                  <Badge variant="secondary" className="text-xs">
+                    {unreadCount} {t('header.unreadNotifications')}
+                  </Badge>
+                )}
+              </div>
               {unreadCount > 0 && (
                 <Button
                   variant="ghost"
@@ -685,6 +796,7 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        )}
 
         {/* Language Selector - Desktop only */}
         <DropdownMenu>
