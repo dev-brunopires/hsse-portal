@@ -75,6 +75,9 @@ function track(level: TelemetryLevel, name: string, data?: Record<string, unknow
   };
 
   queue.push(evt);
+  if (queue.length > MAX_BUFFER) {
+    queue = queue.slice(-MAX_BUFFER);
+  }
   scheduleFlush();
 }
 
@@ -109,6 +112,9 @@ export function initClientTelemetry() {
     });
   });
 
-  window.addEventListener('online', () => telemetry.info('network_online'));
+  window.addEventListener('online', () => {
+    telemetry.info('network_online');
+    void flushNow();
+  });
   window.addEventListener('offline', () => telemetry.warn('network_offline'));
 }
