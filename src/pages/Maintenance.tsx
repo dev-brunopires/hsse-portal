@@ -226,7 +226,7 @@ export default function Maintenance() {
               
               {/* Refresh button */}
               <Button 
-                variant="ghost" 
+                variant="outline" 
                 size="icon"
                 onClick={() => refetch()}
                 disabled={isFetching}
