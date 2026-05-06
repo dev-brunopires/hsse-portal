@@ -909,6 +909,10 @@ export function VirtualizedEquipmentTable({
           acquisitionDate: selectedEquipment.acquisition_date,
           expiryDate: selectedEquipment.expiry_date || '',
           certificateExpiry: selectedEquipment.certificate_expiry || '',
+          lastHydrostaticTest: (selectedEquipment as any).last_hydrostatic_test || '',
+          nextHydrostaticTest: (selectedEquipment as any).next_hydrostatic_test || '',
+          lastCalibration: (selectedEquipment as any).last_calibration || '',
+          nextCalibration: (selectedEquipment as any).next_calibration || '',
           observations: selectedEquipment.observations || '',
         } : undefined}
       />

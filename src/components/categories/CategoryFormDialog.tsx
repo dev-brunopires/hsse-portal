@@ -24,17 +24,25 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, FolderOpen } from 'lucide-react';
 import { useCreateCategory, useUpdateCategory, type Category } from '@/hooks/useCategories';
 import { useCreateChecklistTemplate, useUpdateChecklistTemplate, useDefaultChecklistTemplate } from '@/hooks/useChecklistTemplates';
 import { categoryIconOptions, getCategoryIcon } from '@/utils/categoryIcons';
 import { ChecklistItemsEditor, type ChecklistItemData } from './ChecklistItemsEditor';
 
+type BlockingExpiryKey =
+  | 'certificate_expiry'
+  | 'expiry_date'
+  | 'next_hydrostatic_test'
+  | 'next_calibration';
+
 type CategoryFormData = {
   name: string;
   description?: string;
   icon: string;
   inspection_frequency: string;
+  blocking_expiries: BlockingExpiryKey[];
 };
 
 interface CategoryFormDialogProps {
@@ -62,6 +70,9 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
     description: z.string().optional(),
     icon: z.string().min(1, t('validation.selectIcon')),
     inspection_frequency: z.string().min(1, t('validation.selectFrequency')),
+    blocking_expiries: z.array(
+      z.enum(['certificate_expiry', 'expiry_date', 'next_hydrostatic_test', 'next_calibration'])
+    ).default([]),
   });
 
   const frequencyOptions = [
@@ -72,6 +83,13 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
     { value: 'custom', label: t('categoryForm.custom') },
   ];
 
+  const blockingExpiryOptions: { value: BlockingExpiryKey; label: string }[] = [
+    { value: 'certificate_expiry', label: t('categoryForm.blockingCertificate', 'Validade do certificado') },
+    { value: 'expiry_date', label: t('categoryForm.blockingEquipment', 'Validade do equipamento') },
+    { value: 'next_hydrostatic_test', label: t('categoryForm.blockingHydrostatic', 'Próximo teste hidrostático') },
+    { value: 'next_calibration', label: t('categoryForm.blockingCalibration', 'Próxima calibração') },
+  ];
+
   const form = useForm<CategoryFormData>({
     resolver: zodResolver(categorySchema),
     defaultValues: {
@@ -79,16 +97,21 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
       description: '',
       icon: 'package',
       inspection_frequency: 'monthly',
+      blocking_expiries: ['certificate_expiry', 'expiry_date'],
     },
   });
 
   useEffect(() => {
     if (open && category && mode === 'edit') {
+      const existing: BlockingExpiryKey[] = Array.isArray((category as any).blocking_expiries)
+        ? ((category as any).blocking_expiries as BlockingExpiryKey[])
+        : (['certificate_expiry', 'expiry_date'] as BlockingExpiryKey[]);
       form.reset({
         name: category.name,
         description: category.description || '',
         icon: category.icon || 'package',
         inspection_frequency: category.inspection_frequency,
+        blocking_expiries: existing,
       });
       // Load existing checklist items from default template
       if (defaultTemplate?.items) {
@@ -106,6 +129,7 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
         description: '',
         icon: 'package',
         inspection_frequency: 'monthly',
+        blocking_expiries: ['certificate_expiry', 'expiry_date'],
       });
       setChecklistItems([]);
     }
@@ -119,6 +143,7 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
         description: data.description || null,
         icon: data.icon,
         inspection_frequency: data.inspection_frequency,
+        blocking_expiries: data.blocking_expiries as any,
       });
       
       // Then create default checklist template if items exist
@@ -140,6 +165,7 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
         description: data.description || null,
         icon: data.icon,
         inspection_frequency: data.inspection_frequency,
+        blocking_expiries: data.blocking_expiries as any,
       });
       
       // Update or create default checklist template
@@ -276,6 +302,43 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
                 )}
               />
             </div>
+
+            <Separator className="my-2" />
+
+            <FormField
+              control={form.control}
+              name="blocking_expiries"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('categoryForm.blockingExpiriesLabel', 'Vencimentos que reprovam o equipamento')}</FormLabel>
+                  <FormDescription className="text-xs">
+                    {t('categoryForm.blockingExpiriesDescription', 'Marque quais vencimentos, ao expirar, devem reprovar automaticamente o equipamento desta categoria.')}
+                  </FormDescription>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                    {blockingExpiryOptions.map((opt) => {
+                      const checked = field.value?.includes(opt.value) ?? false;
+                      return (
+                        <label
+                          key={opt.value}
+                          className="flex items-center gap-2 rounded-md border border-border p-2 cursor-pointer hover:bg-muted/50"
+                        >
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={(v) => {
+                              const current = field.value ?? [];
+                              if (v) field.onChange([...current, opt.value]);
+                              else field.onChange(current.filter((x) => x !== opt.value));
+                            }}
+                          />
+                          <span className="text-sm">{opt.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <Separator className="my-2" />
 

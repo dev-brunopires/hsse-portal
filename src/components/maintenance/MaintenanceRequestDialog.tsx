@@ -25,6 +25,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { DatePickerField } from '@/components/ui/date-picker';
 import { Wrench, X, Loader2, Camera } from 'lucide-react';
 import { useEquipment } from '@/hooks/useEquipment';
+import { EquipmentCombobox } from '@/components/equipment/EquipmentCombobox';
 import { useCreateMaintenanceRequest, type MaintenanceType, type MaintenancePriority } from '@/hooks/useMaintenanceRequests';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -190,20 +191,15 @@ export function MaintenanceRequestDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t('navigation.equipment')} *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value} disabled={equipmentLoading}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={equipmentLoading ? t('common.loading') : t('maintenanceForm.selectEquipment')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent className="max-h-[300px] bg-popover border border-border z-50">
-                      {equipment.map(eq => (
-                        <SelectItem key={eq.id} value={eq.id}>
-                          {eq.internal_code} - {eq.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <EquipmentCombobox
+                      value={field.value}
+                      onChange={field.onChange}
+                      disabled={equipmentLoading}
+                      equipmentList={equipment as any}
+                      placeholder={equipmentLoading ? t('common.loading') : t('maintenanceForm.selectEquipment')}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

@@ -33,6 +33,7 @@ import {
 import { DatePicker } from '@/components/ui/date-picker';
 
 import { useEquipment } from '@/hooks/useEquipment';
+import { EquipmentCombobox } from '@/components/equipment/EquipmentCombobox';
 import {
   useCreateCertificate,
   useUpdateCertificate,
@@ -178,20 +179,14 @@ export function CertificateFormDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t('certificates.equipment')} *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('certificates.selectEquipment')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {equipment.map((eq) => (
-                        <SelectItem key={eq.id} value={eq.id}>
-                          {eq.name} ({eq.internal_code})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <EquipmentCombobox
+                      value={field.value}
+                      onChange={field.onChange}
+                      equipmentList={equipment as any}
+                      placeholder={t('certificates.selectEquipment')}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

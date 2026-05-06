@@ -55,6 +55,7 @@ import {
   Trash2,
   ChevronDown,
   ChevronUp,
+  Link2 as LinkIcon,
 } from 'lucide-react';
 import { useCategories } from '@/hooks/useCategories';
 import { useCreateEquipment, useUpdateEquipment } from '@/hooks/useEquipment';
@@ -68,6 +69,7 @@ import { DatePickerField } from '@/components/ui/date-picker';
 import { useEquipmentDocuments, useDeleteDocument, type EquipmentDocument } from '@/hooks/useEquipmentDocuments';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
+import { EquipmentRelationshipsEditor } from './EquipmentRelationshipsEditor';
 
 const createEquipmentSchema = (t: (key: string) => string) => z.object({
   // Dados Gerais
@@ -87,6 +89,10 @@ const createEquipmentSchema = (t: (key: string) => string) => z.object({
   acquisitionDate: z.string().optional(),
   expiryDate: z.string().optional(),
   certificateExpiry: z.string().optional(),
+  lastHydrostaticTest: z.string().optional(),
+  nextHydrostaticTest: z.string().optional(),
+  lastCalibration: z.string().optional(),
+  nextCalibration: z.string().optional(),
   // Observações
   observations: z.string().optional(),
 });
@@ -181,6 +187,10 @@ export function EquipmentFormDialog({
       acquisitionDate: initialData?.acquisitionDate || '',
       expiryDate: initialData?.expiryDate || '',
       certificateExpiry: initialData?.certificateExpiry || '',
+      lastHydrostaticTest: (initialData as any)?.lastHydrostaticTest || '',
+      nextHydrostaticTest: (initialData as any)?.nextHydrostaticTest || '',
+      lastCalibration: (initialData as any)?.lastCalibration || '',
+      nextCalibration: (initialData as any)?.nextCalibration || '',
       observations: initialData?.observations || '',
     },
   });
@@ -227,6 +237,10 @@ export function EquipmentFormDialog({
         acquisitionDate: initialData.acquisitionDate || '',
         expiryDate: initialData.expiryDate || '',
         certificateExpiry: initialData.certificateExpiry || '',
+        lastHydrostaticTest: (initialData as any).lastHydrostaticTest || '',
+        nextHydrostaticTest: (initialData as any).nextHydrostaticTest || '',
+        lastCalibration: (initialData as any).lastCalibration || '',
+        nextCalibration: (initialData as any).nextCalibration || '',
         observations: initialData.observations || '',
       });
       return;
@@ -258,6 +272,10 @@ export function EquipmentFormDialog({
       acquisitionDate: '',
       expiryDate: '',
       certificateExpiry: '',
+      lastHydrostaticTest: '',
+      nextHydrostaticTest: '',
+      lastCalibration: '',
+      nextCalibration: '',
       observations: '',
     });
   }, [
@@ -369,6 +387,10 @@ export function EquipmentFormDialog({
         acquisition_date: data.acquisitionDate || null,
         expiry_date: data.expiryDate || null,
         certificate_expiry: data.certificateExpiry || null,
+        last_hydrostatic_test: data.lastHydrostaticTest || null,
+        next_hydrostatic_test: data.nextHydrostaticTest || null,
+        last_calibration: data.lastCalibration || null,
+        next_calibration: data.nextCalibration || null,
         observations: data.observations || null,
         created_by: user?.id,
       };
@@ -408,10 +430,11 @@ export function EquipmentFormDialog({
     }
   };
 
-  const tabFields: Record<'general' | 'location' | 'dates' | 'documents', Array<keyof EquipmentFormData>> = {
+  const tabFields: Record<'general' | 'location' | 'dates' | 'links' | 'documents', Array<keyof EquipmentFormData>> = {
     general: ['internalCode', 'name', 'categoryId', 'type', 'manufacturer', 'model', 'serialNumber'],
     location: ['shipId', 'location'],
     dates: ['manufacturingDate', 'acquisitionDate'],
+    links: [],
     documents: [],
   };
 
@@ -434,6 +457,7 @@ export function EquipmentFormDialog({
     general: form.watch('name') && form.watch('categoryId') && form.watch('internalCode'),
     location: form.watch('shipId') && form.watch('location'),
     dates: form.watch('manufacturingDate') || form.watch('acquisitionDate') || form.watch('expiryDate') || form.watch('certificateExpiry'),
+    links: true,
     documents: true,
   };
 
@@ -453,7 +477,7 @@ export function EquipmentFormDialog({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="flex-1 overflow-hidden flex flex-col min-h-0">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-              <TabsList className="grid w-full grid-cols-4 mb-4">
+              <TabsList className="grid w-full grid-cols-5 mb-4">
                 <TabsTrigger value="general" className="gap-2 relative">
                   <Package className="h-4 w-4" />
                   <span className="hidden sm:inline">{t('equipmentForm.general')}</span>
@@ -474,6 +498,10 @@ export function EquipmentFormDialog({
                   {tabProgress.dates && (
                     <CheckCircle2 className="h-3 w-3 text-status-success absolute -top-1 -right-1" />
                   )}
+                </TabsTrigger>
+                <TabsTrigger value="links" className="gap-2 relative">
+                  <LinkIcon className="h-4 w-4" />
+                  <span className="hidden sm:inline">{t('equipmentForm.links', 'Vínculos')}</span>
                 </TabsTrigger>
                 <TabsTrigger value="documents" className="gap-2 relative">
                   <FileText className="h-4 w-4" />
@@ -816,14 +844,113 @@ export function EquipmentFormDialog({
                     />
                   </div>
 
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                    <FormField
+                      control={form.control}
+                      name="lastHydrostaticTest"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>{t('equipmentForm.lastHydrostaticTest', 'Último teste hidrostático')}</FormLabel>
+                          <FormControl>
+                            <DatePickerField
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder={t('equipmentForm.selectDate')}
+                              fromYear={1990}
+                              toYear={new Date().getFullYear() + 1}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="nextHydrostaticTest"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>{t('equipmentForm.nextHydrostaticTest', 'Próximo teste hidrostático')}</FormLabel>
+                          <FormControl>
+                            <DatePickerField
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder={t('equipmentForm.selectDate')}
+                              fromYear={new Date().getFullYear()}
+                              toYear={new Date().getFullYear() + 30}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            {t('equipmentForm.nextHydrostaticDescription', 'Define expirações que podem reprovar o equipamento se a categoria for configurada para isso.')}
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                    <FormField
+                      control={form.control}
+                      name="lastCalibration"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>{t('equipmentForm.lastCalibration', 'Última calibração')}</FormLabel>
+                          <FormControl>
+                            <DatePickerField
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder={t('equipmentForm.selectDate')}
+                              fromYear={1990}
+                              toYear={new Date().getFullYear() + 1}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="nextCalibration"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>{t('equipmentForm.nextCalibration', 'Próxima calibração')}</FormLabel>
+                          <FormControl>
+                            <DatePickerField
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder={t('equipmentForm.selectDate')}
+                              fromYear={new Date().getFullYear()}
+                              toYear={new Date().getFullYear() + 30}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            {t('equipmentForm.nextCalibrationDescription', 'Define expirações que podem reprovar o equipamento se a categoria for configurada para isso.')}
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
                   <div className="p-4 bg-muted/50 rounded-lg border border-border">
-                    <h4 className="font-medium text-sm mb-2">Informações Importantes</h4>
+                    <h4 className="font-medium text-sm mb-2">{t('equipmentForm.importantInfo', 'Informações Importantes')}</h4>
                     <ul className="text-sm text-muted-foreground space-y-1">
-                      <li>• A data de validade determina quando o equipamento precisa ser substituído</li>
-                      <li>• A validade do certificado indica quando a recertificação é necessária</li>
-                      <li>• Alertas serão gerados automaticamente antes do vencimento</li>
+                      <li>• {t('equipmentForm.importantInfoLine1', 'A data de validade determina quando o equipamento precisa ser substituído')}</li>
+                      <li>• {t('equipmentForm.importantInfoLine2', 'A validade do certificado indica quando a recertificação é necessária')}</li>
+                      <li>• {t('equipmentForm.importantInfoLine3', 'Alertas serão gerados automaticamente antes do vencimento')}</li>
                     </ul>
                   </div>
+                </TabsContent>
+
+                {/* Links Tab */}
+                <TabsContent value="links" className="space-y-4 mt-0">
+                  {mode === 'edit' && initialData?.id ? (
+                    <EquipmentRelationshipsEditor equipmentId={initialData.id} />
+                  ) : (
+                    <div className="p-6 text-center text-sm text-muted-foreground border border-dashed rounded-lg">
+                      {t('equipmentForm.linksAvailableAfterCreate', 'Os vínculos podem ser adicionados após salvar o equipamento.')}
+                    </div>
+                  )}
                 </TabsContent>
 
                 {/* Documents Tab */}
@@ -1003,7 +1130,7 @@ export function EquipmentFormDialog({
                     type="button"
                     variant="outline"
                     onClick={() => {
-                      const tabs = ['general', 'location', 'dates', 'documents'];
+                      const tabs = ['general', 'location', 'dates', 'links', 'documents'];
                       const currentIndex = tabs.indexOf(activeTab);
                       if (currentIndex > 0) setActiveTab(tabs[currentIndex - 1]);
                     }}
@@ -1022,7 +1149,7 @@ export function EquipmentFormDialog({
                   <Button
                     type="button"
                     onClick={async () => {
-                      const tabs = ['general', 'location', 'dates', 'documents'] as const;
+                      const tabs = ['general', 'location', 'dates', 'links', 'documents'] as const;
                       const currentIndex = tabs.indexOf(activeTab as (typeof tabs)[number]);
                       const currentTab = tabs[currentIndex] ?? 'general';
 
