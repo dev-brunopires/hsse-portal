@@ -25,6 +25,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { DatePickerField } from '@/components/ui/date-picker';
 import { Wrench, X, Loader2, Camera } from 'lucide-react';
 import { useEquipment } from '@/hooks/useEquipment';
+import { EquipmentCombobox } from '@/components/equipment/EquipmentCombobox';
 import { useCreateMaintenanceRequest, type MaintenanceType, type MaintenancePriority } from '@/hooks/useMaintenanceRequests';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
