@@ -96,7 +96,6 @@ export async function ensureCertificateForEquipment(
   if (showToast) {
     toast.success(i18n.t('certificates.autoSyncCreated'), {
       description: equipmentName,
-      icon: '✅',
     });
   }
   return 'created';
