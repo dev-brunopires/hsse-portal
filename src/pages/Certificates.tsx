@@ -104,7 +104,7 @@ export default function Certificates() {
   const [activeTab, setActiveTab] = useState('all');
 
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [selectedCertificate, setSelectedCertificate] = useState<Certificate | null>(null);
+  const [selectedCertificateId, setSelectedCertificateId] = useState<string | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isRenewOpen, setIsRenewOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -126,6 +126,12 @@ export default function Certificates() {
   });
 
   const { data: stats } = useCertificateStats();
+
+  // Derive selected certificate from the live list so it always reflects latest data after edits
+  const selectedCertificate = useMemo(
+    () => certificates.find((c) => c.id === selectedCertificateId) ?? null,
+    [certificates, selectedCertificateId]
+  );
 
   const filteredCertificates = useMemo(() => {
     let result = certificates;
@@ -241,17 +247,17 @@ export default function Certificates() {
   };
 
   const handleOpenDetail = (certificate: Certificate) => {
-    setSelectedCertificate(certificate);
+    setSelectedCertificateId(certificate.id);
     setIsDetailOpen(true);
   };
 
   const handleOpenRenew = (certificate: Certificate) => {
-    setSelectedCertificate(certificate);
+    setSelectedCertificateId(certificate.id);
     setIsRenewOpen(true);
   };
 
   const handleEdit = (certificate: Certificate) => {
-    setSelectedCertificate(certificate);
+    setSelectedCertificateId(certificate.id);
     setIsFormOpen(true);
   };
 
@@ -369,7 +375,7 @@ export default function Certificates() {
               <Zap className={cn('h-4 w-4', syncCertificates.isPending && 'animate-pulse')} />
               <span className="hidden sm:inline ml-2">{t('certificates.syncFromEquipment')}</span>
             </Button>
-            <Button onClick={() => { setSelectedCertificate(null); setIsFormOpen(true); }}>
+            <Button onClick={() => { setSelectedCertificateId(null); setIsFormOpen(true); }}>
               <Plus className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">{t('certificates.add')}</span>
             </Button>
@@ -526,7 +532,7 @@ export default function Certificates() {
                 <p className="text-muted-foreground text-center mt-1">
                   {t('certificates.noCertificatesDesc')}
                 </p>
-                <Button className="mt-4" onClick={() => { setSelectedCertificate(null); setIsFormOpen(true); }}>
+                <Button className="mt-4" onClick={() => { setSelectedCertificateId(null); setIsFormOpen(true); }}>
                   <Plus className="h-4 w-4 mr-2" />
                   {t('certificates.add')}
                 </Button>
