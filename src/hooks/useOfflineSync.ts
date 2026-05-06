@@ -949,10 +949,12 @@ export function useOfflineSync() {
 
     if (syncedCount > 0) {
       hapticSuccess();
-      toast.success(t('offline.maintenanceSyncCompleted'), {
-        id: 'maintenance-sync-completed',
-        description: t('offline.maintenanceSyncCompletedDesc', { count: syncedCount }),
-      });
+      if (!silent) {
+        toast.success(t('offline.maintenanceSyncCompleted'), {
+          id: 'maintenance-sync-completed',
+          description: t('offline.maintenanceSyncCompletedDesc', { count: syncedCount }),
+        });
+      }
       
       showSyncPushNotification(
         t('offline.maintenanceSyncCompleted'),
@@ -967,10 +969,12 @@ export function useOfflineSync() {
 
     if (failedActions.length > 0) {
       hapticWarning();
-      toast.error(t('offline.syncFailed'), {
-        id: 'maintenance-sync-failed',
-        description: t('offline.syncFailedDesc', { count: failedActions.length }),
-      });
+      if (!silent) {
+        toast.error(t('offline.syncFailed'), {
+          id: 'maintenance-sync-failed',
+          description: t('offline.syncFailedDesc', { count: failedActions.length }),
+        });
+      }
     }
   }, [isOnline, queryClient, t, refreshStats]);
 
