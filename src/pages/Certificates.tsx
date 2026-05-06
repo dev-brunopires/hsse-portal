@@ -104,7 +104,7 @@ export default function Certificates() {
   const [activeTab, setActiveTab] = useState('all');
 
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [selectedCertificate, setSelectedCertificate] = useState<Certificate | null>(null);
+  const [selectedCertificateId, setSelectedCertificateId] = useState<string | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isRenewOpen, setIsRenewOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
