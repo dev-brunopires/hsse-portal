@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { RefreshCw, X, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -11,6 +11,7 @@ export function PWAUpdatePrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(null);
+  const updateIntervalRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
@@ -45,10 +46,14 @@ export function PWAUpdatePrompt() {
           }
         });
 
-        // Check for updates periodically
-        setInterval(() => {
-          registration.update();
-        }, 5 * 60 * 1000); // Every 5 minutes
+        // Check for updates periodically, but only while online and after the user
+        // has interacted with the page. This avoids mobile viewport/network flaps
+        // repeatedly surfacing a stale update prompt.
+        updateIntervalRef.current = window.setInterval(() => {
+          if (navigator.onLine && document.visibilityState === 'visible') {
+            void registration.update();
+          }
+        }, 30 * 60 * 1000); // Every 30 minutes
       } catch (error) {
         console.error('SW check error:', error);
       }
@@ -59,6 +64,9 @@ export function PWAUpdatePrompt() {
 
     return () => {
       navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
+      if (updateIntervalRef.current !== null) {
+        window.clearInterval(updateIntervalRef.current);
+      }
     };
   }, []);
 

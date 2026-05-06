@@ -63,6 +63,7 @@ export default defineConfig(({ mode }) => ({
         // Pre-cache all static assets including JS chunks
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2,woff,ttf,json}"],
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024, // 8MB limit for larger chunks
+        cleanupOutdatedCaches: true,
         
         // Skip waiting and claim clients immediately for faster updates
         skipWaiting: true,
@@ -133,23 +134,8 @@ export default defineConfig(({ mode }) => ({
               },
             },
           },
-          // Supabase API calls with NetworkFirst fallback
-          {
-            urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "supabase-api-cache",
-              networkTimeoutSeconds: 10,
-              expiration: {
-                maxEntries: 200,
-                maxAgeSeconds: 60 * 60 * 24, // 24 hours
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-            },
-          },
-          // Supabase Storage (images/files) with StaleWhileRevalidate
+          // Lovable Cloud Storage assets only. API/auth/function requests must bypass Workbox
+          // to avoid stale update prompts and `no-response` errors on mobile network changes.
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/storage\/.*/i,
             handler: "StaleWhileRevalidate",
