@@ -73,6 +73,7 @@ import { useUserSignature } from '@/hooks/useUserSignature';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { useDefaultChecklistTemplate } from '@/hooks/useChecklistTemplates';
 import { ConnectionStatus } from '@/components/ui/connection-status';
+import { supabase } from '@/integrations/supabase/client';
 
 const createInspectionSchema = (t: (key: string) => string) => z.object({
   inspectorId: z.string().min(1, t('inspectionForm.selectInspectorBefore')),
