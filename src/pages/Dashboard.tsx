@@ -52,7 +52,7 @@ export default function Dashboard() {
   const { t, i18n } = useTranslation();
   const dateLocale = i18n.language === 'en' ? enUS : ptBR;
   const queryClient = useQueryClient();
-  const { selectedShipId, setSelectedShipId, isFilterEnabled } = useShipFilter();
+  const { selectedShipId, setSelectedShipId, isFilterEnabled, isReady: isShipFilterReady } = useShipFilter();
   const { data: stats, isLoading, error, refetch, isFetching } = useDashboardStats();
   const { data: ships = [] } = useShips();
   const { data: categories = [] } = useCategories();
@@ -112,7 +112,9 @@ export default function Dashboard() {
     toast.success(t('common.refresh'));
   };
 
-  if (isLoading) {
+  // While auth/ship filter is still initializing, the query is disabled and returns
+  // no data — show skeleton instead of falling through to the error UI.
+  if (isLoading || !isShipFilterReady) {
     return <DashboardSkeleton />;
   }
 
