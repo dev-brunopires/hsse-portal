@@ -475,7 +475,7 @@ export function EquipmentFormDialog({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="flex-1 overflow-hidden flex flex-col min-h-0">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-              <TabsList className="grid w-full grid-cols-4 mb-4">
+              <TabsList className="grid w-full grid-cols-5 mb-4">
                 <TabsTrigger value="general" className="gap-2 relative">
                   <Package className="h-4 w-4" />
                   <span className="hidden sm:inline">{t('equipmentForm.general')}</span>
@@ -496,6 +496,10 @@ export function EquipmentFormDialog({
                   {tabProgress.dates && (
                     <CheckCircle2 className="h-3 w-3 text-status-success absolute -top-1 -right-1" />
                   )}
+                </TabsTrigger>
+                <TabsTrigger value="links" className="gap-2 relative">
+                  <LinkIcon className="h-4 w-4" />
+                  <span className="hidden sm:inline">{t('equipmentForm.links', 'Vínculos')}</span>
                 </TabsTrigger>
                 <TabsTrigger value="documents" className="gap-2 relative">
                   <FileText className="h-4 w-4" />
