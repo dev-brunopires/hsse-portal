@@ -38,8 +38,8 @@ export function SyncButton() {
     toast.loading(t('syncButton.syncing'), { id: toastId });
     try {
       // Run pending sync sequentially so a single toast reflects real progress
-      await syncPendingInspections();
-      await syncPendingMaintenance();
+      await syncPendingInspections({ silent: true });
+      await syncPendingMaintenance({ silent: true });
       // Refresh cache silently — avoid duplicate toasts
       await preCacheData({ silent: true, force: true });
       toast.success(t('syncButton.syncCompletedShort', 'Sincronização concluída'), { id: toastId });
