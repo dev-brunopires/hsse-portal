@@ -41,6 +41,10 @@ export interface CachedEquipment {
   certificate_expiry?: string | null;
   last_inspection?: string | null;
   next_inspection?: string | null;
+  last_hydrostatic_test?: string | null;
+  next_hydrostatic_test?: string | null;
+  last_calibration?: string | null;
+  next_calibration?: string | null;
   observations?: string | null;
   updated_at?: string; // For delta sync
 }
