@@ -88,6 +88,7 @@ export default function Users() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [shipsDialogOpen, setShipsDialogOpen] = useState(false);
+  const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<ProfileWithRole | null>(null);
   
   // Ship dialogs
