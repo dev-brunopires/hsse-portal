@@ -380,8 +380,9 @@ export function useUpdateCertificate() {
       return certificate;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['certificates'] });
-      queryClient.invalidateQueries({ queryKey: ['certificate-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['certificates'], refetchType: 'active' });
+      queryClient.invalidateQueries({ queryKey: ['certificate-stats'], refetchType: 'active' });
+      queryClient.invalidateQueries({ queryKey: ['certificate-renewals'] });
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast.success(i18n.t('certificates.updateSuccess'));
