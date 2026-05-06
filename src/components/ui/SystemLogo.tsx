@@ -22,9 +22,9 @@ export function SystemLogo({ variant = 'default', className, showText = true, si
   const sizes = sizeClasses[size];
   
   return (
-    <div className={cn('flex items-center gap-2', className)}>
+    <div className={cn('flex items-center gap-2 min-w-0', className)}>
       <div className={cn(
-        'flex items-center justify-center rounded-lg',
+        'flex items-center justify-center rounded-lg shrink-0',
         sizes.padding,
         isWhite ? 'bg-white/10' : 'bg-primary/10'
       )}>
@@ -34,11 +34,14 @@ export function SystemLogo({ variant = 'default', className, showText = true, si
         )} />
       </div>
       {showText && (
-        <span className={cn(
-          'font-bold tracking-tight leading-tight',
-          sizes.text,
-          isWhite ? 'text-white' : 'text-foreground'
-        )}>
+        <span
+          className={cn(
+            'font-bold tracking-tight leading-tight truncate whitespace-nowrap min-w-0',
+            sizes.text,
+            isWhite ? 'text-white' : 'text-foreground'
+          )}
+          title={t('navigation.appTitle')}
+        >
           {t('navigation.appTitle')}
         </span>
       )}
