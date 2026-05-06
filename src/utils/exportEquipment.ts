@@ -127,7 +127,7 @@ export async function exportToPDF(
 
   // Table 1: Equipment Identification
   addSectionHeader(doc, yPos, t('exportEquipment.identificationSection'));
-  yPos += 8;
+  yPos += 14;
 
   const identificationData = equipment.map(item => [
     item.internal_code,
