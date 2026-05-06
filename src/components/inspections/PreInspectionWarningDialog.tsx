@@ -110,7 +110,7 @@ export function PreInspectionWarningDialog({
   );
 
   const alertsContent = (
-    <ScrollArea className="flex-1 max-h-[60vh] pr-4">
+    <ScrollArea className="flex-1 min-h-0 pr-4">
       <div className="space-y-4 py-2 pb-4">
         {/* Critical Alerts Section */}
         {criticalIssuesCount > 0 && (
