@@ -33,6 +33,7 @@ import {
 import { DatePicker } from '@/components/ui/date-picker';
 
 import { useEquipment } from '@/hooks/useEquipment';
+import { EquipmentCombobox } from '@/components/equipment/EquipmentCombobox';
 import {
   useCreateCertificate,
   useUpdateCertificate,
