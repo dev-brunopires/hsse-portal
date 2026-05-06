@@ -331,7 +331,7 @@ export default function Inspections() {
           setShowNewInspectionForm(open);
           if (!open) handleFormCancel();
         }}
-        preSelectedEquipmentId={scanEquipmentId}
+        preSelectedEquipmentId={scanEquipmentId || preselectedEquipmentId}
       />
 
       {/* Statistics Cards */}
@@ -703,6 +703,10 @@ export default function Inspections() {
             onInspectionClick={(inspection) => {
               setSelectedInspection(inspection);
               setDetailDialogOpen(true);
+            }}
+            onCreateForEquipment={(equipmentId) => {
+              setPreselectedEquipmentId(equipmentId);
+              setShowNewInspectionForm(true);
             }}
           />
         </TabsContent>
