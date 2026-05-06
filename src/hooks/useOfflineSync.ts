@@ -674,8 +674,15 @@ export function useOfflineSync() {
   }, []);
 
   // Sync pending inspections when online
-  const syncPendingInspections = useCallback(async () => {
-    if (!isOnline || syncInProgressRef.current) return;
+  const syncPendingInspections = useCallback(async (options?: { silent?: boolean }) => {
+    if (!isOnline) return;
+    // Wait briefly if another sync is in progress instead of bailing out
+    if (syncInProgressRef.current) {
+      for (let i = 0; i < 30 && syncInProgressRef.current; i++) {
+        await new Promise((r) => setTimeout(r, 200));
+      }
+      if (syncInProgressRef.current) return;
+    }
 
     const pendingActions = await offlineDB.getPendingActions();
     const inspectionActions = pendingActions.filter(a => a.type === 'create_inspection');
@@ -698,6 +705,7 @@ export function useOfflineSync() {
     let skippedCount = 0;
     const failedActions: string[] = [];
     const processedActionIds = new Set<string>();
+    const silent = options?.silent ?? false;
 
     for (let i = 0; i < inspectionActions.length; i++) {
       const action = inspectionActions[i];
@@ -810,10 +818,12 @@ export function useOfflineSync() {
 
     if (syncedCount > 0) {
       hapticSuccess();
-      toast.success(t('offline.syncCompleted'), {
-        id: 'sync-completed',
-        description: t('offline.syncCompletedDesc', { count: syncedCount }),
-      });
+      if (!silent) {
+        toast.success(t('offline.syncCompleted'), {
+          id: 'sync-completed',
+          description: t('offline.syncCompletedDesc', { count: syncedCount }),
+        });
+      }
       
       showSyncPushNotification(
         t('offline.syncCompleted'),
@@ -830,16 +840,24 @@ export function useOfflineSync() {
 
     if (failedActions.length > 0) {
       hapticWarning();
-      toast.error(t('offline.syncFailed'), {
-        id: 'sync-failed',
-        description: t('offline.syncFailedDesc', { count: failedActions.length }),
-      });
+      if (!silent) {
+        toast.error(t('offline.syncFailed'), {
+          id: 'sync-failed',
+          description: t('offline.syncFailedDesc', { count: failedActions.length }),
+        });
+      }
     }
   }, [isOnline, queryClient, t, uploadPendingPhotos, refreshStats, checkDuplicateInspection]);
 
   // Sync pending maintenance when online
-  const syncPendingMaintenance = useCallback(async () => {
-    if (!isOnline || syncInProgressRef.current) return;
+  const syncPendingMaintenance = useCallback(async (options?: { silent?: boolean }) => {
+    if (!isOnline) return;
+    if (syncInProgressRef.current) {
+      for (let i = 0; i < 30 && syncInProgressRef.current; i++) {
+        await new Promise((r) => setTimeout(r, 200));
+      }
+      if (syncInProgressRef.current) return;
+    }
 
     const pendingActions = await offlineDB.getPendingActions();
     const maintenanceActions = pendingActions.filter(a => a.type === 'complete_maintenance');
@@ -860,6 +878,7 @@ export function useOfflineSync() {
     
     let syncedCount = 0;
     const failedActions: string[] = [];
+    const silent = options?.silent ?? false;
 
     for (let i = 0; i < maintenanceActions.length; i++) {
       const action = maintenanceActions[i];
@@ -930,10 +949,12 @@ export function useOfflineSync() {
 
     if (syncedCount > 0) {
       hapticSuccess();
-      toast.success(t('offline.maintenanceSyncCompleted'), {
-        id: 'maintenance-sync-completed',
-        description: t('offline.maintenanceSyncCompletedDesc', { count: syncedCount }),
-      });
+      if (!silent) {
+        toast.success(t('offline.maintenanceSyncCompleted'), {
+          id: 'maintenance-sync-completed',
+          description: t('offline.maintenanceSyncCompletedDesc', { count: syncedCount }),
+        });
+      }
       
       showSyncPushNotification(
         t('offline.maintenanceSyncCompleted'),
@@ -948,10 +969,12 @@ export function useOfflineSync() {
 
     if (failedActions.length > 0) {
       hapticWarning();
-      toast.error(t('offline.syncFailed'), {
-        id: 'maintenance-sync-failed',
-        description: t('offline.syncFailedDesc', { count: failedActions.length }),
-      });
+      if (!silent) {
+        toast.error(t('offline.syncFailed'), {
+          id: 'maintenance-sync-failed',
+          description: t('offline.syncFailedDesc', { count: failedActions.length }),
+        });
+      }
     }
   }, [isOnline, queryClient, t, refreshStats]);
 

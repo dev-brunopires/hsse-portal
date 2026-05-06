@@ -2135,7 +2135,8 @@
     "starting": "Iniciando sincronização...",
     "error": "Erro ao sincronizar",
     "offlineCannotSync": "Sem conexão. Conecte-se para sincronizar.",
-    "hint": "O cache é atualizado apenas quando há mudanças. Use este botão para forçar a atualização."
+    "hint": "O cache é atualizado apenas quando há mudanças. Use este botão para forçar a atualização.",
+    "syncCompletedShort": "Sincronização concluída"
   },
   "labelSize": {
     "small": "Pequeno (90×70mm)",

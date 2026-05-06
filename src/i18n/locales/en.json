@@ -2135,7 +2135,8 @@
     "starting": "Starting sync...",
     "error": "Sync failed",
     "offlineCannotSync": "No connection. Connect to sync.",
-    "hint": "Cache only refreshes when there are changes. Use this button to force an update."
+    "hint": "Cache only refreshes when there are changes. Use this button to force an update.",
+    "syncCompletedShort": "Sync completed"
   },
   "labelSize": {
     "small": "Small (90×70mm)",

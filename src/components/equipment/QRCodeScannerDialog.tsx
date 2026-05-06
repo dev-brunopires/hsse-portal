@@ -610,7 +610,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-w-[calc(100vw-2rem)] mx-auto p-4 sm:p-6">
+      <DialogContent className="sm:max-w-md w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] mx-auto p-3 sm:p-6 max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <div className={cn(
@@ -635,17 +635,17 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
         <div className="space-y-4">
           {/* Manual input mode - replaces scanner entirely */}
           {showManualInput ? (
-            <div className="w-full rounded-xl border-2 border-primary/30 bg-background p-4 flex flex-col items-center">
+            <div className="w-full rounded-xl border-2 border-primary/30 bg-background p-3 sm:p-4 flex flex-col items-center">
               <div className="rounded-full p-2 mb-2 bg-primary/10">
-                <Keyboard className="h-7 w-7 text-primary" />
+                <Keyboard className="h-6 w-6 sm:h-7 sm:w-7 text-primary" />
               </div>
               <p className="text-base font-semibold mb-1 text-foreground">
                 {t('qrScanner.manualInputTitle')}
               </p>
-              <p className="text-xs text-center text-muted-foreground max-w-xs mb-3">
+              <p className="text-xs text-center text-muted-foreground mb-3">
                 {t('qrScanner.manualInputDescription')}
               </p>
-              <div className="w-full max-w-xs space-y-3">
+              <div className="w-full space-y-3">
                 <Input
                   placeholder={t('qrScanner.manualInputPlaceholder')}
                   value={manualCode}
@@ -657,7 +657,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                     if (e.key === 'Enter') handleManualSubmit();
                   }}
                   inputMode="numeric"
-                  className="text-center font-mono text-2xl tracking-[0.3em] h-14"
+                  className="text-center font-mono text-xl sm:text-2xl tracking-[0.2em] sm:tracking-[0.3em] h-12 sm:h-14"
                   autoFocus
                 />
                 {/* Large numeric keypad - glove-friendly */}
@@ -667,7 +667,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                       key={digit}
                       type="button"
                       variant="outline"
-                      className="h-14 text-2xl font-semibold touch-manipulation active:scale-95"
+                      className="h-12 sm:h-14 text-xl sm:text-2xl font-semibold touch-manipulation active:scale-95"
                       onClick={() => {
                         setErrorMessage(null);
                         setManualCode((prev) => (prev + digit).slice(0, 36));
@@ -679,7 +679,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-14 text-base touch-manipulation active:scale-95"
+                    className="h-12 sm:h-14 text-sm sm:text-base touch-manipulation active:scale-95"
                     onClick={() => {
                       setErrorMessage(null);
                       setManualCode('');
@@ -690,7 +690,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-14 text-2xl font-semibold touch-manipulation active:scale-95"
+                    className="h-12 sm:h-14 text-xl sm:text-2xl font-semibold touch-manipulation active:scale-95"
                     onClick={() => {
                       setErrorMessage(null);
                       setManualCode((prev) => (prev + '0').slice(0, 36));
@@ -701,7 +701,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-14 touch-manipulation active:scale-95"
+                    className="h-12 sm:h-14 touch-manipulation active:scale-95"
                     onClick={() => {
                       setErrorMessage(null);
                       setManualCode((prev) => prev.slice(0, -1));
