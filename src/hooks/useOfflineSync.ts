@@ -115,15 +115,48 @@ type NetworkCallback = (online: boolean) => void;
 const networkCallbacks = new Set<NetworkCallback>();
 let networkListenersRegistered = false;
 
+// Verify connectivity with a tiny no-cors fetch before trusting the offline event.
+// Chrome DevTools (and viewport toggles) can momentarily fire 'offline' even when online.
+async function verifyOnline(): Promise<boolean> {
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    // Double-check with a real request — navigator.onLine can lie
+    try {
+      const ctrl = new AbortController();
+      const timeout = setTimeout(() => ctrl.abort(), 2500);
+      await fetch('https://www.google.com/generate_204', {
+        method: 'HEAD',
+        mode: 'no-cors',
+        cache: 'no-store',
+        signal: ctrl.signal,
+      });
+      clearTimeout(timeout);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  return true;
+}
+
+let offlineVerifyTimer: ReturnType<typeof setTimeout> | null = null;
+
 function registerNetworkListeners() {
   if (networkListenersRegistered) return;
   networkListenersRegistered = true;
 
   window.addEventListener('online', () => {
+    if (offlineVerifyTimer) { clearTimeout(offlineVerifyTimer); offlineVerifyTimer = null; }
     networkCallbacks.forEach(cb => cb(true));
   });
   window.addEventListener('offline', () => {
-    networkCallbacks.forEach(cb => cb(false));
+    // Debounce + verify: ignore spurious offline events (e.g. DevTools device-mode toggle)
+    if (offlineVerifyTimer) clearTimeout(offlineVerifyTimer);
+    offlineVerifyTimer = setTimeout(async () => {
+      const reallyOnline = await verifyOnline();
+      offlineVerifyTimer = null;
+      if (reallyOnline) return; // false alarm — stay online
+      networkCallbacks.forEach(cb => cb(false));
+    }, 1500);
   });
 }
 
