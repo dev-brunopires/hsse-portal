@@ -156,8 +156,9 @@ export function PreInspectionWarningDialog({
                       </strong>
                     </span>
                   </div>
-                  <p className="mt-2 font-medium">
-                    ⚠️ {t('preInspectionWarning.inspectionOverdueWarning')}
+                  <p className="mt-2 font-medium flex items-center gap-1.5">
+                    <AlertTriangle className="h-4 w-4" />
+                    {t('preInspectionWarning.inspectionOverdueWarning')}
                   </p>
                 </AlertDescription>
               </Alert>
