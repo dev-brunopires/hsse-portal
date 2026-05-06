@@ -173,19 +173,19 @@ export function formatStatusWithAlerts(
   const alertIndicators: string[] = [];
   
   if (alerts.hasCertificateExpired) {
-    alertIndicators.push(alertLabels.certificateExpired || '⚠️ Cert. Vencido');
+    alertIndicators.push(alertLabels.certificateExpired || 'Cert. Vencido');
   } else if (alerts.hasCertificateExpiringSoon) {
-    alertIndicators.push(alertLabels.certificateExpiring || '⏰ Cert. a Vencer');
+    alertIndicators.push(alertLabels.certificateExpiring || 'Cert. a Vencer');
   }
   
   if (alerts.hasEquipmentExpired) {
-    alertIndicators.push(alertLabels.equipmentExpired || '⚠️ Validade Vencida');
+    alertIndicators.push(alertLabels.equipmentExpired || 'Validade Vencida');
   }
   
   if (alerts.hasInspectionOverdue) {
-    alertIndicators.push(alertLabels.inspectionOverdue || '⚠️ Inspeção Atrasada');
+    alertIndicators.push(alertLabels.inspectionOverdue || 'Inspeção Atrasada');
   } else if (alerts.hasInspectionDueSoon) {
-    alertIndicators.push(alertLabels.inspectionDueSoon || '⏰ Inspeção Próxima');
+    alertIndicators.push(alertLabels.inspectionDueSoon || 'Inspeção Próxima');
   }
   
   if (alertIndicators.length > 0) {
