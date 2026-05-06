@@ -568,6 +568,8 @@ export function EquipmentDetailDialog({
                         </div>
                       </>
                     )}
+                  </div>
+                )}
 
                 {/* Observations */}
                 {(equipment as any).observations && (
