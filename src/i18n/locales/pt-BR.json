@@ -198,6 +198,8 @@
     "renew": "Renovar",
     "renewed": "Renovado",
     "currentExpiry": "Validade atual",
+    "newIssueDate": "Nova Data de Emissão",
+    "newIssueDateRequired": "A nova data de emissão é obrigatória para renovar.",
     "newExpiryDate": "Nova Data de Validade",
     "newExpirySelected": "Nova validade selecionada",
     "quickOptions": "Opções Rápidas",

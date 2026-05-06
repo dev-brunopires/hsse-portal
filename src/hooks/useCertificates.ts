@@ -400,11 +400,13 @@ export function useRenewCertificate() {
   return useMutation({
     mutationFn: async ({
       certificateId,
+      newIssueDate,
       newExpiryDate,
       notes,
       file,
     }: {
       certificateId: string;
+      newIssueDate: string;
       newExpiryDate: string;
       notes?: string;
       file?: File;
@@ -451,6 +453,7 @@ export function useRenewCertificate() {
 
       // Update certificate
       const updateData: Record<string, unknown> = {
+        issue_date: newIssueDate,
         expiry_date: newExpiryDate,
         last_renewal_date: getLocalToday(),
         renewal_status: 'completed',

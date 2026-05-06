@@ -38,6 +38,7 @@ export function RenewCertificateDialog({
   const { t } = useTranslation();
   const renewCertificate = useRenewCertificate();
 
+  const [newIssueDate, setNewIssueDate] = useState<string>('');
   const [newExpiryDate, setNewExpiryDate] = useState<string>('');
   const [notes, setNotes] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -45,7 +46,9 @@ export function RenewCertificateDialog({
   if (!certificate) return null;
 
   const handleQuickOption = (months: number) => {
-    const baseDate = certificate.expiry_date
+    const baseDate = newIssueDate
+      ? new Date(newIssueDate)
+      : certificate.expiry_date
       ? new Date(certificate.expiry_date)
       : new Date();
     const newDate = addMonths(baseDate, months);
@@ -53,16 +56,18 @@ export function RenewCertificateDialog({
   };
 
   const handleSubmit = async () => {
-    if (!newExpiryDate) return;
+    if (!newIssueDate || !newExpiryDate) return;
 
     await renewCertificate.mutateAsync({
       certificateId: certificate.id,
+      newIssueDate,
       newExpiryDate,
       notes: notes || undefined,
       file: file || undefined,
     });
 
     onOpenChange(false);
+    setNewIssueDate('');
     setNewExpiryDate('');
     setNotes('');
     setFile(null);
@@ -114,6 +119,17 @@ export function RenewCertificateDialog({
                 {option.label}
               </Button>
             ))}
+          </div>
+        </div>
+
+        {/* New Issue Date (required) */}
+        <div>
+          <Label>{t('certificates.newIssueDate')} *</Label>
+          <div className="mt-2">
+            <DatePicker
+              value={newIssueDate}
+              onChange={setNewIssueDate}
+            />
           </div>
         </div>
 
@@ -186,7 +202,7 @@ export function RenewCertificateDialog({
         </Button>
         <Button
           onClick={handleSubmit}
-          disabled={!newExpiryDate || renewCertificate.isPending}
+          disabled={!newIssueDate || !newExpiryDate || renewCertificate.isPending}
         >
           {renewCertificate.isPending ? (
             <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
