@@ -106,20 +106,14 @@ export function MaintenancePlanDialog({ open, onOpenChange }: MaintenancePlanDia
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t('navigation.equipment')}</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('maintenanceForm.selectEquipment')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {equipment.map((eq) => (
-                        <SelectItem key={eq.id} value={eq.id}>
-                          {eq.name} - {eq.internal_code}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <EquipmentCombobox
+                      value={field.value}
+                      onChange={field.onChange}
+                      equipmentList={equipment as any}
+                      placeholder={t('maintenanceForm.selectEquipment')}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
