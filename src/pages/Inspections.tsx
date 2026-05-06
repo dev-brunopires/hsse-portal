@@ -25,6 +25,8 @@ import {
   MoreHorizontal,
   Trash2,
   Layers,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { StatCard } from '@/components/ui/stat-card';
 import { PageHeader } from '@/components/layout/PageHeader';
