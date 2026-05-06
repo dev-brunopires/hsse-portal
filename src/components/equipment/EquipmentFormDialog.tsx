@@ -270,6 +270,10 @@ export function EquipmentFormDialog({
       acquisitionDate: '',
       expiryDate: '',
       certificateExpiry: '',
+      lastHydrostaticTest: '',
+      nextHydrostaticTest: '',
+      lastCalibration: '',
+      nextCalibration: '',
       observations: '',
     });
   }, [
