@@ -590,28 +590,6 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
         {/* Sync / Cache Button */}
         <SyncButton />
 
-        {/* Notifications Dropdown */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              {unreadCount > 0 && (
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-status-danger text-status-danger-foreground text-xs">
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </Badge>
-              )}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80 sm:w-96 bg-popover border border-border shadow-lg z-50">
-            <DropdownMenuLabel className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span>{t('header.notifications')}</span>
-                {unreadCount > 0 && (
-                  <Badge variant="secondary" className="text-xs">
-                    {unreadCount} {t('header.unreadNotifications')}
-                  </Badge>
-                )}
-              </div>
         {/* Notifications - Mobile = Drawer */}
         {isMobile ? (
           <Drawer>
