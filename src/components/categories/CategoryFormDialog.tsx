@@ -313,6 +313,30 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
               />
             </div>
 
+            <FormField
+              control={form.control}
+              name="inspection_due_day"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('categoryForm.dueDayLabel', 'Dia do mês para inspeção (opcional)')}</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={31}
+                      placeholder={t('categoryForm.dueDayPlaceholder', 'Ex: 15')}
+                      value={field.value ?? ''}
+                      onChange={(e) => field.onChange(e.target.value === '' ? null : Number(e.target.value))}
+                    />
+                  </FormControl>
+                  <FormDescription className="text-xs">
+                    {t('categoryForm.dueDayDescription', 'Quando preenchido, a próxima inspeção será gerada automaticamente sempre neste dia do mês.')}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <Separator className="my-2" />
 
             <FormField
