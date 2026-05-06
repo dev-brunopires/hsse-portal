@@ -34,16 +34,17 @@ export function SyncButton() {
       toast.error(t('syncButton.offlineCannotSync'));
       return;
     }
-    toast.info(t('syncButton.starting'), { id: 'manual-sync-start' });
+    const toastId = 'manual-sync';
+    toast.loading(t('syncButton.syncing'), { id: toastId });
     try {
-      await Promise.all([
-        syncPendingInspections(),
-        syncPendingMaintenance(),
-      ]);
-      // Force cache refresh with toast feedback
-      await preCacheData({ silent: false, force: true });
+      // Run pending sync sequentially so a single toast reflects real progress
+      await syncPendingInspections();
+      await syncPendingMaintenance();
+      // Refresh cache silently — avoid duplicate toasts
+      await preCacheData({ silent: true, force: true });
+      toast.success(t('syncButton.syncCompletedShort', 'Sincronização concluída'), { id: toastId });
     } catch {
-      toast.error(t('syncButton.error'));
+      toast.error(t('syncButton.error'), { id: toastId });
     }
   }, [isOnline, preCacheData, syncPendingInspections, syncPendingMaintenance, t]);
 
