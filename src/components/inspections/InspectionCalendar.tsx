@@ -27,11 +27,12 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { parseLocalDate } from '@/utils/dateFormat';
 import type { InspectionWithDetails } from '@/hooks/useInspections';
+import { usePendingInspections } from '@/hooks/usePendingInspections';
 
 interface InspectionCalendarProps {
   inspections: InspectionWithDetails[];
   onInspectionClick: (inspection: InspectionWithDetails) => void;
-  onCreateForEquipment?: (equipmentId: string) => void;
+  onCreateForEquipment?: (equipmentId: string, pendingId?: string) => void;
 }
 
 const getStatusConfig = (t: (key: string) => string) => ({
@@ -66,6 +67,7 @@ const getStatusConfig = (t: (key: string) => string) => ({
 });
 
 export function InspectionCalendar({ inspections, onInspectionClick, onCreateForEquipment }: InspectionCalendarProps) {
+  const { data: pendingInspections = [] } = usePendingInspections();
   const { t, i18n } = useTranslation();
   const statusConfig = getStatusConfig(t);
   const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
@@ -114,8 +116,25 @@ export function InspectionCalendar({ inspections, onInspectionClick, onCreateFor
       }
     });
 
+    // Add auto-generated pending inspections
+    pendingInspections.forEach((p) => {
+      const dateKey = p.due_date;
+      if (!grouped.has(dateKey)) grouped.set(dateKey, []);
+      grouped.get(dateKey)!.push({
+        id: `pending-${p.id}`,
+        equipment_id: p.equipment_id,
+        equipment: p.equipment ? { id: p.equipment.id, name: p.equipment.name, internal_code: p.equipment.internal_code } : null,
+        inspection_date: dateKey,
+        next_inspection_date: null,
+        status: 'pending' as any,
+        profiles: null,
+        _isUpcoming: true,
+        _pendingId: p.id,
+      } as unknown as InspectionWithDetails);
+    });
+
     return grouped;
-  }, [inspections]);
+  }, [inspections, pendingInspections]);
 
   const getInspectionsForDay = (date: Date): InspectionWithDetails[] => {
     // Format the local date to YYYY-MM-DD without timezone conversion
@@ -351,7 +370,7 @@ export function InspectionCalendar({ inspections, onInspectionClick, onCreateFor
                     key={inspection.id + (isUpcoming ? '-upcoming' : '')}
                     onClick={() => {
                       if (isUpcoming && onCreateForEquipment && inspection.equipment_id) {
-                        onCreateForEquipment(inspection.equipment_id);
+                        onCreateForEquipment(inspection.equipment_id, (inspection as any)._pendingId);
                       } else {
                         onInspectionClick(inspection);
                       }

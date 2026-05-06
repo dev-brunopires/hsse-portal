@@ -27,6 +27,7 @@ import { useEquipment, type EquipmentWithCategory } from '@/hooks/useEquipment';
 import { getLocalToday } from '@/utils/dateFormat';
 import { useCategories } from '@/hooks/useCategories';
 import { useLastInspection } from '@/hooks/useInspections';
+import { fetchPendingInspectionById, type PendingInspection } from '@/hooks/usePendingInspections';
 import { useOfflineSync, CachedEquipment, CachedCategory, CachedTemplate, CachedLastInspection } from '@/hooks/useOfflineSync';
 import { InspectionFormDialog } from '@/components/equipment/InspectionFormDialog';
 import { PreInspectionWarningDialog } from './PreInspectionWarningDialog';
@@ -42,9 +43,10 @@ interface NewInspectionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   preSelectedEquipmentId?: string | null;
+  pendingInspectionId?: string | null;
 }
 
-export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId }: NewInspectionDialogProps) {
+export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId, pendingInspectionId }: NewInspectionDialogProps) {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
@@ -87,6 +89,15 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [hasAutoSelected, setHasAutoSelected] = useState(false);
+  const [pendingData, setPendingData] = useState<PendingInspection | null>(null);
+
+  useEffect(() => {
+    if (open && pendingInspectionId) {
+      fetchPendingInspectionById(pendingInspectionId).then(setPendingData).catch(() => setPendingData(null));
+    } else if (!open) {
+      setPendingData(null);
+    }
+  }, [open, pendingInspectionId]);
 
   // Fetch last inspection for pending equipment to check for warnings (only when online)
   const { data: lastInspection } = useLastInspection(isOnline ? pendingEquipment?.id : undefined);
@@ -567,6 +578,8 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
           onOpenChange={handleInspectionClose}
           equipment={convertToEquipmentType(selectedEquipment)}
           onSuccess={handleInspectionSuccess}
+          carryoverItems={pendingData?.carryover_items}
+          carryoverRecommendations={pendingData?.carryover_recommendations}
         />
       )}
     </>

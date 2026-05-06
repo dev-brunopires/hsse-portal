@@ -90,6 +90,8 @@ interface InspectionFormDialogProps {
   onOpenChange: (open: boolean) => void;
   equipment: Equipment | null;
   onSuccess?: () => void;
+  carryoverItems?: Array<{ description: string; status: string; notes?: string | null }>;
+  carryoverRecommendations?: string | null;
 }
 
 interface ChecklistItem {
@@ -116,6 +118,8 @@ export function InspectionFormDialog({
   onOpenChange, 
   equipment,
   onSuccess,
+  carryoverItems,
+  carryoverRecommendations,
 }: InspectionFormDialogProps) {
   const { t } = useTranslation();
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
@@ -153,27 +157,44 @@ export function InspectionFormDialog({
   // Load checklist from category template or use default fallback
   useEffect(() => {
     if (open && equipment) {
-      // If template is loaded, use it
+      // Build base checklist from template or fallback
+      let baseItems: ChecklistItem[] = [];
       if (defaultTemplate?.items && defaultTemplate.items.length > 0) {
-        const templateItems: ChecklistItem[] = defaultTemplate.items.map((item, index) => ({
+        baseItems = defaultTemplate.items.map((item, index) => ({
           id: item.id || `item-${index}`,
           description: item.description,
           status: 'pending',
           notes: '',
           required: item.is_required ?? true,
         }));
-        setChecklist(templateItems);
       } else if (!templateLoading) {
-        // Fallback to default if no template exists
-        setChecklist(getDefaultChecklist(t));
+        baseItems = getDefaultChecklist(t);
       }
-      
+
+      // Append carryover items from previous pending inspection
+      if (carryoverItems && carryoverItems.length > 0) {
+        const existingDescs = new Set(baseItems.map(i => i.description.trim().toLowerCase()));
+        carryoverItems.forEach((c, idx) => {
+          const desc = `[${t('inspectionCalendar.carryoverItems', 'Pendência da última inspeção')}] ${c.description}`;
+          if (!existingDescs.has(desc.trim().toLowerCase())) {
+            baseItems.push({
+              id: `carryover-${idx}`,
+              description: desc,
+              status: 'pending',
+              notes: c.notes || '',
+              required: true,
+            });
+          }
+        });
+      }
+      setChecklist(baseItems);
+
       form.reset({
         inspectorId: user?.id || '',
         inspectionDate: getLocalToday(),
         overallStatus: 'approved',
         observations: '',
-        recommendations: '',
+        recommendations: carryoverRecommendations || '',
         nextInspectionDate: '',
       });
       
@@ -184,7 +205,7 @@ export function InspectionFormDialog({
         setSignatureData(null);
       }
     }
-  }, [open, equipment, defaultTemplate, templateLoading, form, user, userSignatureSettings, t]);
+  }, [open, equipment, defaultTemplate, templateLoading, form, user, userSignatureSettings, t, carryoverItems, carryoverRecommendations]);
 
   const hasTriggeredConfetti = useRef(false);
 
