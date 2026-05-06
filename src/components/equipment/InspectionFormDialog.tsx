@@ -124,6 +124,7 @@ export function InspectionFormDialog({
 }: InspectionFormDialogProps) {
   const { t } = useTranslation();
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
+  const [autoCarryover, setAutoCarryover] = useState<{ items: Array<{ description: string; status: string; notes: string | null }>; recommendations: string | null } | null>(null);
   const [uploadedPhotos, setUploadedPhotos] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [signatureData, setSignatureData] = useState<string | null>(null);
