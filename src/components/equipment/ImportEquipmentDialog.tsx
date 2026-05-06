@@ -214,6 +214,10 @@ export function ImportEquipmentDialog({ open, onOpenChange }: ImportEquipmentDia
         compareField('acquisition_date', item.acquisition_date, existing.acquisition_date);
         compareField('expiry_date', item.expiry_date, existing.expiry_date);
         compareField('certificate_expiry', item.certificate_expiry, existing.certificate_expiry);
+        compareField('last_hydrostatic_test', item.last_hydrostatic_test, existing.last_hydrostatic_test);
+        compareField('next_hydrostatic_test', item.next_hydrostatic_test, existing.next_hydrostatic_test);
+        compareField('last_calibration', item.last_calibration, existing.last_calibration);
+        compareField('next_calibration', item.next_calibration, existing.next_calibration);
         compareField('observations', item.observations, existing.observations);
 
         // Check category change
