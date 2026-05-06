@@ -87,7 +87,7 @@ export function AppSidebar() {
       data-tour="sidebar"
       className={cn(
         'h-screen bg-sidebar flex flex-col border-r border-sidebar-border transition-all duration-300',
-        collapsed ? 'w-16' : 'w-64'
+        collapsed ? 'w-16' : 'w-72'
       )}
     >
       <div className={cn(
