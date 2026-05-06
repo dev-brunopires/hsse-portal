@@ -52,7 +52,7 @@ export default function Dashboard() {
   const { t, i18n } = useTranslation();
   const dateLocale = i18n.language === 'en' ? enUS : ptBR;
   const queryClient = useQueryClient();
-  const { selectedShipId, setSelectedShipId, isFilterEnabled } = useShipFilter();
+  const { selectedShipId, setSelectedShipId, isFilterEnabled, isReady: isShipFilterReady } = useShipFilter();
   const { data: stats, isLoading, error, refetch, isFetching } = useDashboardStats();
   const { data: ships = [] } = useShips();
   const { data: categories = [] } = useCategories();
