@@ -14,6 +14,7 @@ import {
   Ship,
   Anchor,
   MoreVertical,
+  KeyRound,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
