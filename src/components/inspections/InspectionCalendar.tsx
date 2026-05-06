@@ -325,8 +325,8 @@ export function InspectionCalendar({ inspections, onInspectionClick, onCreateFor
 
       {/* Day Details Dialog */}
       <Dialog open={dayDialogOpen} onOpenChange={setDayDialogOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader className="pb-4 border-b">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
+          <DialogHeader className="pb-4 border-b shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <CalendarDays className="h-5 w-5 text-primary" />
               <span>
@@ -337,23 +337,29 @@ export function InspectionCalendar({ inspections, onInspectionClick, onCreateFor
               {selectedDateInspections.length} {t('inspectionCalendar.inspectionsOnDay')}
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="max-h-[60vh] pr-4">
+          <ScrollArea className="flex-1 pr-4 -mr-2">
             <div className="space-y-3 py-2">
               {selectedDateInspections.map((inspection) => {
-                const config = statusConfig[inspection.status] || statusConfig.pending;
-                const Icon = config.icon;
                 const isUpcoming = (inspection as any)._isUpcoming;
+                const config = isUpcoming
+                  ? statusConfig.pending
+                  : (statusConfig[inspection.status] || statusConfig.pending);
+                const Icon = config.icon;
                 
                 return (
                   <button
                     key={inspection.id + (isUpcoming ? '-upcoming' : '')}
                     onClick={() => {
-                      onInspectionClick(inspection);
+                      if (isUpcoming && onCreateForEquipment && inspection.equipment_id) {
+                        onCreateForEquipment(inspection.equipment_id);
+                      } else {
+                        onInspectionClick(inspection);
+                      }
                       setDayDialogOpen(false);
                     }}
                     className={cn(
                       "w-full p-4 rounded-xl border-2 transition-all duration-200 text-left group",
-                      "hover:shadow-lg hover:scale-[1.01] hover:border-primary/30",
+                      "hover:shadow-lg hover:border-primary/30",
                       "bg-gradient-to-r from-card to-card/80",
                       config.borderColor
                     )}
@@ -366,7 +372,7 @@ export function InspectionCalendar({ inspections, onInspectionClick, onCreateFor
                         <Icon className={cn("h-5 w-5", config.color)} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <p className="font-semibold truncate text-foreground">
                             {inspection.equipment?.name || 'Equipamento'}
                           </p>
@@ -379,7 +385,7 @@ export function InspectionCalendar({ inspections, onInspectionClick, onCreateFor
                         <p className="text-sm text-muted-foreground font-mono">
                           {inspection.equipment?.internal_code}
                         </p>
-                        <div className="flex items-center gap-3 mt-2.5">
+                        <div className="flex items-center gap-3 mt-2.5 flex-wrap">
                           <Badge 
                             className={cn(
                               "text-xs font-medium",
@@ -387,15 +393,17 @@ export function InspectionCalendar({ inspections, onInspectionClick, onCreateFor
                               "text-white border-0"
                             )}
                           >
-                            {config.label}
+                            {isUpcoming ? t('inspectionCalendar.scheduled') : config.label}
                           </Badge>
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
-                            {inspection.profiles?.full_name}
-                          </span>
+                          {!isUpcoming && (
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
+                              {inspection.profiles?.full_name}
+                            </span>
+                          )}
                         </div>
                       </div>
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                         <Eye className="h-5 w-5 text-muted-foreground" />
                       </div>
                     </div>
