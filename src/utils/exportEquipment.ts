@@ -78,6 +78,10 @@ export function exportToExcel(equipment: EquipmentWithCategory[], filename = 'eq
       [t('exportEquipment.certificateExpiry')]: formatDate(item.certificate_expiry),
       [t('exportEquipment.lastInspection')]: formatDate(item.last_inspection),
       [t('exportEquipment.nextInspection')]: formatDate(item.next_inspection),
+      [t('equipmentForm.lastHydrostaticTest', 'Último teste hidrostático')]: formatDate((item as any).last_hydrostatic_test),
+      [t('equipmentForm.nextHydrostaticTest', 'Próximo teste hidrostático')]: formatDate((item as any).next_hydrostatic_test),
+      [t('equipmentForm.lastCalibration', 'Última calibração')]: formatDate((item as any).last_calibration),
+      [t('equipmentForm.nextCalibration', 'Próxima calibração')]: formatDate((item as any).next_calibration),
     };
   });
 
