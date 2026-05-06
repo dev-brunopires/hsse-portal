@@ -46,9 +46,6 @@ export function GlobalSearchTrigger({ className, variant = 'default' }: GlobalSe
         <span className="ml-2 truncate flex-1 text-left">
           {t('globalSearch.placeholder')}
         </span>
-        <kbd className="ml-2 pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex flex-shrink-0">
-          <span className="text-xs">⌘</span>K
-        </kbd>
       </Button>
       <GlobalSearchDialog open={open} onOpenChange={setOpen} />
     </>
