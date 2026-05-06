@@ -287,7 +287,7 @@ export function CertificateFormDialog({
                 name="issue_date"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('certificates.issueDate')}</FormLabel>
+                    <FormLabel>{t('certificates.issueDate')} *</FormLabel>
                     <DatePicker
                       value={field.value}
                       onChange={field.onChange}
