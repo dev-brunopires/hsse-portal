@@ -338,8 +338,8 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
       {/* Right Actions */}
       <div className="flex items-center gap-1 sm:gap-2 lg:gap-4">
         {/* Mobile Quick Actions - Language Toggle */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+        <Drawer>
+          <DrawerTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
@@ -348,26 +348,46 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
             >
               <Languages className="h-5 w-5" />
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40 bg-popover border border-border shadow-lg z-50">
-            <DropdownMenuLabel>{t('header.language')}</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => setLanguage('pt-BR')}
-              className="gap-2"
-            >
-              {language === 'pt-BR' && <Check className="h-4 w-4 text-primary" />}
-              <span className={language === 'pt-BR' ? 'font-medium' : ''}>Português</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => setLanguage('en')}
-              className="gap-2"
-            >
-              {language === 'en' && <Check className="h-4 w-4 text-primary" />}
-              <span className={language === 'en' ? 'font-medium' : ''}>English</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+          </DrawerTrigger>
+          <DrawerContent>
+            <DrawerHeader className="text-left">
+              <DrawerTitle className="flex items-center gap-2">
+                <Languages className="h-5 w-5 text-primary" />
+                {t('header.language')}
+              </DrawerTitle>
+            </DrawerHeader>
+            <div className="px-4 pb-6 space-y-1">
+              <DrawerClose asChild>
+                <button
+                  onClick={() => setLanguage('pt-BR')}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors",
+                    language === 'pt-BR' ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted"
+                  )}
+                >
+                  <span className="w-5 flex-shrink-0">
+                    {language === 'pt-BR' && <Check className="h-5 w-5 text-primary" />}
+                  </span>
+                  <span>Português</span>
+                </button>
+              </DrawerClose>
+              <DrawerClose asChild>
+                <button
+                  onClick={() => setLanguage('en')}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors",
+                    language === 'en' ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted"
+                  )}
+                >
+                  <span className="w-5 flex-shrink-0">
+                    {language === 'en' && <Check className="h-5 w-5 text-primary" />}
+                  </span>
+                  <span>English</span>
+                </button>
+              </DrawerClose>
+            </div>
+          </DrawerContent>
+        </Drawer>
 
         {/* Mobile Quick Actions - Theme Toggle */}
         <Button
