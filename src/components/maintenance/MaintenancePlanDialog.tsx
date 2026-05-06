@@ -36,6 +36,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { useEquipment } from '@/hooks/useEquipment';
+import { EquipmentCombobox } from '@/components/equipment/EquipmentCombobox';
 import { useCreateMaintenancePlan } from '@/hooks/useMaintenance';
 
 interface MaintenancePlanDialogProps {
