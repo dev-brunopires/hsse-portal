@@ -130,6 +130,8 @@ export function CertificateFormDialog({
         type: 'certificate',
         certificate_number: '',
         issuer: '',
+        issue_date: '',
+        expiry_date: '',
         notes: '',
       });
       setFile(null);
