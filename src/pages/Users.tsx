@@ -46,6 +46,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { UserRoleDialog } from '@/components/users/UserRoleDialog';
 import { UserEditDialog } from '@/components/users/UserEditDialog';
 import { DeleteUserDialog } from '@/components/users/DeleteUserDialog';
+import { ResetPasswordDialog } from '@/components/users/ResetPasswordDialog';
 import { CreateUserDialog } from '@/components/users/CreateUserDialog';
 import { UserShipsDialog } from '@/components/users/UserShipsDialog';
 import { ShipFormDialog } from '@/components/ships/ShipFormDialog';
