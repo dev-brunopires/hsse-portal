@@ -55,6 +55,7 @@ import {
   Trash2,
   ChevronDown,
   ChevronUp,
+  Link2 as LinkIcon,
 } from 'lucide-react';
 import { useCategories } from '@/hooks/useCategories';
 import { useCreateEquipment, useUpdateEquipment } from '@/hooks/useEquipment';
