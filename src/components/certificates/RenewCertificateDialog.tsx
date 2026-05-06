@@ -122,6 +122,17 @@ export function RenewCertificateDialog({
           </div>
         </div>
 
+        {/* New Issue Date (required) */}
+        <div>
+          <Label>{t('certificates.newIssueDate')} *</Label>
+          <div className="mt-2">
+            <DatePicker
+              value={newIssueDate}
+              onChange={setNewIssueDate}
+            />
+          </div>
+        </div>
+
         {/* New Expiry Date */}
         <div>
           <Label>{t('certificates.newExpiryDate')} *</Label>
