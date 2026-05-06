@@ -95,6 +95,8 @@ export function CertificateFormDialog({
   const isEditing = !!certificate;
   const isLoading = createCertificate.isPending || updateCertificate.isPending;
 
+  const formSchema = buildFormSchema(t);
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -103,6 +105,8 @@ export function CertificateFormDialog({
       type: 'certificate',
       certificate_number: '',
       issuer: '',
+      issue_date: '',
+      expiry_date: '',
       notes: '',
     },
   });
