@@ -69,6 +69,7 @@ import { DatePickerField } from '@/components/ui/date-picker';
 import { useEquipmentDocuments, useDeleteDocument, type EquipmentDocument } from '@/hooks/useEquipmentDocuments';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
+import { EquipmentRelationshipsEditor } from './EquipmentRelationshipsEditor';
 
 const createEquipmentSchema = (t: (key: string) => string) => z.object({
   // Dados Gerais
