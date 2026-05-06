@@ -70,7 +70,6 @@ export async function ensureCertificateForEquipment(
     if (showToast) {
       toast.info(i18n.t('certificates.autoSyncUpdated'), {
         description: equipmentName,
-        icon: '🔄',
       });
     }
     return 'updated';
