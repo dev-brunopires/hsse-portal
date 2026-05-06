@@ -133,7 +133,7 @@ export function ImportEquipmentDialog({ open, onOpenChange }: ImportEquipmentDia
     
     const { data: existingEquipment } = await supabase
       .from('equipment')
-      .select('id, internal_code, name, type, serial_number, manufacturer, model, capacity, unit, location, status, manufacturing_date, acquisition_date, expiry_date, certificate_expiry, observations, category_id, ship_id')
+      .select('id, internal_code, name, type, serial_number, manufacturer, model, capacity, unit, location, status, manufacturing_date, acquisition_date, expiry_date, certificate_expiry, last_hydrostatic_test, next_hydrostatic_test, last_calibration, next_calibration, observations, category_id, ship_id')
       .in('internal_code', internalCodes);
 
     const existingMap = new Map<string, ExistingEquipmentData>();
