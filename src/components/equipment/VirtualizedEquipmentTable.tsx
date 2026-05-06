@@ -480,7 +480,7 @@ export function VirtualizedEquipmentTable({
               <Upload className="h-4 w-4" />
               <span className="hidden sm:inline">{t('equipmentTable.import')}</span>
             </Button>
-            <Button size="sm" className="gap-2 flex-shrink-0 ml-auto" onClick={openCreateForm}>
+            <Button size="sm" className="gap-2 flex-shrink-0" onClick={openCreateForm}>
               <Plus className="h-4 w-4" />
               <span className="hidden xs:inline">{t('equipmentTable.new')}</span>
               <span className="hidden sm:inline">{t('equipmentTable.equipmentName')}</span>
