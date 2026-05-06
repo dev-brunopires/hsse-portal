@@ -704,6 +704,10 @@ export default function Inspections() {
               setSelectedInspection(inspection);
               setDetailDialogOpen(true);
             }}
+            onCreateForEquipment={(equipmentId) => {
+              setPreselectedEquipmentId(equipmentId);
+              setShowNewInspectionForm(true);
+            }}
           />
         </TabsContent>
 
