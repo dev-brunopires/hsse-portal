@@ -1129,7 +1129,7 @@ export function EquipmentFormDialog({
                     type="button"
                     variant="outline"
                     onClick={() => {
-                      const tabs = ['general', 'location', 'dates', 'documents'];
+                      const tabs = ['general', 'location', 'dates', 'links', 'documents'];
                       const currentIndex = tabs.indexOf(activeTab);
                       if (currentIndex > 0) setActiveTab(tabs[currentIndex - 1]);
                     }}
