@@ -55,6 +55,7 @@ export type Database = {
       }
       categories: {
         Row: {
+          blocking_expiries: Json
           created_at: string
           description: string | null
           icon: string | null
@@ -65,6 +66,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          blocking_expiries?: Json
           created_at?: string
           description?: string | null
           icon?: string | null
@@ -75,6 +77,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          blocking_expiries?: Json
           created_at?: string
           description?: string | null
           icon?: string | null
@@ -338,12 +341,16 @@ export type Database = {
           expiry_date: string | null
           id: string
           internal_code: string
+          last_calibration: string | null
+          last_hydrostatic_test: string | null
           last_inspection: string | null
           location: string
           manufacturer: string | null
           manufacturing_date: string | null
           model: string | null
           name: string
+          next_calibration: string | null
+          next_hydrostatic_test: string | null
           next_inspection: string | null
           observations: string | null
           serial_number: string
@@ -364,12 +371,16 @@ export type Database = {
           expiry_date?: string | null
           id?: string
           internal_code: string
+          last_calibration?: string | null
+          last_hydrostatic_test?: string | null
           last_inspection?: string | null
           location: string
           manufacturer?: string | null
           manufacturing_date?: string | null
           model?: string | null
           name: string
+          next_calibration?: string | null
+          next_hydrostatic_test?: string | null
           next_inspection?: string | null
           observations?: string | null
           serial_number: string
@@ -390,12 +401,16 @@ export type Database = {
           expiry_date?: string | null
           id?: string
           internal_code?: string
+          last_calibration?: string | null
+          last_hydrostatic_test?: string | null
           last_inspection?: string | null
           location?: string
           manufacturer?: string | null
           manufacturing_date?: string | null
           model?: string | null
           name?: string
+          next_calibration?: string | null
+          next_hydrostatic_test?: string | null
           next_inspection?: string | null
           observations?: string | null
           serial_number?: string
@@ -458,6 +473,51 @@ export type Database = {
           {
             foreignKeyName: "equipment_documents_equipment_id_fkey"
             columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equipment_relationships: {
+        Row: {
+          child_equipment_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          parent_equipment_id: string
+          relationship_type: string
+        }
+        Insert: {
+          child_equipment_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          parent_equipment_id: string
+          relationship_type?: string
+        }
+        Update: {
+          child_equipment_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          parent_equipment_id?: string
+          relationship_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_relationships_child_equipment_id_fkey"
+            columns: ["child_equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_relationships_parent_equipment_id_fkey"
+            columns: ["parent_equipment_id"]
             isOneToOne: false
             referencedRelation: "equipment"
             referencedColumns: ["id"]

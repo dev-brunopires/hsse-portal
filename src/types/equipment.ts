@@ -40,6 +40,10 @@ export interface Equipment {
   certificateExpiry: string;
   lastInspection: string;
   nextInspection: string;
+  lastHydrostaticTest?: string | null;
+  nextHydrostaticTest?: string | null;
+  lastCalibration?: string | null;
+  nextCalibration?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }
