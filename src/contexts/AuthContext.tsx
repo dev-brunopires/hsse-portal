@@ -317,7 +317,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
       window.removeEventListener('focus', onFocus);
-      window.removeEventListener('online', onFocus);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
       document.removeEventListener('visibilitychange', onVisibilityChange);
       window.clearInterval(interval);
     };
