@@ -758,7 +758,7 @@ export default function Reports() {
 
     const selectedCategory = categoryFilter !== 'all' 
       ? categories.find(c => c.id === categoryFilter)
-      : { id: 'all', name: t('reports.allCategories'), description: '', icon: '', inspection_frequency: 'monthly', created_at: '', updated_at: '', organization_id: null, blocking_expiries: ['certificate_expiry', 'expiry_date'] };
+      : { id: 'all', name: t('reports.allCategories'), description: '', icon: '', inspection_frequency: 'monthly', inspection_due_day: null, created_at: '', updated_at: '', organization_id: null, blocking_expiries: ['certificate_expiry', 'expiry_date'] } as any;
     
     const selectedShip = shipFilter !== 'all'
       ? ships.find(s => s.id === shipFilter)
