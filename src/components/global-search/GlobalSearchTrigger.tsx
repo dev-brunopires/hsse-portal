@@ -38,7 +38,7 @@ export function GlobalSearchTrigger({ className, variant = 'default' }: GlobalSe
         onClick={() => setOpen(true)}
         className={cn(
           'relative h-9 justify-start rounded-lg bg-muted/50 text-sm text-muted-foreground',
-          'w-[200px] lg:w-[280px]',
+          'w-[200px] xl:w-[280px]',
           className
         )}
       >
