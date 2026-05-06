@@ -90,6 +90,8 @@ interface InspectionFormDialogProps {
   onOpenChange: (open: boolean) => void;
   equipment: Equipment | null;
   onSuccess?: () => void;
+  carryoverItems?: Array<{ description: string; status: string; notes?: string | null }>;
+  carryoverRecommendations?: string | null;
 }
 
 interface ChecklistItem {
@@ -116,6 +118,8 @@ export function InspectionFormDialog({
   onOpenChange, 
   equipment,
   onSuccess,
+  carryoverItems,
+  carryoverRecommendations,
 }: InspectionFormDialogProps) {
   const { t } = useTranslation();
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
