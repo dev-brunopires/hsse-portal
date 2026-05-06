@@ -65,7 +65,7 @@ const getStatusConfig = (t: (key: string) => string) => ({
   },
 });
 
-export function InspectionCalendar({ inspections, onInspectionClick }: InspectionCalendarProps) {
+export function InspectionCalendar({ inspections, onInspectionClick, onCreateForEquipment }: InspectionCalendarProps) {
   const { t, i18n } = useTranslation();
   const statusConfig = getStatusConfig(t);
   const dateLocale = i18n.language === 'pt-BR' ? ptBR : enUS;
