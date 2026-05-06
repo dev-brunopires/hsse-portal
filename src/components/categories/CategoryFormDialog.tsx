@@ -42,6 +42,7 @@ type CategoryFormData = {
   description?: string;
   icon: string;
   inspection_frequency: string;
+  inspection_due_day?: number | null;
   blocking_expiries: BlockingExpiryKey[];
 };
 
@@ -70,6 +71,10 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
     description: z.string().optional(),
     icon: z.string().min(1, t('validation.selectIcon')),
     inspection_frequency: z.string().min(1, t('validation.selectFrequency')),
+    inspection_due_day: z.preprocess(
+      (v) => (v === '' || v === null || v === undefined ? null : Number(v)),
+      z.number().int().min(1).max(31).nullable().optional()
+    ),
     blocking_expiries: z.array(
       z.enum(['certificate_expiry', 'expiry_date', 'next_hydrostatic_test', 'next_calibration'])
     ).default([]),
@@ -97,6 +102,7 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
       description: '',
       icon: 'package',
       inspection_frequency: 'monthly',
+      inspection_due_day: null,
       blocking_expiries: ['certificate_expiry', 'expiry_date'],
     },
   });
@@ -111,6 +117,7 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
         description: category.description || '',
         icon: category.icon || 'package',
         inspection_frequency: category.inspection_frequency,
+        inspection_due_day: (category as any).inspection_due_day ?? null,
         blocking_expiries: existing,
       });
       // Load existing checklist items from default template
@@ -129,6 +136,7 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
         description: '',
         icon: 'package',
         inspection_frequency: 'monthly',
+        inspection_due_day: null,
         blocking_expiries: ['certificate_expiry', 'expiry_date'],
       });
       setChecklistItems([]);
@@ -143,8 +151,9 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
         description: data.description || null,
         icon: data.icon,
         inspection_frequency: data.inspection_frequency,
+        inspection_due_day: data.inspection_due_day ?? null,
         blocking_expiries: data.blocking_expiries as any,
-      });
+      } as any);
       
       // Then create default checklist template if items exist
       if (checklistItems.length > 0 && newCategory) {
@@ -165,8 +174,9 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
         description: data.description || null,
         icon: data.icon,
         inspection_frequency: data.inspection_frequency,
+        inspection_due_day: data.inspection_due_day ?? null,
         blocking_expiries: data.blocking_expiries as any,
-      });
+      } as any);
       
       // Update or create default checklist template
       if (defaultTemplate) {
