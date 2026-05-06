@@ -14,6 +14,7 @@ import {
   Ship,
   Anchor,
   MoreVertical,
+  KeyRound,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -45,6 +46,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { UserRoleDialog } from '@/components/users/UserRoleDialog';
 import { UserEditDialog } from '@/components/users/UserEditDialog';
 import { DeleteUserDialog } from '@/components/users/DeleteUserDialog';
+import { ResetPasswordDialog } from '@/components/users/ResetPasswordDialog';
 import { CreateUserDialog } from '@/components/users/CreateUserDialog';
 import { UserShipsDialog } from '@/components/users/UserShipsDialog';
 import { ShipFormDialog } from '@/components/ships/ShipFormDialog';
@@ -74,7 +76,8 @@ export default function Users() {
   const { data: profiles, isLoading } = useProfiles();
   const { data: ships, isLoading: shipsLoading } = useShips();
   const { data: allUserShips } = useAllUserShips();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, isAdminMaster, isPlatformOwner } = useAuth();
+  const canResetPassword = isAdminMaster || isPlatformOwner;
   
   const [searchTerm, setSearchTerm] = useState('');
   const [shipSearchTerm, setShipSearchTerm] = useState('');
@@ -85,6 +88,7 @@ export default function Users() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [shipsDialogOpen, setShipsDialogOpen] = useState(false);
+  const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<ProfileWithRole | null>(null);
   
   // Ship dialogs
@@ -139,6 +143,11 @@ export default function Users() {
   const handleManageShips = (user: ProfileWithRole) => {
     setSelectedUser(user);
     setShipsDialogOpen(true);
+  };
+
+  const handleResetPassword = (user: ProfileWithRole) => {
+    setSelectedUser(user);
+    setResetPasswordDialogOpen(true);
   };
 
   const handleEditShip = (ship: ShipType) => {
@@ -366,6 +375,12 @@ export default function Users() {
                                   <Anchor className="h-4 w-4 mr-2" />
                                   {t('usersPage.manageShips')}
                                 </DropdownMenuItem>
+                                {canResetPassword && !isCurrentUser && (
+                                  <DropdownMenuItem onClick={() => handleResetPassword(user)}>
+                                    <KeyRound className="h-4 w-4 mr-2" />
+                                    {t('usersPage.resetPassword', 'Redefinir Senha')}
+                                  </DropdownMenuItem>
+                                )}
                                 {!isCurrentUser && (
                                   <>
                                     <DropdownMenuSeparator />
@@ -515,6 +530,12 @@ export default function Users() {
                                     <Anchor className="h-4 w-4 mr-2" />
                                     {t('usersPage.manageShips')}
                                   </DropdownMenuItem>
+                                  {canResetPassword && !isCurrentUser && (
+                                    <DropdownMenuItem onClick={() => handleResetPassword(user)}>
+                                      <KeyRound className="h-4 w-4 mr-2" />
+                                      {t('usersPage.resetPassword', 'Redefinir Senha')}
+                                    </DropdownMenuItem>
+                                  )}
                                   {!isCurrentUser && (
                                     <>
                                       <DropdownMenuSeparator />
@@ -750,6 +771,11 @@ export default function Users() {
       <UserShipsDialog
         open={shipsDialogOpen}
         onOpenChange={setShipsDialogOpen}
+        user={selectedUser}
+      />
+      <ResetPasswordDialog
+        open={resetPasswordDialogOpen}
+        onOpenChange={setResetPasswordDialogOpen}
         user={selectedUser}
       />
 
