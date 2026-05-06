@@ -500,10 +500,11 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
                 size="sm" 
                 className="gap-2 hidden md:flex"
                 data-tour="ship-filter"
+                title={selectedShipName}
               >
                 <Ship className="h-4 w-4" />
-                <span className="text-sm max-w-[120px] lg:max-w-[180px] truncate">{selectedShipName}</span>
-                <ChevronDown className="h-4 w-4" />
+                <span className="hidden xl:inline text-sm max-w-[180px] truncate">{selectedShipName}</span>
+                <ChevronDown className="h-4 w-4 hidden xl:inline" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64 bg-popover border border-border shadow-lg z-50">
