@@ -17,6 +17,10 @@ export interface ImportedEquipment {
   acquisition_date?: string;
   expiry_date?: string;
   certificate_expiry?: string;
+  last_hydrostatic_test?: string;
+  next_hydrostatic_test?: string;
+  last_calibration?: string;
+  next_calibration?: string;
   observations?: string;
 }
 
@@ -118,7 +122,23 @@ const columnMapping: Record<string, keyof ImportedEquipment> = {
   'validade certificado': 'certificate_expiry',
   'val. certificado': 'certificate_expiry',
   'certificate expiry': 'certificate_expiry',
-  
+
+  // Hydrostatic test
+  'último teste hidrostático': 'last_hydrostatic_test',
+  'ultimo teste hidrostatico': 'last_hydrostatic_test',
+  'last hydrostatic test': 'last_hydrostatic_test',
+  'próximo teste hidrostático': 'next_hydrostatic_test',
+  'proximo teste hidrostatico': 'next_hydrostatic_test',
+  'next hydrostatic test': 'next_hydrostatic_test',
+
+  // Calibration
+  'última calibração': 'last_calibration',
+  'ultima calibracao': 'last_calibration',
+  'last calibration': 'last_calibration',
+  'próxima calibração': 'next_calibration',
+  'proxima calibracao': 'next_calibration',
+  'next calibration': 'next_calibration',
+
   // Observations
   'observações': 'observations',
   'observacoes': 'observations',
@@ -205,7 +225,7 @@ export function parseCSV(file: File): Promise<ImportResult> {
             if (mappedKey && row[colIndex] !== undefined && row[colIndex] !== null) {
               const value = row[colIndex];
               
-              if (mappedKey.includes('date') || mappedKey === 'certificate_expiry') {
+              if (mappedKey.includes('date') || mappedKey === 'certificate_expiry' || mappedKey === 'last_hydrostatic_test' || mappedKey === 'next_hydrostatic_test' || mappedKey === 'last_calibration' || mappedKey === 'next_calibration') {
                 item[mappedKey] = parseDate(value) || '';
               } else if (mappedKey === 'status') {
                 item[mappedKey] = parseStatus(value) || 'active';

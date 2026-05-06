@@ -65,6 +65,10 @@ interface ExistingEquipmentData {
   acquisition_date: string | null;
   expiry_date: string | null;
   certificate_expiry: string | null;
+  last_hydrostatic_test: string | null;
+  next_hydrostatic_test: string | null;
+  last_calibration: string | null;
+  next_calibration: string | null;
   observations: string | null;
   category_id: string;
   ship_id: string | null;
@@ -129,7 +133,7 @@ export function ImportEquipmentDialog({ open, onOpenChange }: ImportEquipmentDia
     
     const { data: existingEquipment } = await supabase
       .from('equipment')
-      .select('id, internal_code, name, type, serial_number, manufacturer, model, capacity, unit, location, status, manufacturing_date, acquisition_date, expiry_date, certificate_expiry, observations, category_id, ship_id')
+      .select('id, internal_code, name, type, serial_number, manufacturer, model, capacity, unit, location, status, manufacturing_date, acquisition_date, expiry_date, certificate_expiry, last_hydrostatic_test, next_hydrostatic_test, last_calibration, next_calibration, observations, category_id, ship_id')
       .in('internal_code', internalCodes);
 
     const existingMap = new Map<string, ExistingEquipmentData>();
@@ -165,6 +169,10 @@ export function ImportEquipmentDialog({ open, onOpenChange }: ImportEquipmentDia
       acquisition_date: t('importEquipment.columns.acquisitionDate'),
       expiry_date: t('importEquipment.columns.expiryDate'),
       certificate_expiry: t('importEquipment.columns.certificateExpiry'),
+      last_hydrostatic_test: t('equipmentForm.lastHydrostaticTest', 'Último teste hidrostático'),
+      next_hydrostatic_test: t('equipmentForm.nextHydrostaticTest', 'Próximo teste hidrostático'),
+      last_calibration: t('equipmentForm.lastCalibration', 'Última calibração'),
+      next_calibration: t('equipmentForm.nextCalibration', 'Próxima calibração'),
       observations: t('importEquipment.columns.observations'),
       category_name: t('importEquipment.columns.category'),
       ship_name: t('importEquipment.columns.ship'),
@@ -206,6 +214,10 @@ export function ImportEquipmentDialog({ open, onOpenChange }: ImportEquipmentDia
         compareField('acquisition_date', item.acquisition_date, existing.acquisition_date);
         compareField('expiry_date', item.expiry_date, existing.expiry_date);
         compareField('certificate_expiry', item.certificate_expiry, existing.certificate_expiry);
+        compareField('last_hydrostatic_test', item.last_hydrostatic_test, existing.last_hydrostatic_test);
+        compareField('next_hydrostatic_test', item.next_hydrostatic_test, existing.next_hydrostatic_test);
+        compareField('last_calibration', item.last_calibration, existing.last_calibration);
+        compareField('next_calibration', item.next_calibration, existing.next_calibration);
         compareField('observations', item.observations, existing.observations);
 
         // Check category change
@@ -447,6 +459,10 @@ export function ImportEquipmentDialog({ open, onOpenChange }: ImportEquipmentDia
             acquisition_date: item.acquisition_date || null,
             expiry_date: item.expiry_date || null,
             certificate_expiry: item.certificate_expiry || null,
+            last_hydrostatic_test: item.last_hydrostatic_test || null,
+            next_hydrostatic_test: item.next_hydrostatic_test || null,
+            last_calibration: item.last_calibration || null,
+            next_calibration: item.next_calibration || null,
             observations: item.observations || null,
             created_by: currentUserId,
           });
@@ -468,6 +484,10 @@ export function ImportEquipmentDialog({ open, onOpenChange }: ImportEquipmentDia
             acquisition_date?: string | null;
             expiry_date?: string | null;
             certificate_expiry?: string | null;
+            last_hydrostatic_test?: string | null;
+            next_hydrostatic_test?: string | null;
+            last_calibration?: string | null;
+            next_calibration?: string | null;
             observations?: string | null;
             category_id?: string;
             ship_id?: string;
@@ -489,6 +509,10 @@ export function ImportEquipmentDialog({ open, onOpenChange }: ImportEquipmentDia
           if (item.acquisition_date) updateData.acquisition_date = item.acquisition_date;
           if (item.expiry_date) updateData.expiry_date = item.expiry_date;
           if (item.certificate_expiry) updateData.certificate_expiry = item.certificate_expiry;
+          if (item.last_hydrostatic_test) updateData.last_hydrostatic_test = item.last_hydrostatic_test;
+          if (item.next_hydrostatic_test) updateData.next_hydrostatic_test = item.next_hydrostatic_test;
+          if (item.last_calibration) updateData.last_calibration = item.last_calibration;
+          if (item.next_calibration) updateData.next_calibration = item.next_calibration;
           if (item.observations) updateData.observations = item.observations;
           
           // Update category if provided and matched

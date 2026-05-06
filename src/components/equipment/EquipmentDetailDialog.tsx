@@ -509,6 +509,68 @@ export function EquipmentDetailDialog({
                   </div>
                 </div>
 
+                {/* Additional Date Cards (Hydrostatic / Calibration) */}
+                {(equipment.lastHydrostaticTest || equipment.nextHydrostaticTest || equipment.lastCalibration || equipment.nextCalibration) && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                    {(equipment.lastHydrostaticTest || equipment.nextHydrostaticTest) && (
+                      <>
+                        <div className="p-4 rounded-lg border border-border bg-muted/30">
+                          <div className="flex items-center gap-2 mb-2">
+                            <ShieldCheck className="h-5 w-5 text-primary" />
+                            <span className="font-medium text-sm">{t('equipmentForm.lastHydrostaticTest', 'Último teste hidrostático')}</span>
+                          </div>
+                          <p className="text-xl sm:text-2xl font-bold">
+                            {equipment.lastHydrostaticTest ? formatDate(equipment.lastHydrostaticTest) : '—'}
+                          </p>
+                        </div>
+                        <div className={cn(
+                          'p-4 rounded-lg border',
+                          equipment.nextHydrostaticTest ? (
+                            new Date(equipment.nextHydrostaticTest) < new Date() ? 'border-status-danger bg-status-danger/10' :
+                            'border-border bg-muted/30'
+                          ) : 'border-border bg-muted/30'
+                        )}>
+                          <div className="flex items-center gap-2 mb-2">
+                            <Clock className="h-5 w-5 text-primary" />
+                            <span className="font-medium text-sm">{t('equipmentForm.nextHydrostaticTest', 'Próximo teste hidrostático')}</span>
+                          </div>
+                          <p className="text-xl sm:text-2xl font-bold">
+                            {equipment.nextHydrostaticTest ? formatDate(equipment.nextHydrostaticTest) : '—'}
+                          </p>
+                        </div>
+                      </>
+                    )}
+                    {(equipment.lastCalibration || equipment.nextCalibration) && (
+                      <>
+                        <div className="p-4 rounded-lg border border-border bg-muted/30">
+                          <div className="flex items-center gap-2 mb-2">
+                            <ShieldCheck className="h-5 w-5 text-primary" />
+                            <span className="font-medium text-sm">{t('equipmentForm.lastCalibration', 'Última calibração')}</span>
+                          </div>
+                          <p className="text-xl sm:text-2xl font-bold">
+                            {equipment.lastCalibration ? formatDate(equipment.lastCalibration) : '—'}
+                          </p>
+                        </div>
+                        <div className={cn(
+                          'p-4 rounded-lg border',
+                          equipment.nextCalibration ? (
+                            new Date(equipment.nextCalibration) < new Date() ? 'border-status-danger bg-status-danger/10' :
+                            'border-border bg-muted/30'
+                          ) : 'border-border bg-muted/30'
+                        )}>
+                          <div className="flex items-center gap-2 mb-2">
+                            <Clock className="h-5 w-5 text-primary" />
+                            <span className="font-medium text-sm">{t('equipmentForm.nextCalibration', 'Próxima calibração')}</span>
+                          </div>
+                          <p className="text-xl sm:text-2xl font-bold">
+                            {equipment.nextCalibration ? formatDate(equipment.nextCalibration) : '—'}
+                          </p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+
                 {/* Observations */}
                 {(equipment as any).observations && (
                   <>
