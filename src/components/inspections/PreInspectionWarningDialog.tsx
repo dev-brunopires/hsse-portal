@@ -110,7 +110,7 @@ export function PreInspectionWarningDialog({
   );
 
   const alertsContent = (
-    <ScrollArea className="flex-1 max-h-[60vh] pr-4">
+    <ScrollArea className="flex-1 min-h-0 pr-4">
       <div className="space-y-4 py-2 pb-4">
         {/* Critical Alerts Section */}
         {criticalIssuesCount > 0 && (
@@ -306,11 +306,11 @@ export function PreInspectionWarningDialog({
             <DrawerTitle>{headerContent}</DrawerTitle>
             <DrawerDescription asChild>{descriptionContent}</DrawerDescription>
           </DrawerHeader>
-          <div className="flex-1 min-h-0 overflow-y-auto px-4 py-2">
+          <div className="flex-1 min-h-0 flex flex-col px-4 py-2">
             {alertsContent}
           </div>
-          <Separator />
-          <DrawerFooter className="flex-row gap-2">
+          <Separator className="flex-shrink-0" />
+          <DrawerFooter className="flex-row gap-2 flex-shrink-0">
             <Button 
               variant="outline" 
               onClick={() => onOpenChange(false)}
@@ -333,15 +333,15 @@ export function PreInspectionWarningDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
-        <AlertDialogHeader className="pb-2">
+      <AlertDialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+        <AlertDialogHeader className="pb-2 flex-shrink-0">
           <AlertDialogTitle>{headerContent}</AlertDialogTitle>
           <AlertDialogDescription asChild>{descriptionContent}</AlertDialogDescription>
         </AlertDialogHeader>
 
         {alertsContent}
 
-        <Separator className="my-2" />
+        <Separator className="my-2 flex-shrink-0" />
 
         <AlertDialogFooter className="gap-2">
           <AlertDialogCancel className="flex-1 sm:flex-none">
