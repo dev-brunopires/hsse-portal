@@ -118,6 +118,7 @@ export default function Inspections() {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [showNewInspectionForm, setShowNewInspectionForm] = useState(false);
+  const [upcomingCollapsed, setUpcomingCollapsed] = useState(false);
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'calendar' | 'timeline' | 'category'>('list');
   const [preselectedEquipmentId, setPreselectedEquipmentId] = useState<string | null>(null);
