@@ -65,6 +65,10 @@ interface ExistingEquipmentData {
   acquisition_date: string | null;
   expiry_date: string | null;
   certificate_expiry: string | null;
+  last_hydrostatic_test: string | null;
+  next_hydrostatic_test: string | null;
+  last_calibration: string | null;
+  next_calibration: string | null;
   observations: string | null;
   category_id: string;
   ship_id: string | null;
