@@ -103,9 +103,9 @@ export function CategoryFormDialog({ open, onOpenChange, mode, category }: Categ
 
   useEffect(() => {
     if (open && category && mode === 'edit') {
-      const existing = Array.isArray((category as any).blocking_expiries)
+      const existing: BlockingExpiryKey[] = Array.isArray((category as any).blocking_expiries)
         ? ((category as any).blocking_expiries as BlockingExpiryKey[])
-        : ['certificate_expiry', 'expiry_date'];
+        : (['certificate_expiry', 'expiry_date'] as BlockingExpiryKey[]);
       form.reset({
         name: category.name,
         description: category.description || '',
