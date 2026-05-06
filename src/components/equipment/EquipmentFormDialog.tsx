@@ -475,8 +475,8 @@ export function EquipmentFormDialog({
 
   const formContent = (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="flex-1 overflow-hidden flex flex-col min-h-0">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+      <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="flex flex-col overflow-hidden min-h-0 max-h-[calc(88vh-8rem)]">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col overflow-hidden min-h-0">
               <TabsList className="grid w-full grid-cols-5 mb-4">
                 <TabsTrigger value="general" className="gap-2 relative">
                   <Package className="h-4 w-4" />
@@ -514,7 +514,7 @@ export function EquipmentFormDialog({
                 </TabsTrigger>
               </TabsList>
 
-              <div className="flex-1 overflow-y-auto px-1 pb-2">
+              <div className="overflow-y-auto px-1 pb-2 min-h-0">
                 {/* General Tab */}
                 <TabsContent value="general" className="space-y-4 mt-0">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
@@ -1206,12 +1206,12 @@ export function EquipmentFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl h-[90vh] overflow-hidden flex flex-col bg-card border border-border" hideCloseButton>
+      <DialogContent className="w-[min(94vw,960px)] max-w-none max-h-[88vh] overflow-hidden flex flex-col bg-card border border-border" hideCloseButton>
         <DialogHeader className="pb-4 border-b border-border flex-shrink-0">
           <DialogTitle>{headerContent}</DialogTitle>
           <DialogDescription className="sr-only">{mode === 'edit' ? t('equipment.editEquipment') : t('equipment.newEquipment')}</DialogDescription>
         </DialogHeader>
-        <div className="flex-1 overflow-hidden min-h-0">
+        <div className="overflow-hidden min-h-0">
           {formContent}
         </div>
       </DialogContent>
