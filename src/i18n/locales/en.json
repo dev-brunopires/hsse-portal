@@ -198,6 +198,8 @@
     "renew": "Renew",
     "renewed": "Renewed",
     "currentExpiry": "Current expiry",
+    "newIssueDate": "New Issue Date",
+    "newIssueDateRequired": "New issue date is required to renew.",
     "newExpiryDate": "New Expiry Date",
     "newExpirySelected": "New expiry selected",
     "quickOptions": "Quick Options",
