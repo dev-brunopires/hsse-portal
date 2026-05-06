@@ -114,7 +114,7 @@ export function useLastInspection(equipmentId: string | undefined) {
       
       const { data, error } = await supabase
         .from('inspections')
-        .select('*')
+        .select('*, inspection_checklist_items(id, description, status, notes)')
         .eq('equipment_id', equipmentId)
         .order('inspection_date', { ascending: false })
         .limit(1)
