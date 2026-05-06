@@ -17,6 +17,10 @@ export interface ImportedEquipment {
   acquisition_date?: string;
   expiry_date?: string;
   certificate_expiry?: string;
+  last_hydrostatic_test?: string;
+  next_hydrostatic_test?: string;
+  last_calibration?: string;
+  next_calibration?: string;
   observations?: string;
 }
 
