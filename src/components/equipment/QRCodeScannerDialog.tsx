@@ -891,40 +891,42 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                 {/* Error/Permission denied overlay */}
                 {(scannerState === 'error' || scannerState === 'permission-denied') && (
                   <div className={cn(
-                    "absolute inset-0 flex flex-col items-center justify-center z-10 p-4 overflow-y-auto",
+                    "absolute inset-0 z-30 flex flex-col items-center justify-center p-3 overflow-y-auto",
                     stateConfig.bgColor
                   )}>
-                    <div className={cn(
-                      "rounded-full p-3 mb-3 shrink-0",
-                      scannerState === 'error' ? 'bg-destructive/20' : 'bg-amber-500/20'
-                    )}>
-                      <StateIcon className={cn("h-10 w-10", stateConfig.color)} />
-                    </div>
-                    <p className={cn("text-base font-semibold mb-1 text-center", stateConfig.color)}>
-                      {stateConfig.title}
-                    </p>
-                    <p className="text-xs text-center text-muted-foreground max-w-[90%] mb-4 leading-relaxed">
-                      {stateConfig.subtitle}
-                    </p>
-                    <div className="flex flex-col gap-2 w-full max-w-[200px]">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                        onClick={handleRetry}
-                      >
-                        <Camera className="h-4 w-4 mr-2" />
-                        {t('qrScanner.retry')}
-                      </Button>
-                      <Button
-                        variant="default"
-                        size="sm"
-                        className="w-full"
-                        onClick={() => setShowManualInput(true)}
-                      >
-                        <Keyboard className="h-4 w-4 mr-2" />
-                        {t('qrScanner.enterManually')}
-                      </Button>
+                    <div className="flex flex-col items-center w-full max-w-[260px] my-auto">
+                      <div className={cn(
+                        "rounded-full p-2.5 mb-2 shrink-0",
+                        scannerState === 'error' ? 'bg-destructive/20' : 'bg-amber-500/20'
+                      )}>
+                        <StateIcon className={cn("h-8 w-8 sm:h-10 sm:w-10", stateConfig.color)} />
+                      </div>
+                      <p className={cn("text-sm sm:text-base font-semibold mb-1 text-center", stateConfig.color)}>
+                        {stateConfig.title}
+                      </p>
+                      <p className="text-[11px] sm:text-xs text-center text-muted-foreground mb-3 leading-snug break-words">
+                        {stateConfig.subtitle}
+                      </p>
+                      <div className="flex flex-col gap-2 w-full">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full h-9"
+                          onClick={handleRetry}
+                        >
+                          <Camera className="h-4 w-4 mr-2" />
+                          {t('qrScanner.retry')}
+                        </Button>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="w-full h-9"
+                          onClick={() => setShowManualInput(true)}
+                        >
+                          <Keyboard className="h-4 w-4 mr-2" />
+                          {t('qrScanner.enterManually')}
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 )}
