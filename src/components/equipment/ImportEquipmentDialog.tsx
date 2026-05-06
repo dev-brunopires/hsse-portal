@@ -459,6 +459,10 @@ export function ImportEquipmentDialog({ open, onOpenChange }: ImportEquipmentDia
             acquisition_date: item.acquisition_date || null,
             expiry_date: item.expiry_date || null,
             certificate_expiry: item.certificate_expiry || null,
+            last_hydrostatic_test: item.last_hydrostatic_test || null,
+            next_hydrostatic_test: item.next_hydrostatic_test || null,
+            last_calibration: item.last_calibration || null,
+            next_calibration: item.next_calibration || null,
             observations: item.observations || null,
             created_by: currentUserId,
           });
