@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { RefreshCw, Check, AlertCircle, Cloud, CloudOff, Image, X } from 'lucide-react';
+import { RefreshCw, Check, AlertCircle, Cloud, CloudOff, Image, X, Upload } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
