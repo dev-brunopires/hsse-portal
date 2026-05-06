@@ -162,11 +162,11 @@ export function ChecklistTemplatesDialog({ open, onOpenChange, category }: Check
         title={t('checklistTemplates.title')}
         description={t('checklistTemplates.description', { category: category.name })}
         titleIcon={<ListChecks className="h-5 w-5 text-primary" />}
-        className="sm:max-w-2xl"
+        className="sm:max-w-5xl"
       >
         <div className={cn(
-          'flex gap-4',
-          isMobile ? 'flex-col h-auto' : 'h-[500px]'
+          'flex gap-6',
+          isMobile ? 'flex-col h-auto' : 'h-[70vh] min-h-[560px]'
         )}>
           {/* Templates List */}
           {showTemplatesList && (
