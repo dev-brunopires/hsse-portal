@@ -50,5 +50,26 @@ export async function fetchPendingInspectionById(id: string): Promise<PendingIns
     .eq('id', id)
     .maybeSingle();
   if (error) throw error;
-  return data as unknown as PendingInspection | null;
+  const pending = data as unknown as PendingInspection | null;
+  if (!pending) return null;
+
+  // Dynamically fetch carryover from the latest inspection of the equipment
+  const { data: lastInsp } = await supabase
+    .from('inspections')
+    .select('id, recommendations, inspection_checklist_items(description, status, notes)')
+    .eq('equipment_id', pending.equipment_id)
+    .order('inspection_date', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (lastInsp) {
+    const items = (lastInsp.inspection_checklist_items || [])
+      .filter((i: any) => i.status === 'attention' || i.status === 'fail')
+      .map((i: any) => ({ description: i.description, status: i.status, notes: i.notes }));
+    pending.carryover_items = items;
+    pending.carryover_recommendations = lastInsp.recommendations || null;
+    pending.previous_inspection_id = lastInsp.id;
+  }
+
+  return pending;
 }
