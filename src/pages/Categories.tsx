@@ -10,6 +10,7 @@ import {
   ListChecks,
   QrCode,
 } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -166,9 +167,7 @@ export default function Categories() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
+            <Spinner size="lg" className="py-12" />
           </CardContent>
         </Card>
       </div>
