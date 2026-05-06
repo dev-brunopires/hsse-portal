@@ -7,18 +7,24 @@
  */
 import { getLocalToday, formatLocalDate } from '@/utils/dateFormat';
 
+export type BlockingExpiryField = 'certificate_expiry' | 'expiry_date' | 'next_hydrostatic_test' | 'next_calibration';
+
 export interface EquipmentWithDates {
   status: string;
   certificate_expiry?: string | null;
   expiry_date?: string | null;
   next_inspection?: string | null;
+  next_hydrostatic_test?: string | null;
+  next_calibration?: string | null;
+  // Optional category blocking config (defaults to certificate + expiry)
+  category_blocking_expiries?: BlockingExpiryField[] | null;
 }
 
 export interface EffectiveStatusResult {
   effectiveStatus: 'active' | 'maintenance' | 'rejected' | 'expired' | 'inactive';
   isAutoRejected: boolean;
   reasons: string[];
-  reasonKeys: string[]; // i18n keys for translation
+  reasonKeys: string[];
 }
 
 export interface EquipmentAlerts {
@@ -27,43 +33,52 @@ export interface EquipmentAlerts {
   hasEquipmentExpired: boolean;
   hasInspectionOverdue: boolean;
   hasInspectionDueSoon: boolean;
+  hasHydroExpired?: boolean;
+  hasHydroExpiringSoon?: boolean;
+  hasCalibrationExpired?: boolean;
+  hasCalibrationExpiringSoon?: boolean;
   alertCount: number;
   alertKeys: string[];
 }
+
+const DEFAULT_BLOCKING: BlockingExpiryField[] = ['certificate_expiry', 'expiry_date'];
 
 export function getEffectiveEquipmentStatus(equipment: EquipmentWithDates): EffectiveStatusResult {
   const today = getLocalToday();
   const reasons: string[] = [];
   const reasonKeys: string[] = [];
   let isAutoRejected = false;
-  
-  // Check certificate expiry
-  const isCertificateExpired = !!(equipment.certificate_expiry && equipment.certificate_expiry < today);
-  if (isCertificateExpired) {
-    reasons.push('Certificado vencido'); // Fallback for non-i18n contexts
+
+  const blocking = equipment.category_blocking_expiries ?? DEFAULT_BLOCKING;
+
+  if (blocking.includes('certificate_expiry') && equipment.certificate_expiry && equipment.certificate_expiry < today) {
+    reasons.push('Certificado vencido');
     reasonKeys.push('alerts.msgCertificateExpired');
     isAutoRejected = true;
   }
-  
-  // Check equipment expiry (hydrostatic test, etc.)
-  const isEquipmentExpired = !!(equipment.expiry_date && equipment.expiry_date < today);
-  if (isEquipmentExpired) {
-    reasons.push('Teste hidrostático/validade vencida'); // Fallback for non-i18n contexts
+
+  if (blocking.includes('expiry_date') && equipment.expiry_date && equipment.expiry_date < today) {
+    reasons.push('Validade do equipamento vencida');
     reasonKeys.push('alerts.msgHydrostaticExpired');
     isAutoRejected = true;
   }
-  
-  // If auto-rejected due to expiry, return rejected status
-  if (isAutoRejected) {
-    return {
-      effectiveStatus: 'rejected',
-      isAutoRejected: true,
-      reasons,
-      reasonKeys
-    };
+
+  if (blocking.includes('next_hydrostatic_test') && equipment.next_hydrostatic_test && equipment.next_hydrostatic_test < today) {
+    reasons.push('Teste hidrostático vencido');
+    reasonKeys.push('alerts.msgHydroTestExpired');
+    isAutoRejected = true;
   }
-  
-  // Otherwise, return the stored status
+
+  if (blocking.includes('next_calibration') && equipment.next_calibration && equipment.next_calibration < today) {
+    reasons.push('Calibração vencida');
+    reasonKeys.push('alerts.msgCalibrationExpired');
+    isAutoRejected = true;
+  }
+
+  if (isAutoRejected) {
+    return { effectiveStatus: 'rejected', isAutoRejected: true, reasons, reasonKeys };
+  }
+
   return {
     effectiveStatus: equipment.status as EffectiveStatusResult['effectiveStatus'],
     isAutoRejected: false,
