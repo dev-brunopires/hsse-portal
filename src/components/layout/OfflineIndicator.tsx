@@ -219,12 +219,24 @@ export function OfflineIndicator() {
             <CollapsibleContent>
               <div className="absolute bottom-10 right-0 bg-card border rounded-lg shadow-lg p-3 min-w-[200px] space-y-2">
                 <p className="text-xs font-medium text-foreground">{t('offline.syncStatus')}</p>
-                <div className="text-xs text-muted-foreground space-y-1">
-                  <p>📶 {t('offline.online')}</p>
-                  <p>📦 {t('offline.pending')}: {pendingCount}</p>
-                  <p>💾 Cache: {cacheAvailable ? '✓' : '✗'}</p>
+                <div className="text-xs text-muted-foreground space-y-1.5">
+                  <p className="flex items-center gap-2">
+                    <Wifi className="h-3.5 w-3.5 text-muted-foreground" />
+                    {t('offline.online')}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <Package className="h-3.5 w-3.5 text-muted-foreground" />
+                    {t('offline.pending')}: {pendingCount}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <HardDrive className="h-3.5 w-3.5 text-muted-foreground" />
+                    Cache: {cacheAvailable ? '✓' : '✗'}
+                  </p>
                   {lastSyncTime && (
-                    <p>🕐 {t('offline.lastSync')}: {format(new Date(lastSyncTime), 'HH:mm')}</p>
+                    <p className="flex items-center gap-2">
+                      <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                      {t('offline.lastSync')}: {format(new Date(lastSyncTime), 'HH:mm')}
+                    </p>
                   )}
                 </div>
                 <div className="flex gap-2 pt-2">
