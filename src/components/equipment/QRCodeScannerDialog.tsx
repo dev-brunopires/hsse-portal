@@ -667,7 +667,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                       key={digit}
                       type="button"
                       variant="outline"
-                      className="h-14 text-2xl font-semibold touch-manipulation active:scale-95"
+                      className="h-12 sm:h-14 text-xl sm:text-2xl font-semibold touch-manipulation active:scale-95"
                       onClick={() => {
                         setErrorMessage(null);
                         setManualCode((prev) => (prev + digit).slice(0, 36));
@@ -679,7 +679,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-14 text-base touch-manipulation active:scale-95"
+                    className="h-12 sm:h-14 text-sm sm:text-base touch-manipulation active:scale-95"
                     onClick={() => {
                       setErrorMessage(null);
                       setManualCode('');
@@ -690,7 +690,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-14 text-2xl font-semibold touch-manipulation active:scale-95"
+                    className="h-12 sm:h-14 text-xl sm:text-2xl font-semibold touch-manipulation active:scale-95"
                     onClick={() => {
                       setErrorMessage(null);
                       setManualCode((prev) => (prev + '0').slice(0, 36));
@@ -701,7 +701,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-14 touch-manipulation active:scale-95"
+                    className="h-12 sm:h-14 touch-manipulation active:scale-95"
                     onClick={() => {
                       setErrorMessage(null);
                       setManualCode((prev) => prev.slice(0, -1));
