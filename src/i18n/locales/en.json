@@ -1913,6 +1913,7 @@
     "equipmentExpiryExpired": "Equipment Expiry Date Passed",
     "expiredAt": "Expired on",
     "lastInspectionWithProblems": "LAST INSPECTION WITH PROBLEMS",
+    "nonConformItems": "Non-conform items",
     "statusLabel": "Status",
     "lastInspectionIssuesWarning": "The last inspection had issues. Verify if they have been resolved!",
     "recommendationsSection": "RECOMMENDATIONS FROM LAST INSPECTION",
