@@ -610,7 +610,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-w-[calc(100vw-2rem)] mx-auto p-4 sm:p-6">
+      <DialogContent className="sm:max-w-md w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] mx-auto p-3 sm:p-6 max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <div className={cn(
