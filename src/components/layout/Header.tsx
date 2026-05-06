@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { 
   Bell, 
   User, 
@@ -75,6 +76,7 @@ interface HeaderProps {
 
 export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
   const { t, i18n } = useTranslation();
+  const isMobile = useIsMobile();
   const { user, profile, role, signOut, isPlatformOwner, sessionUnstable, forceRefreshSession, profileLoading } = useAuth();
   const [isReconnecting, setIsReconnecting] = useState(false);
   const { selectedShipId, setSelectedShipId, isFilterEnabled } = useShipFilter();
@@ -336,8 +338,8 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
       {/* Right Actions */}
       <div className="flex items-center gap-1 sm:gap-2 lg:gap-4">
         {/* Mobile Quick Actions - Language Toggle */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+        <Drawer>
+          <DrawerTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
@@ -346,26 +348,46 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
             >
               <Languages className="h-5 w-5" />
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40 bg-popover border border-border shadow-lg z-50">
-            <DropdownMenuLabel>{t('header.language')}</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => setLanguage('pt-BR')}
-              className="gap-2"
-            >
-              {language === 'pt-BR' && <Check className="h-4 w-4 text-primary" />}
-              <span className={language === 'pt-BR' ? 'font-medium' : ''}>Português</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => setLanguage('en')}
-              className="gap-2"
-            >
-              {language === 'en' && <Check className="h-4 w-4 text-primary" />}
-              <span className={language === 'en' ? 'font-medium' : ''}>English</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+          </DrawerTrigger>
+          <DrawerContent>
+            <DrawerHeader className="text-left">
+              <DrawerTitle className="flex items-center gap-2">
+                <Languages className="h-5 w-5 text-primary" />
+                {t('header.language')}
+              </DrawerTitle>
+            </DrawerHeader>
+            <div className="px-4 pb-6 space-y-1">
+              <DrawerClose asChild>
+                <button
+                  onClick={() => setLanguage('pt-BR')}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors",
+                    language === 'pt-BR' ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted"
+                  )}
+                >
+                  <span className="w-5 flex-shrink-0">
+                    {language === 'pt-BR' && <Check className="h-5 w-5 text-primary" />}
+                  </span>
+                  <span>Português</span>
+                </button>
+              </DrawerClose>
+              <DrawerClose asChild>
+                <button
+                  onClick={() => setLanguage('en')}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors",
+                    language === 'en' ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted"
+                  )}
+                >
+                  <span className="w-5 flex-shrink-0">
+                    {language === 'en' && <Check className="h-5 w-5 text-primary" />}
+                  </span>
+                  <span>English</span>
+                </button>
+              </DrawerClose>
+            </div>
+          </DrawerContent>
+        </Drawer>
 
         {/* Mobile Quick Actions - Theme Toggle */}
         <Button
@@ -568,7 +590,96 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
         {/* Sync / Cache Button */}
         <SyncButton />
 
-        {/* Notifications Dropdown */}
+        {/* Notifications - Mobile = Drawer */}
+        {isMobile ? (
+          <Drawer>
+            <DrawerTrigger asChild>
+              <Button variant="ghost" size="icon" className="relative">
+                <Bell className="h-5 w-5" />
+                {unreadCount > 0 && (
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-status-danger text-status-danger-foreground text-xs">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </Badge>
+                )}
+              </Button>
+            </DrawerTrigger>
+            <DrawerContent>
+              <DrawerHeader className="text-left">
+                <DrawerTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Bell className="h-5 w-5 text-primary" />
+                    <span>{t('header.notifications')}</span>
+                    {unreadCount > 0 && (
+                      <Badge variant="secondary" className="text-xs">
+                        {unreadCount} {t('header.unreadNotifications')}
+                      </Badge>
+                    )}
+                  </div>
+                  {unreadCount > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-auto py-1 px-2 text-xs gap-1"
+                      onClick={handleMarkAllAsRead}
+                    >
+                      <CheckCheck className="h-3 w-3" />
+                      {t('header.markAll')}
+                    </Button>
+                  )}
+                </DrawerTitle>
+              </DrawerHeader>
+              <div className="px-4 pb-6">
+                <ScrollArea className="max-h-[60vh]">
+                  {combinedNotifications.length === 0 ? (
+                    <div className="p-6 text-center text-muted-foreground">
+                      <Bell className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                      <p className="text-sm font-medium">{t('header.noNotifications')}</p>
+                      <p className="text-xs mt-1">{t('header.upToDate')}</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {combinedNotifications.slice(0, 10).map((notification) => (
+                        <div
+                          key={notification.id}
+                          className={`p-3 rounded-lg border transition-all ${getNotificationBg(notification.type, notification.isRead)}`}
+                          onClick={() => {
+                            if (!notification.isRead && notification.canMarkRead) {
+                              handleMarkAsRead(notification.id, notification.isSystem || false);
+                            }
+                          }}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="mt-0.5">{getNotificationIcon(notification.type)}</div>
+                            <div className="flex-1 min-w-0">
+                              <p className={`font-medium text-sm ${notification.isRead ? 'text-muted-foreground' : ''}`}>
+                                {notification.title}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {notification.message}
+                              </p>
+                            </div>
+                            {!notification.isRead && (
+                              <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0 mt-1.5" />
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
+                <DrawerClose asChild>
+                  <Button
+                    variant="ghost"
+                    className="w-full mt-3 text-primary"
+                    onClick={() => navigate('/alerts')}
+                  >
+                    {t('header.viewAllAlerts')}
+                  </Button>
+                </DrawerClose>
+              </div>
+            </DrawerContent>
+          </Drawer>
+        ) : (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="relative">
@@ -663,6 +774,7 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        )}
 
         {/* Language Selector - Desktop only */}
         <DropdownMenu>
