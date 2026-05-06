@@ -202,7 +202,7 @@ export function RenewCertificateDialog({
         </Button>
         <Button
           onClick={handleSubmit}
-          disabled={!newExpiryDate || renewCertificate.isPending}
+          disabled={!newIssueDate || !newExpiryDate || renewCertificate.isPending}
         >
           {renewCertificate.isPending ? (
             <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
