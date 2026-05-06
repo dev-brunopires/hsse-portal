@@ -119,6 +119,7 @@ export default function Inspections() {
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'calendar' | 'timeline' | 'category'>('list');
   const [preselectedEquipmentId, setPreselectedEquipmentId] = useState<string | null>(null);
+  const [pendingInspectionId, setPendingInspectionId] = useState<string | null>(null);
 
   // Auto-open form when scanning QR code - trigger immediately on scan param
   useEffect(() => {
@@ -332,6 +333,7 @@ export default function Inspections() {
           if (!open) handleFormCancel();
         }}
         preSelectedEquipmentId={scanEquipmentId || preselectedEquipmentId}
+        pendingInspectionId={pendingInspectionId}
       />
 
       {/* Statistics Cards */}
@@ -704,8 +706,9 @@ export default function Inspections() {
               setSelectedInspection(inspection);
               setDetailDialogOpen(true);
             }}
-            onCreateForEquipment={(equipmentId) => {
+            onCreateForEquipment={(equipmentId, pendingId) => {
               setPreselectedEquipmentId(equipmentId);
+              setPendingInspectionId(pendingId || null);
               setShowNewInspectionForm(true);
             }}
           />
