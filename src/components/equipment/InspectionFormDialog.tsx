@@ -73,6 +73,7 @@ import { useUserSignature } from '@/hooks/useUserSignature';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { useDefaultChecklistTemplate } from '@/hooks/useChecklistTemplates';
 import { ConnectionStatus } from '@/components/ui/connection-status';
+import { supabase } from '@/integrations/supabase/client';
 
 const createInspectionSchema = (t: (key: string) => string) => z.object({
   inspectorId: z.string().min(1, t('inspectionForm.selectInspectorBefore')),
@@ -123,6 +124,7 @@ export function InspectionFormDialog({
 }: InspectionFormDialogProps) {
   const { t } = useTranslation();
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
+  const [autoCarryover, setAutoCarryover] = useState<{ items: Array<{ description: string; status: string; notes: string | null }>; recommendations: string | null } | null>(null);
   const [uploadedPhotos, setUploadedPhotos] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [signatureData, setSignatureData] = useState<string | null>(null);
@@ -154,6 +156,34 @@ export function InspectionFormDialog({
     },
   });
 
+  // Auto-fetch carryover items from last inspection of this equipment whenever dialog opens
+  useEffect(() => {
+    let cancelled = false;
+    if (open && equipment?.id && isOnline) {
+      (async () => {
+        const { data: lastInsp } = await supabase
+          .from('inspections')
+          .select('id, recommendations, inspection_checklist_items(description, status, notes)')
+          .eq('equipment_id', equipment.id)
+          .order('inspection_date', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (cancelled) return;
+        if (lastInsp) {
+          const items = ((lastInsp as any).inspection_checklist_items || [])
+            .filter((i: any) => i.status === 'attention' || i.status === 'fail')
+            .map((i: any) => ({ description: i.description, status: i.status, notes: i.notes }));
+          setAutoCarryover({ items, recommendations: (lastInsp as any).recommendations || null });
+        } else {
+          setAutoCarryover({ items: [], recommendations: null });
+        }
+      })();
+    } else if (!open) {
+      setAutoCarryover(null);
+    }
+    return () => { cancelled = true; };
+  }, [open, equipment?.id, isOnline]);
+
   // Load checklist from category template or use default fallback
   useEffect(() => {
     if (open && equipment) {
@@ -171,10 +201,13 @@ export function InspectionFormDialog({
         baseItems = getDefaultChecklist(t);
       }
 
-      // Append carryover items from previous pending inspection
-      if (carryoverItems && carryoverItems.length > 0) {
+      // Merge carryover items: explicit prop OR auto-fetched from last inspection
+      const effectiveCarryover = (carryoverItems && carryoverItems.length > 0)
+        ? carryoverItems
+        : (autoCarryover?.items || []);
+      if (effectiveCarryover.length > 0) {
         const existingDescs = new Set(baseItems.map(i => i.description.trim().toLowerCase()));
-        carryoverItems.forEach((c, idx) => {
+        effectiveCarryover.forEach((c, idx) => {
           const desc = `[${t('inspectionCalendar.carryoverItems', 'Pendência da última inspeção')}] ${c.description}`;
           if (!existingDescs.has(desc.trim().toLowerCase())) {
             baseItems.push({
@@ -189,12 +222,13 @@ export function InspectionFormDialog({
       }
       setChecklist(baseItems);
 
+      const effectiveRecs = carryoverRecommendations ?? autoCarryover?.recommendations ?? '';
       form.reset({
         inspectorId: user?.id || '',
         inspectionDate: getLocalToday(),
         overallStatus: 'approved',
         observations: '',
-        recommendations: carryoverRecommendations || '',
+        recommendations: effectiveRecs || '',
         nextInspectionDate: '',
       });
       
@@ -205,7 +239,7 @@ export function InspectionFormDialog({
         setSignatureData(null);
       }
     }
-  }, [open, equipment, defaultTemplate, templateLoading, form, user, userSignatureSettings, t, carryoverItems, carryoverRecommendations]);
+  }, [open, equipment, defaultTemplate, templateLoading, form, user, userSignatureSettings, t, carryoverItems, carryoverRecommendations, autoCarryover]);
 
   const hasTriggeredConfetti = useRef(false);
 
