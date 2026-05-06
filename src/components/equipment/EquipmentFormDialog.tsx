@@ -428,10 +428,11 @@ export function EquipmentFormDialog({
     }
   };
 
-  const tabFields: Record<'general' | 'location' | 'dates' | 'documents', Array<keyof EquipmentFormData>> = {
+  const tabFields: Record<'general' | 'location' | 'dates' | 'links' | 'documents', Array<keyof EquipmentFormData>> = {
     general: ['internalCode', 'name', 'categoryId', 'type', 'manufacturer', 'model', 'serialNumber'],
     location: ['shipId', 'location'],
     dates: ['manufacturingDate', 'acquisitionDate'],
+    links: [],
     documents: [],
   };
 
@@ -454,6 +455,7 @@ export function EquipmentFormDialog({
     general: form.watch('name') && form.watch('categoryId') && form.watch('internalCode'),
     location: form.watch('shipId') && form.watch('location'),
     dates: form.watch('manufacturingDate') || form.watch('acquisitionDate') || form.watch('expiryDate') || form.watch('certificateExpiry'),
+    links: true,
     documents: true,
   };
 
