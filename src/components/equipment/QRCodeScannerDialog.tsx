@@ -635,17 +635,17 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
         <div className="space-y-4">
           {/* Manual input mode - replaces scanner entirely */}
           {showManualInput ? (
-            <div className="w-full rounded-xl border-2 border-primary/30 bg-background p-4 flex flex-col items-center">
+            <div className="w-full rounded-xl border-2 border-primary/30 bg-background p-3 sm:p-4 flex flex-col items-center">
               <div className="rounded-full p-2 mb-2 bg-primary/10">
-                <Keyboard className="h-7 w-7 text-primary" />
+                <Keyboard className="h-6 w-6 sm:h-7 sm:w-7 text-primary" />
               </div>
               <p className="text-base font-semibold mb-1 text-foreground">
                 {t('qrScanner.manualInputTitle')}
               </p>
-              <p className="text-xs text-center text-muted-foreground max-w-xs mb-3">
+              <p className="text-xs text-center text-muted-foreground mb-3">
                 {t('qrScanner.manualInputDescription')}
               </p>
-              <div className="w-full max-w-xs space-y-3">
+              <div className="w-full space-y-3">
                 <Input
                   placeholder={t('qrScanner.manualInputPlaceholder')}
                   value={manualCode}
