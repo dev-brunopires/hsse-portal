@@ -31,6 +31,7 @@ import type { InspectionWithDetails } from '@/hooks/useInspections';
 interface InspectionCalendarProps {
   inspections: InspectionWithDetails[];
   onInspectionClick: (inspection: InspectionWithDetails) => void;
+  onCreateForEquipment?: (equipmentId: string) => void;
 }
 
 const getStatusConfig = (t: (key: string) => string) => ({
