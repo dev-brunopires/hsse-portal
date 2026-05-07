@@ -775,12 +775,13 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
 
                 {/* Camera controls - top right */}
                 {scannerState === 'scanning' && !isSwitchingCamera && (
-                  <div className="absolute top-3 right-3 z-20 flex flex-col gap-2">
+                  <div className="absolute top-2 right-2 z-20 flex gap-1.5">
                     <Button
                       variant="secondary"
                       size="icon"
-                      className="h-10 w-10 rounded-full bg-background/80 backdrop-blur-sm shadow-lg hover:bg-background/90 border border-border/50"
+                      className="h-11 w-11 rounded-full bg-background/80 backdrop-blur-sm border border-border/50"
                       onClick={handleSwitchCamera}
+                      aria-label={t('qrScanner.switchToCamera')}
                     >
                       <SwitchCamera className="h-5 w-5" />
                     </Button>
@@ -789,8 +790,8 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                         variant="secondary"
                         size="icon"
                         className={cn(
-                          "h-10 w-10 rounded-full backdrop-blur-sm shadow-lg border border-border/50",
-                          torchOn ? "bg-yellow-400/90 hover:bg-yellow-400 text-black" : "bg-background/80 hover:bg-background/90"
+                          "h-11 w-11 rounded-full backdrop-blur-sm border border-border/50",
+                          torchOn ? "bg-primary/90 hover:bg-primary text-primary-foreground" : "bg-background/80 hover:bg-background/90"
                         )}
                         onClick={async () => {
                           try {
@@ -802,6 +803,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                             }
                           } catch {}
                         }}
+                        aria-label={t('qrScanner.flashlight')}
                       >
                         {torchOn ? <FlashlightOff className="h-5 w-5" /> : <Flashlight className="h-5 w-5" />}
                       </Button>
@@ -810,7 +812,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                       variant="secondary"
                       size="icon"
                       className={cn(
-                        "h-10 w-10 rounded-full backdrop-blur-sm shadow-lg border border-border/50",
+                        "h-11 w-11 rounded-full backdrop-blur-sm border border-border/50",
                         highContrast ? "bg-primary/90 hover:bg-primary text-primary-foreground" : "bg-background/80 hover:bg-background/90"
                       )}
                       onClick={() => setHighContrast((v) => !v)}
