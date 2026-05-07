@@ -19,6 +19,7 @@ import {
 import i18n from '@/i18n';
 import type { OrganizationBranding } from '@/hooks/useOrganizationBranding';
 import { formatInspectionId } from './formatId';
+import { parseLocalDate } from './dateFormat';
 
 const getDateLocale = () => i18n.language === 'en' ? enUS : ptBR;
 
