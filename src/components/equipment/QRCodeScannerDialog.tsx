@@ -619,7 +619,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] mx-auto p-3 sm:p-6 max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+        <DialogHeader className="space-y-1">
           <DialogTitle className="flex items-center gap-2">
             <div className={cn(
               "p-1.5 rounded-lg transition-colors duration-300",
@@ -632,12 +632,8 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
             </div>
             {t('qrScanner.dialogTitle')}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="sr-only">
             {t('qrScanner.dialogDescription')}
-            <span className="flex items-center gap-1.5 text-xs mt-1 text-muted-foreground/80">
-              <Lightbulb className="h-3.5 w-3.5" />
-              {t('qrScanner.screenTip')}
-            </span>
           </DialogDescription>
         </DialogHeader>
 
