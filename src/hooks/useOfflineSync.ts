@@ -823,19 +823,6 @@ export function useOfflineSync() {
             next_inspection_date: inspection.next_inspection_date ?? null,
             signature_data: inspection.signature_data,
             signed_at: inspection.signature_data ? new Date().toISOString() : null,
-        const { data: newInspection, error: inspectionError } = await supabase
-          .from('inspections')
-          .insert({
-            equipment_id: inspection.equipment_id,
-            inspector_id: inspection.inspector_id,
-            inspection_date: inspectionDateStr,
-            status: inspection.status,
-            observations: inspection.observations,
-            recommendations: inspection.recommendations,
-            actions_taken: inspection.actions_taken ?? null,
-            next_inspection_date: inspection.next_inspection_date ?? null,
-            signature_data: inspection.signature_data,
-            signed_at: inspection.signature_data ? new Date().toISOString() : null,
             ship_id: resolvedShipId,
             client_action_id: action.id,
           })
