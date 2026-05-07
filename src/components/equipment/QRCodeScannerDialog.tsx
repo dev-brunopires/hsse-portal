@@ -823,34 +823,22 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                   </div>
                 )}
 
-                {/* Camera indicator badge */}
-                {scannerState === 'scanning' && (
-                  <div className="absolute top-3 left-3 z-20">
-                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-background/80 backdrop-blur-sm text-xs font-medium border border-border/50">
-                      <Camera className="h-3 w-3" />
-                      {facingMode === 'environment' ? t('qrScanner.backCamera') : t('qrScanner.frontCamera')}
-                    </div>
-                  </div>
-                )}
-
                 {/* Scanning frame overlay */}
                 {scannerState === 'scanning' && !isSwitchingCamera && (
                   <div className="absolute inset-0 pointer-events-none z-10">
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="relative w-56 h-56">
-                        <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-primary rounded-tl-lg" />
-                        <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-primary rounded-tr-lg" />
-                        <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-primary rounded-bl-lg" />
-                        <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-primary rounded-br-lg" />
-                        <div 
-                          className="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent animate-scan-line"
-                          style={{ opacity: 0.8, boxShadow: '0 0 8px hsl(var(--primary))' }}
-                        />
+                      <div className="relative h-52 w-52 rounded-md border border-primary/90 bg-transparent">
+                        <div className="absolute -top-px -left-px h-7 w-7 border-t-2 border-l-2 border-primary" />
+                        <div className="absolute -top-px -right-px h-7 w-7 border-t-2 border-r-2 border-primary" />
+                        <div className="absolute -bottom-px -left-px h-7 w-7 border-b-2 border-l-2 border-primary" />
+                        <div className="absolute -bottom-px -right-px h-7 w-7 border-b-2 border-r-2 border-primary" />
+                        <div className="absolute inset-x-8 top-1/2 h-px bg-primary/80" />
                       </div>
                     </div>
-                    <div className="absolute inset-0 bg-black/40">
-                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 bg-transparent" 
-                           style={{ boxShadow: '0 0 0 9999px rgba(0,0,0,0.4)' }} />
+                    <div className="absolute inset-x-4 bottom-4 text-center">
+                      <span className="rounded-full bg-background/80 px-3 py-1 text-xs font-medium text-foreground backdrop-blur-sm border border-border/50">
+                        {t('qrScanner.positionQRCode')}
+                      </span>
                     </div>
                   </div>
                 )}
