@@ -120,7 +120,7 @@ export function exportInspectionsToExcel(
       [t('exportInspections.observations')]: item.observations || '—',
       [t('exportInspections.recommendations')]: item.recommendations || '—',
       [t('exportInspections.nextInspection')]: item.next_inspection_date 
-        ? format(new Date(item.next_inspection_date), 'dd/MM/yyyy', { locale: dateLocale }) 
+        ? format(parseLocalDate(item.next_inspection_date) || new Date(item.next_inspection_date), 'dd/MM/yyyy', { locale: dateLocale }) 
         : '—',
     };
   });
