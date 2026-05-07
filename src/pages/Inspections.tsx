@@ -375,8 +375,8 @@ export default function Inspections() {
         />
       </div>
 
-      {/* Upcoming Inspections (movido para o topo, minimizável) */}
-      {upcomingInspections.length > 0 && (
+      {/* Upcoming Inspections — only on List view */}
+      {viewMode === 'list' && upcomingInspections.length > 0 && (
         <Card>
           <CardHeader
             className="cursor-pointer select-none"
