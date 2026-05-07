@@ -31,6 +31,10 @@ interface EquipmentRow {
   certificate_expiry: string | null;
   next_inspection: string | null;
   last_inspection: string | null;
+  last_hydrostatic_test?: string | null;
+  next_hydrostatic_test?: string | null;
+  last_calibration?: string | null;
+  next_calibration?: string | null;
   category_id: string;
   categories?: { name: string; icon: string } | null;
   ships?: { id: string; name: string; code: string | null } | null;
