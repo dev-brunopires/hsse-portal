@@ -767,6 +767,21 @@ export function useOfflineSync() {
           type: 'inspection',
         });
         
+        // Idempotency: check if this exact action was already synced (server-side trust)
+        const { data: existingByAction } = await supabase
+          .from('inspections')
+          .select('id')
+          .eq('client_action_id', action.id)
+          .maybeSingle();
+
+        if (existingByAction) {
+          console.log('Inspection already synced (client_action_id match):', action.id);
+          await offlineDB.removePendingAction(action.id);
+          await offlineDB.removePhotosByInspection(inspection.id);
+          skippedCount++;
+          continue;
+        }
+
         const isDuplicate = await checkDuplicateInspection(
           inspection.equipment_id,
           inspection.timestamp
