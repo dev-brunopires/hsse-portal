@@ -372,7 +372,7 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
                     className="hidden"
                   >
                     <QRCodeSVG
-                      value={`${window.location.origin}/inspections?scan=${eq.id}`}
+                      value={eq.short_code || `${window.location.origin}/inspections?scan=${eq.id}`}
                       size={500}
                       level="H"
                       marginSize={4}
