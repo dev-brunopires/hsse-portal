@@ -632,33 +632,35 @@ export function useOfflineSync() {
     sessionStorage.setItem(SESSION_CACHE_KEY, 'true');
   }, [preCacheData, isOnline]);
 
-  // Upload pending photos for an inspection
+  // Upload pending photos for an inspection. Returns true only if ALL photos uploaded.
   const uploadPendingPhotos = useCallback(async (
     localInspectionId: string,
     serverInspectionId: string
-  ): Promise<void> => {
+  ): Promise<boolean> => {
     const photos = await offlineDB.getPhotosByInspection(localInspectionId);
-    if (photos.length === 0) return;
+    if (photos.length === 0) return true;
 
     const organizationId = await getCurrentOrganizationId();
-    if (!organizationId) return;
+    if (!organizationId) return false;
 
+    let allOk = true;
     for (const photo of photos) {
       try {
         const blob = offlineDB.base64ToBlob(photo.base64Data, photo.mimeType);
         const file = new File([blob], photo.fileName, { type: photo.mimeType });
-        
+
         const filePath = generateInspectionPhotoPath(organizationId, serverInspectionId, photo.fileName);
         const { error: uploadError } = await supabase.storage
           .from('inspection-photos')
           .upload(filePath, file);
-        
+
         if (uploadError) {
           console.error('Photo upload error:', uploadError);
+          allOk = false;
           continue;
         }
 
-        await supabase
+        const { error: insertError } = await supabase
           .from('inspection_photos')
           .insert({
             inspection_id: serverInspectionId,
@@ -666,11 +668,19 @@ export function useOfflineSync() {
             file_path: filePath,
           });
 
+        if (insertError) {
+          console.error('Photo db insert error:', insertError);
+          allOk = false;
+          continue;
+        }
+
         await offlineDB.removePhoto(photo.id);
       } catch (error) {
         console.error('Error uploading photo:', error);
+        allOk = false;
       }
     }
+    return allOk;
   }, []);
 
   // Check if a recent inspection exists for the same equipment (prevents duplicates)
@@ -770,17 +780,35 @@ export function useOfflineSync() {
           continue;
         }
         
+        // Resolve ship_id from equipment if not provided
+        let resolvedShipId = inspection.ship_id;
+        if (!resolvedShipId) {
+          const { data: eq } = await supabase
+            .from('equipment')
+            .select('ship_id')
+            .eq('id', inspection.equipment_id)
+            .maybeSingle();
+          resolvedShipId = eq?.ship_id ?? null;
+        }
+
+        const inspectionDateStr =
+          inspection.inspection_date ||
+          new Date(inspection.timestamp).toISOString().slice(0, 10);
+
         const { data: newInspection, error: inspectionError } = await supabase
           .from('inspections')
           .insert({
             equipment_id: inspection.equipment_id,
             inspector_id: inspection.inspector_id,
+            inspection_date: inspectionDateStr,
             status: inspection.status,
             observations: inspection.observations,
             recommendations: inspection.recommendations,
+            actions_taken: inspection.actions_taken ?? null,
+            next_inspection_date: inspection.next_inspection_date ?? null,
             signature_data: inspection.signature_data,
             signed_at: inspection.signature_data ? new Date().toISOString() : null,
-            ship_id: inspection.ship_id,
+            ship_id: resolvedShipId,
           })
           .select()
           .single();
@@ -802,8 +830,9 @@ export function useOfflineSync() {
           if (checklistError) console.error('Checklist error:', checklistError);
         }
 
+        let photosOk = true;
         if (newInspection) {
-          await uploadPendingPhotos(inspection.id, newInspection.id);
+          photosOk = await uploadPendingPhotos(inspection.id, newInspection.id);
         }
 
         if (newInspection) {
@@ -817,6 +846,9 @@ export function useOfflineSync() {
         }
 
         await offlineDB.removePendingAction(action.id);
+        if (!photosOk) {
+          console.warn(`Inspection ${newInspection?.id} synced but some photos failed to upload`);
+        }
         syncedCount++;
       } catch (error) {
         console.error('Error syncing inspection:', error);
@@ -1042,8 +1074,8 @@ export function useOfflineSync() {
   // Cache refresh only happens once per session via checkAndRefreshCache (throttled to 5min + session flag)
   useEffect(() => {
     if (isOnline) {
-      syncPendingInspections();
-      syncPendingMaintenance();
+      syncPendingInspections({ silent: true });
+      syncPendingMaintenance({ silent: true });
       // Only check cache on first mount if not yet checked this session
       const sessionChecked = sessionStorage.getItem(SESSION_CACHE_KEY);
       if (!sessionChecked) {
@@ -1137,8 +1169,8 @@ export function useOfflineSync() {
       
       if (hasFailedActions && isOnline && !syncInProgressRef.current) {
         console.log('Auto-retry sync triggered for failed actions');
-        syncPendingInspections();
-        syncPendingMaintenance();
+        syncPendingInspections({ silent: true });
+        syncPendingMaintenance({ silent: true });
       }
     }, 30000);
 

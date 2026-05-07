@@ -328,6 +328,8 @@ export function InspectionFormDialog({
           status: calculateOverallStatus(),
           observations: data.observations || null,
           recommendations: data.recommendations || null,
+          inspection_date: data.inspectionDate || getLocalToday(),
+          next_inspection_date: data.nextInspectionDate || null,
           checklist_items: checklist.map(item => ({
             description: item.description,
             status: item.status,
@@ -335,7 +337,7 @@ export function InspectionFormDialog({
           })),
           signature_data: signatureData,
           inspector_id: data.inspectorId,
-          ship_id: null, // Will be set from equipment when syncing
+          ship_id: null, // resolved from equipment at sync time
         });
         
         toast({
@@ -425,6 +427,8 @@ export function InspectionFormDialog({
           status: 'compliant',
           observations: t('inspectionForm.quickInspection'),
           recommendations: null,
+          inspection_date: formData.inspectionDate || getLocalToday(),
+          next_inspection_date: formData.nextInspectionDate || null,
           checklist_items: quickChecklist,
           signature_data: signatureData,
           inspector_id: formData.inspectorId,
