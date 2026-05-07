@@ -77,6 +77,7 @@ import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { PullToRefreshIndicator } from '@/components/ui/PullToRefreshIndicator';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useOrganizationBranding } from '@/hooks/useOrganizationBranding';
+import { cn } from '@/lib/utils';
 
 const getStatusConfig = (t: (key: string) => string) => ({
   compliant: { label: t('inspections.statusCompliant'), variant: 'default' as const, icon: CheckCircle },
