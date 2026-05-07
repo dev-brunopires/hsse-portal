@@ -163,7 +163,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
 
       // Try to parse as URL with equipment ID
       try {
-          const url = new URL(decodedValue);
+        const url = new URL(decodedValue);
         const scanParam = url.searchParams.get('scan');
         if (scanParam) {
           equipmentId = scanParam;
