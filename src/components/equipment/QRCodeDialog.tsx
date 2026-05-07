@@ -526,16 +526,16 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
 
   const qrContent = (
     <>
-      {/* Preview with organization branding */}
+      {/* Preview matching the printed label layout (4:3 horizontal) */}
       <div className="flex flex-col items-center">
-        <div className="border-2 border-dashed border-primary rounded-lg overflow-hidden w-full max-w-xs">
-          {/* Header - Dynamic logo */}
-          <div className="bg-primary py-2 px-4 flex justify-center items-center min-h-[40px]">
+        <div className="border-2 border-dashed border-primary rounded-lg overflow-hidden w-full max-w-md bg-white">
+          {/* Header - Dynamic logo with preserved aspect ratio */}
+          <div className="bg-primary py-2 px-4 flex justify-center items-center min-h-[48px]">
             {logoWhiteUrl ? (
-              <img 
-                src={logoWhiteUrl} 
-                alt={organizationName} 
-                className="h-6 w-auto max-w-[150px] object-contain"
+              <img
+                src={logoWhiteUrl}
+                alt={organizationName}
+                className="h-8 w-auto max-w-[180px] object-contain"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
                   if (e.currentTarget.nextElementSibling) {
@@ -549,30 +549,30 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
             </span>
           </div>
 
-          {/* Content */}
-          <div className="bg-white p-4 flex flex-col items-center">
-            <p className="font-mono text-xs text-muted-foreground">{equipment.internalCode}</p>
-
-            <div ref={qrRef} className="bg-white p-4 sm:p-5 rounded-lg border mt-3">
+          {/* Content - horizontal layout (QR + info) */}
+          <div className="bg-white p-3 flex items-center gap-3">
+            <div ref={qrRef} className="bg-white p-2 rounded border flex-shrink-0">
               <QRCodeSVG
                 value={qrValue}
-                size={isMobile ? 260 : 360}
+                size={isMobile ? 110 : 140}
                 level="H"
                 includeMargin
                 marginSize={4}
               />
             </div>
 
-            {equipment.shortCode && (
-              <div className="mt-3 bg-primary text-primary-foreground px-4 py-2 rounded-md font-mono font-black text-xl tracking-[0.2em] shadow-sm">
-                {equipment.shortCode}
-              </div>
-            )}
-
-            <p className="text-sm text-foreground text-center mt-2 font-medium">{equipment.name}</p>
-            {equipment.location && (
-              <p className="text-xs text-muted-foreground">📍 {equipment.location}</p>
-            )}
+            <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+              {equipment.shortCode && (
+                <div className="bg-primary text-primary-foreground px-2 py-1.5 rounded font-mono font-black text-base tracking-[0.15em] text-center leading-none">
+                  {equipment.shortCode}
+                </div>
+              )}
+              <p className="font-bold text-sm text-foreground truncate">{equipment.internalCode}</p>
+              <p className="text-xs text-foreground line-clamp-2 leading-tight">{equipment.name}</p>
+              {equipment.location && (
+                <p className="text-xs text-muted-foreground break-words leading-tight">📍 {equipment.location}</p>
+              )}
+            </div>
           </div>
 
           {/* Footer */}
