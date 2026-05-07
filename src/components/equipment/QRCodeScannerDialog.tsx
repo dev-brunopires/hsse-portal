@@ -9,9 +9,8 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Camera, CameraOff, Loader2, QrCode, CheckCircle2, AlertCircle, Scan, SwitchCamera, Keyboard, Search, Flashlight, FlashlightOff, ZoomIn, Contrast, Delete, Lightbulb } from 'lucide-react';
+import { Camera, CameraOff, Loader2, QrCode, CheckCircle2, AlertCircle, Scan, SwitchCamera, Keyboard, Search, Flashlight, FlashlightOff, ZoomIn, Contrast, Delete } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 
@@ -135,11 +134,12 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
   }, []);
 
   const handleScanSuccess = useCallback((decodedText: string) => {
+    const decodedValue = decodedText.trim();
     const now = Date.now();
     
     // Debounce: ignore duplicate scans within 1.5 seconds
     if (
-      lastScannedRef.current === decodedText && 
+      lastScannedRef.current === decodedValue && 
       now - lastScanTimeRef.current < 1500
     ) {
       return;
@@ -150,7 +150,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       return;
     }
     
-    lastScannedRef.current = decodedText;
+    lastScannedRef.current = decodedValue;
     lastScanTimeRef.current = now;
     
     setScannerState('success');
@@ -163,7 +163,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
 
       // Try to parse as URL with equipment ID
       try {
-        const url = new URL(decodedText);
+        const url = new URL(decodedValue);
         const scanParam = url.searchParams.get('scan');
         if (scanParam) {
           equipmentId = scanParam;
@@ -175,7 +175,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       // Try to parse as JSON
       if (!equipmentId) {
         try {
-          const data = JSON.parse(decodedText);
+          const data = JSON.parse(decodedValue);
           if (data.id) {
             equipmentId = data.id;
           }
@@ -185,8 +185,13 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       }
 
       // Try as UUID directly
-      if (!equipmentId && decodedText.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-        equipmentId = decodedText;
+      if (!equipmentId && decodedValue.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+        equipmentId = decodedValue;
+      }
+
+      // Try as compact 6-digit equipment short code
+      if (!equipmentId && decodedValue.match(/^\d{6}$/)) {
+        equipmentId = decodedValue;
       }
 
       if (equipmentId) {
@@ -236,7 +241,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
         { facingMode: cameraFacingMode },
         {
           fps: 15,
-          qrbox: { width: 250, height: 250 },
+          qrbox: { width: 220, height: 220 },
           aspectRatio: 1.0,
           disableFlip: false,
           videoConstraints: {
@@ -614,7 +619,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] mx-auto p-3 sm:p-6 max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+        <DialogHeader className="space-y-1">
           <DialogTitle className="flex items-center gap-2">
             <div className={cn(
               "p-1.5 rounded-lg transition-colors duration-300",
@@ -627,16 +632,12 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
             </div>
             {t('qrScanner.dialogTitle')}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="sr-only">
             {t('qrScanner.dialogDescription')}
-            <span className="flex items-center gap-1.5 text-xs mt-1 text-muted-foreground/80">
-              <Lightbulb className="h-3.5 w-3.5" />
-              {t('qrScanner.screenTip')}
-            </span>
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+                <div className="space-y-3">
           {/* Manual input mode - replaces scanner entirely */}
           {showManualInput ? (
             <div className="w-full rounded-xl border-2 border-primary/30 bg-background p-3 sm:p-4 flex flex-col items-center">
@@ -749,10 +750,10 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
               <div
                 key={containerId}
                 className={cn(
-                  "relative w-full rounded-xl overflow-hidden transition-all duration-300 border-2",
+                  "relative w-full rounded-lg overflow-hidden transition-all duration-300 border",
                   "aspect-[4/3] sm:aspect-square",
-                  scannerState === 'scanning' && "border-primary/50 shadow-lg shadow-primary/10",
-                  scannerState === 'success' && "border-green-500/50 shadow-lg shadow-green-500/20",
+                  scannerState === 'scanning' && "border-primary/40",
+                  scannerState === 'success' && "border-green-500/50",
                   scannerState === 'error' && "border-destructive/50",
                   scannerState === 'permission-denied' && "border-amber-500/50",
                   (scannerState === 'initializing') && "border-muted bg-muted"
@@ -762,19 +763,20 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                 <div 
                   id={containerId} 
                   className={cn(
-                    "absolute inset-0 [&_#qr-shaded-region]:hidden [&>div>div]:border-none transition-[filter] duration-200",
-                    highContrast && "[&_video]:[filter:contrast(1.8)_brightness(1.15)_grayscale(1)]"
+                    "absolute inset-0 [&_#qr-shaded-region]:hidden [&>div>div]:border-none transition-[filter] duration-200 [&_video]:object-cover",
+                    highContrast && "[&_video]:[filter:contrast(1.35)_brightness(1.1)_grayscale(1)]"
                   )}
                 />
 
                 {/* Camera controls - top right */}
                 {scannerState === 'scanning' && !isSwitchingCamera && (
-                  <div className="absolute top-3 right-3 z-20 flex flex-col gap-2">
+                  <div className="absolute top-2 right-2 z-20 flex gap-1.5">
                     <Button
                       variant="secondary"
                       size="icon"
-                      className="h-10 w-10 rounded-full bg-background/80 backdrop-blur-sm shadow-lg hover:bg-background/90 border border-border/50"
+                      className="h-11 w-11 rounded-full bg-background/80 backdrop-blur-sm border border-border/50"
                       onClick={handleSwitchCamera}
+                      aria-label={t('qrScanner.switchToCamera')}
                     >
                       <SwitchCamera className="h-5 w-5" />
                     </Button>
@@ -783,8 +785,8 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                         variant="secondary"
                         size="icon"
                         className={cn(
-                          "h-10 w-10 rounded-full backdrop-blur-sm shadow-lg border border-border/50",
-                          torchOn ? "bg-yellow-400/90 hover:bg-yellow-400 text-black" : "bg-background/80 hover:bg-background/90"
+                          "h-11 w-11 rounded-full backdrop-blur-sm border border-border/50",
+                          torchOn ? "bg-primary/90 hover:bg-primary text-primary-foreground" : "bg-background/80 hover:bg-background/90"
                         )}
                         onClick={async () => {
                           try {
@@ -796,6 +798,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                             }
                           } catch {}
                         }}
+                        aria-label={torchOn ? t('qrScanner.flashOff') : t('qrScanner.flashOn')}
                       >
                         {torchOn ? <FlashlightOff className="h-5 w-5" /> : <Flashlight className="h-5 w-5" />}
                       </Button>
@@ -804,7 +807,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                       variant="secondary"
                       size="icon"
                       className={cn(
-                        "h-10 w-10 rounded-full backdrop-blur-sm shadow-lg border border-border/50",
+                        "h-11 w-11 rounded-full backdrop-blur-sm border border-border/50",
                         highContrast ? "bg-primary/90 hover:bg-primary text-primary-foreground" : "bg-background/80 hover:bg-background/90"
                       )}
                       onClick={() => setHighContrast((v) => !v)}
@@ -815,34 +818,22 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                   </div>
                 )}
 
-                {/* Camera indicator badge */}
-                {scannerState === 'scanning' && (
-                  <div className="absolute top-3 left-3 z-20">
-                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-background/80 backdrop-blur-sm text-xs font-medium border border-border/50">
-                      <Camera className="h-3 w-3" />
-                      {facingMode === 'environment' ? t('qrScanner.backCamera') : t('qrScanner.frontCamera')}
-                    </div>
-                  </div>
-                )}
-
                 {/* Scanning frame overlay */}
                 {scannerState === 'scanning' && !isSwitchingCamera && (
                   <div className="absolute inset-0 pointer-events-none z-10">
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="relative w-56 h-56">
-                        <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-primary rounded-tl-lg" />
-                        <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-primary rounded-tr-lg" />
-                        <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-primary rounded-bl-lg" />
-                        <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-primary rounded-br-lg" />
-                        <div 
-                          className="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent animate-scan-line"
-                          style={{ opacity: 0.8, boxShadow: '0 0 8px hsl(var(--primary))' }}
-                        />
+                      <div className="relative h-52 w-52 rounded-md border border-primary/90 bg-transparent">
+                        <div className="absolute -top-px -left-px h-7 w-7 border-t-2 border-l-2 border-primary" />
+                        <div className="absolute -top-px -right-px h-7 w-7 border-t-2 border-r-2 border-primary" />
+                        <div className="absolute -bottom-px -left-px h-7 w-7 border-b-2 border-l-2 border-primary" />
+                        <div className="absolute -bottom-px -right-px h-7 w-7 border-b-2 border-r-2 border-primary" />
+                        <div className="absolute inset-x-8 top-1/2 h-px bg-primary/80" />
                       </div>
                     </div>
-                    <div className="absolute inset-0 bg-black/40">
-                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 bg-transparent" 
-                           style={{ boxShadow: '0 0 0 9999px rgba(0,0,0,0.4)' }} />
+                    <div className="absolute inset-x-4 bottom-4 text-center">
+                      <span className="rounded-full bg-background/80 px-3 py-1 text-xs font-medium text-foreground backdrop-blur-sm border border-border/50">
+                        {t('qrScanner.positionQRCode')}
+                      </span>
                     </div>
                   </div>
                 )}
@@ -954,9 +945,9 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
               {/* Action button below scanner - enter code manually */}
               {scannerState === 'scanning' && !isSwitchingCamera && (
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
-                  className="w-full"
+                  className="w-full min-h-11"
                   onClick={() => {
                     cleanupScanner();
                     setShowManualInput(true);
@@ -970,13 +961,12 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
           )}
 
           {/* Status indicator bar */}
-          <div className={cn(
+          {scannerState !== 'scanning' && <div className={cn(
             "flex items-center gap-3 p-3 rounded-lg transition-colors duration-300",
             stateConfig.bgColor
           )}>
             <div className={cn(
               "p-2 rounded-full",
-              scannerState === 'scanning' && "bg-primary/20",
               scannerState === 'success' && "bg-green-500/20",
               scannerState === 'error' && "bg-destructive/20",
               scannerState === 'permission-denied' && "bg-amber-500/20",
@@ -996,10 +986,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                 {stateConfig.subtitle}
               </p>
             </div>
-            {scannerState === 'scanning' && !isSwitchingCamera && (
-              <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            )}
-          </div>
+          </div>}
         </div>
       </DialogContent>
     </Dialog>

@@ -79,6 +79,7 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
   // URL que abre diretamente o formulário de inspeção
   const baseUrl = window.location.origin;
   const inspectionUrl = `${baseUrl}/inspections?scan=${equipment.id}`;
+  const qrValue = equipment.shortCode || inspectionUrl;
 
   const handleDownload = () => {
     // Create a styled canvas with logo and border
@@ -158,15 +159,6 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
           ctx.fillRect(qrX - 10, qrY - 10, qrSize + 20, qrSize + 20);
 
           ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
-
-          // Short code in center of QR (only place we show it)
-          if (equipment.shortCode) {
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(qrX + qrSize / 2 - 92, qrY + qrSize / 2 - 24, 184, 48);
-            ctx.fillStyle = '#000000';
-            ctx.font = 'bold 36px monospace';
-            ctx.fillText(equipment.shortCode, width / 2, qrY + qrSize / 2 + 12);
-          }
 
           // Equipment name
           ctx.fillStyle = '#333333';
@@ -451,19 +443,6 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
               width: 400px;
               height: 400px;
             }
-            .qr-center-code {
-              position: absolute;
-              top: 50%;
-              left: 50%;
-              transform: translate(-50%, -50%);
-              background: white;
-              padding: 4px 10px;
-              border-radius: 4px;
-              font-family: monospace;
-              font-weight: bold;
-              font-size: 14px;
-              border: 1px solid #e5e5e5;
-            }
             .footer {
               background: ${BRAND_COLOR};
               padding: 10px;
@@ -484,7 +463,6 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
               ${equipment.location ? `<div class="location">📍 ${equipment.location}</div>` : ''}
               <div class="qr-wrapper">
                 ${svg.outerHTML}
-                ${equipment.shortCode ? `<div class="qr-center-code">${equipment.shortCode}</div>` : ''}
               </div>
             </div>
             <div class="footer">📱 ${scanText}</div>
@@ -534,7 +512,7 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
 
             <div ref={qrRef} className="bg-white p-4 sm:p-5 rounded-lg border mt-3">
               <QRCodeSVG
-                value={inspectionUrl}
+                value={qrValue}
                 size={isMobile ? 260 : 360}
                 level="H"
                 includeMargin
