@@ -193,7 +193,7 @@ export async function exportInspectionsToPDF(
       item.profiles?.full_name || '—',
       statusLabels[item.status] || item.status,
       item.next_inspection_date 
-        ? format(new Date(item.next_inspection_date), 'dd/MM/yyyy', { locale: dateLocale }) 
+        ? format(parseLocalDate(item.next_inspection_date) || new Date(item.next_inspection_date), 'dd/MM/yyyy', { locale: dateLocale }) 
         : '—',
     ];
   });
