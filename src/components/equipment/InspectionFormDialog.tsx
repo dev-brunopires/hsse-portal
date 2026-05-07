@@ -166,6 +166,7 @@ export function InspectionFormDialog({
           .select('id, recommendations, inspection_checklist_items(description, status, notes)')
           .eq('equipment_id', equipment.id)
           .order('inspection_date', { ascending: false })
+          .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
         if (cancelled) return;

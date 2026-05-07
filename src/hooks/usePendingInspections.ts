@@ -59,6 +59,7 @@ export async function fetchPendingInspectionById(id: string): Promise<PendingIns
     .select('id, recommendations, inspection_checklist_items(description, status, notes)')
     .eq('equipment_id', pending.equipment_id)
     .order('inspection_date', { ascending: false })
+    .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
 
