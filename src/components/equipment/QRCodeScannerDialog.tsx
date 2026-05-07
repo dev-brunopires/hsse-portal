@@ -950,9 +950,9 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
               {/* Action button below scanner - enter code manually */}
               {scannerState === 'scanning' && !isSwitchingCamera && (
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
-                  className="w-full"
+                  className="w-full min-h-11"
                   onClick={() => {
                     cleanupScanner();
                     setShowManualInput(true);
@@ -966,7 +966,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
           )}
 
           {/* Status indicator bar */}
-          <div className={cn(
+          {scannerState !== 'scanning' && <div className={cn(
             "flex items-center gap-3 p-3 rounded-lg transition-colors duration-300",
             stateConfig.bgColor
           )}>
@@ -995,7 +995,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
             {scannerState === 'scanning' && !isSwitchingCamera && (
               <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
             )}
-          </div>
+          </div>}
         </div>
       </DialogContent>
     </Dialog>
