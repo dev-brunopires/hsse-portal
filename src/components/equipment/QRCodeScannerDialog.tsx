@@ -972,7 +972,6 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
           )}>
             <div className={cn(
               "p-2 rounded-full",
-              scannerState === 'scanning' && "bg-primary/20",
               scannerState === 'success' && "bg-green-500/20",
               scannerState === 'error' && "bg-destructive/20",
               scannerState === 'permission-denied' && "bg-amber-500/20",
@@ -992,9 +991,6 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                 {stateConfig.subtitle}
               </p>
             </div>
-            {scannerState === 'scanning' && !isSwitchingCamera && (
-              <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            )}
           </div>}
         </div>
       </DialogContent>
