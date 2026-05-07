@@ -632,33 +632,35 @@ export function useOfflineSync() {
     sessionStorage.setItem(SESSION_CACHE_KEY, 'true');
   }, [preCacheData, isOnline]);
 
-  // Upload pending photos for an inspection
+  // Upload pending photos for an inspection. Returns true only if ALL photos uploaded.
   const uploadPendingPhotos = useCallback(async (
     localInspectionId: string,
     serverInspectionId: string
-  ): Promise<void> => {
+  ): Promise<boolean> => {
     const photos = await offlineDB.getPhotosByInspection(localInspectionId);
-    if (photos.length === 0) return;
+    if (photos.length === 0) return true;
 
     const organizationId = await getCurrentOrganizationId();
-    if (!organizationId) return;
+    if (!organizationId) return false;
 
+    let allOk = true;
     for (const photo of photos) {
       try {
         const blob = offlineDB.base64ToBlob(photo.base64Data, photo.mimeType);
         const file = new File([blob], photo.fileName, { type: photo.mimeType });
-        
+
         const filePath = generateInspectionPhotoPath(organizationId, serverInspectionId, photo.fileName);
         const { error: uploadError } = await supabase.storage
           .from('inspection-photos')
           .upload(filePath, file);
-        
+
         if (uploadError) {
           console.error('Photo upload error:', uploadError);
+          allOk = false;
           continue;
         }
 
-        await supabase
+        const { error: insertError } = await supabase
           .from('inspection_photos')
           .insert({
             inspection_id: serverInspectionId,
@@ -666,11 +668,19 @@ export function useOfflineSync() {
             file_path: filePath,
           });
 
+        if (insertError) {
+          console.error('Photo db insert error:', insertError);
+          allOk = false;
+          continue;
+        }
+
         await offlineDB.removePhoto(photo.id);
       } catch (error) {
         console.error('Error uploading photo:', error);
+        allOk = false;
       }
     }
+    return allOk;
   }, []);
 
   // Check if a recent inspection exists for the same equipment (prevents duplicates)
