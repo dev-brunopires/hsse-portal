@@ -767,6 +767,21 @@ export function useOfflineSync() {
           type: 'inspection',
         });
         
+        // Idempotency: check if this exact action was already synced (server-side trust)
+        const { data: existingByAction } = await supabase
+          .from('inspections')
+          .select('id')
+          .eq('client_action_id', action.id)
+          .maybeSingle();
+
+        if (existingByAction) {
+          console.log('Inspection already synced (client_action_id match):', action.id);
+          await offlineDB.removePendingAction(action.id);
+          await offlineDB.removePhotosByInspection(inspection.id);
+          skippedCount++;
+          continue;
+        }
+
         const isDuplicate = await checkDuplicateInspection(
           inspection.equipment_id,
           inspection.timestamp
@@ -809,11 +824,22 @@ export function useOfflineSync() {
             signature_data: inspection.signature_data,
             signed_at: inspection.signature_data ? new Date().toISOString() : null,
             ship_id: resolvedShipId,
+            client_action_id: action.id,
           })
           .select()
           .single();
 
-        if (inspectionError) throw inspectionError;
+        if (inspectionError) {
+          // Unique violation on client_action_id = race already inserted by another retry
+          if ((inspectionError as any).code === '23505') {
+            console.log('Inspection already inserted by concurrent sync, skipping');
+            await offlineDB.removePendingAction(action.id);
+            await offlineDB.removePhotosByInspection(inspection.id);
+            skippedCount++;
+            continue;
+          }
+          throw inspectionError;
+        }
 
         if (inspection.checklist_items.length > 0 && newInspection) {
           const { error: checklistError } = await supabase
