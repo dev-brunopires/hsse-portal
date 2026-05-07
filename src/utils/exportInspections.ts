@@ -107,7 +107,7 @@ export function exportInspectionsToExcel(
     const alertIndicators = getEquipmentAlertIndicators(item, allEquipment);
     
     return {
-      [t('exportInspections.inspectionDate')]: format(new Date(item.inspection_date), 'dd/MM/yyyy', { locale: dateLocale }),
+      [t('exportInspections.inspectionDate')]: format(parseLocalDate(item.inspection_date) || new Date(item.inspection_date), 'dd/MM/yyyy', { locale: dateLocale }),
       [t('exportInspections.equipment')]: item.equipment?.name || '—',
       [t('exportInspections.code')]: item.equipment?.internal_code || '—',
       [t('reports.serialNumber')]: (item.equipment as any)?.serial_number || '—',
