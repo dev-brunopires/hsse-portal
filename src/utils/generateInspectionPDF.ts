@@ -87,7 +87,9 @@ const getStatusLabels = (): Record<string, string> => ({
 const formatDate = (date: string | null | undefined): string => {
   if (!date) return '-';
   try {
-    return format(new Date(date), 'dd/MM/yyyy', { locale: getDateLocale() });
+    const d = parseLocalDate(date);
+    if (!d || isNaN(d.getTime())) return '-';
+    return format(d, 'dd/MM/yyyy', { locale: getDateLocale() });
   } catch {
     return '-';
   }
