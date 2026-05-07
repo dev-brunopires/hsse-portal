@@ -150,7 +150,7 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
       }
     });
 
-    printWindow.document.write(`
+    const html = `
       <!DOCTYPE html>
       <html>
         <head>
