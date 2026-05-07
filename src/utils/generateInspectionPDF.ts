@@ -19,6 +19,7 @@ import {
 import i18n from '@/i18n';
 import type { OrganizationBranding } from '@/hooks/useOrganizationBranding';
 import { formatInspectionId } from './formatId';
+import { parseLocalDate } from './dateFormat';
 
 const getDateLocale = () => i18n.language === 'en' ? enUS : ptBR;
 
@@ -86,7 +87,9 @@ const getStatusLabels = (): Record<string, string> => ({
 const formatDate = (date: string | null | undefined): string => {
   if (!date) return '-';
   try {
-    return format(new Date(date), 'dd/MM/yyyy', { locale: getDateLocale() });
+    const d = parseLocalDate(date);
+    if (!d || isNaN(d.getTime())) return '-';
+    return format(d, 'dd/MM/yyyy', { locale: getDateLocale() });
   } catch {
     return '-';
   }
@@ -441,7 +444,8 @@ export async function generateInspectionPDF(data: InspectionPDFData, options?: {
   );
 
   // Save or Preview
-  const fileName = `${t('generateInspectionPDF.filePrefix')}_${data.equipment.internal_code}_${format(new Date(data.inspection.inspection_date), 'yyyyMMdd')}.pdf`;
+  const fileNameDate = parseLocalDate(data.inspection.inspection_date) || new Date();
+  const fileName = `${t('generateInspectionPDF.filePrefix')}_${data.equipment.internal_code}_${format(fileNameDate, 'yyyyMMdd')}.pdf`;
   
   if (options?.preview) {
     const pdfBlob = doc.output('blob');

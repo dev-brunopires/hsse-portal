@@ -2,7 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
-import { getLocalToday } from '@/utils/dateFormat';
+import { getLocalToday, parseLocalDate } from '@/utils/dateFormat';
 import { ptBR, enUS } from 'date-fns/locale';
 import type { InspectionWithDetails, InspectionPhoto } from '@/hooks/useInspections';
 import { supabase } from '@/integrations/supabase/client';
@@ -107,7 +107,7 @@ export function exportInspectionsToExcel(
     const alertIndicators = getEquipmentAlertIndicators(item, allEquipment);
     
     return {
-      [t('exportInspections.inspectionDate')]: format(new Date(item.inspection_date), 'dd/MM/yyyy', { locale: dateLocale }),
+      [t('exportInspections.inspectionDate')]: format(parseLocalDate(item.inspection_date) || new Date(item.inspection_date), 'dd/MM/yyyy', { locale: dateLocale }),
       [t('exportInspections.equipment')]: item.equipment?.name || '—',
       [t('exportInspections.code')]: item.equipment?.internal_code || '—',
       [t('reports.serialNumber')]: (item.equipment as any)?.serial_number || '—',
@@ -120,7 +120,7 @@ export function exportInspectionsToExcel(
       [t('exportInspections.observations')]: item.observations || '—',
       [t('exportInspections.recommendations')]: item.recommendations || '—',
       [t('exportInspections.nextInspection')]: item.next_inspection_date 
-        ? format(new Date(item.next_inspection_date), 'dd/MM/yyyy', { locale: dateLocale }) 
+        ? format(parseLocalDate(item.next_inspection_date) || new Date(item.next_inspection_date), 'dd/MM/yyyy', { locale: dateLocale }) 
         : '—',
     };
   });
@@ -184,7 +184,7 @@ export async function exportInspectionsToPDF(
     const fullEquip = allEquipment?.find(e => e.id === item.equipment_id) as any;
     
     return [
-      format(new Date(item.inspection_date), 'dd/MM/yyyy', { locale: dateLocale }),
+      format(parseLocalDate(item.inspection_date) || new Date(item.inspection_date), 'dd/MM/yyyy', { locale: dateLocale }),
       item.equipment?.name || '—',
       item.equipment?.internal_code || '—',
       (item.equipment as any)?.serial_number || fullEquip?.serial_number || '—',
@@ -193,7 +193,7 @@ export async function exportInspectionsToPDF(
       item.profiles?.full_name || '—',
       statusLabels[item.status] || item.status,
       item.next_inspection_date 
-        ? format(new Date(item.next_inspection_date), 'dd/MM/yyyy', { locale: dateLocale }) 
+        ? format(parseLocalDate(item.next_inspection_date) || new Date(item.next_inspection_date), 'dd/MM/yyyy', { locale: dateLocale }) 
         : '—',
     ];
   });
@@ -289,7 +289,7 @@ export async function exportSingleInspectionPDF(
   
   doc.setFontSize(10);
   doc.setTextColor(...DARK_GRAY);
-  doc.text(`${t('exportInspections.date')}: ${format(new Date(inspection.inspection_date), 'dd/MM/yyyy', { locale: dateLocale })}`, 14, yPos);
+  doc.text(`${t('exportInspections.date')}: ${format(parseLocalDate(inspection.inspection_date) || new Date(inspection.inspection_date), 'dd/MM/yyyy', { locale: dateLocale })}`, 14, yPos);
   doc.text(`${t('exportInspections.status')}: ${statusLabels[inspection.status] || inspection.status}`, 100, yPos);
   yPos += 6;
   doc.text(`${t('exportInspections.inspector')}: ${inspection.profiles?.full_name || '—'}`, 14, yPos);
