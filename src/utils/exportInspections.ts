@@ -289,7 +289,7 @@ export async function exportSingleInspectionPDF(
   
   doc.setFontSize(10);
   doc.setTextColor(...DARK_GRAY);
-  doc.text(`${t('exportInspections.date')}: ${format(new Date(inspection.inspection_date), 'dd/MM/yyyy', { locale: dateLocale })}`, 14, yPos);
+  doc.text(`${t('exportInspections.date')}: ${format(parseLocalDate(inspection.inspection_date) || new Date(inspection.inspection_date), 'dd/MM/yyyy', { locale: dateLocale })}`, 14, yPos);
   doc.text(`${t('exportInspections.status')}: ${statusLabels[inspection.status] || inspection.status}`, 100, yPos);
   yPos += 6;
   doc.text(`${t('exportInspections.inspector')}: ${inspection.profiles?.full_name || '—'}`, 14, yPos);
