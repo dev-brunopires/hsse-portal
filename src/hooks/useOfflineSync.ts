@@ -780,17 +780,35 @@ export function useOfflineSync() {
           continue;
         }
         
+        // Resolve ship_id from equipment if not provided
+        let resolvedShipId = inspection.ship_id;
+        if (!resolvedShipId) {
+          const { data: eq } = await supabase
+            .from('equipment')
+            .select('ship_id')
+            .eq('id', inspection.equipment_id)
+            .maybeSingle();
+          resolvedShipId = eq?.ship_id ?? null;
+        }
+
+        const inspectionDateStr =
+          inspection.inspection_date ||
+          new Date(inspection.timestamp).toISOString().slice(0, 10);
+
         const { data: newInspection, error: inspectionError } = await supabase
           .from('inspections')
           .insert({
             equipment_id: inspection.equipment_id,
             inspector_id: inspection.inspector_id,
+            inspection_date: inspectionDateStr,
             status: inspection.status,
             observations: inspection.observations,
             recommendations: inspection.recommendations,
+            actions_taken: inspection.actions_taken ?? null,
+            next_inspection_date: inspection.next_inspection_date ?? null,
             signature_data: inspection.signature_data,
             signed_at: inspection.signature_data ? new Date().toISOString() : null,
-            ship_id: inspection.ship_id,
+            ship_id: resolvedShipId,
           })
           .select()
           .single();
@@ -812,8 +830,9 @@ export function useOfflineSync() {
           if (checklistError) console.error('Checklist error:', checklistError);
         }
 
+        let photosOk = true;
         if (newInspection) {
-          await uploadPendingPhotos(inspection.id, newInspection.id);
+          photosOk = await uploadPendingPhotos(inspection.id, newInspection.id);
         }
 
         if (newInspection) {
@@ -827,6 +846,9 @@ export function useOfflineSync() {
         }
 
         await offlineDB.removePendingAction(action.id);
+        if (!photosOk) {
+          console.warn(`Inspection ${newInspection?.id} synced but some photos failed to upload`);
+        }
         syncedCount++;
       } catch (error) {
         console.error('Error syncing inspection:', error);
