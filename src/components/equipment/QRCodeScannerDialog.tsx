@@ -184,14 +184,19 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
         }
       }
 
-      // Try as UUID directly
-      if (!equipmentId && decodedValue.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-        equipmentId = decodedValue;
+      // Normalize: strip whitespace/zero-width/BOM characters that some scanners include
+      const normalized = decodedValue.replace(/[\s\u200B-\u200D\uFEFF]/g, '');
+
+      // Try as UUID directly (anywhere in the payload)
+      if (!equipmentId) {
+        const uuidMatch = normalized.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+        if (uuidMatch) equipmentId = uuidMatch[0];
       }
 
-      // Try as compact 6-digit equipment short code
-      if (!equipmentId && decodedValue.match(/^\d{6}$/)) {
-        equipmentId = decodedValue;
+      // Try as compact 6-digit equipment short code (anywhere in the payload)
+      if (!equipmentId) {
+        const shortMatch = normalized.match(/(?:^|[^0-9])(\d{6})(?:[^0-9]|$)/);
+        if (shortMatch) equipmentId = shortMatch[1];
       }
 
       if (equipmentId) {

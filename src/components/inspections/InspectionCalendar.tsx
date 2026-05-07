@@ -344,7 +344,7 @@ export function InspectionCalendar({ inspections, onInspectionClick, onCreateFor
 
       {/* Day Details Dialog */}
       <Dialog open={dayDialogOpen} onOpenChange={setDayDialogOpen}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
           <DialogHeader className="pb-4 border-b shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <CalendarDays className="h-5 w-5 text-primary" />
