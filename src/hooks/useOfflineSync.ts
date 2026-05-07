@@ -823,12 +823,36 @@ export function useOfflineSync() {
             next_inspection_date: inspection.next_inspection_date ?? null,
             signature_data: inspection.signature_data,
             signed_at: inspection.signature_data ? new Date().toISOString() : null,
+        const { data: newInspection, error: inspectionError } = await supabase
+          .from('inspections')
+          .insert({
+            equipment_id: inspection.equipment_id,
+            inspector_id: inspection.inspector_id,
+            inspection_date: inspectionDateStr,
+            status: inspection.status,
+            observations: inspection.observations,
+            recommendations: inspection.recommendations,
+            actions_taken: inspection.actions_taken ?? null,
+            next_inspection_date: inspection.next_inspection_date ?? null,
+            signature_data: inspection.signature_data,
+            signed_at: inspection.signature_data ? new Date().toISOString() : null,
             ship_id: resolvedShipId,
+            client_action_id: action.id,
           })
           .select()
           .single();
 
-        if (inspectionError) throw inspectionError;
+        if (inspectionError) {
+          // Unique violation on client_action_id = race already inserted by another retry
+          if ((inspectionError as any).code === '23505') {
+            console.log('Inspection already inserted by concurrent sync, skipping');
+            await offlineDB.removePendingAction(action.id);
+            await offlineDB.removePhotosByInspection(inspection.id);
+            skippedCount++;
+            continue;
+          }
+          throw inspectionError;
+        }
 
         if (inspection.checklist_items.length > 0 && newInspection) {
           const { error: checklistError } = await supabase
