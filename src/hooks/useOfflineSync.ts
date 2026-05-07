@@ -1169,8 +1169,8 @@ export function useOfflineSync() {
       
       if (hasFailedActions && isOnline && !syncInProgressRef.current) {
         console.log('Auto-retry sync triggered for failed actions');
-        syncPendingInspections();
-        syncPendingMaintenance();
+        syncPendingInspections({ silent: true });
+        syncPendingMaintenance({ silent: true });
       }
     }, 30000);
 
