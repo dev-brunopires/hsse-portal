@@ -131,9 +131,6 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
     const selectedEquipment = equipment.filter(e => selectedIds.has(e.id));
     if (selectedEquipment.length === 0) return;
 
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-
     const scanText = t('qrCode.scanToInspect').toUpperCase();
     const cfg = LABEL_SIZES[labelSize];
 
