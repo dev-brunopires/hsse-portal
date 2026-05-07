@@ -17,6 +17,7 @@ import {
   MoreHorizontal,
   Zap,
   CheckSquare,
+  Paperclip,
 } from 'lucide-react';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
@@ -295,7 +296,19 @@ export default function Certificates() {
                 </p>
               )}
             </div>
-            {getStatusBadge(certificate.status)}
+            <div className="flex flex-col items-end gap-1">
+              {getStatusBadge(certificate.status)}
+              {certificate.file_path ? (
+                <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20 text-[10px]">
+                  <Paperclip className="h-3 w-3 mr-1" />
+                  {t('certificates.hasAttachment')}
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-muted-foreground text-[10px]">
+                  {t('certificates.noAttachment')}
+                </Badge>
+              )}
+            </div>
           </div>
 
           <div className="mt-3 flex items-center justify-between text-sm">
@@ -560,6 +573,7 @@ export default function Certificates() {
                       <TableHead>{t('certificates.equipment')}</TableHead>
                       <TableHead>{t('certificates.issuer')}</TableHead>
                       <TableHead>{t('certificates.expiryDate')}</TableHead>
+                      <TableHead>{t('certificates.attachment')}</TableHead>
                       <TableHead>{t('common.status')}</TableHead>
                       <TableHead className="text-right">{t('common.actions')}</TableHead>
                     </TableRow>
@@ -616,6 +630,18 @@ export default function Certificates() {
                                 </p>
                               )}
                             </div>
+                          </TableCell>
+                          <TableCell>
+                            {certificate.file_path ? (
+                              <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20">
+                                <Paperclip className="h-3 w-3 mr-1" />
+                                {t('certificates.hasAttachment')}
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-muted-foreground">
+                                {t('certificates.noAttachment')}
+                              </Badge>
+                            )}
                           </TableCell>
                           <TableCell>{getStatusBadge(certificate.status)}</TableCell>
                           <TableCell className="text-right">
