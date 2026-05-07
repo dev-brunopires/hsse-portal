@@ -427,6 +427,8 @@ export function InspectionFormDialog({
           status: 'compliant',
           observations: t('inspectionForm.quickInspection'),
           recommendations: null,
+          inspection_date: formData.inspectionDate || getLocalToday(),
+          next_inspection_date: formData.nextInspectionDate || null,
           checklist_items: quickChecklist,
           signature_data: signatureData,
           inspector_id: formData.inspectorId,
