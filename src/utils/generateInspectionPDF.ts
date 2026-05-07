@@ -444,7 +444,8 @@ export async function generateInspectionPDF(data: InspectionPDFData, options?: {
   );
 
   // Save or Preview
-  const fileName = `${t('generateInspectionPDF.filePrefix')}_${data.equipment.internal_code}_${format(new Date(data.inspection.inspection_date), 'yyyyMMdd')}.pdf`;
+  const fileNameDate = parseLocalDate(data.inspection.inspection_date) || new Date();
+  const fileName = `${t('generateInspectionPDF.filePrefix')}_${data.equipment.internal_code}_${format(fileNameDate, 'yyyyMMdd')}.pdf`;
   
   if (options?.preview) {
     const pdfBlob = doc.output('blob');
