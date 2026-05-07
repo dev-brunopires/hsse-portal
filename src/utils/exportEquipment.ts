@@ -240,6 +240,55 @@ export async function exportToPDF(
     },
   });
 
+  // Table 3: Hydrostatic tests & Calibrations (only if any equipment has data)
+  const hasTestData = equipment.some((it: any) =>
+    it.last_hydrostatic_test || it.next_hydrostatic_test || it.last_calibration || it.next_calibration
+  );
+
+  if (hasTestData) {
+    yPos = (doc as any).lastAutoTable?.finalY + 10 || yPos + 50;
+    if (yPos > pageHeight - 60) {
+      doc.addPage();
+      yPos = 20;
+    }
+
+    addSectionHeader(doc, yPos, t('exportEquipment.testsSection', 'Testes e Calibrações'));
+    yPos += 14;
+
+    const testsData = equipment.map((item: any) => [
+      item.internal_code,
+      item.name,
+      formatDate(item.last_hydrostatic_test),
+      formatDate(item.next_hydrostatic_test),
+      formatDate(item.last_calibration),
+      formatDate(item.next_calibration),
+    ]);
+
+    autoTable(doc, {
+      startY: yPos,
+      head: [[
+        t('exportEquipment.code'),
+        t('exportEquipment.name'),
+        t('equipmentForm.lastHydrostaticTest', 'Último teste hidrostático'),
+        t('equipmentForm.nextHydrostaticTest', 'Próximo teste hidrostático'),
+        t('equipmentForm.lastCalibration', 'Última calibração'),
+        t('equipmentForm.nextCalibration', 'Próxima calibração'),
+      ]],
+      body: testsData,
+      styles: { fontSize: 7, cellPadding: 3 },
+      headStyles: { fillColor: SBM_BLUE, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      columnStyles: {
+        0: { cellWidth: 26 },
+        1: { cellWidth: 'auto' },
+        2: { cellWidth: 36 },
+        3: { cellWidth: 36 },
+        4: { cellWidth: 32 },
+        5: { cellWidth: 32 },
+      },
+    });
+  }
+
   // Add standardized footer with organization name
   const companyName = branding?.name || 'SafeShip';
   addPDFFooter(
