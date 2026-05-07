@@ -242,7 +242,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
         { facingMode: cameraFacingMode },
         {
           fps: 15,
-          qrbox: { width: 250, height: 250 },
+          qrbox: { width: 220, height: 220 },
           aspectRatio: 1.0,
           disableFlip: false,
           videoConstraints: {
@@ -642,7 +642,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+                <div className="space-y-3">
           {/* Manual input mode - replaces scanner entirely */}
           {showManualInput ? (
             <div className="w-full rounded-xl border-2 border-primary/30 bg-background p-3 sm:p-4 flex flex-col items-center">
@@ -755,10 +755,10 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
               <div
                 key={containerId}
                 className={cn(
-                  "relative w-full rounded-xl overflow-hidden transition-all duration-300 border-2",
+                  "relative w-full rounded-lg overflow-hidden transition-all duration-300 border",
                   "aspect-[4/3] sm:aspect-square",
-                  scannerState === 'scanning' && "border-primary/50 shadow-lg shadow-primary/10",
-                  scannerState === 'success' && "border-green-500/50 shadow-lg shadow-green-500/20",
+                  scannerState === 'scanning' && "border-primary/40",
+                  scannerState === 'success' && "border-green-500/50",
                   scannerState === 'error' && "border-destructive/50",
                   scannerState === 'permission-denied' && "border-amber-500/50",
                   (scannerState === 'initializing') && "border-muted bg-muted"
@@ -768,8 +768,8 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                 <div 
                   id={containerId} 
                   className={cn(
-                    "absolute inset-0 [&_#qr-shaded-region]:hidden [&>div>div]:border-none transition-[filter] duration-200",
-                    highContrast && "[&_video]:[filter:contrast(1.8)_brightness(1.15)_grayscale(1)]"
+                    "absolute inset-0 [&_#qr-shaded-region]:hidden [&>div>div]:border-none transition-[filter] duration-200 [&_video]:object-cover",
+                    highContrast && "[&_video]:[filter:contrast(1.35)_brightness(1.1)_grayscale(1)]"
                   )}
                 />
 
