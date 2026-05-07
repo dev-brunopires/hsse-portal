@@ -286,8 +286,21 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
           </script>
         </body>
       </html>
-    `);
-    printWindow.document.close();
+    `;
+
+    const safeName = (category?.name || 'categoria').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+    const blob = new Blob([html], { type: 'text/html' });
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = `etiquetas-${safeName}.html`;
+    // Open in new tab with friendly filename via Blob URL
+    const printWindow = window.open(blobUrl, '_blank');
+    if (!printWindow) {
+      URL.revokeObjectURL(blobUrl);
+      return;
+    }
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
   };
 
   const content = (
