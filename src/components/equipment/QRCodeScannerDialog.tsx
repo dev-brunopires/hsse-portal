@@ -803,7 +803,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
                             }
                           } catch {}
                         }}
-                        aria-label={t('qrScanner.flashlight')}
+                        aria-label={torchOn ? t('qrScanner.flashOff') : t('qrScanner.flashOn')}
                       >
                         {torchOn ? <FlashlightOff className="h-5 w-5" /> : <Flashlight className="h-5 w-5" />}
                       </Button>
