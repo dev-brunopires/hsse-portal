@@ -124,6 +124,9 @@ export interface PendingInspection {
   signature_data: string | null;
   inspector_id: string;
   ship_id: string | null;
+  inspection_date?: string | null;
+  next_inspection_date?: string | null;
+  actions_taken?: string | null;
   timestamp: number;
   photos?: string[];
 }
