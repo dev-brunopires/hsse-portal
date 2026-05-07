@@ -1074,8 +1074,8 @@ export function useOfflineSync() {
   // Cache refresh only happens once per session via checkAndRefreshCache (throttled to 5min + session flag)
   useEffect(() => {
     if (isOnline) {
-      syncPendingInspections();
-      syncPendingMaintenance();
+      syncPendingInspections({ silent: true });
+      syncPendingMaintenance({ silent: true });
       // Only check cache on first mount if not yet checked this session
       const sessionChecked = sessionStorage.getItem(SESSION_CACHE_KEY);
       if (!sessionChecked) {
