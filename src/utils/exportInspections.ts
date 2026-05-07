@@ -2,7 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
-import { getLocalToday } from '@/utils/dateFormat';
+import { getLocalToday, parseLocalDate } from '@/utils/dateFormat';
 import { ptBR, enUS } from 'date-fns/locale';
 import type { InspectionWithDetails, InspectionPhoto } from '@/hooks/useInspections';
 import { supabase } from '@/integrations/supabase/client';
