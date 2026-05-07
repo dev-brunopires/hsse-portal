@@ -184,7 +184,7 @@ export async function exportInspectionsToPDF(
     const fullEquip = allEquipment?.find(e => e.id === item.equipment_id) as any;
     
     return [
-      format(new Date(item.inspection_date), 'dd/MM/yyyy', { locale: dateLocale }),
+      format(parseLocalDate(item.inspection_date) || new Date(item.inspection_date), 'dd/MM/yyyy', { locale: dateLocale }),
       item.equipment?.name || '—',
       item.equipment?.internal_code || '—',
       (item.equipment as any)?.serial_number || fullEquip?.serial_number || '—',
