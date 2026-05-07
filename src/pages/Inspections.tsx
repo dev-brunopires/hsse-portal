@@ -441,10 +441,7 @@ export default function Inspections() {
 
       {/* View Mode Tabs */}
       <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'list' | 'calendar' | 'timeline' | 'category')}>
-        <TabsList className={cn(
-          "w-full grid md:w-auto md:inline-flex",
-          viewMode === 'category' ? "grid-cols-2" : "grid-cols-4"
-        )}>
+        <TabsList className="w-full grid grid-cols-4 md:w-auto md:inline-flex">
           <TabsTrigger value="list" className="gap-1.5 px-2 md:px-4">
             <List className="h-4 w-4" />
             <span>{t('inspectionsPage.list')}</span>
@@ -454,20 +451,16 @@ export default function Inspections() {
             <span className="hidden sm:inline">{t('inspectionsPage.byCategory')}</span>
             <span className="sm:hidden">Cat.</span>
           </TabsTrigger>
-          {viewMode !== 'category' && (
-            <>
-              <TabsTrigger value="timeline" className="gap-1.5 px-2 md:px-4">
-                <GitCommitHorizontal className="h-4 w-4" />
-                <span className="hidden sm:inline">{t('inspectionsPage.timeline')}</span>
-                <span className="sm:hidden">Timeline</span>
-              </TabsTrigger>
-              <TabsTrigger value="calendar" className="gap-1.5 px-2 md:px-4">
-                <CalendarDays className="h-4 w-4" />
-                <span className="hidden sm:inline">{t('inspectionsPage.calendar')}</span>
-                <span className="sm:hidden">Cal.</span>
-              </TabsTrigger>
-            </>
-          )}
+          <TabsTrigger value="timeline" className="gap-1.5 px-2 md:px-4">
+            <GitCommitHorizontal className="h-4 w-4" />
+            <span className="hidden sm:inline">{t('inspectionsPage.timeline')}</span>
+            <span className="sm:hidden">Timeline</span>
+          </TabsTrigger>
+          <TabsTrigger value="calendar" className="gap-1.5 px-2 md:px-4">
+            <CalendarDays className="h-4 w-4" />
+            <span className="hidden sm:inline">{t('inspectionsPage.calendar')}</span>
+            <span className="sm:hidden">Cal.</span>
+          </TabsTrigger>
         </TabsList>
 
         {/* List View */}
