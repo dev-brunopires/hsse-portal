@@ -142,6 +142,10 @@ export function exportEquipmentByCategoryExcel(
         [t('reports.lastInspection')]: formatDate(insp?.lastInspectionDate || eq.last_inspection),
         [t('reports.inspector')]: insp?.lastInspectorName || '—',
         [t('reports.inspStatus')]: insp ? getInspectionStatusLabel(insp.lastInspectionStatus) : '—',
+        [t('equipmentForm.lastHydrostaticTest', 'Último teste hidrostático')]: formatDate(eq.last_hydrostatic_test ?? null),
+        [t('equipmentForm.nextHydrostaticTest', 'Próximo teste hidrostático')]: formatDate(eq.next_hydrostatic_test ?? null),
+        [t('equipmentForm.lastCalibration', 'Última calibração')]: formatDate(eq.last_calibration ?? null),
+        [t('equipmentForm.nextCalibration', 'Próxima calibração')]: formatDate(eq.next_calibration ?? null),
         [t('equipmentByCategoryReport.shipName')]: eq.ships?.name || '—',
       });
     }
