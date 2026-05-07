@@ -82,38 +82,57 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
   const qrValue = equipment.shortCode || inspectionUrl;
 
   const handleDownload = () => {
-    // Create a styled canvas with logo and border
+    // Create a styled canvas matching the printed label layout (horizontal)
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const width = 800;
-    const height = 960;
-    const padding = 40;
-    
+    // 4:3 horizontal label (matches "medium" 120x90mm proportion)
+    const width = 1200;
+    const height = 900;
+    const headerH = 140;
+    const footerH = 90;
+    const padding = 24;
+
     canvas.width = width;
     canvas.height = height;
 
-    // White background with rounded corners simulation
+    // White background
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, width, height);
 
     // Dashed border for cutting
     ctx.strokeStyle = BRAND_COLOR;
-    ctx.lineWidth = 3;
-    ctx.setLineDash([8, 4]);
-    ctx.strokeRect(padding/2, padding/2, width - padding, height - padding);
+    ctx.lineWidth = 4;
+    ctx.setLineDash([12, 6]);
+    ctx.strokeRect(padding / 2, padding / 2, width - padding, height - padding);
+    ctx.setLineDash([]);
 
-    // Logo header bar
+    // Header bar
     ctx.fillStyle = BRAND_COLOR;
-    ctx.fillRect(padding, padding, width - padding * 2, 100);
+    ctx.fillRect(padding, padding, width - padding * 2, headerH);
 
-    // Load and draw logo (organization logo or fallback to text)
+    // Footer bar
+    ctx.fillStyle = BRAND_COLOR;
+    ctx.fillRect(padding, height - padding - footerH, width - padding * 2, footerH);
+
     const drawLogoAndContent = () => {
       if (logoBase64) {
         const logoImg = new Image();
         logoImg.onload = () => {
-          ctx.drawImage(logoImg, width / 2 - 100, padding + 16, 200, 68);
+          // Preserve aspect ratio (object-fit: contain)
+          const maxLogoH = headerH - 32;
+          const maxLogoW = width - padding * 2 - 80;
+          const ratio = logoImg.width / logoImg.height;
+          let logoH = maxLogoH;
+          let logoW = logoH * ratio;
+          if (logoW > maxLogoW) {
+            logoW = maxLogoW;
+            logoH = logoW / ratio;
+          }
+          const logoX = (width - logoW) / 2;
+          const logoY = padding + (headerH - logoH) / 2;
+          ctx.drawImage(logoImg, logoX, logoY, logoW, logoH);
           drawContent();
         };
         logoImg.onerror = () => {
@@ -129,71 +148,95 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
 
     const drawFallbackLogo = () => {
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 32px Arial';
+      ctx.font = 'bold 48px Arial';
       ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
       const displayName = organizationName.length > 20 ? organizationName.substring(0, 17) + '...' : organizationName;
-      ctx.fillText(displayName, width / 2, padding + 64);
+      ctx.fillText(displayName, width / 2, padding + headerH / 2);
     };
 
     drawLogoAndContent();
 
     const drawContent = () => {
-      // Internal code
-      ctx.fillStyle = '#666666';
-      ctx.font = '28px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText(equipment.internalCode, width / 2, padding + 160);
-
-      // QR Code
       const qrSvg = qrRef.current?.querySelector('svg');
-      if (qrSvg) {
-        const qrData = new XMLSerializer().serializeToString(qrSvg);
-        const qrImg = new Image();
-        qrImg.onload = () => {
-          const qrSize = 460;
-          const qrX = (width - qrSize) / 2;
-          const qrY = padding + 190;
+      if (!qrSvg) return;
 
-          // White background for QR
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(qrX - 10, qrY - 10, qrSize + 20, qrSize + 20);
+      const qrData = new XMLSerializer().serializeToString(qrSvg);
+      const qrImg = new Image();
+      qrImg.onload = () => {
+        const contentTop = padding + headerH + 24;
+        const contentBottom = height - padding - footerH - 24;
+        const contentH = contentBottom - contentTop;
+        const qrSize = contentH; // square
+        const qrX = padding + 40;
+        const qrY = contentTop;
 
-          ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+        // QR background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(qrX, qrY, qrSize, qrSize);
+        ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
 
-          // Equipment name
-          ctx.fillStyle = '#333333';
-          ctx.font = '28px Arial';
-          const name = equipment.name.length > 40 ? equipment.name.substring(0, 37) + '...' : equipment.name;
-          ctx.fillText(name, width / 2, qrY + qrSize + 50);
+        // Info column (right of QR)
+        const infoX = qrX + qrSize + 40;
+        const infoW = width - padding - 40 - infoX;
+        let cursorY = qrY + 20;
 
-          // Location
-          if (equipment.location) {
-            ctx.fillStyle = '#666666';
-            ctx.font = '32px Arial';
-            ctx.fillText(`📍 ${equipment.location}`, width / 2, qrY + qrSize + 85);
-          }
-
-          // Footer instruction
+        // Short code box
+        if (equipment.shortCode) {
+          const boxH = 90;
           ctx.fillStyle = BRAND_COLOR;
-          ctx.fillRect(padding, height - padding - 80, width - padding * 2, 80);
+          ctx.fillRect(infoX, cursorY, infoW, boxH);
           ctx.fillStyle = '#ffffff';
-          ctx.font = 'bold 24px Arial';
-          ctx.fillText(`📱 ${t('qrCode.scanToInspect')}`, width / 2, height - padding - 30);
+          ctx.font = 'bold 56px "Courier New", monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(equipment.shortCode, infoX + infoW / 2, cursorY + boxH / 2);
+          cursorY += boxH + 24;
+        }
 
-          // Download with organization name in filename
-          const orgSlug = organizationName.toLowerCase().replace(/\s+/g, '_');
-          const link = document.createElement('a');
-          link.download = `qrcode_${orgSlug}_${equipment.shortCode || equipment.internalCode}.png`;
-          link.href = canvas.toDataURL('image/png', 1.0);
-          link.click();
+        // Internal code
+        ctx.fillStyle = '#222222';
+        ctx.font = 'bold 40px Arial';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText(equipment.internalCode, infoX, cursorY);
+        cursorY += 56;
 
-          toast({
-            title: t('qrCode.downloadStarted'),
-            description: t('qrCode.labelDownloaded', { code: equipment.shortCode || equipment.internalCode }),
-          });
-        };
-        qrImg.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(qrData)));
-      }
+        // Equipment name (truncate)
+        ctx.fillStyle = '#333333';
+        ctx.font = '30px Arial';
+        const name = equipment.name.length > 32 ? equipment.name.substring(0, 29) + '...' : equipment.name;
+        ctx.fillText(name, infoX, cursorY);
+        cursorY += 44;
+
+        // Location
+        if (equipment.location) {
+          ctx.fillStyle = '#666666';
+          ctx.font = '26px Arial';
+          const loc = equipment.location.length > 36 ? equipment.location.substring(0, 33) + '...' : equipment.location;
+          ctx.fillText(`📍 ${loc}`, infoX, cursorY);
+        }
+
+        // Footer text
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 32px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`📱 ${t('qrCode.scanToInspect').toUpperCase()}`, width / 2, height - padding - footerH / 2);
+
+        // Download
+        const orgSlug = organizationName.toLowerCase().replace(/\s+/g, '_');
+        const link = document.createElement('a');
+        link.download = `qrcode_${orgSlug}_${equipment.shortCode || equipment.internalCode}.png`;
+        link.href = canvas.toDataURL('image/png', 1.0);
+        link.click();
+
+        toast({
+          title: t('qrCode.downloadStarted'),
+          description: t('qrCode.labelDownloaded', { code: equipment.shortCode || equipment.internalCode }),
+        });
+      };
+      qrImg.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(qrData)));
     };
   };
 
@@ -483,16 +526,16 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
 
   const qrContent = (
     <>
-      {/* Preview with organization branding */}
+      {/* Preview matching the printed label layout (4:3 horizontal) */}
       <div className="flex flex-col items-center">
-        <div className="border-2 border-dashed border-primary rounded-lg overflow-hidden w-full max-w-xs">
-          {/* Header - Dynamic logo */}
-          <div className="bg-primary py-2 px-4 flex justify-center items-center min-h-[40px]">
+        <div className="border-2 border-dashed border-primary rounded-lg overflow-hidden w-full max-w-md bg-white">
+          {/* Header - Dynamic logo with preserved aspect ratio */}
+          <div className="bg-primary py-2 px-4 flex justify-center items-center min-h-[48px]">
             {logoWhiteUrl ? (
-              <img 
-                src={logoWhiteUrl} 
-                alt={organizationName} 
-                className="h-6 w-auto max-w-[150px] object-contain"
+              <img
+                src={logoWhiteUrl}
+                alt={organizationName}
+                className="h-8 w-auto max-w-[180px] object-contain"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
                   if (e.currentTarget.nextElementSibling) {
@@ -506,30 +549,30 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
             </span>
           </div>
 
-          {/* Content */}
-          <div className="bg-white p-4 flex flex-col items-center">
-            <p className="font-mono text-xs text-muted-foreground">{equipment.internalCode}</p>
-
-            <div ref={qrRef} className="bg-white p-4 sm:p-5 rounded-lg border mt-3">
+          {/* Content - horizontal layout (QR + info) */}
+          <div className="bg-white p-3 flex items-center gap-3">
+            <div ref={qrRef} className="bg-white p-2 rounded border flex-shrink-0">
               <QRCodeSVG
                 value={qrValue}
-                size={isMobile ? 260 : 360}
+                size={isMobile ? 110 : 140}
                 level="H"
                 includeMargin
                 marginSize={4}
               />
             </div>
 
-            {equipment.shortCode && (
-              <div className="mt-3 bg-primary text-primary-foreground px-4 py-2 rounded-md font-mono font-black text-xl tracking-[0.2em] shadow-sm">
-                {equipment.shortCode}
-              </div>
-            )}
-
-            <p className="text-sm text-foreground text-center mt-2 font-medium">{equipment.name}</p>
-            {equipment.location && (
-              <p className="text-xs text-muted-foreground">📍 {equipment.location}</p>
-            )}
+            <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+              {equipment.shortCode && (
+                <div className="bg-primary text-primary-foreground px-2 py-1.5 rounded font-mono font-black text-base tracking-[0.15em] text-center leading-none">
+                  {equipment.shortCode}
+                </div>
+              )}
+              <p className="font-bold text-sm text-foreground truncate">{equipment.internalCode}</p>
+              <p className="text-xs text-foreground line-clamp-2 leading-tight">{equipment.name}</p>
+              {equipment.location && (
+                <p className="text-xs text-muted-foreground break-words leading-tight">📍 {equipment.location}</p>
+              )}
+            </div>
           </div>
 
           {/* Footer */}
