@@ -135,11 +135,12 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
   }, []);
 
   const handleScanSuccess = useCallback((decodedText: string) => {
+    const decodedValue = decodedText.trim();
     const now = Date.now();
     
     // Debounce: ignore duplicate scans within 1.5 seconds
     if (
-      lastScannedRef.current === decodedText && 
+      lastScannedRef.current === decodedValue && 
       now - lastScanTimeRef.current < 1500
     ) {
       return;
@@ -150,7 +151,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       return;
     }
     
-    lastScannedRef.current = decodedText;
+    lastScannedRef.current = decodedValue;
     lastScanTimeRef.current = now;
     
     setScannerState('success');
@@ -163,7 +164,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
 
       // Try to parse as URL with equipment ID
       try {
-        const url = new URL(decodedText);
+          const url = new URL(decodedValue);
         const scanParam = url.searchParams.get('scan');
         if (scanParam) {
           equipmentId = scanParam;
@@ -175,7 +176,7 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       // Try to parse as JSON
       if (!equipmentId) {
         try {
-          const data = JSON.parse(decodedText);
+          const data = JSON.parse(decodedValue);
           if (data.id) {
             equipmentId = data.id;
           }
@@ -185,8 +186,13 @@ export function QRCodeScannerDialog({ open, onOpenChange, onScan }: QRCodeScanne
       }
 
       // Try as UUID directly
-      if (!equipmentId && decodedText.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-        equipmentId = decodedText;
+      if (!equipmentId && decodedValue.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+        equipmentId = decodedValue;
+      }
+
+      // Try as compact 6-digit equipment short code
+      if (!equipmentId && decodedValue.match(/^\d{6}$/)) {
+        equipmentId = decodedValue;
       }
 
       if (equipmentId) {
