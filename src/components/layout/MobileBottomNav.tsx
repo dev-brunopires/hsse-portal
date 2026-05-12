@@ -35,6 +35,7 @@ export function MobileBottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const { pendingCount, isOnline } = useOfflineSync();
 
   const handleNavigation = (path: string) => {
@@ -42,17 +43,21 @@ export function MobileBottomNav() {
     navigate(path);
   };
 
-  const handleScan = (equipmentId: string) => {
-    setScannerOpen(false);
+  const handleResolved = (equipmentId: string) => {
     hapticSuccess();
     // Append timestamp so re-scanning the same equipment still triggers
     // a URL change and re-fires the scan effect on /inspections.
     navigate(`/inspections?scan=${equipmentId}&t=${Date.now()}`);
   };
 
-  const handleOpenScanner = () => {
+  const handleScan = (equipmentId: string) => {
+    setScannerOpen(false);
+    handleResolved(equipmentId);
+  };
+
+  const handleOpenDrawer = () => {
     hapticButton();
-    setScannerOpen(true);
+    setDrawerOpen(true);
   };
 
   const isActive = (path: string) => location.pathname === path;
