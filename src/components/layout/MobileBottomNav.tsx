@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { FileText, ClipboardList, Package, QrCode, Bell, LayoutDashboard, Wrench } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { QRCodeScannerDialog } from '@/components/equipment/QRCodeScannerDialog';
+import { MobileScanDrawer } from '@/components/equipment/MobileScanDrawer';
 import { hapticButton, hapticSuccess } from '@/utils/hapticFeedback';
 import { Badge } from '@/components/ui/badge';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
