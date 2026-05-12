@@ -123,7 +123,7 @@ export function MobileScanDrawer({ open, onOpenChange, onResolved, onOpenScanner
 
   return (
     <Drawer open={open} onOpenChange={handleOpenChange}>
-      <DrawerContent className="z-[70] pwa-safe-bottom">
+      <DrawerContent className="z-[70] pb-[max(env(safe-area-inset-bottom,0px),16px)]">
         <div className="mx-auto w-full max-w-md">
           <DrawerHeader className="text-left">
             <DrawerTitle>
