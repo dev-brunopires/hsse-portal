@@ -63,19 +63,17 @@ export function MobileScanDrawer({ open, onOpenChange, onResolved, onOpenScanner
 
   const resolveByCode = async (rawCode: string): Promise<string | null> => {
     const trimmed = rawCode.trim();
-    if (!trimmed) return null;
+    if (!CODE_REGEX.test(trimmed)) return null;
 
     // Online lookup
     if (navigator.onLine) {
       try {
-        const isShortCode = /^\d{6}$/.test(trimmed);
-        let query = supabase.from('equipment').select('id').limit(1);
-        if (isShortCode) {
-          query = query.eq('short_code', trimmed);
-        } else {
-          query = query.eq('internal_code', trimmed);
-        }
-        const { data, error } = await query.maybeSingle();
+        const { data, error } = await supabase
+          .from('equipment')
+          .select('id')
+          .eq('short_code', trimmed)
+          .limit(1)
+          .maybeSingle();
         if (error) throw error;
         if (data?.id) return data.id;
       } catch {
@@ -86,12 +84,7 @@ export function MobileScanDrawer({ open, onOpenChange, onResolved, onOpenScanner
     // Offline / fallback lookup
     try {
       const cached = await getAllFromStore<CachedEquipment>('equipment');
-      const found = cached.find(
-        (e) =>
-          e.short_code === trimmed ||
-          (e as any).internal_code === trimmed ||
-          e.id === trimmed
-      );
+      const found = cached.find((e) => e.short_code === trimmed);
       return found?.id || null;
     } catch {
       return null;
