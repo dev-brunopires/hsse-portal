@@ -134,11 +134,11 @@ export function MobileBottomNav() {
             </div>
           </div>
 
-          {/* Floating Action Button for QR Scanner - Centered */}
+          {/* Floating Action Button - opens scan options drawer */}
           <button
-            onClick={handleOpenScanner}
+            onClick={handleOpenDrawer}
             className="absolute left-1/2 -translate-x-1/2 -top-6 w-14 h-14 bg-primary rounded-full flex items-center justify-center shadow-lg shadow-primary/30 hover:bg-primary/90 transition-all hover:scale-105 active:scale-95 border-4 border-background touch-manipulation"
-            aria-label={t('equipment.scanQRCode')}
+            aria-label={t('equipment.findEquipment')}
           >
             <QrCode className="h-6 w-6 text-primary-foreground" />
           </button>
@@ -147,6 +147,13 @@ export function MobileBottomNav() {
         {/* Safe area padding for devices with home indicator - fixed height for PWA */}
         <div className="bg-card pwa-safe-bottom" />
       </nav>
+
+      <MobileScanDrawer
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        onResolved={handleResolved}
+        onOpenScanner={() => setScannerOpen(true)}
+      />
 
       <QRCodeScannerDialog
         open={scannerOpen}
