@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label';
 import { hapticButton, hapticError } from '@/utils/hapticFeedback';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { offlineStorage } from '@/utils/offlineStorage';
+import { getAllFromStore, type CachedEquipment } from '@/utils/offlineStorage';
 
 interface MobileScanDrawerProps {
   open: boolean;
