@@ -389,12 +389,12 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
           </DrawerContent>
         </Drawer>
 
-        {/* Mobile Quick Actions - Theme Toggle */}
+        {/* Theme Toggle - hidden on mobile (available in Profile) */}
         <Button
           variant="ghost"
           size="icon"
           onClick={toggleTheme}
-          className="lg:hidden text-muted-foreground hover:text-foreground"
+          className="hidden text-muted-foreground hover:text-foreground"
           title={resolvedTheme === 'dark' ? t('header.lightMode') : t('header.darkMode')}
         >
           {resolvedTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
