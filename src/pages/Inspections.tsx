@@ -304,7 +304,9 @@ export default function Inspections() {
         onOpenChange={setShowQRScanner}
         onScan={(equipmentId) => {
           console.log('[Inspections] QR scanned from internal scanner:', equipmentId);
-          setSearchParams({ scan: equipmentId });
+          // Include timestamp so re-scanning the same equipment still updates
+          // the URL and re-triggers the scan-handling effect.
+          setSearchParams({ scan: equipmentId, t: String(Date.now()) });
           setPreselectedEquipmentId(equipmentId);
           setShowNewInspectionForm(true);
           setShowQRScanner(false);
