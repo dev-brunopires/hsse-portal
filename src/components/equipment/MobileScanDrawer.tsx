@@ -81,11 +81,11 @@ export function MobileScanDrawer({ open, onOpenChange, onResolved, onOpenScanner
 
     // Offline / fallback lookup
     try {
-      const cached = await offlineStorage.getAllEquipment();
+      const cached = await getAllFromStore<CachedEquipment>('equipment');
       const found = cached.find(
-        (e: any) =>
+        (e) =>
           e.short_code === trimmed ||
-          e.internal_code === trimmed ||
+          (e as any).internal_code === trimmed ||
           e.id === trimmed
       );
       return found?.id || null;
