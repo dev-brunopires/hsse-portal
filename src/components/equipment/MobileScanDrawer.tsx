@@ -30,11 +30,15 @@ export function MobileScanDrawer({ open, onOpenChange, onResolved, onOpenScanner
   const { toast } = useToast();
   const [mode, setMode] = useState<'menu' | 'code'>('menu');
   const [code, setCode] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const CODE_REGEX = /^\d{6}$/;
 
   const reset = () => {
     setMode('menu');
     setCode('');
+    setError(null);
     setLoading(false);
   };
 
@@ -59,19 +63,17 @@ export function MobileScanDrawer({ open, onOpenChange, onResolved, onOpenScanner
 
   const resolveByCode = async (rawCode: string): Promise<string | null> => {
     const trimmed = rawCode.trim();
-    if (!trimmed) return null;
+    if (!CODE_REGEX.test(trimmed)) return null;
 
     // Online lookup
     if (navigator.onLine) {
       try {
-        const isShortCode = /^\d{6}$/.test(trimmed);
-        let query = supabase.from('equipment').select('id').limit(1);
-        if (isShortCode) {
-          query = query.eq('short_code', trimmed);
-        } else {
-          query = query.eq('internal_code', trimmed);
-        }
-        const { data, error } = await query.maybeSingle();
+        const { data, error } = await supabase
+          .from('equipment')
+          .select('id')
+          .eq('short_code', trimmed)
+          .limit(1)
+          .maybeSingle();
         if (error) throw error;
         if (data?.id) return data.id;
       } catch {
@@ -82,12 +84,7 @@ export function MobileScanDrawer({ open, onOpenChange, onResolved, onOpenScanner
     // Offline / fallback lookup
     try {
       const cached = await getAllFromStore<CachedEquipment>('equipment');
-      const found = cached.find(
-        (e) =>
-          e.short_code === trimmed ||
-          (e as any).internal_code === trimmed ||
-          e.id === trimmed
-      );
+      const found = cached.find((e) => e.short_code === trimmed);
       return found?.id || null;
     } catch {
       return null;
@@ -96,9 +93,16 @@ export function MobileScanDrawer({ open, onOpenChange, onResolved, onOpenScanner
 
   const handleSubmitCode = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!code.trim() || loading) return;
+    if (loading) return;
+    const trimmed = code.trim();
+    if (!CODE_REGEX.test(trimmed)) {
+      setError(t('equipment.codeInvalidFormat'));
+      hapticError();
+      return;
+    }
+    setError(null);
     setLoading(true);
-    const id = await resolveByCode(code);
+    const id = await resolveByCode(trimmed);
     setLoading(false);
     if (id) {
       hapticButton();
@@ -163,16 +167,29 @@ export function MobileScanDrawer({ open, onOpenChange, onResolved, onOpenScanner
                 <Input
                   id="equipment-code"
                   autoFocus
-                  inputMode="text"
-                  autoCapitalize="characters"
+                  inputMode="numeric"
+                  pattern="\d{6}"
+                  maxLength={6}
                   autoComplete="off"
                   value={code}
-                  onChange={(e) => setCode(e.target.value)}
+                  onChange={(e) => {
+                    // Allow only digits, cap at 6
+                    const next = e.target.value.replace(/\D/g, '').slice(0, 6);
+                    setCode(next);
+                    if (error) setError(null);
+                  }}
                   placeholder={t('equipment.codePlaceholder')}
-                  className="text-base"
+                  aria-invalid={!!error}
+                  aria-describedby="equipment-code-error"
+                  className="text-base tracking-widest text-center font-mono"
                 />
+                {error && (
+                  <p id="equipment-code-error" className="text-sm text-destructive">
+                    {error}
+                  </p>
+                )}
               </div>
-              <Button type="submit" className="w-full" disabled={!code.trim() || loading}>
+              <Button type="submit" className="w-full" disabled={code.length !== 6 || loading}>
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {t('common.search')}
               </Button>
