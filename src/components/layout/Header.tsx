@@ -389,12 +389,12 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
           </DrawerContent>
         </Drawer>
 
-        {/* Mobile Quick Actions - Theme Toggle */}
+        {/* Theme Toggle - hidden on mobile (available in Profile) */}
         <Button
           variant="ghost"
           size="icon"
           onClick={toggleTheme}
-          className="lg:hidden text-muted-foreground hover:text-foreground"
+          className="hidden text-muted-foreground hover:text-foreground"
           title={resolvedTheme === 'dark' ? t('header.lightMode') : t('header.darkMode')}
         >
           {resolvedTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
@@ -407,7 +407,7 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="md:hidden text-muted-foreground hover:text-foreground relative"
+                className="hidden text-muted-foreground hover:text-foreground relative"
                 title={t('header.filterByUnit')}
               >
                 <Ship className="h-5 w-5" />
@@ -498,7 +498,7 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
         <div className="hidden lg:block">
           <GlobalSearchTrigger />
         </div>
-        <GlobalSearchTrigger variant="compact" className="lg:hidden" />
+        <GlobalSearchTrigger variant="compact" className="hidden md:inline-flex lg:hidden" />
 
         {/* Ship Indicator - hidden on mobile */}
         {userShips.length > 0 && (
