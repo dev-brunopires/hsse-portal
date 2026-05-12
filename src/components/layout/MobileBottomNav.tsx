@@ -44,7 +44,9 @@ export function MobileBottomNav() {
   const handleScan = (equipmentId: string) => {
     setScannerOpen(false);
     hapticSuccess();
-    navigate(`/inspections?scan=${equipmentId}`);
+    // Append timestamp so re-scanning the same equipment still triggers
+    // a URL change and re-fires the scan effect on /inspections.
+    navigate(`/inspections?scan=${equipmentId}&t=${Date.now()}`);
   };
 
   const handleOpenScanner = () => {
