@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { FileText, ClipboardList, Package, QrCode, Bell, LayoutDashboard, Wrench } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { QRCodeScannerDialog } from '@/components/equipment/QRCodeScannerDialog';
+import { MobileScanDrawer } from '@/components/equipment/MobileScanDrawer';
 import { hapticButton, hapticSuccess } from '@/utils/hapticFeedback';
 import { Badge } from '@/components/ui/badge';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
@@ -34,6 +35,7 @@ export function MobileBottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const { pendingCount, isOnline } = useOfflineSync();
 
   const handleNavigation = (path: string) => {
@@ -41,17 +43,21 @@ export function MobileBottomNav() {
     navigate(path);
   };
 
-  const handleScan = (equipmentId: string) => {
-    setScannerOpen(false);
+  const handleResolved = (equipmentId: string) => {
     hapticSuccess();
     // Append timestamp so re-scanning the same equipment still triggers
     // a URL change and re-fires the scan effect on /inspections.
     navigate(`/inspections?scan=${equipmentId}&t=${Date.now()}`);
   };
 
-  const handleOpenScanner = () => {
+  const handleScan = (equipmentId: string) => {
+    setScannerOpen(false);
+    handleResolved(equipmentId);
+  };
+
+  const handleOpenDrawer = () => {
     hapticButton();
-    setScannerOpen(true);
+    setDrawerOpen(true);
   };
 
   const isActive = (path: string) => location.pathname === path;
@@ -128,11 +134,11 @@ export function MobileBottomNav() {
             </div>
           </div>
 
-          {/* Floating Action Button for QR Scanner - Centered */}
+          {/* Floating Action Button - opens scan options drawer */}
           <button
-            onClick={handleOpenScanner}
+            onClick={handleOpenDrawer}
             className="absolute left-1/2 -translate-x-1/2 -top-6 w-14 h-14 bg-primary rounded-full flex items-center justify-center shadow-lg shadow-primary/30 hover:bg-primary/90 transition-all hover:scale-105 active:scale-95 border-4 border-background touch-manipulation"
-            aria-label={t('equipment.scanQRCode')}
+            aria-label={t('equipment.findEquipment')}
           >
             <QrCode className="h-6 w-6 text-primary-foreground" />
           </button>
@@ -141,6 +147,13 @@ export function MobileBottomNav() {
         {/* Safe area padding for devices with home indicator - fixed height for PWA */}
         <div className="bg-card pwa-safe-bottom" />
       </nav>
+
+      <MobileScanDrawer
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        onResolved={handleResolved}
+        onOpenScanner={() => setScannerOpen(true)}
+      />
 
       <QRCodeScannerDialog
         open={scannerOpen}
