@@ -30,11 +30,15 @@ export function MobileScanDrawer({ open, onOpenChange, onResolved, onOpenScanner
   const { toast } = useToast();
   const [mode, setMode] = useState<'menu' | 'code'>('menu');
   const [code, setCode] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const CODE_REGEX = /^\d{6}$/;
 
   const reset = () => {
     setMode('menu');
     setCode('');
+    setError(null);
     setLoading(false);
   };
 
