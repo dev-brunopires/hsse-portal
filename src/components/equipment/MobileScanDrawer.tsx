@@ -93,9 +93,16 @@ export function MobileScanDrawer({ open, onOpenChange, onResolved, onOpenScanner
 
   const handleSubmitCode = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!code.trim() || loading) return;
+    if (loading) return;
+    const trimmed = code.trim();
+    if (!CODE_REGEX.test(trimmed)) {
+      setError(t('equipment.codeInvalidFormat'));
+      hapticError();
+      return;
+    }
+    setError(null);
     setLoading(true);
-    const id = await resolveByCode(code);
+    const id = await resolveByCode(trimmed);
     setLoading(false);
     if (id) {
       hapticButton();
