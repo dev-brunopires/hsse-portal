@@ -167,16 +167,29 @@ export function MobileScanDrawer({ open, onOpenChange, onResolved, onOpenScanner
                 <Input
                   id="equipment-code"
                   autoFocus
-                  inputMode="text"
-                  autoCapitalize="characters"
+                  inputMode="numeric"
+                  pattern="\d{6}"
+                  maxLength={6}
                   autoComplete="off"
                   value={code}
-                  onChange={(e) => setCode(e.target.value)}
+                  onChange={(e) => {
+                    // Allow only digits, cap at 6
+                    const next = e.target.value.replace(/\D/g, '').slice(0, 6);
+                    setCode(next);
+                    if (error) setError(null);
+                  }}
                   placeholder={t('equipment.codePlaceholder')}
-                  className="text-base"
+                  aria-invalid={!!error}
+                  aria-describedby="equipment-code-error"
+                  className="text-base tracking-widest text-center font-mono"
                 />
+                {error && (
+                  <p id="equipment-code-error" className="text-sm text-destructive">
+                    {error}
+                  </p>
+                )}
               </div>
-              <Button type="submit" className="w-full" disabled={!code.trim() || loading}>
+              <Button type="submit" className="w-full" disabled={code.length !== 6 || loading}>
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {t('common.search')}
               </Button>
