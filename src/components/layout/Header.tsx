@@ -407,7 +407,7 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="md:hidden text-muted-foreground hover:text-foreground relative"
+                className="hidden text-muted-foreground hover:text-foreground relative"
                 title={t('header.filterByUnit')}
               >
                 <Ship className="h-5 w-5" />
