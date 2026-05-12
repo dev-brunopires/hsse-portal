@@ -498,7 +498,7 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
         <div className="hidden lg:block">
           <GlobalSearchTrigger />
         </div>
-        <GlobalSearchTrigger variant="compact" className="lg:hidden" />
+        <GlobalSearchTrigger variant="compact" className="hidden md:inline-flex lg:hidden" />
 
         {/* Ship Indicator - hidden on mobile */}
         {userShips.length > 0 && (
