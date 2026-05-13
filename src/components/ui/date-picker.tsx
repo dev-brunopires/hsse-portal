@@ -22,10 +22,22 @@ interface DatePickerProps {
   toYear?: number;
 }
 
+/**
+ * Mask a raw digit string into dd/MM/yyyy progressively.
+ */
+function maskDate(input: string): string {
+  const digits = input.replace(/\D/g, '').slice(0, 8);
+  const parts: string[] = [];
+  if (digits.length > 0) parts.push(digits.slice(0, 2));
+  if (digits.length > 2) parts.push(digits.slice(2, 4));
+  if (digits.length > 4) parts.push(digits.slice(4, 8));
+  return parts.join('/');
+}
+
 export function DatePicker({
   value,
   onChange,
-  placeholder = 'Selecione uma data',
+  placeholder = 'dd/mm/aaaa',
   disabled = false,
   className,
   fromYear = 1950,
@@ -40,39 +52,92 @@ export function DatePicker({
     return isValid(parsed) ? parsed : undefined;
   }, [value]);
 
+  // Local text state for typing
+  const [text, setText] = React.useState<string>(
+    dateValue ? format(dateValue, 'dd/MM/yyyy') : ''
+  );
+
+  // Sync external value -> text when not focused
+  const inputRef = React.useRef<HTMLInputElement>(null);
+  React.useEffect(() => {
+    if (document.activeElement !== inputRef.current) {
+      setText(dateValue ? format(dateValue, 'dd/MM/yyyy') : '');
+    }
+  }, [dateValue]);
+
   const handleSelect = (date: Date | undefined) => {
     if (date && onChange) {
       onChange(format(date, 'yyyy-MM-dd'));
+      setText(format(date, 'dd/MM/yyyy'));
     }
     setOpen(false);
   };
 
+  const commitText = (raw: string) => {
+    if (!raw) {
+      onChange?.('');
+      return;
+    }
+    const parsed = parse(raw, 'dd/MM/yyyy', new Date());
+    if (isValid(parsed)) {
+      const y = parsed.getFullYear();
+      if (y >= fromYear && y <= toYear) {
+        onChange?.(format(parsed, 'yyyy-MM-dd'));
+        setText(format(parsed, 'dd/MM/yyyy'));
+        return;
+      }
+    }
+    // Invalid -> revert to last valid value
+    setText(dateValue ? format(dateValue, 'dd/MM/yyyy') : '');
+  };
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          disabled={disabled}
-          className={cn(
-            'w-full justify-start text-left font-normal',
-            !dateValue && 'text-muted-foreground',
-            className
-          )}
-        >
-          <CalendarIcon className="mr-2 h-4 w-4" />
-          {dateValue ? format(dateValue, 'dd/MM/yyyy', { locale: ptBR }) : placeholder}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
-        <Calendar
-          mode="single"
-          selected={dateValue}
-          onSelect={handleSelect}
-          initialFocus
-          locale={ptBR}
-        />
-      </PopoverContent>
-    </Popover>
+    <div className={cn('relative w-full', className)}>
+      <input
+        ref={inputRef}
+        type="text"
+        inputMode="numeric"
+        disabled={disabled}
+        value={text}
+        placeholder={placeholder}
+        onChange={(e) => setText(maskDate(e.target.value))}
+        onBlur={(e) => commitText(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            commitText((e.target as HTMLInputElement).value);
+          }
+        }}
+        className={cn(
+          'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
+          !dateValue && 'text-muted-foreground'
+        )}
+      />
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            disabled={disabled}
+            className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
+            aria-label="Abrir calendário"
+          >
+            <CalendarIcon className="h-4 w-4" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="end">
+          <Calendar
+            mode="single"
+            selected={dateValue}
+            onSelect={handleSelect}
+            initialFocus
+            locale={ptBR}
+            className={cn('p-3 pointer-events-auto')}
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
   );
 }
 
@@ -89,7 +154,7 @@ interface DatePickerFieldProps {
 }
 
 export const DatePickerField = React.forwardRef<HTMLButtonElement, DatePickerFieldProps>(
-  ({ value, onChange, onBlur, placeholder, disabled, className, fromYear, toYear }, _ref) => {
+  ({ value, onChange, placeholder, disabled, className, fromYear, toYear }, _ref) => {
     return (
       <DatePicker
         value={value}
