@@ -356,6 +356,7 @@ export function useDeleteInspection() {
         .select('*')
         .eq('equipment_id', inspection.equipment_id)
         .order('inspection_date', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 
