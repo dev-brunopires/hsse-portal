@@ -43,7 +43,8 @@ export function useInspections() {
       let query = supabase
         .from('inspections')
         .select('*')
-        .order('inspection_date', { ascending: false });
+        .order('inspection_date', { ascending: false })
+        .order('created_at', { ascending: false });
       
       // Apply ship filter for admin/admin_master when a specific ship is selected
       if (isFilterEnabled && selectedShipId) {
@@ -84,7 +85,8 @@ export function useInspectionsByEquipment(equipmentId: string | undefined) {
         .from('inspections')
         .select('*')
         .eq('equipment_id', equipmentId)
-        .order('inspection_date', { ascending: false });
+        .order('inspection_date', { ascending: false })
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
       
@@ -117,6 +119,7 @@ export function useLastInspection(equipmentId: string | undefined) {
         .select('*, inspection_checklist_items(id, description, status, notes)')
         .eq('equipment_id', equipmentId)
         .order('inspection_date', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
       
@@ -353,6 +356,7 @@ export function useDeleteInspection() {
         .select('*')
         .eq('equipment_id', inspection.equipment_id)
         .order('inspection_date', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 
