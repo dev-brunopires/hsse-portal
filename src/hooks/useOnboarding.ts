@@ -82,103 +82,95 @@ export function useOnboarding() {
     fetchOnboardingStatus();
   }, [userId]);
 
-  const getSteps = useCallback((): DriveStep[] => [
-    {
-      element: '[data-tour="sidebar"]',
-      popover: {
-        title: t('onboarding.mainMenu'),
-        description: t('onboarding.mainMenuDesc'),
-        side: 'right',
-        align: 'start',
+  const getSteps = useCallback((): DriveStep[] => {
+    const candidates: DriveStep[] = [
+      {
+        element: '[data-tour="sidebar"]',
+        popover: { title: t('onboarding.mainMenu'), description: t('onboarding.mainMenuDesc'), side: 'right', align: 'start' },
       },
-    },
-    {
-      element: '[data-tour="dashboard"]',
-      popover: {
-        title: t('onboarding.dashboard'),
-        description: t('onboarding.dashboardDesc'),
-        side: 'bottom',
-        align: 'center',
+      {
+        element: '[data-tour="dashboard"]',
+        popover: { title: t('onboarding.dashboard'), description: t('onboarding.dashboardDesc'), side: 'right', align: 'start' },
       },
-    },
-    {
-      element: '[data-tour="equipment"]',
-      popover: {
-        title: t('onboarding.equipment'),
-        description: t('onboarding.equipmentDesc'),
-        side: 'right',
-        align: 'start',
+      {
+        element: '[data-tour="equipment"]',
+        popover: { title: t('onboarding.equipment'), description: t('onboarding.equipmentDesc'), side: 'right', align: 'start' },
       },
-    },
-    {
-      element: '[data-tour="inspections"]',
-      popover: {
-        title: t('onboarding.inspections'),
-        description: t('onboarding.inspectionsDesc'),
-        side: 'right',
-        align: 'start',
+      {
+        element: '[data-tour="inspections"]',
+        popover: { title: t('onboarding.inspections'), description: t('onboarding.inspectionsDesc'), side: 'right', align: 'start' },
       },
-    },
-    {
-      element: '[data-tour="alerts"]',
-      popover: {
-        title: t('onboarding.alerts'),
-        description: t('onboarding.alertsDesc'),
-        side: 'right',
-        align: 'start',
+      {
+        element: '[data-tour="maintenance"]',
+        popover: { title: t('onboarding.maintenance'), description: t('onboarding.maintenanceDesc'), side: 'right', align: 'start' },
       },
-    },
-    {
-      element: '[data-tour="reports"]',
-      popover: {
-        title: t('onboarding.reports'),
-        description: t('onboarding.reportsDesc'),
-        side: 'right',
-        align: 'start',
+      {
+        element: '[data-tour="certificates"]',
+        popover: { title: t('onboarding.certificates'), description: t('onboarding.certificatesDesc'), side: 'right', align: 'start' },
       },
-    },
-    {
-      element: '[data-tour="profile"]',
-      popover: {
-        title: t('onboarding.profile'),
-        description: t('onboarding.profileDesc'),
-        side: 'left',
-        align: 'start',
+      {
+        element: '[data-tour="pending-recommendations"]',
+        popover: { title: t('onboarding.pendingRecommendations'), description: t('onboarding.pendingRecommendationsDesc'), side: 'right', align: 'start' },
       },
-    },
-    {
-      popover: {
-        title: t('onboarding.digitalSignature'),
-        description: t('onboarding.digitalSignatureDesc'),
-        side: 'over',
-        align: 'center',
+      {
+        element: '[data-tour="reports"]',
+        popover: { title: t('onboarding.reports'), description: t('onboarding.reportsDesc'), side: 'right', align: 'start' },
       },
-    },
-    {
-      popover: {
-        title: t('onboarding.keyboardShortcuts'),
-        description: `
-          <div class="text-sm space-y-1">
-            <p><kbd class="px-1 bg-muted rounded">Alt+D</kbd> Dashboard</p>
-            <p><kbd class="px-1 bg-muted rounded">Alt+E</kbd> ${t('navigation.equipment')}</p>
-            <p><kbd class="px-1 bg-muted rounded">Alt+I</kbd> ${t('navigation.inspections')}</p>
-            <p><kbd class="px-1 bg-muted rounded">Alt+R</kbd> ${t('navigation.reports')}</p>
-            <p><kbd class="px-1 bg-muted rounded">Alt+A</kbd> ${t('navigation.alerts')}</p>
-          </div>
-        `,
-        side: 'over',
-        align: 'center',
+      {
+        element: '[data-tour="alerts"]',
+        popover: { title: t('onboarding.alerts'), description: t('onboarding.alertsDesc'), side: 'right', align: 'start' },
       },
-    },
-    {
-      popover: {
-        title: t('onboarding.readyToStart'),
-        description: t('onboarding.readyToStartDesc'),
-        side: 'over',
-        align: 'center',
+      {
+        element: '[data-tour="categories"]',
+        popover: { title: t('onboarding.categories'), description: t('onboarding.categoriesDesc'), side: 'right', align: 'start' },
       },
-    },
-  ], [t]);
+      {
+        element: '[data-tour="supervisor"]',
+        popover: { title: t('onboarding.supervisor'), description: t('onboarding.supervisorDesc'), side: 'right', align: 'start' },
+      },
+      {
+        element: '[data-tour="users"]',
+        popover: { title: t('onboarding.users'), description: t('onboarding.usersDesc'), side: 'right', align: 'start' },
+      },
+      {
+        element: '[data-tour="audit-log"]',
+        popover: { title: t('onboarding.auditLog'), description: t('onboarding.auditLogDesc'), side: 'right', align: 'start' },
+      },
+      {
+        element: '[data-tour="health-check"]',
+        popover: { title: t('onboarding.healthCheck'), description: t('onboarding.healthCheckDesc'), side: 'right', align: 'start' },
+      },
+      {
+        element: '[data-tour="profile"]',
+        popover: { title: t('onboarding.profile'), description: t('onboarding.profileDesc'), side: 'bottom', align: 'end' },
+      },
+      {
+        popover: { title: t('onboarding.digitalSignature'), description: t('onboarding.digitalSignatureDesc'), side: 'over', align: 'center' },
+      },
+      {
+        popover: {
+          title: t('onboarding.keyboardShortcuts'),
+          description: `
+            <div class="text-sm space-y-1">
+              <p><kbd class="px-1 bg-muted rounded">Alt+D</kbd> Dashboard</p>
+              <p><kbd class="px-1 bg-muted rounded">Alt+E</kbd> ${t('navigation.equipment')}</p>
+              <p><kbd class="px-1 bg-muted rounded">Alt+I</kbd> ${t('navigation.inspections')}</p>
+              <p><kbd class="px-1 bg-muted rounded">Alt+R</kbd> ${t('navigation.reports')}</p>
+              <p><kbd class="px-1 bg-muted rounded">Alt+A</kbd> ${t('navigation.alerts')}</p>
+            </div>
+          `,
+          side: 'over',
+          align: 'center',
+        },
+      },
+      {
+        popover: { title: t('onboarding.readyToStart'), description: t('onboarding.readyToStartDesc'), side: 'over', align: 'center' },
+      },
+    ];
+
+    // Skip steps whose target element is not in the DOM (role-restricted items).
+    return candidates.filter(step => !step.element || document.querySelector(step.element as string));
+  }, [t]);
 
   const markOnboardingComplete = useCallback(async () => {
     const currentUserId = userIdRef.current;
