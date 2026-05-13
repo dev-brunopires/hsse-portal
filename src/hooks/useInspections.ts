@@ -85,7 +85,8 @@ export function useInspectionsByEquipment(equipmentId: string | undefined) {
         .from('inspections')
         .select('*')
         .eq('equipment_id', equipmentId)
-        .order('inspection_date', { ascending: false });
+        .order('inspection_date', { ascending: false })
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
       
