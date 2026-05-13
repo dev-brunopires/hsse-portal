@@ -43,7 +43,8 @@ export function useInspections() {
       let query = supabase
         .from('inspections')
         .select('*')
-        .order('inspection_date', { ascending: false });
+        .order('inspection_date', { ascending: false })
+        .order('created_at', { ascending: false });
       
       // Apply ship filter for admin/admin_master when a specific ship is selected
       if (isFilterEnabled && selectedShipId) {
