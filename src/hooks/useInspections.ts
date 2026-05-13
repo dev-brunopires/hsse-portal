@@ -119,6 +119,7 @@ export function useLastInspection(equipmentId: string | undefined) {
         .select('*, inspection_checklist_items(id, description, status, notes)')
         .eq('equipment_id', equipmentId)
         .order('inspection_date', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
       
