@@ -824,6 +824,7 @@ export function Header({ onMenuClick, showMenuButton = false }: HeaderProps) {
           <DropdownMenuTrigger asChild>
             <Button 
               variant="ghost" 
+              data-tour="profile"
               className="gap-3 px-2 lg:px-4 h-12 hover:bg-muted/50 rounded-xl transition-all duration-200 group"
             >
               {/* Avatar with status indicator */}

@@ -111,28 +111,42 @@ export function AppSidebar() {
         <div data-tour="maintenance">
           <NavItem to="/maintenance" icon={<Wrench size={20} />} label={t('navigation.maintenance')} collapsed={collapsed} />
         </div>
-        <NavItem to="/certificates" icon={<Award size={20} />} label={t('navigation.certificates')} collapsed={collapsed} />
-        <NavItem to="/pending" icon={<AlertCircle size={20} />} label={t('navigation.pendingRecommendations')} collapsed={collapsed} />
+        <div data-tour="certificates">
+          <NavItem to="/certificates" icon={<Award size={20} />} label={t('navigation.certificates')} collapsed={collapsed} />
+        </div>
+        <div data-tour="pending-recommendations">
+          <NavItem to="/pending" icon={<AlertCircle size={20} />} label={t('navigation.pendingRecommendations')} collapsed={collapsed} />
+        </div>
         <div data-tour="reports">
           <NavItem to="/reports" icon={<FileText size={20} />} label={t('navigation.reports')} collapsed={collapsed} />
         </div>
         <div data-tour="alerts">
           <NavItem to="/alerts" icon={<Bell size={20} />} label={t('navigation.alerts')} collapsed={collapsed} />
         </div>
-        <NavItem to="/categories" icon={<FolderOpen size={20} />} label={t('navigation.categories')} collapsed={collapsed} />
-        <NavItem to="/supervisor" icon={<Users size={20} />} label={t('navigation.supervisor')} collapsed={collapsed} />
+        <div data-tour="categories">
+          <NavItem to="/categories" icon={<FolderOpen size={20} />} label={t('navigation.categories')} collapsed={collapsed} />
+        </div>
+        <div data-tour="supervisor">
+          <NavItem to="/supervisor" icon={<Users size={20} />} label={t('navigation.supervisor')} collapsed={collapsed} />
+        </div>
       </nav>
 
       {/* Bottom Section - Admin only items */}
       {isAdmin && (
         <div className="border-t border-sidebar-border p-3 space-y-1">
-          <NavItem to="/users" icon={<Users size={20} />} label={t('navigation.users')} collapsed={collapsed} />
-          <NavItem to="/audit-log" icon={<History size={20} />} label={t('navigation.auditLog')} collapsed={collapsed} />
+          <div data-tour="users">
+            <NavItem to="/users" icon={<Users size={20} />} label={t('navigation.users')} collapsed={collapsed} />
+          </div>
+          <div data-tour="audit-log">
+            <NavItem to="/audit-log" icon={<History size={20} />} label={t('navigation.auditLog')} collapsed={collapsed} />
+          </div>
         </div>
       )}
       {(isAdminMaster || isPlatformOwner) && (
         <div className={!isAdmin ? "border-t border-sidebar-border p-3 space-y-1" : "px-3 pb-3 space-y-1"}>
-          <NavItem to="/health-check" icon={<Activity size={20} />} label={t('navigation.healthCheck')} collapsed={collapsed} />
+          <div data-tour="health-check">
+            <NavItem to="/health-check" icon={<Activity size={20} />} label={t('navigation.healthCheck')} collapsed={collapsed} />
+          </div>
           {isPlatformOwner && (
             <NavItem to="/platform-admin" icon={<Building2 size={20} />} label={t('navigation.platformAdmin')} collapsed={collapsed} />
           )}
