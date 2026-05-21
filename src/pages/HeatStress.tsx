@@ -56,6 +56,7 @@ interface Measurement {
   nho_status: NhoStatus;
   notes: string | null;
   measured_at: string;
+  created_by: string | null;
   readings?: Array<{ tbn: number; tg: number; tbs: number | null }> | null;
 }
 
