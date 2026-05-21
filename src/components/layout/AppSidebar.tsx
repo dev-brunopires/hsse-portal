@@ -11,12 +11,14 @@ import {
   FolderOpen,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   AlertCircle,
   History,
   Wrench,
   Building2,
   Award,
   Activity,
+  Thermometer,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -56,7 +58,7 @@ const NavItem = forwardRef<HTMLAnchorElement, NavItemProps>(
           )}
         >
           <span className={cn(
-            'flex-shrink-0 transition-transform duration-200 group-hover:scale-110', 
+            'flex-shrink-0 transition-transform duration-200 group-hover:scale-110',
             isActive && 'text-sidebar-primary'
           )}>
             {icon}
@@ -72,12 +74,44 @@ const NavItem = forwardRef<HTMLAnchorElement, NavItemProps>(
 
 NavItem.displayName = 'NavItem';
 
+interface NavGroupProps {
+  label: string;
+  collapsed: boolean;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}
+
+function NavGroup({ label, collapsed, children, defaultOpen = true }: NavGroupProps) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  if (collapsed) {
+    return <div className="space-y-1">{children}</div>;
+  }
+
+  return (
+    <div className="space-y-1">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors"
+      >
+        <span className="truncate">{label}</span>
+        <ChevronDown
+          size={14}
+          className={cn('transition-transform duration-200', !open && '-rotate-90')}
+        />
+      </button>
+      {open && <div className="space-y-1">{children}</div>}
+    </div>
+  );
+}
+
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const { isAdmin, isAdminMaster, isPlatformOwner } = useAuth();
   const { t } = useTranslation();
   const { organization, logoWhiteUrl } = useOrganization();
-  
+
   // Use organization white logo or system default
   const hasOrgLogo = organization && logoWhiteUrl;
   const organizationName = organization?.name || 'SafeShip';
@@ -98,37 +132,45 @@ export function AppSidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-        <div data-tour="dashboard">
-          <NavItem to="/" icon={<LayoutDashboard size={20} />} label={t('navigation.dashboard')} collapsed={collapsed} />
-        </div>
-        <div data-tour="equipment">
-          <NavItem to="/equipment" icon={<Package size={20} />} label={t('navigation.equipment')} collapsed={collapsed} />
-        </div>
-        <div data-tour="inspections">
-          <NavItem to="/inspections" icon={<ClipboardCheck size={20} />} label={t('navigation.inspections')} collapsed={collapsed} />
-        </div>
-        <div data-tour="maintenance">
-          <NavItem to="/maintenance" icon={<Wrench size={20} />} label={t('navigation.maintenance')} collapsed={collapsed} />
-        </div>
-        <div data-tour="certificates">
-          <NavItem to="/certificates" icon={<Award size={20} />} label={t('navigation.certificates')} collapsed={collapsed} />
-        </div>
-        <div data-tour="pending-recommendations">
-          <NavItem to="/pending" icon={<AlertCircle size={20} />} label={t('navigation.pendingRecommendations')} collapsed={collapsed} />
-        </div>
-        <div data-tour="reports">
-          <NavItem to="/reports" icon={<FileText size={20} />} label={t('navigation.reports')} collapsed={collapsed} />
-        </div>
-        <div data-tour="alerts">
-          <NavItem to="/alerts" icon={<Bell size={20} />} label={t('navigation.alerts')} collapsed={collapsed} />
-        </div>
-        <div data-tour="categories">
-          <NavItem to="/categories" icon={<FolderOpen size={20} />} label={t('navigation.categories')} collapsed={collapsed} />
-        </div>
-        <div data-tour="supervisor">
-          <NavItem to="/supervisor" icon={<Users size={20} />} label={t('navigation.supervisor')} collapsed={collapsed} />
-        </div>
+      <nav className="flex-1 p-3 space-y-4 overflow-y-auto">
+        <NavGroup label={t('navigation.groupEquipment')} collapsed={collapsed}>
+          <div data-tour="dashboard">
+            <NavItem to="/" icon={<LayoutDashboard size={20} />} label={t('navigation.dashboard')} collapsed={collapsed} />
+          </div>
+          <div data-tour="equipment">
+            <NavItem to="/equipment" icon={<Package size={20} />} label={t('navigation.equipment')} collapsed={collapsed} />
+          </div>
+          <div data-tour="inspections">
+            <NavItem to="/inspections" icon={<ClipboardCheck size={20} />} label={t('navigation.inspections')} collapsed={collapsed} />
+          </div>
+          <div data-tour="maintenance">
+            <NavItem to="/maintenance" icon={<Wrench size={20} />} label={t('navigation.maintenance')} collapsed={collapsed} />
+          </div>
+          <div data-tour="certificates">
+            <NavItem to="/certificates" icon={<Award size={20} />} label={t('navigation.certificates')} collapsed={collapsed} />
+          </div>
+          <div data-tour="pending-recommendations">
+            <NavItem to="/pending" icon={<AlertCircle size={20} />} label={t('navigation.pendingRecommendations')} collapsed={collapsed} />
+          </div>
+          <div data-tour="reports">
+            <NavItem to="/reports" icon={<FileText size={20} />} label={t('navigation.reports')} collapsed={collapsed} />
+          </div>
+          <div data-tour="alerts">
+            <NavItem to="/alerts" icon={<Bell size={20} />} label={t('navigation.alerts')} collapsed={collapsed} />
+          </div>
+          <div data-tour="categories">
+            <NavItem to="/categories" icon={<FolderOpen size={20} />} label={t('navigation.categories')} collapsed={collapsed} />
+          </div>
+          <div data-tour="supervisor">
+            <NavItem to="/supervisor" icon={<Users size={20} />} label={t('navigation.supervisor')} collapsed={collapsed} />
+          </div>
+        </NavGroup>
+
+        <NavGroup label={t('navigation.groupHealth')} collapsed={collapsed}>
+          <div data-tour="heat-stress">
+            <NavItem to="/heat-stress" icon={<Thermometer size={20} />} label={t('navigation.heatStress')} collapsed={collapsed} />
+          </div>
+        </NavGroup>
       </nav>
 
       {/* Bottom Section - Admin only items */}
