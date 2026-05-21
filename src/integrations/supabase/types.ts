@@ -1311,6 +1311,39 @@ export type Database = {
           },
         ]
       }
+      ship_areas: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          organization_id: string | null
+          ship_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          organization_id?: string | null
+          ship_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          organization_id?: string | null
+          ship_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ships: {
         Row: {
           code: string | null

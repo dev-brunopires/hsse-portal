@@ -70,6 +70,8 @@ import { useEquipmentDocuments, useDeleteDocument, type EquipmentDocument } from
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
 import { EquipmentRelationshipsEditor } from './EquipmentRelationshipsEditor';
+import { AreaCombobox } from '@/components/ships/AreaCombobox';
+
 
 const createEquipmentSchema = (t: (key: string) => string) => z.object({
   // Dados Gerais
@@ -723,7 +725,13 @@ export function EquipmentFormDialog({
                       <FormItem>
                         <FormLabel>{t('equipmentForm.physicalLocation')} *</FormLabel>
                         <FormControl>
-                          <Input placeholder={t('equipmentForm.physicalLocationPlaceholder')} {...field} />
+                          <AreaCombobox
+                            shipId={form.watch('shipId')}
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder={t('equipmentForm.physicalLocationPlaceholder')}
+                            disabled={!form.watch('shipId')}
+                          />
                         </FormControl>
                         <FormDescription>
                           {t('equipmentForm.locationDescription')}
@@ -732,6 +740,7 @@ export function EquipmentFormDialog({
                       </FormItem>
                     )}
                   />
+
 
                   <FormField
                     control={form.control}

@@ -22,8 +22,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Loader2, Ship } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { Loader2, Ship, MapPin } from 'lucide-react';
 import { useCreateShip, useUpdateShip, type Ship as ShipType } from '@/hooks/useShips';
+import { ShipAreasManager } from './ShipAreasManager';
+import { useCreateShipArea } from '@/hooks/useShipAreas';
 
 interface ShipFormDialogProps {
   open: boolean;
@@ -43,15 +46,14 @@ export function ShipFormDialog({ open, onOpenChange, ship }: ShipFormDialogProps
   const { t } = useTranslation();
   const createShip = useCreateShip();
   const updateShip = useUpdateShip();
+  const createArea = useCreateShipArea();
   const isEditing = !!ship;
+
+  const [draftAreas, setDraftAreas] = useState<string[]>([]);
 
   const form = useForm<ShipFormData>({
     resolver: zodResolver(shipSchema),
-    defaultValues: {
-      name: '',
-      code: '',
-      description: '',
-    },
+    defaultValues: { name: '', code: '', description: '' },
   });
 
   useEffect(() => {
@@ -62,13 +64,10 @@ export function ShipFormDialog({ open, onOpenChange, ship }: ShipFormDialogProps
         description: ship.description || '',
       });
     } else {
-      form.reset({
-        name: '',
-        code: '',
-        description: '',
-      });
+      form.reset({ name: '', code: '', description: '' });
+      setDraftAreas([]);
     }
-  }, [ship, form]);
+  }, [ship, form, open]);
 
   const onSubmit = async (data: ShipFormData) => {
     try {
@@ -80,15 +79,23 @@ export function ShipFormDialog({ open, onOpenChange, ship }: ShipFormDialogProps
           description: data.description,
         });
       } else {
-        await createShip.mutateAsync({
+        const created = await createShip.mutateAsync({
           name: data.name,
           code: data.code,
           description: data.description,
         });
+        // Persist draft areas
+        if (created?.id && draftAreas.length > 0) {
+          await Promise.all(
+            draftAreas.map((name) =>
+              createArea.mutateAsync({ ship_id: created.id, name }).catch(() => null)
+            )
+          );
+        }
       }
       onOpenChange(false);
     } catch (error) {
-      // Error handled in mutation
+      // handled
     }
   };
 
@@ -96,7 +103,7 @@ export function ShipFormDialog({ open, onOpenChange, ship }: ShipFormDialogProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Ship className="h-5 w-5 text-primary" />
@@ -108,53 +115,74 @@ export function ShipFormDialog({ open, onOpenChange, ship }: ShipFormDialogProps
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('dialogs.shipName')} *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ex: Navio Atlântico Sul" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('dialogs.shipName')} *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ex: Navio Atlântico Sul" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="code"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('dialogs.shipCode')}</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ex: NAS-001" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="code"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('dialogs.shipCode')}</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ex: NAS-001" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('common.description')}</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder={t('common.observations')} 
-                      className="resize-none"
-                      rows={3}
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('common.description')}</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder={t('common.observations')}
+                        className="resize-none"
+                        rows={3}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <Separator />
+
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <h3 className="text-sm font-semibold flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-primary" />
+                  {t('shipAreas.title', 'Áreas / Locais físicos')}
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  {t('shipAreas.help', 'Cadastre as áreas físicas deste navio. Elas ficarão disponíveis ao selecionar localização de equipamentos, medições e demais módulos.')}
+                </p>
+              </div>
+              <ShipAreasManager
+                shipId={ship?.id}
+                draftAreas={draftAreas}
+                onDraftChange={setDraftAreas}
+              />
+            </div>
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

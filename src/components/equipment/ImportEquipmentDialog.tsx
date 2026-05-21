@@ -23,6 +23,8 @@ import {
   Eye
 } from 'lucide-react';
 import { parseCSV, generateTemplate, type ImportResult, type ImportedEquipment } from '@/utils/importEquipment';
+import { ensureShipArea } from '@/hooks/useShipAreas';
+
 import { useCategories } from '@/hooks/useCategories';
 import { useShips } from '@/hooks/useShips';
 import { useCreateEquipment, useUpdateEquipment } from '@/hooks/useEquipment';
@@ -433,6 +435,12 @@ export function ImportEquipmentDialog({ open, onOpenChange }: ImportEquipmentDia
             shipId = matchedShipId;
           }
         }
+
+        // Auto-register the area/location for this ship (no-op if already exists)
+        if (shipId && item.location) {
+          await ensureShipArea(shipId, item.location);
+        }
+
 
         if (match.action === 'create') {
           if (!categoryId) {
