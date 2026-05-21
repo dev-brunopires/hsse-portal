@@ -192,6 +192,11 @@ export default function HeatStress() {
         ibutg,
         nho_status: finalStatus,
         notes: notes.trim() || null,
+        readings: validReadings.map(r => ({
+          tbn: Number(r.tbn.toFixed(2)),
+          tg: Number(r.tg.toFixed(2)),
+          tbs: r.tbs != null ? Number(r.tbs.toFixed(2)) : null,
+        })),
         created_by: user?.id || null,
       };
       const { data, error } = await (supabase as any)
