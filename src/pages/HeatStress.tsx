@@ -294,13 +294,13 @@ export default function HeatStress() {
       <Card>
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between gap-4">
-            <div className="flex-1 flex items-center gap-2 overflow-x-auto">
+            <div className="flex-1 flex items-center gap-3 overflow-x-auto">
               {STEPS.map((s, idx) => {
                 const Icon = s.icon;
                 const active = step === s.id;
                 const completed = step > s.id;
                 return (
-                  <div key={s.id} className="flex items-center gap-2 flex-1 min-w-0">
+                  <div key={s.id} className="flex items-center gap-3 min-w-0">
                     <div className={cn(
                       'flex items-center gap-2 rounded-full px-3 py-1.5 text-sm whitespace-nowrap transition-colors',
                       active && 'bg-primary text-primary-foreground',
@@ -311,7 +311,7 @@ export default function HeatStress() {
                       <span className="font-medium">{s.id}. {s.title}</span>
                     </div>
                     {idx < STEPS.length - 1 && (
-                      <Separator className={cn('flex-1 min-w-4', completed ? 'bg-primary/40' : '')} />
+                      <Separator className={cn('w-8 shrink-0', completed ? 'bg-primary/40' : '')} />
                     )}
                   </div>
                 );
