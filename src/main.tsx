@@ -7,6 +7,36 @@ import { initClientTelemetry, telemetry } from '@/utils/clientTelemetry';
 
 initClientTelemetry();
 
+// Unregister Service Worker + clear caches on Lovable preview / iframe hosts
+// to prevent stale "old app" content. Production published domain keeps PWA.
+(() => {
+  try {
+    const isInIframe = (() => {
+      try { return window.self !== window.top; } catch { return true; }
+    })();
+    const host = window.location.hostname;
+    const isPreviewHost =
+      host.includes('id-preview--') ||
+      host.includes('lovableproject.com') ||
+      host.endsWith('.lovable.dev');
+
+    if (isPreviewHost || isInIframe) {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then((regs) => {
+          regs.forEach((r) => r.unregister());
+        }).catch(() => {});
+      }
+      if ('caches' in window) {
+        caches.keys().then((names) => {
+          names.forEach((n) => caches.delete(n));
+        }).catch(() => {});
+      }
+    }
+  } catch {
+    // no-op
+  }
+})();
+
 // Handle chunk loading errors (PWA cache issues) in production only.
 // In dev/preview we avoid auto-reload loops.
 let didAutoRecover = false;
