@@ -90,12 +90,21 @@ function useStatusBadge() {
 
 
 export default function HeatStress() {
+  const { t } = useTranslation();
   const { user, profile } = useAuth() as any;
   const { organization } = useOrganization();
   const branding = useOrganizationBranding();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: ships = [], isLoading: shipsLoading } = useShips();
+  const statusBadge = useStatusBadge();
+
+  const STEPS = [
+    { id: 1, title: t('heatStress.steps.info'), icon: ShipIcon },
+    { id: 2, title: t('heatStress.steps.measurements'), icon: Thermometer },
+    { id: 3, title: t('heatStress.steps.summary'), icon: FileText },
+  ];
+
 
   // wizard state
   const [step, setStep] = useState(1);
