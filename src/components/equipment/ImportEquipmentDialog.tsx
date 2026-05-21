@@ -23,6 +23,8 @@ import {
   Eye
 } from 'lucide-react';
 import { parseCSV, generateTemplate, type ImportResult, type ImportedEquipment } from '@/utils/importEquipment';
+import { ensureShipArea } from '@/hooks/useShipAreas';
+
 import { useCategories } from '@/hooks/useCategories';
 import { useShips } from '@/hooks/useShips';
 import { useCreateEquipment, useUpdateEquipment } from '@/hooks/useEquipment';
