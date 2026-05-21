@@ -102,7 +102,8 @@ function useStatusBadge() {
 
 export default function HeatStress() {
   const { t } = useTranslation();
-  const { user, profile } = useAuth() as any;
+  const { user, profile, isAdmin, isAdminMaster, isSupervisor } = useAuth() as any;
+  const canDelete = isAdmin || isAdminMaster || isSupervisor;
   const { organization } = useOrganization();
   const branding = useOrganizationBranding();
   const { toast } = useToast();
