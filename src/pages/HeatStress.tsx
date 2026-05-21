@@ -242,13 +242,20 @@ export default function HeatStress() {
 
   const downloadHistoryPDF = async (m: Measurement) => {
     const ship = ships.find(s => s.id === m.ship_id);
+    const storedReadings = Array.isArray(m.readings) && m.readings.length > 0
+      ? m.readings.map(r => ({
+          tbn: Number(r.tbn),
+          tg: Number(r.tg),
+          tbs: r.tbs != null ? Number(r.tbs) : null,
+        }))
+      : [{ tbn: Number(m.tbn), tg: Number(m.tg), tbs: m.tbs != null ? Number(m.tbs) : null }];
+
     await downloadHeatStressPDF({
       shipName: ship?.name || '—',
       sector: m.sector,
       environmentType: m.environment_type,
       metabolicRate: Number(m.metabolic_rate),
-      // Histórico armazena apenas as médias — exibimos como uma única leitura representativa
-      readings: [{ tbn: Number(m.tbn), tg: Number(m.tg), tbs: m.tbs != null ? Number(m.tbs) : null }],
+      readings: storedReadings,
       avgTbn: Number(m.tbn),
       avgTg: Number(m.tg),
       avgTbs: m.tbs != null ? Number(m.tbs) : null,
@@ -259,6 +266,7 @@ export default function HeatStress() {
       branding,
     });
   };
+
 
   const updateReading = (i: number, field: keyof Reading, value: string) => {
     setReadings(prev => prev.map((r, idx) => idx === i ? { ...r, [field]: value } : r));
