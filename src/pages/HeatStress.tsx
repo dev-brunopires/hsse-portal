@@ -27,6 +27,11 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { formatDateTime } from '@/utils/dateFormat';
 import { downloadHeatStressPDF, type HeatStressPDFData } from '@/utils/generateHeatStressPDF';
 import { cn } from '@/lib/utils';
