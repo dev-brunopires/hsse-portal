@@ -111,9 +111,9 @@ export default function HeatStress() {
   ];
 
 
-  // wizard state
+  // wizard state - ship comes from global header filter
+  const { selectedShipId } = useShipFilter();
   const [step, setStep] = useState(1);
-  const [shipId, setShipId] = useState<string>('');
   const [sector, setSector] = useState('');
   const [envType, setEnvType] = useState<EnvType>('no_solar');
   const [metabolicPreset, setMetabolicPreset] = useState<string>('180');
@@ -121,9 +121,8 @@ export default function HeatStress() {
   const [notes, setNotes] = useState('');
   const [readings, setReadings] = useState<Reading[]>([{ tbn: '', tg: '', tbs: '' }]);
 
-  useEffect(() => {
-    if (!shipId && ships.length > 0) setShipId(ships[0].id);
-  }, [ships, shipId]);
+  // Use globally selected ship; fallback to first ship if header is on "All"
+  const shipId = selectedShipId || ships[0]?.id || '';
 
   const metabolic = metabolicCustom ? Number(metabolicCustom) : Number(metabolicPreset);
   const selectedShip = ships.find(s => s.id === shipId);
