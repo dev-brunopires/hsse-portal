@@ -27,6 +27,11 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { formatDateTime } from '@/utils/dateFormat';
 import { downloadHeatStressPDF, type HeatStressPDFData } from '@/utils/generateHeatStressPDF';
 import { cn } from '@/lib/utils';
@@ -51,6 +56,7 @@ interface Measurement {
   nho_status: NhoStatus;
   notes: string | null;
   measured_at: string;
+  created_by: string | null;
   readings?: Array<{ tbn: number; tg: number; tbs: number | null }> | null;
 }
 
@@ -96,7 +102,8 @@ function useStatusBadge() {
 
 export default function HeatStress() {
   const { t } = useTranslation();
-  const { user, profile } = useAuth() as any;
+  const { user, profile, isAdmin, isAdminMaster, isSupervisor } = useAuth() as any;
+  const canDelete = isAdmin || isAdminMaster || isSupervisor;
   const { organization } = useOrganization();
   const branding = useOrganizationBranding();
   const { toast } = useToast();
@@ -178,6 +185,34 @@ export default function HeatStress() {
     },
     enabled: !!shipId,
   });
+
+  // Fetch profiles for the "created_by" of measurements (responsável da medição)
+  const creatorIds = useMemo(() => {
+    const ids = new Set<string>();
+    measurements.forEach(m => { if (m.created_by) ids.add(m.created_by); });
+    return Array.from(ids);
+  }, [measurements]);
+
+  const { data: creatorsMap = {} } = useQuery({
+    queryKey: ['heat-stress-creators', creatorIds.sort().join(',')],
+    queryFn: async () => {
+      if (creatorIds.length === 0) return {} as Record<string, string>;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, full_name')
+        .in('user_id', creatorIds);
+      if (error) throw error;
+      const map: Record<string, string> = {};
+      (data || []).forEach((p: any) => { map[p.user_id] = p.full_name || ''; });
+      return map;
+    },
+    enabled: creatorIds.length > 0,
+  });
+
+  const getInspectorName = (m: Measurement): string | undefined => {
+    if (!m.created_by) return undefined;
+    return creatorsMap[m.created_by] || undefined;
+  };
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -263,11 +298,29 @@ export default function HeatStress() {
       avgTbs: m.tbs != null ? Number(m.tbs) : null,
       ibutg: Number(m.ibutg),
       nhoStatus: m.nho_status,
+      inspectorName: getInspectorName(m),
       measuredAt: m.measured_at,
       notes: m.notes,
       branding,
     });
   };
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any)
+        .from('heat_stress_measurements')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: t('heatStress.toast.deletedTitle'), description: t('heatStress.toast.deletedDescription') });
+      queryClient.invalidateQueries({ queryKey: ['heat-stress-measurements', shipId] });
+    },
+    onError: (err: Error) => {
+      toast({ title: t('heatStress.toast.deleteErrorTitle'), description: err.message, variant: 'destructive' });
+    },
+  });
 
 
   const updateReading = (i: number, field: keyof Reading, value: string) => {
@@ -629,24 +682,27 @@ export default function HeatStress() {
                   <TableHead className="text-right">{t('heatStress.history.colIbutg')}</TableHead>
                   <TableHead className="text-right">{t('heatStress.history.colRate')}</TableHead>
                   <TableHead>{t('heatStress.history.colStatus')}</TableHead>
+                  <TableHead>{t('heatStress.history.colResponsible')}</TableHead>
                   <TableHead className="text-right">{t('heatStress.history.colPdf')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {measurementsLoading ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-10 text-muted-foreground">
+                    <TableCell colSpan={canDelete ? 11 : 10} className="text-center py-10 text-muted-foreground">
                       <Loader2 className="h-4 w-4 animate-spin inline mr-2" /> {t('heatStress.history.loading')}
                     </TableCell>
                   </TableRow>
                 ) : measurements.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-10 text-muted-foreground">
+                    <TableCell colSpan={canDelete ? 11 : 10} className="text-center py-10 text-muted-foreground">
                       {t('heatStress.history.empty')}
                     </TableCell>
                   </TableRow>
                 ) : (
-                  measurements.map((m) => (
+                  measurements.map((m) => {
+                    const inspectorName = getInspectorName(m);
+                    return (
                     <TableRow key={m.id}>
                       <TableCell className="whitespace-nowrap">{formatDateTime(m.measured_at)}</TableCell>
                       <TableCell className="font-medium">{m.sector}</TableCell>
@@ -656,17 +712,57 @@ export default function HeatStress() {
                       <TableCell className="text-right tabular-nums font-semibold">{Number(m.ibutg).toFixed(2)}</TableCell>
                       <TableCell className="text-right tabular-nums">{Number(m.metabolic_rate).toFixed(0)}</TableCell>
                       <TableCell>{statusBadge(m.nho_status)}</TableCell>
+                      <TableCell className="whitespace-nowrap text-sm">
+                        {inspectorName || <span className="text-muted-foreground">{t('heatStress.history.unknownInspector')}</span>}
+                      </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          variant="ghost" size="icon"
-                          onClick={() => downloadHistoryPDF(m)}
-                          aria-label={t('heatStress.history.downloadPdf')}
-                        >
-                          <FileDown className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost" size="icon"
+                            onClick={() => downloadHistoryPDF(m)}
+                            aria-label={t('heatStress.history.downloadPdf')}
+                          >
+                            <FileDown className="h-4 w-4" />
+                          </Button>
+                          {canDelete && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost" size="icon"
+                                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  aria-label={t('heatStress.history.delete')}
+                                  disabled={deleteMutation.isPending}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>{t('heatStress.history.deleteConfirmTitle')}</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    {t('heatStress.history.deleteConfirmDescription', {
+                                      sector: m.sector,
+                                      date: formatDateTime(m.measured_at),
+                                    })}
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>{t('heatStress.history.deleteCancel')}</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    onClick={() => deleteMutation.mutate(m.id)}
+                                  >
+                                    {t('heatStress.history.deleteConfirm')}
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
-                  ))
+                    );
+                  })
                 )}
 
               </TableBody>

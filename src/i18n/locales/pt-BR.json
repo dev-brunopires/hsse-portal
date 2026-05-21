@@ -3446,14 +3446,24 @@
       "colIbutg": "IBUTG",
       "colRate": "Taxa (W)",
       "colStatus": "Status NHO 06",
+      "colResponsible": "Responsável",
       "colPdf": "PDF",
-      "downloadPdf": "Baixar PDF"
+      "downloadPdf": "Baixar PDF",
+      "delete": "Excluir medição",
+      "deleteConfirmTitle": "Excluir medição?",
+      "deleteConfirmDescription": "Esta ação não pode ser desfeita. A medição de {{sector}} em {{date}} será removida permanentemente.",
+      "deleteConfirm": "Sim, excluir",
+      "deleteCancel": "Cancelar",
+      "unknownInspector": "—"
     },
     "toast": {
       "savedTitle": "Medição registrada",
       "savedDescription": "Heat stress salvo com sucesso.",
       "errorTitle": "Erro ao salvar",
-      "incompleteData": "Dados incompletos"
+      "incompleteData": "Dados incompletos",
+      "deletedTitle": "Medição excluída",
+      "deletedDescription": "A medição foi removida com sucesso.",
+      "deleteErrorTitle": "Erro ao excluir"
     },
     "pdf": {
       "title": "Avaliação de Heat Stress",
