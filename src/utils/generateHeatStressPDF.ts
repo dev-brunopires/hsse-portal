@@ -1,7 +1,8 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS } from 'date-fns/locale';
+import i18n from '@/i18n';
 import {
   SBM_BLUE,
   DARK_GRAY,
@@ -35,22 +36,18 @@ export interface HeatStressPDFData {
   branding?: OrganizationBranding;
 }
 
-const ENV_LABEL: Record<HeatStressPDFData['environmentType'], string> = {
-  no_solar: 'Interno / Externo sem carga solar',
-  with_solar: 'Externo com carga solar',
-};
-
-const STATUS_LABEL: Record<HeatStressPDFData['nhoStatus'], string> = {
-  normal: 'Normal',
-  action: 'Nível de Ação',
-  above_limit: 'Acima do Limite de Tolerância',
-};
-
 const STATUS_COLOR: Record<HeatStressPDFData['nhoStatus'], [number, number, number]> = {
   normal: SUCCESS_GREEN,
   action: WARNING_YELLOW,
   above_limit: DANGER_RED,
 };
+
+const STATUS_KEY: Record<HeatStressPDFData['nhoStatus'], string> = {
+  normal: 'statusNormal',
+  action: 'statusAction',
+  above_limit: 'statusAboveLimit',
+};
+
 
 export async function generateHeatStressPDF(data: HeatStressPDFData): Promise<jsPDF> {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
