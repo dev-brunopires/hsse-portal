@@ -134,7 +134,11 @@
     "loginAgain": "Entrar novamente"
   },
   "navigation": {
-    "appTitle": "Gestão de Equipamentos",
+    "appTitle": "Portal de HSSE",
+    "groupEquipment": "Gestão de Equipamentos",
+    "groupHealth": "Gestão de Saúde",
+    "heatStress": "Heat Stress",
+    "comingSoon": "Em breve",
     "dashboard": "Dashboard",
     "equipment": "Equipamentos",
     "inspections": "Inspeções",

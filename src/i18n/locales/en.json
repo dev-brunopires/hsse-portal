@@ -134,7 +134,11 @@
     "loginAgain": "Log in again"
   },
   "navigation": {
-    "appTitle": "Equipment Management",
+    "appTitle": "HSSE Portal",
+    "groupEquipment": "Equipment Management",
+    "groupHealth": "Health Management",
+    "heatStress": "Heat Stress",
+    "comingSoon": "Coming soon",
     "dashboard": "Dashboard",
     "equipment": "Equipment",
     "inspections": "Inspections",
