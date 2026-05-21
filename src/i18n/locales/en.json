@@ -3360,5 +3360,100 @@
     "attention": "Attention",
     "compliant": "Compliant",
     "nonCompliant": "Non-Compliant"
+  },
+  "heatStress": {
+    "title": "Heat Stress",
+    "subtitle": "Heat exposure assessment — NHO 06 / FUNDACENTRO",
+    "steps": {
+      "info": "Information",
+      "measurements": "Measurements",
+      "summary": "Summary"
+    },
+    "info": {
+      "title": "Initial information",
+      "description": "Select the ship, enter the sector and the type of environment assessed.",
+      "ship": "Ship",
+      "shipPlaceholder": "Select a ship",
+      "noShips": "No ships available for your account.",
+      "sector": "Sector / Area",
+      "sectorPlaceholder": "E.g.: Engine Room",
+      "envType": "Environment Type",
+      "envNoSolar": "Indoor or Outdoor without solar load",
+      "envWithSolar": "Outdoor with solar load",
+      "envNoSolarShort": "No solar load",
+      "envWithSolarShort": "Outdoor with solar load",
+      "metabolic": "Metabolic Rate (W)",
+      "metabolicCustom": "Custom…",
+      "metabolicCustomPlaceholder": "Watts",
+      "notes": "Notes (optional)",
+      "notesPlaceholder": "Environment conditions, activity performed, etc."
+    },
+    "metabolicPresets": {
+      "rest": "Seated at rest (115 W)",
+      "light": "Light work (180 W)",
+      "moderate": "Moderate work (300 W)",
+      "heavy": "Heavy work (415 W)",
+      "veryHeavy": "Very heavy work (520 W)"
+    },
+    "measurements": {
+      "title": "Temperature readings",
+      "description": "Record 1 to 5 readings. The system will calculate the average before applying the WBGT formula.",
+      "addReading": "Add reading",
+      "reading": "Reading",
+      "remove": "Remove reading",
+      "avgTbn": "Avg Tnw",
+      "avgTg": "Avg Tg",
+      "avgTbs": "Avg Tdb",
+      "ibutg": "WBGT"
+    },
+    "summary": {
+      "title": "Assessment summary",
+      "description": "Review the data before saving. The PDF will be generated automatically.",
+      "shipLabel": "Ship",
+      "sectorLabel": "Sector / Area",
+      "envLabel": "Environment Type",
+      "metabolicLabel": "Metabolic Rate",
+      "ibutgCalculated": "Calculated WBGT",
+      "averageOf": "Average of {{count}} reading",
+      "averageOf_plural": "Average of {{count}} readings",
+      "formulaWithSolar": "0.7·Tnw + 0.2·Tg + 0.1·Tdb",
+      "formulaNoSolar": "0.7·Tnw + 0.3·Tg",
+      "nhoStatus": "NHO 06 Status",
+      "avgRow": "Average",
+      "notesLabel": "Notes"
+    },
+    "status": {
+      "normal": "Normal",
+      "action": "Action Level",
+      "aboveLimit": "Above Limit"
+    },
+    "nav": {
+      "back": "Back",
+      "continue": "Continue",
+      "saveAndDownload": "Save and download PDF"
+    },
+    "history": {
+      "title": "Measurement History",
+      "subtitle": "{{ship}} — last 200 measurements",
+      "selectShip": "Select a ship",
+      "loading": "Loading…",
+      "empty": "No measurements recorded for this ship.",
+      "colDateTime": "Date/Time",
+      "colSector": "Sector",
+      "colTbn": "Tnw",
+      "colTg": "Tg",
+      "colTbs": "Tdb",
+      "colIbutg": "WBGT",
+      "colRate": "Rate (W)",
+      "colStatus": "NHO 06 Status",
+      "colPdf": "PDF",
+      "downloadPdf": "Download PDF"
+    },
+    "toast": {
+      "savedTitle": "Measurement recorded",
+      "savedDescription": "Heat stress saved successfully.",
+      "errorTitle": "Error saving",
+      "incompleteData": "Incomplete data"
+    }
   }
 }
