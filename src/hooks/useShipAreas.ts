@@ -81,11 +81,10 @@ export function useDeleteShipArea() {
 export async function ensureShipArea(shipId: string, name: string) {
   const clean = (name || '').trim();
   if (!clean || !shipId) return;
-  await supabase
-    .from('ship_areas')
-    .insert({ ship_id: shipId, name: clean })
-    .select()
-    .maybeSingle()
-    .then(() => {})
-    .catch(() => {}); // ignore unique violation
+  try {
+    await supabase.from('ship_areas').insert({ ship_id: shipId, name: clean });
+  } catch {
+    // ignore unique violation / RLS errors silently
+  }
 }
+
