@@ -723,7 +723,13 @@ export function EquipmentFormDialog({
                       <FormItem>
                         <FormLabel>{t('equipmentForm.physicalLocation')} *</FormLabel>
                         <FormControl>
-                          <Input placeholder={t('equipmentForm.physicalLocationPlaceholder')} {...field} />
+                          <AreaCombobox
+                            shipId={form.watch('shipId')}
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder={t('equipmentForm.physicalLocationPlaceholder')}
+                            disabled={!form.watch('shipId')}
+                          />
                         </FormControl>
                         <FormDescription>
                           {t('equipmentForm.locationDescription')}
@@ -732,6 +738,7 @@ export function EquipmentFormDialog({
                       </FormItem>
                     )}
                   />
+
 
                   <FormField
                     control={form.control}
