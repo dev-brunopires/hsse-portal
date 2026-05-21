@@ -3360,5 +3360,100 @@
     "attention": "Atenção",
     "compliant": "Conforme",
     "nonCompliant": "Não Conforme"
+  },
+  "heatStress": {
+    "title": "Heat Stress",
+    "subtitle": "Avaliação de exposição ao calor — NHO 06 / FUNDACENTRO",
+    "steps": {
+      "info": "Informações",
+      "measurements": "Medições",
+      "summary": "Resumo"
+    },
+    "info": {
+      "title": "Informações iniciais",
+      "description": "Selecione o navio, informe o setor e o tipo de ambiente avaliado.",
+      "ship": "Navio",
+      "shipPlaceholder": "Selecione um navio",
+      "noShips": "Nenhum navio liberado para sua conta.",
+      "sector": "Setor / Área",
+      "sectorPlaceholder": "Ex.: Praça de Máquinas",
+      "envType": "Tipo de Ambiente",
+      "envNoSolar": "Interno ou Externo sem carga solar",
+      "envWithSolar": "Externo com carga solar",
+      "envNoSolarShort": "Sem carga solar",
+      "envWithSolarShort": "Externo com carga solar",
+      "metabolic": "Taxa Metabólica (W)",
+      "metabolicCustom": "Personalizado…",
+      "metabolicCustomPlaceholder": "Watts",
+      "notes": "Observações (opcional)",
+      "notesPlaceholder": "Condições do ambiente, atividade exercida, etc."
+    },
+    "metabolicPresets": {
+      "rest": "Sentado em repouso (115 W)",
+      "light": "Trabalho leve (180 W)",
+      "moderate": "Trabalho moderado (300 W)",
+      "heavy": "Trabalho pesado (415 W)",
+      "veryHeavy": "Trabalho muito pesado (520 W)"
+    },
+    "measurements": {
+      "title": "Leituras de temperatura",
+      "description": "Registre de 1 a 5 leituras. O sistema calculará a média antes de aplicar a fórmula do IBUTG.",
+      "addReading": "Adicionar leitura",
+      "reading": "Leitura",
+      "remove": "Remover leitura",
+      "avgTbn": "Média Tbn",
+      "avgTg": "Média Tg",
+      "avgTbs": "Média Tbs",
+      "ibutg": "IBUTG"
+    },
+    "summary": {
+      "title": "Resumo da avaliação",
+      "description": "Confira os dados antes de salvar. O PDF será gerado automaticamente.",
+      "shipLabel": "Navio",
+      "sectorLabel": "Setor / Área",
+      "envLabel": "Tipo de Ambiente",
+      "metabolicLabel": "Taxa Metabólica",
+      "ibutgCalculated": "IBUTG Calculado",
+      "averageOf": "Média de {{count}} leitura",
+      "averageOf_plural": "Média de {{count}} leituras",
+      "formulaWithSolar": "0,7·Tbn + 0,2·Tg + 0,1·Tbs",
+      "formulaNoSolar": "0,7·Tbn + 0,3·Tg",
+      "nhoStatus": "Status NHO 06",
+      "avgRow": "Média",
+      "notesLabel": "Observações"
+    },
+    "status": {
+      "normal": "Normal",
+      "action": "Nível de Ação",
+      "aboveLimit": "Acima do Limite"
+    },
+    "nav": {
+      "back": "Voltar",
+      "continue": "Continuar",
+      "saveAndDownload": "Salvar e baixar PDF"
+    },
+    "history": {
+      "title": "Histórico de Medições",
+      "subtitle": "{{ship}} — últimas 200 medições",
+      "selectShip": "Selecione um navio",
+      "loading": "Carregando…",
+      "empty": "Nenhuma medição registrada para este navio.",
+      "colDateTime": "Data/Hora",
+      "colSector": "Setor",
+      "colTbn": "Tbn",
+      "colTg": "Tg",
+      "colTbs": "Tbs",
+      "colIbutg": "IBUTG",
+      "colRate": "Taxa (W)",
+      "colStatus": "Status NHO 06",
+      "colPdf": "PDF",
+      "downloadPdf": "Baixar PDF"
+    },
+    "toast": {
+      "savedTitle": "Medição registrada",
+      "savedDescription": "Heat stress salvo com sucesso.",
+      "errorTitle": "Erro ao salvar",
+      "incompleteData": "Dados incompletos"
+    }
   }
 }
