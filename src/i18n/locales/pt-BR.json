@@ -146,7 +146,7 @@
     "certificates": "Certificados",
     "reports": "Relatórios",
     "categories": "Categorias",
-    "users": "Usuários",
+    "users": "Gestão",
     "settings": "Configurações",
     "profile": "Meu Perfil",
     "alerts": "Alertas",
@@ -1658,7 +1658,7 @@
     "dueDayDescription": "Quando preenchido, a próxima inspeção será gerada automaticamente sempre neste dia do mês."
   },
   "usersPage": {
-    "title": "Gestão de Usuários",
+    "title": "Gestão",
     "subtitle": "Gerencie usuários, permissões e navios",
     "systemUsers": "Usuários do Sistema",
     "allRegisteredUsers": "Todos os usuários cadastrados",

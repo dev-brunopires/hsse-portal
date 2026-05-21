@@ -146,7 +146,7 @@
     "certificates": "Certificates",
     "reports": "Reports",
     "categories": "Categories",
-    "users": "Users",
+    "users": "Management",
     "settings": "Settings",
     "profile": "My Profile",
     "alerts": "Alerts",
@@ -1658,7 +1658,7 @@
     "dueDayDescription": "When set, the next inspection will be auto-generated on this day of the month."
   },
   "usersPage": {
-    "title": "User Management",
+    "title": "Management",
     "subtitle": "Manage users, permissions and ships",
     "systemUsers": "System Users",
     "allRegisteredUsers": "All registered users",
