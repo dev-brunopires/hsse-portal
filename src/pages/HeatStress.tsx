@@ -177,7 +177,7 @@ export default function HeatStress() {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      if (!ibutg || !averages || !finalStatus) throw new Error('Dados incompletos');
+      if (!ibutg || !averages || !finalStatus) throw new Error(t('heatStress.toast.incompleteData'));
       const payload = {
         ship_id: shipId,
         organization_id: organization?.id || null,
