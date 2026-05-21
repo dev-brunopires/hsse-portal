@@ -268,9 +268,10 @@ export default function HeatStress() {
     <div className="p-4 sm:p-6 space-y-6 max-w-6xl mx-auto">
       <PageHeader
         icon={Thermometer}
-        title="Heat Stress"
-        subtitle="Avaliação de exposição ao calor — NHO 06 / FUNDACENTRO"
+        title={t('heatStress.title')}
+        subtitle={t('heatStress.subtitle')}
       />
+
 
       {/* WIZARD */}
       <Card>
