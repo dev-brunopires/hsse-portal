@@ -251,6 +251,16 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
+                <Route
+                  path="/heat-stress"
+                  element={
+                    <ProtectedRoute>
+                      <AppLayout>
+                        <HeatStress />
+                      </AppLayout>
+                    </ProtectedRoute>
+                  }
+                />
                 <Route path="*" element={<NotFound />} />
               </Routes>
                   </Suspense>
