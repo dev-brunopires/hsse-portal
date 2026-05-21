@@ -1,70 +1,35 @@
-## Objetivo
+# Reestruturação da Sidebar — Portal de HSSE
 
-Expandir o tour de onboarding para cobrir todas as páginas principais do menu lateral e corrigir o passo "Your Profile" que hoje aponta para um seletor inexistente — ele deve destacar o botão de perfil no canto superior direito do header.
+Transformar o sistema em **Portal de HSSE** com duas categorias agrupadas (colapsáveis) na sidebar, mantendo todas as funcionalidades atuais dentro de "Gestão de Equipamentos" e preparando o caminho para "Gestão de Saúde > Heat Stress".
 
 ## Mudanças
 
-### 1. Adicionar `data-tour` no botão de perfil do header
-**Arquivo:** `src/components/layout/Header.tsx` (linha ~825)
+### 1. Traduções (`src/i18n/locales/pt-BR.json` e `en.json`)
+Em `navigation`:
+- `appTitle`: "Portal de HSSE" (ambos idiomas)
+- `groupEquipment`: "Gestão de Equipamentos" / "Equipment Management"
+- `groupHealth`: "Gestão de Saúde" / "Health Management"
+- `heatStress`: "Heat Stress" (ambos)
 
-Adicionar `data-tour="profile"` no `<Button>` do `DropdownMenuTrigger` do User Menu (atualmente sem âncora). Assim o passo "Your Profile / Seu Perfil" do tour vai apontar para o avatar/dropdown do usuário no header.
+### 2. `src/components/layout/AppSidebar.tsx`
+- Criar componente interno `NavGroup` (header colapsável com chevron, igual ao padrão da imagem de referência)
+- Agrupar os itens existentes (Dashboard, Equipamentos, Inspeções, Manutenção, Certificados, Recomendações Pendentes, Relatórios, Alertas, Categorias, Supervisor) dentro de **Gestão de Equipamentos** (aberto por padrão)
+- Adicionar grupo **Gestão de Saúde** (aberto por padrão) contendo apenas **Heat Stress** (ícone `Thermometer`, rota `/heat-stress`)
+- Manter seção admin (Users, Audit Log, Health Check, Platform Admin) fora dos grupos, como hoje
+- Título "Portal de HSSE" já vem automático via `SystemLogo` (que lê `navigation.appTitle`)
+- Quando `collapsed`, os labels de grupo somem (mantém só ícones, igual à lógica existente)
 
-### 2. Adicionar `data-tour` nas páginas que faltam no sidebar
-**Arquivo:** `src/components/layout/AppSidebar.tsx`
+### 3. `src/components/layout/MobileSidebar.tsx`
+- Mesma estrutura de grupos colapsáveis (Gestão de Equipamentos + Gestão de Saúde com Heat Stress)
 
-Envolver os `NavItem` que ainda não têm âncora com `<div data-tour="...">`:
-- `certificates` (linha 114)
-- `pending-recommendations` (linha 115)
-- `categories` (linha 122)
-- `supervisor` (linha 123)
-- `users` (linha 129, admin)
-- `audit-log` (linha 130, admin)
-- `health-check` (linha 135, admin master/platform owner)
+### 4. `src/pages/HeatStress.tsx` (novo, placeholder mínimo)
+- Página com apenas `PageHeader` mostrando título "Heat Stress" e mensagem "Em breve" / "Coming soon" (i18n)
+- Sem conteúdo funcional, conforme solicitado — apenas para o atalho não cair em 404
 
-### 3. Expandir os passos do tour
-**Arquivo:** `src/hooks/useOnboarding.ts`
+### 5. `src/App.tsx`
+- Registrar rota `/heat-stress` (lazy) dentro de `AppLayout` + `ProtectedRoute`
 
-Reordenar e adicionar passos seguindo a ordem do menu. Cada passo verifica `document.querySelector(element)` antes de incluir, para pular itens não visíveis ao role do usuário (ex.: `users`, `audit-log`, `health-check` só aparecem para admin/admin master). Construir os steps dinamicamente filtrando os elementos presentes no DOM.
-
-Nova ordem de passos:
-1. Sidebar (intro)
-2. Dashboard
-3. Equipment
-4. Inspections
-5. Maintenance *(novo)*
-6. Certificates *(novo)*
-7. Pending Recommendations *(novo)*
-8. Reports
-9. Alerts
-10. Categories *(novo)*
-11. Supervisor *(novo)*
-12. Users *(novo, admin)*
-13. Audit Log *(novo, admin)*
-14. Health Check *(novo, admin master/platform owner)*
-15. Profile (agora aponta corretamente para o botão no header)
-16. Digital Signature (mantido)
-17. Keyboard Shortcuts (mantido)
-18. Ready to Start (mantido)
-
-Corrigir também o passo "Profile" para usar `side: 'bottom'` e `align: 'end'`, já que o alvo está no canto superior direito.
-
-### 4. Traduções
-**Arquivos:** `src/i18n/locales/pt-BR.json` e `src/i18n/locales/en.json`
-
-Adicionar em `onboarding.*` as chaves novas (com title + description curtos para cada um):
-- `maintenance` / `maintenanceDesc`
-- `certificates` / `certificatesDesc`
-- `pendingRecommendations` / `pendingRecommendationsDesc`
-- `categories` / `categoriesDesc`
-- `supervisor` / `supervisorDesc`
-- `users` / `usersDesc`
-- `auditLog` / `auditLogDesc`
-- `healthCheck` / `healthCheckDesc`
-
-Manter tom curto e instrutivo, consistente com os textos existentes, em PT-BR e EN.
-
-## Notas técnicas
-
-- Os passos com `element` que não existirem no DOM (role sem permissão) serão filtrados antes de inicializar o `driver()`, evitando popovers vazios.
-- Nenhuma mudança de lógica de negócio; apenas UI/UX e i18n.
-- Sem alterações em rotas, RLS, ou dados.
+## Fora de escopo
+- Lógica de heat stress (cálculos, formulários, dados)
+- Mudanças no header, no onboarding ou em outras páginas
+- Migração de dados ou backend
