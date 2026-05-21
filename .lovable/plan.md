@@ -1,35 +1,41 @@
-# Reestruturação da Sidebar — Portal de HSSE
+## Problema
 
-Transformar o sistema em **Portal de HSSE** com duas categorias agrupadas (colapsáveis) na sidebar, mantendo todas as funcionalidades atuais dentro de "Gestão de Equipamentos" e preparando o caminho para "Gestão de Saúde > Heat Stress".
+O preview do Lovable fica servindo partes antigas do app porque o **Service Worker (PWA)** está ativo também em ambiente de preview/desenvolvimento. O `vite-plugin-pwa` está configurado com `registerType: "autoUpdate"` e várias estratégias de cache (`StaleWhileRevalidate`, `CacheFirst`) que guardam JS, CSS, imagens e fontes. Resultado: ao abrir o preview, o navegador entrega primeiro a versão em cache e só depois (às vezes) busca a nova — dando a sensação de "app antigo".
 
-## Mudanças
+Além disso, o `main.tsx` tem um auto-recover que limpa caches e faz reload, mas só dispara em `import.meta.env.PROD` e apenas quando detecta erro de chunk — não resolve o caso normal de "está exibindo versão velha".
 
-### 1. Traduções (`src/i18n/locales/pt-BR.json` e `en.json`)
-Em `navigation`:
-- `appTitle`: "Portal de HSSE" (ambos idiomas)
-- `groupEquipment`: "Gestão de Equipamentos" / "Equipment Management"
-- `groupHealth`: "Gestão de Saúde" / "Health Management"
-- `heatStress`: "Heat Stress" (ambos)
+## Solução proposta
 
-### 2. `src/components/layout/AppSidebar.tsx`
-- Criar componente interno `NavGroup` (header colapsável com chevron, igual ao padrão da imagem de referência)
-- Agrupar os itens existentes (Dashboard, Equipamentos, Inspeções, Manutenção, Certificados, Recomendações Pendentes, Relatórios, Alertas, Categorias, Supervisor) dentro de **Gestão de Equipamentos** (aberto por padrão)
-- Adicionar grupo **Gestão de Saúde** (aberto por padrão) contendo apenas **Heat Stress** (ícone `Thermometer`, rota `/heat-stress`)
-- Manter seção admin (Users, Audit Log, Health Check, Platform Admin) fora dos grupos, como hoje
-- Título "Portal de HSSE" já vem automático via `SystemLogo` (que lê `navigation.appTitle`)
-- Quando `collapsed`, os labels de grupo somem (mantém só ícones, igual à lógica existente)
+Registrar o Service Worker **somente no domínio publicado** (`sbm-inspect.lovable.app`), e **desativá-lo no preview** (`*.lovable.app/id-preview--*` e em desenvolvimento). Assim:
 
-### 3. `src/components/layout/MobileSidebar.tsx`
-- Mesma estrutura de grupos colapsáveis (Gestão de Equipamentos + Gestão de Saúde com Heat Stress)
+- **Preview Lovable**: sempre versão fresca, sem cache de SW.
+- **App publicado / PWA instalado**: continua funcionando offline normalmente.
 
-### 4. `src/pages/HeatStress.tsx` (novo, placeholder mínimo)
-- Página com apenas `PageHeader` mostrando título "Heat Stress" e mensagem "Em breve" / "Coming soon" (i18n)
-- Sem conteúdo funcional, conforme solicitado — apenas para o atalho não cair em 404
+### Mudanças
 
-### 5. `src/App.tsx`
-- Registrar rota `/heat-stress` (lazy) dentro de `AppLayout` + `ProtectedRoute`
+1. **`vite.config.ts`**
+   - Trocar `registerType: "autoUpdate"` por `registerType: "prompt"` (mais previsível) **ou** manter `autoUpdate` e adicionar `devOptions: { enabled: false }` (já é o default, só explicitar).
+   - Nenhuma mudança estrutural no Workbox.
 
-## Fora de escopo
-- Lógica de heat stress (cálculos, formulários, dados)
-- Mudanças no header, no onboarding ou em outras páginas
-- Migração de dados ou backend
+2. **`src/main.tsx`** (principal correção)
+   - Adicionar um bloco que, ao detectar que o host é o domínio de **preview** do Lovable (`id-preview--*.lovable.app` ou qualquer host que não seja o publicado), executa no boot:
+     - `navigator.serviceWorker.getRegistrations()` → `unregister()` em todos.
+     - `caches.keys()` → `caches.delete()` em todos.
+   - Isso garante que, mesmo que um SW tenha sido instalado antes nesse host, ele é removido na próxima visita.
+   - Não afeta o domínio publicado nem PWAs instalados pelos usuários finais.
+
+3. **Opcional (recomendado)**: adicionar um pequeno helper `src/utils/previewEnvironment.ts` com `isLovablePreviewHost()` para centralizar a detecção (`hostname.includes('id-preview--')` ou `hostname.endsWith('.lovable.app') && hostname !== 'sbm-inspect.lovable.app'`).
+
+### O que NÃO muda
+
+- Comportamento offline do app publicado.
+- Estratégias de cache do Workbox em produção.
+- Lazy loading / `lazyWithRetry`.
+- Nada de UI.
+
+## Resultado esperado
+
+- No preview do Lovable: cada reload busca os assets novos direto da rede; sem "fantasmas" de versões antigas.
+- No app publicado: PWA continua igual, com cache e funcionamento offline.
+
+Quer que eu siga por esse caminho (desativar SW só no preview) ou prefere algo mais agressivo, tipo desligar o PWA inteiro em qualquer ambiente que não seja produção publicada?
