@@ -50,12 +50,12 @@ interface Measurement {
   measured_at: string;
 }
 
-const METABOLIC_PRESETS = [
-  { label: 'Sentado em repouso (115 W)', value: 115 },
-  { label: 'Trabalho leve (180 W)', value: 180 },
-  { label: 'Trabalho moderado (300 W)', value: 300 },
-  { label: 'Trabalho pesado (415 W)', value: 415 },
-  { label: 'Trabalho muito pesado (520 W)', value: 520 },
+const METABOLIC_PRESETS: { key: string; value: number }[] = [
+  { key: 'rest', value: 115 },
+  { key: 'light', value: 180 },
+  { key: 'moderate', value: 300 },
+  { key: 'heavy', value: 415 },
+  { key: 'veryHeavy', value: 520 },
 ];
 
 // NHO 06 — limites de tolerância simplificados (regime contínuo)
@@ -70,26 +70,24 @@ function classifyNho(ibutg: number, metabolic: number): NhoStatus {
   return 'normal';
 }
 
-function statusBadge(status: NhoStatus, size: 'sm' | 'md' = 'sm') {
-  const cls = size === 'md' ? 'text-sm py-1 px-3' : '';
-  if (status === 'above_limit') return (
-    <Badge className={cn('bg-red-100 text-red-800 hover:bg-red-100 border-red-200 dark:bg-red-950 dark:text-red-200 dark:border-red-900', cls)}>
-      Acima do Limite
-    </Badge>
-  );
-  if (status === 'action') return (
-    <Badge className={cn('bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200 dark:bg-amber-950 dark:text-amber-200 dark:border-amber-900', cls)}>
-      Nível de Ação
-    </Badge>
-  );
-  return <Badge variant="secondary" className={cn('font-normal', cls)}>Normal</Badge>;
+function useStatusBadge() {
+  const { t } = useTranslation();
+  return (status: NhoStatus, size: 'sm' | 'md' = 'sm') => {
+    const cls = size === 'md' ? 'text-sm py-1 px-3' : '';
+    if (status === 'above_limit') return (
+      <Badge className={cn('bg-red-100 text-red-800 hover:bg-red-100 border-red-200 dark:bg-red-950 dark:text-red-200 dark:border-red-900', cls)}>
+        {t('heatStress.status.aboveLimit')}
+      </Badge>
+    );
+    if (status === 'action') return (
+      <Badge className={cn('bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200 dark:bg-amber-950 dark:text-amber-200 dark:border-amber-900', cls)}>
+        {t('heatStress.status.action')}
+      </Badge>
+    );
+    return <Badge variant="secondary" className={cn('font-normal', cls)}>{t('heatStress.status.normal')}</Badge>;
+  };
 }
 
-const STEPS = [
-  { id: 1, title: 'Informações', icon: ShipIcon },
-  { id: 2, title: 'Medições', icon: Thermometer },
-  { id: 3, title: 'Resumo', icon: FileText },
-];
 
 export default function HeatStress() {
   const { user, profile } = useAuth() as any;
