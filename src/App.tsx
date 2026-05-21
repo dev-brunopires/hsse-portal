@@ -35,6 +35,7 @@ const OfflineData = lazyWithRetry(() => import("./pages/OfflineData"));
 const Diagnostics = lazyWithRetry(() => import("./pages/Diagnostics"));
 const HealthCheck = lazyWithRetry(() => import("./pages/HealthCheck"));
 const Supervisor = lazyWithRetry(() => import("./pages/Supervisor"));
+const HeatStress = lazyWithRetry(() => import("./pages/HeatStress"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
