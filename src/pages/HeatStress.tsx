@@ -229,7 +229,7 @@ export default function HeatStress() {
       setReadings([{ tbn: '', tg: '', tbs: '' }]);
     },
     onError: (err: Error) => {
-      toast({ title: 'Erro ao salvar', description: err.message, variant: 'destructive' });
+      toast({ title: t('heatStress.toast.errorTitle'), description: err.message, variant: 'destructive' });
     },
   });
 
