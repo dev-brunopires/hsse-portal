@@ -298,11 +298,29 @@ export default function HeatStress() {
       avgTbs: m.tbs != null ? Number(m.tbs) : null,
       ibutg: Number(m.ibutg),
       nhoStatus: m.nho_status,
+      inspectorName: getInspectorName(m),
       measuredAt: m.measured_at,
       notes: m.notes,
       branding,
     });
   };
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any)
+        .from('heat_stress_measurements')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: t('heatStress.toast.deletedTitle'), description: t('heatStress.toast.deletedDescription') });
+      queryClient.invalidateQueries({ queryKey: ['heat-stress-measurements', shipId] });
+    },
+    onError: (err: Error) => {
+      toast({ title: t('heatStress.toast.deleteErrorTitle'), description: err.message, variant: 'destructive' });
+    },
+  });
 
 
   const updateReading = (i: number, field: keyof Reading, value: string) => {
