@@ -434,6 +434,12 @@ export function ImportEquipmentDialog({ open, onOpenChange }: ImportEquipmentDia
           }
         }
 
+        // Auto-register the area/location for this ship (no-op if already exists)
+        if (shipId && item.location) {
+          await ensureShipArea(shipId, item.location);
+        }
+
+
         if (match.action === 'create') {
           if (!categoryId) {
             throw new Error(t('importEquipment.noCategoryMatch'));
