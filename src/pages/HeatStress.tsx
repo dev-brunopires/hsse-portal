@@ -352,12 +352,15 @@ export default function HeatStress() {
                   <Label className="flex items-center gap-2">
                     <MapPin className="h-3.5 w-3.5 text-muted-foreground" /> {t('heatStress.info.sector')}
                   </Label>
-                  <Input
+                  <AreaCombobox
+                    shipId={shipId}
                     value={sector}
-                    onChange={(e) => setSector(e.target.value)}
+                    onChange={setSector}
                     placeholder={t('heatStress.info.sectorPlaceholder')}
+                    disabled={!shipId}
                   />
                 </div>
+
 
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2">
