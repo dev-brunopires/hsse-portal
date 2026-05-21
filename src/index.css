@@ -31,9 +31,9 @@
     --muted: 210 15% 94%;
     --muted-foreground: 210 20% 45%;
 
-    /* Orange accent - used sparingly */
-    --accent: 18 89% 54%;
-    --accent-foreground: 0 0% 100%;
+    /* Accent - soft blue tint of primary, used for hover/highlight states */
+    --accent: 210 60% 92%;
+    --accent-foreground: 210 100% 25%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
