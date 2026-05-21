@@ -186,6 +186,34 @@ export default function HeatStress() {
     enabled: !!shipId,
   });
 
+  // Fetch profiles for the "created_by" of measurements (responsável da medição)
+  const creatorIds = useMemo(() => {
+    const ids = new Set<string>();
+    measurements.forEach(m => { if (m.created_by) ids.add(m.created_by); });
+    return Array.from(ids);
+  }, [measurements]);
+
+  const { data: creatorsMap = {} } = useQuery({
+    queryKey: ['heat-stress-creators', creatorIds.sort().join(',')],
+    queryFn: async () => {
+      if (creatorIds.length === 0) return {} as Record<string, string>;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id, full_name')
+        .in('user_id', creatorIds);
+      if (error) throw error;
+      const map: Record<string, string> = {};
+      (data || []).forEach((p: any) => { map[p.user_id] = p.full_name || ''; });
+      return map;
+    },
+    enabled: creatorIds.length > 0,
+  });
+
+  const getInspectorName = (m: Measurement): string | undefined => {
+    if (!m.created_by) return undefined;
+    return creatorsMap[m.created_by] || undefined;
+  };
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!ibutg || !averages || !finalStatus) throw new Error(t('heatStress.toast.incompleteData'));
