@@ -29,6 +29,8 @@ import {
 import { formatDateTime } from '@/utils/dateFormat';
 import { downloadHeatStressPDF, type HeatStressPDFData } from '@/utils/generateHeatStressPDF';
 import { cn } from '@/lib/utils';
+import { AreaCombobox } from '@/components/ships/AreaCombobox';
+
 
 type EnvType = 'no_solar' | 'with_solar';
 type NhoStatus = 'normal' | 'action' | 'above_limit';
