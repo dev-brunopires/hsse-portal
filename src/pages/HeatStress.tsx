@@ -572,7 +572,7 @@ export default function HeatStress() {
               onClick={() => setStep(s => Math.max(1, s - 1))}
               disabled={step === 1 || saveMutation.isPending}
             >
-              <ChevronLeft className="h-4 w-4 mr-1" /> Voltar
+              <ChevronLeft className="h-4 w-4 mr-1" /> {t('heatStress.nav.back')}
             </Button>
             <div className="flex items-center gap-2">
               {step < 3 && (
@@ -580,7 +580,7 @@ export default function HeatStress() {
                   onClick={() => setStep(s => s + 1)}
                   disabled={(step === 1 && !canGoStep2) || (step === 2 && !canGoStep3)}
                 >
-                  Continuar <ChevronRight className="h-4 w-4 ml-1" />
+                  {t('heatStress.nav.continue')} <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
               )}
               {step === 3 && (
@@ -588,11 +588,12 @@ export default function HeatStress() {
                   {saveMutation.isPending
                     ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     : <Save className="h-4 w-4 mr-2" />}
-                  Salvar e baixar PDF
+                  {t('heatStress.nav.saveAndDownload')}
                 </Button>
               )}
             </div>
           </div>
+
         </CardContent>
       </Card>
 
