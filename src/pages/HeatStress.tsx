@@ -484,33 +484,33 @@ export default function HeatStress() {
           {step === 3 && ibutg !== null && averages && finalStatus && (
             <div className="space-y-5">
               <div>
-                <CardTitle className="text-base">Resumo da avaliação</CardTitle>
+                <CardTitle className="text-base">{t('heatStress.summary.title')}</CardTitle>
                 <CardDescription>
-                  Confira os dados antes de salvar. O PDF será gerado automaticamente.
+                  {t('heatStress.summary.description')}
                 </CardDescription>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <InfoCard label="Navio" value={selectedShip?.name || '—'} icon={ShipIcon} />
-                <InfoCard label="Setor / Área" value={sector} icon={MapPin} />
-                <InfoCard label="Tipo de Ambiente" value={envType === 'with_solar' ? 'Externo com carga solar' : 'Sem carga solar'} icon={Cloud} />
-                <InfoCard label="Taxa Metabólica" value={`${metabolic.toFixed(0)} W`} icon={Activity} />
+                <InfoCard label={t('heatStress.summary.shipLabel')} value={selectedShip?.name || '—'} icon={ShipIcon} />
+                <InfoCard label={t('heatStress.summary.sectorLabel')} value={sector} icon={MapPin} />
+                <InfoCard label={t('heatStress.summary.envLabel')} value={envType === 'with_solar' ? t('heatStress.info.envWithSolarShort') : t('heatStress.info.envNoSolarShort')} icon={Cloud} />
+                <InfoCard label={t('heatStress.summary.metabolicLabel')} value={`${metabolic.toFixed(0)} W`} icon={Activity} />
               </div>
 
               {/* IBUTG destaque */}
               <div className="rounded-xl border bg-gradient-to-br from-muted/40 to-muted/10 p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                  <p className="text-xs uppercase tracking-wider text-muted-foreground">IBUTG Calculado</p>
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">{t('heatStress.summary.ibutgCalculated')}</p>
                   <p className="text-4xl font-bold tabular-nums mt-1">{ibutg.toFixed(2)} <span className="text-2xl text-muted-foreground">°C</span></p>
                   <p className="text-xs text-muted-foreground mt-2">
-                    Média de {validReadings.length} leitura{validReadings.length > 1 ? 's' : ''} —{' '}
+                    {t('heatStress.summary.averageOf', { count: validReadings.length })} —{' '}
                     {envType === 'with_solar'
-                      ? '0,7·Tbn + 0,2·Tg + 0,1·Tbs'
-                      : '0,7·Tbn + 0,3·Tg'}
+                      ? t('heatStress.summary.formulaWithSolar')
+                      : t('heatStress.summary.formulaNoSolar')}
                   </p>
                 </div>
                 <div className="flex flex-col items-start sm:items-end gap-2">
-                  <span className="text-xs uppercase tracking-wider text-muted-foreground">Status NHO 06</span>
+                  <span className="text-xs uppercase tracking-wider text-muted-foreground">{t('heatStress.summary.nhoStatus')}</span>
                   <div className="flex items-center gap-2">
                     {finalStatus === 'normal' && <CheckCircle2 className="h-5 w-5 text-emerald-600" />}
                     {finalStatus === 'action' && <AlertTriangle className="h-5 w-5 text-amber-600" />}
@@ -526,9 +526,9 @@ export default function HeatStress() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-16">#</TableHead>
-                      <TableHead className="text-right">Tbn (°C)</TableHead>
-                      <TableHead className="text-right">Tg (°C)</TableHead>
-                      {envType === 'with_solar' && <TableHead className="text-right">Tbs (°C)</TableHead>}
+                      <TableHead className="text-right">{t('heatStress.history.colTbn')} (°C)</TableHead>
+                      <TableHead className="text-right">{t('heatStress.history.colTg')} (°C)</TableHead>
+                      {envType === 'with_solar' && <TableHead className="text-right">{t('heatStress.history.colTbs')} (°C)</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -543,7 +543,7 @@ export default function HeatStress() {
                       </TableRow>
                     ))}
                     <TableRow className="bg-muted/40 font-semibold">
-                      <TableCell>Média</TableCell>
+                      <TableCell>{t('heatStress.summary.avgRow')}</TableCell>
                       <TableCell className="text-right tabular-nums">{averages.avgTbn.toFixed(2)}</TableCell>
                       <TableCell className="text-right tabular-nums">{averages.avgTg.toFixed(2)}</TableCell>
                       {envType === 'with_solar' && (
@@ -556,10 +556,11 @@ export default function HeatStress() {
 
               {notes && (
                 <div className="rounded-lg border p-3 bg-muted/20">
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Observações</p>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">{t('heatStress.summary.notesLabel')}</p>
                   <p className="text-sm whitespace-pre-wrap">{notes}</p>
                 </div>
               )}
+
             </div>
           )}
 
