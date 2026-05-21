@@ -597,6 +597,7 @@ export type Database = {
           nho_status: string
           notes: string | null
           organization_id: string | null
+          readings: Json
           sector: string
           ship_id: string
           tbn: number
@@ -615,6 +616,7 @@ export type Database = {
           nho_status: string
           notes?: string | null
           organization_id?: string | null
+          readings?: Json
           sector: string
           ship_id: string
           tbn: number
@@ -633,6 +635,7 @@ export type Database = {
           nho_status?: string
           notes?: string | null
           organization_id?: string | null
+          readings?: Json
           sector?: string
           ship_id?: string
           tbn?: number
