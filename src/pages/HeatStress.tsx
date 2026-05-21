@@ -308,23 +308,23 @@ export default function HeatStress() {
           {step === 1 && (
             <div className="space-y-5">
               <div>
-                <CardTitle className="text-base">Informações iniciais</CardTitle>
+                <CardTitle className="text-base">{t('heatStress.info.title')}</CardTitle>
                 <CardDescription>
-                  Selecione o navio, informe o setor e o tipo de ambiente avaliado.
+                  {t('heatStress.info.description')}
                 </CardDescription>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2">
-                    <ShipIcon className="h-3.5 w-3.5 text-muted-foreground" /> Navio
+                    <ShipIcon className="h-3.5 w-3.5 text-muted-foreground" /> {t('heatStress.info.ship')}
                   </Label>
                   <Select value={shipId} onValueChange={setShipId} disabled={shipsLoading}>
-                    <SelectTrigger><SelectValue placeholder="Selecione um navio" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder={t('heatStress.info.shipPlaceholder')} /></SelectTrigger>
                     <SelectContent>
                       {ships.length === 0 ? (
                         <div className="px-3 py-2 text-sm text-muted-foreground">
-                          Nenhum navio liberado para sua conta.
+                          {t('heatStress.info.noShips')}
                         </div>
                       ) : ships.map(s => (
                         <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
@@ -335,31 +335,31 @@ export default function HeatStress() {
 
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2">
-                    <MapPin className="h-3.5 w-3.5 text-muted-foreground" /> Setor / Área
+                    <MapPin className="h-3.5 w-3.5 text-muted-foreground" /> {t('heatStress.info.sector')}
                   </Label>
                   <Input
                     value={sector}
                     onChange={(e) => setSector(e.target.value)}
-                    placeholder="Ex.: Praça de Máquinas"
+                    placeholder={t('heatStress.info.sectorPlaceholder')}
                   />
                 </div>
 
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2">
-                    <Cloud className="h-3.5 w-3.5 text-muted-foreground" /> Tipo de Ambiente
+                    <Cloud className="h-3.5 w-3.5 text-muted-foreground" /> {t('heatStress.info.envType')}
                   </Label>
                   <Select value={envType} onValueChange={(v) => setEnvType(v as EnvType)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="no_solar">Interno ou Externo sem carga solar</SelectItem>
-                      <SelectItem value="with_solar">Externo com carga solar</SelectItem>
+                      <SelectItem value="no_solar">{t('heatStress.info.envNoSolar')}</SelectItem>
+                      <SelectItem value="with_solar">{t('heatStress.info.envWithSolar')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2">
-                    <Activity className="h-3.5 w-3.5 text-muted-foreground" /> Taxa Metabólica (W)
+                    <Activity className="h-3.5 w-3.5 text-muted-foreground" /> {t('heatStress.info.metabolic')}
                   </Label>
                   <Select
                     value={metabolicCustom ? 'custom' : metabolicPreset}
@@ -371,29 +371,30 @@ export default function HeatStress() {
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {METABOLIC_PRESETS.map(p => (
-                        <SelectItem key={p.value} value={String(p.value)}>{p.label}</SelectItem>
+                        <SelectItem key={p.value} value={String(p.value)}>{t(`heatStress.metabolicPresets.${p.key}`)}</SelectItem>
                       ))}
-                      <SelectItem value="custom">Personalizado…</SelectItem>
+                      <SelectItem value="custom">{t('heatStress.info.metabolicCustom')}</SelectItem>
                     </SelectContent>
                   </Select>
                   {metabolicCustom !== '' && (
                     <Input
                       type="number" min={0} value={metabolicCustom}
                       onChange={(e) => setMetabolicCustom(e.target.value)}
-                      placeholder="Watts"
+                      placeholder={t('heatStress.info.metabolicCustomPlaceholder')}
                     />
                   )}
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label>Observações (opcional)</Label>
+                <Label>{t('heatStress.info.notes')}</Label>
                 <Textarea
                   value={notes} onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Condições do ambiente, atividade exercida, etc."
+                  placeholder={t('heatStress.info.notesPlaceholder')}
                   rows={3}
                 />
               </div>
+
             </div>
           )}
 
