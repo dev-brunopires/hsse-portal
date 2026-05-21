@@ -682,24 +682,27 @@ export default function HeatStress() {
                   <TableHead className="text-right">{t('heatStress.history.colIbutg')}</TableHead>
                   <TableHead className="text-right">{t('heatStress.history.colRate')}</TableHead>
                   <TableHead>{t('heatStress.history.colStatus')}</TableHead>
+                  <TableHead>{t('heatStress.history.colResponsible')}</TableHead>
                   <TableHead className="text-right">{t('heatStress.history.colPdf')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {measurementsLoading ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-10 text-muted-foreground">
+                    <TableCell colSpan={canDelete ? 11 : 10} className="text-center py-10 text-muted-foreground">
                       <Loader2 className="h-4 w-4 animate-spin inline mr-2" /> {t('heatStress.history.loading')}
                     </TableCell>
                   </TableRow>
                 ) : measurements.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-10 text-muted-foreground">
+                    <TableCell colSpan={canDelete ? 11 : 10} className="text-center py-10 text-muted-foreground">
                       {t('heatStress.history.empty')}
                     </TableCell>
                   </TableRow>
                 ) : (
-                  measurements.map((m) => (
+                  measurements.map((m) => {
+                    const inspectorName = getInspectorName(m);
+                    return (
                     <TableRow key={m.id}>
                       <TableCell className="whitespace-nowrap">{formatDateTime(m.measured_at)}</TableCell>
                       <TableCell className="font-medium">{m.sector}</TableCell>
@@ -709,17 +712,57 @@ export default function HeatStress() {
                       <TableCell className="text-right tabular-nums font-semibold">{Number(m.ibutg).toFixed(2)}</TableCell>
                       <TableCell className="text-right tabular-nums">{Number(m.metabolic_rate).toFixed(0)}</TableCell>
                       <TableCell>{statusBadge(m.nho_status)}</TableCell>
+                      <TableCell className="whitespace-nowrap text-sm">
+                        {inspectorName || <span className="text-muted-foreground">{t('heatStress.history.unknownInspector')}</span>}
+                      </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          variant="ghost" size="icon"
-                          onClick={() => downloadHistoryPDF(m)}
-                          aria-label={t('heatStress.history.downloadPdf')}
-                        >
-                          <FileDown className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost" size="icon"
+                            onClick={() => downloadHistoryPDF(m)}
+                            aria-label={t('heatStress.history.downloadPdf')}
+                          >
+                            <FileDown className="h-4 w-4" />
+                          </Button>
+                          {canDelete && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost" size="icon"
+                                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  aria-label={t('heatStress.history.delete')}
+                                  disabled={deleteMutation.isPending}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>{t('heatStress.history.deleteConfirmTitle')}</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    {t('heatStress.history.deleteConfirmDescription', {
+                                      sector: m.sector,
+                                      date: formatDateTime(m.measured_at),
+                                    })}
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>{t('heatStress.history.deleteCancel')}</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    onClick={() => deleteMutation.mutate(m.id)}
+                                  >
+                                    {t('heatStress.history.deleteConfirm')}
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
-                  ))
+                    );
+                  })
                 )}
 
               </TableBody>
