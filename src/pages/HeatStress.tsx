@@ -48,7 +48,9 @@ interface Measurement {
   nho_status: NhoStatus;
   notes: string | null;
   measured_at: string;
+  readings?: Array<{ tbn: number; tg: number; tbs: number | null }> | null;
 }
+
 
 const METABOLIC_PRESETS: { key: string; value: number }[] = [
   { key: 'rest', value: 115 },
