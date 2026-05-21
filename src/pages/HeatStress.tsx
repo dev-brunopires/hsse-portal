@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useShips } from '@/hooks/useShips';
+import { useShipFilter } from '@/contexts/ShipFilterContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useOrganizationBranding } from '@/hooks/useOrganizationBranding';
