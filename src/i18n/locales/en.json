@@ -3446,14 +3446,24 @@
       "colIbutg": "WBGT",
       "colRate": "Rate (W)",
       "colStatus": "NHO 06 Status",
+      "colResponsible": "Inspector",
       "colPdf": "PDF",
-      "downloadPdf": "Download PDF"
+      "downloadPdf": "Download PDF",
+      "delete": "Delete measurement",
+      "deleteConfirmTitle": "Delete measurement?",
+      "deleteConfirmDescription": "This action cannot be undone. The measurement of {{sector}} on {{date}} will be permanently removed.",
+      "deleteConfirm": "Yes, delete",
+      "deleteCancel": "Cancel",
+      "unknownInspector": "—"
     },
     "toast": {
       "savedTitle": "Measurement recorded",
       "savedDescription": "Heat stress saved successfully.",
       "errorTitle": "Error saving",
-      "incompleteData": "Incomplete data"
+      "incompleteData": "Incomplete data",
+      "deletedTitle": "Measurement deleted",
+      "deletedDescription": "The measurement was successfully removed.",
+      "deleteErrorTitle": "Error deleting"
     },
     "pdf": {
       "title": "Heat Stress Assessment",
