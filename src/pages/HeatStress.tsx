@@ -201,7 +201,7 @@ export default function HeatStress() {
       return data as Measurement;
     },
     onSuccess: async (saved) => {
-      toast({ title: 'Medição registrada', description: 'Heat stress salvo com sucesso.' });
+      toast({ title: t('heatStress.toast.savedTitle'), description: t('heatStress.toast.savedDescription') });
       queryClient.invalidateQueries({ queryKey: ['heat-stress-measurements', shipId] });
 
       // Gera e baixa o PDF automaticamente
