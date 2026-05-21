@@ -585,6 +585,63 @@ export type Database = {
           },
         ]
       }
+      heat_stress_measurements: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          environment_type: string
+          ibutg: number
+          id: string
+          measured_at: string
+          metabolic_rate: number
+          nho_status: string
+          notes: string | null
+          organization_id: string | null
+          sector: string
+          ship_id: string
+          tbn: number
+          tbs: number | null
+          tg: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          environment_type: string
+          ibutg: number
+          id?: string
+          measured_at?: string
+          metabolic_rate: number
+          nho_status: string
+          notes?: string | null
+          organization_id?: string | null
+          sector: string
+          ship_id: string
+          tbn: number
+          tbs?: number | null
+          tg: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          environment_type?: string
+          ibutg?: number
+          id?: string
+          measured_at?: string
+          metabolic_rate?: number
+          nho_status?: string
+          notes?: string | null
+          organization_id?: string | null
+          sector?: string
+          ship_id?: string
+          tbn?: number
+          tbs?: number | null
+          tg?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       inspection_checklist_items: {
         Row: {
           created_at: string
