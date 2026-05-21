@@ -8,7 +8,7 @@ export default function HeatStress() {
     <div className="p-6 space-y-6">
       <PageHeader
         title={t('navigation.heatStress')}
-        icon={<Thermometer className="h-6 w-6" />}
+        icon={Thermometer}
       />
       <div className="flex flex-col items-center justify-center py-24 text-muted-foreground">
         <Thermometer className="h-12 w-12 mb-3 opacity-50" />
