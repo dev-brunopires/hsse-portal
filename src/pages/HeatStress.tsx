@@ -600,9 +600,9 @@ export default function HeatStress() {
       {/* ============ HISTÓRICO ============ */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Histórico de Medições</CardTitle>
+          <CardTitle className="text-lg">{t('heatStress.history.title')}</CardTitle>
           <CardDescription>
-            {selectedShip?.name || 'Selecione um navio'} — últimas 200 medições
+            {t('heatStress.history.subtitle', { ship: selectedShip?.name || t('heatStress.history.selectShip') })}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -610,28 +610,28 @@ export default function HeatStress() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Data/Hora</TableHead>
-                  <TableHead>Setor</TableHead>
-                  <TableHead className="text-right">Tbn</TableHead>
-                  <TableHead className="text-right">Tg</TableHead>
-                  <TableHead className="text-right">Tbs</TableHead>
-                  <TableHead className="text-right">IBUTG</TableHead>
-                  <TableHead className="text-right">Taxa (W)</TableHead>
-                  <TableHead>Status NHO 06</TableHead>
-                  <TableHead className="text-right">PDF</TableHead>
+                  <TableHead>{t('heatStress.history.colDateTime')}</TableHead>
+                  <TableHead>{t('heatStress.history.colSector')}</TableHead>
+                  <TableHead className="text-right">{t('heatStress.history.colTbn')}</TableHead>
+                  <TableHead className="text-right">{t('heatStress.history.colTg')}</TableHead>
+                  <TableHead className="text-right">{t('heatStress.history.colTbs')}</TableHead>
+                  <TableHead className="text-right">{t('heatStress.history.colIbutg')}</TableHead>
+                  <TableHead className="text-right">{t('heatStress.history.colRate')}</TableHead>
+                  <TableHead>{t('heatStress.history.colStatus')}</TableHead>
+                  <TableHead className="text-right">{t('heatStress.history.colPdf')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {measurementsLoading ? (
                   <TableRow>
                     <TableCell colSpan={9} className="text-center py-10 text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin inline mr-2" /> Carregando…
+                      <Loader2 className="h-4 w-4 animate-spin inline mr-2" /> {t('heatStress.history.loading')}
                     </TableCell>
                   </TableRow>
                 ) : measurements.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={9} className="text-center py-10 text-muted-foreground">
-                      Nenhuma medição registrada para este navio.
+                      {t('heatStress.history.empty')}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -649,7 +649,7 @@ export default function HeatStress() {
                         <Button
                           variant="ghost" size="icon"
                           onClick={() => downloadHistoryPDF(m)}
-                          aria-label="Baixar PDF"
+                          aria-label={t('heatStress.history.downloadPdf')}
                         >
                           <FileDown className="h-4 w-4" />
                         </Button>
@@ -657,6 +657,7 @@ export default function HeatStress() {
                     </TableRow>
                   ))
                 )}
+
               </TableBody>
             </Table>
           </div>
