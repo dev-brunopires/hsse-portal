@@ -403,16 +403,16 @@ export default function HeatStress() {
             <div className="space-y-5">
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                 <div>
-                  <CardTitle className="text-base">Leituras de temperatura</CardTitle>
+                  <CardTitle className="text-base">{t('heatStress.measurements.title')}</CardTitle>
                   <CardDescription>
-                    Registre de 1 a 5 leituras. O sistema calculará a média antes de aplicar a fórmula do IBUTG.
+                    {t('heatStress.measurements.description')}
                   </CardDescription>
                 </div>
                 <Button
                   variant="outline" size="sm" onClick={addReading}
                   disabled={readings.length >= 5}
                 >
-                  <Plus className="h-4 w-4 mr-1" /> Adicionar leitura ({readings.length}/5)
+                  <Plus className="h-4 w-4 mr-1" /> {t('heatStress.measurements.addReading')} ({readings.length}/5)
                 </Button>
               </div>
 
@@ -420,26 +420,26 @@ export default function HeatStress() {
                 {readings.map((r, i) => (
                   <div key={i} className="grid grid-cols-12 gap-2 items-end p-3 rounded-lg border bg-muted/20">
                     <div className="col-span-12 sm:col-span-1 flex sm:flex-col items-center sm:items-start gap-2">
-                      <span className="text-xs uppercase tracking-wide text-muted-foreground">Leitura</span>
+                      <span className="text-xs uppercase tracking-wide text-muted-foreground">{t('heatStress.measurements.reading')}</span>
                       <span className="text-lg font-semibold tabular-nums">{i + 1}</span>
                     </div>
                     <div className="col-span-12 sm:col-span-3 space-y-1.5">
                       <Label className="flex items-center gap-1.5 text-xs">
-                        <Thermometer className="h-3 w-3 text-muted-foreground" /> Tbn (°C)
+                        <Thermometer className="h-3 w-3 text-muted-foreground" /> {t('heatStress.history.colTbn')} (°C)
                       </Label>
                       <Input type="number" step="0.1" value={r.tbn}
                         onChange={(e) => updateReading(i, 'tbn', e.target.value)} placeholder="0.0" />
                     </div>
                     <div className="col-span-12 sm:col-span-3 space-y-1.5">
                       <Label className="flex items-center gap-1.5 text-xs">
-                        <Flame className="h-3 w-3 text-muted-foreground" /> Tg (°C)
+                        <Flame className="h-3 w-3 text-muted-foreground" /> {t('heatStress.history.colTg')} (°C)
                       </Label>
                       <Input type="number" step="0.1" value={r.tg}
                         onChange={(e) => updateReading(i, 'tg', e.target.value)} placeholder="0.0" />
                     </div>
                     <div className="col-span-10 sm:col-span-3 space-y-1.5">
                       <Label className="flex items-center gap-1.5 text-xs">
-                        <Sun className="h-3 w-3 text-muted-foreground" /> Tbs (°C)
+                        <Sun className="h-3 w-3 text-muted-foreground" /> {t('heatStress.history.colTbs')} (°C)
                       </Label>
                       <Input
                         type="number" step="0.1" value={r.tbs}
@@ -452,7 +452,7 @@ export default function HeatStress() {
                       <Button
                         variant="ghost" size="icon"
                         onClick={() => removeReading(i)} disabled={readings.length === 1}
-                        aria-label="Remover leitura"
+                        aria-label={t('heatStress.measurements.remove')}
                       >
                         <Trash2 className="h-4 w-4 text-muted-foreground" />
                       </Button>
@@ -463,19 +463,20 @@ export default function HeatStress() {
 
               {averages && (
                 <div className="rounded-lg border bg-muted/30 p-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <Stat label="Média Tbn" value={`${averages.avgTbn.toFixed(2)} °C`} />
-                  <Stat label="Média Tg" value={`${averages.avgTg.toFixed(2)} °C`} />
+                  <Stat label={t('heatStress.measurements.avgTbn')} value={`${averages.avgTbn.toFixed(2)} °C`} />
+                  <Stat label={t('heatStress.measurements.avgTg')} value={`${averages.avgTg.toFixed(2)} °C`} />
                   <Stat
-                    label="Média Tbs"
+                    label={t('heatStress.measurements.avgTbs')}
                     value={averages.avgTbs != null ? `${averages.avgTbs.toFixed(2)} °C` : '—'}
                   />
                   <Stat
-                    label="IBUTG"
+                    label={t('heatStress.measurements.ibutg')}
                     value={ibutg !== null ? `${ibutg.toFixed(2)} °C` : '—'}
                     emphasis
                   />
                 </div>
               )}
+
             </div>
           )}
 
