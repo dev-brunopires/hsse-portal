@@ -1,0 +1,1 @@
+ALTER TABLE public.heat_stress_measurements ADD COLUMN IF NOT EXISTS readings jsonb NOT NULL DEFAULT '[]'::jsonb;
