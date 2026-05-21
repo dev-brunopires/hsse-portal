@@ -50,6 +50,12 @@ const STATUS_KEY: Record<HeatStressPDFData['nhoStatus'], string> = {
 
 
 export async function generateHeatStressPDF(data: HeatStressPDFData): Promise<jsPDF> {
+  const t = (k: string, opts?: any) => i18n.t(`heatStress.pdf.${k}`, opts) as string;
+  const dateLocale = (i18n.language || '').toLowerCase().startsWith('pt') ? ptBR : enUS;
+  const dateFmt = dateLocale === ptBR ? 'dd/MM/yyyy HH:mm' : 'yyyy-MM-dd HH:mm';
+
+  const envLabel = data.environmentType === 'with_solar' ? t('envWithSolar') : t('envNoSolar');
+
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 14;
@@ -58,12 +64,12 @@ export async function generateHeatStressPDF(data: HeatStressPDFData): Promise<js
 
   let y = await addPDFHeader(
     doc,
-    'Avaliação de Heat Stress',
-    'NHO 06 — FUNDACENTRO',
+    t('title'),
+    t('subtitle'),
     [
-      `Navio: ${data.shipName}`,
-      `Setor: ${data.sector}`,
-      `Data: ${format(new Date(data.measuredAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}`,
+      `${t('headerShip')}: ${data.shipName}`,
+      `${t('headerSector')}: ${data.sector}`,
+      `${t('headerDate')}: ${format(new Date(data.measuredAt), dateFmt, { locale: dateLocale })}`,
     ],
     { branding: data.branding },
   );
@@ -71,7 +77,7 @@ export async function generateHeatStressPDF(data: HeatStressPDFData): Promise<js
   y += 4;
 
   // ===== INFORMAÇÕES GERAIS =====
-  y = addSectionHeader(doc, y, 'Informações Gerais');
+  y = addSectionHeader(doc, y, t('sectionGeneral'));
   y += 2;
 
   autoTable(doc, {
@@ -84,24 +90,24 @@ export async function generateHeatStressPDF(data: HeatStressPDFData): Promise<js
       1: { cellWidth: 'auto' },
     },
     body: [
-      ['Navio', data.shipName],
-      ['Setor / Área', data.sector],
-      ['Tipo de Ambiente', ENV_LABEL[data.environmentType]],
-      ['Taxa Metabólica', `${data.metabolicRate.toFixed(0)} W`],
-      ['Responsável', data.inspectorName || '—'],
-      ['Data / Hora da Medição', format(new Date(data.measuredAt), "dd/MM/yyyy HH:mm", { locale: ptBR })],
+      [t('rowShip'), data.shipName],
+      [t('rowSector'), data.sector],
+      [t('rowEnv'), envLabel],
+      [t('rowMetabolic'), `${data.metabolicRate.toFixed(0)} W`],
+      [t('rowResponsible'), data.inspectorName || '—'],
+      [t('rowDateTime'), format(new Date(data.measuredAt), dateFmt, { locale: dateLocale })],
     ],
     margin: { left: margin, right: margin },
   });
   y = (doc as any).lastAutoTable.finalY + 6;
 
   // ===== LEITURAS =====
-  y = addSectionHeader(doc, y, `Leituras de Temperatura (${data.readings.length})`);
+  y = addSectionHeader(doc, y, t('sectionReadings', { count: data.readings.length }));
   y += 2;
 
   const head = data.environmentType === 'with_solar'
-    ? [['#', 'Tbn (°C)', 'Tg (°C)', 'Tbs (°C)']]
-    : [['#', 'Tbn (°C)', 'Tg (°C)']];
+    ? [[t('colN'), t('colTbn'), t('colTg'), t('colTbs')]]
+    : [[t('colN'), t('colTbn'), t('colTg')]];
 
   const body = data.readings.map((r, i) => {
     const base = [String(i + 1), r.tbn.toFixed(1), r.tg.toFixed(1)];
@@ -112,8 +118,8 @@ export async function generateHeatStressPDF(data: HeatStressPDFData): Promise<js
 
   // Linha de média em destaque
   const avgRow = data.environmentType === 'with_solar'
-    ? ['Média', data.avgTbn.toFixed(2), data.avgTg.toFixed(2), data.avgTbs != null ? data.avgTbs.toFixed(2) : '—']
-    : ['Média', data.avgTbn.toFixed(2), data.avgTg.toFixed(2)];
+    ? [t('avgRow'), data.avgTbn.toFixed(2), data.avgTg.toFixed(2), data.avgTbs != null ? data.avgTbs.toFixed(2) : '—']
+    : [t('avgRow'), data.avgTbn.toFixed(2), data.avgTg.toFixed(2)];
 
   autoTable(doc, {
     startY: y,
@@ -133,7 +139,7 @@ export async function generateHeatStressPDF(data: HeatStressPDFData): Promise<js
   y = (doc as any).lastAutoTable.finalY + 6;
 
   // ===== RESULTADO IBUTG =====
-  y = addSectionHeader(doc, y, 'Resultado IBUTG');
+  y = addSectionHeader(doc, y, t('sectionResult'));
   y += 4;
 
   const boxW = pageWidth - margin * 2;
@@ -146,7 +152,7 @@ export async function generateHeatStressPDF(data: HeatStressPDFData): Promise<js
   doc.setTextColor(...MEDIUM_GRAY);
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
-  doc.text('IBUTG CALCULADO', margin + 6, y + 7);
+  doc.text(t('ibutgLabel'), margin + 6, y + 7);
 
   doc.setTextColor(...DARK_GRAY);
   doc.setFontSize(22);
@@ -156,9 +162,7 @@ export async function generateHeatStressPDF(data: HeatStressPDFData): Promise<js
   doc.setFontSize(7);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...MEDIUM_GRAY);
-  const formula = data.environmentType === 'with_solar'
-    ? 'Fórmula: 0,7·Tbn + 0,2·Tg + 0,1·Tbs (com carga solar)'
-    : 'Fórmula: 0,7·Tbn + 0,3·Tg (sem carga solar)';
+  const formula = data.environmentType === 'with_solar' ? t('formulaWithSolar') : t('formulaNoSolar');
   doc.text(formula, margin + 6, y + 25);
 
   // Status badge (lado direito)
@@ -172,13 +176,13 @@ export async function generateHeatStressPDF(data: HeatStressPDFData): Promise<js
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
-  doc.text(STATUS_LABEL[data.nhoStatus], badgeX + badgeW / 2, badgeY + badgeH / 2 + 1.5, { align: 'center' });
+  doc.text(t(STATUS_KEY[data.nhoStatus]), badgeX + badgeW / 2, badgeY + badgeH / 2 + 1.5, { align: 'center' });
 
   y += boxH + 8;
 
   // ===== OBSERVAÇÕES =====
   if (data.notes) {
-    y = addSectionHeader(doc, y, 'Observações');
+    y = addSectionHeader(doc, y, t('sectionNotes'));
     y += 4;
     doc.setTextColor(...DARK_GRAY);
     doc.setFontSize(9);
@@ -197,15 +201,14 @@ export async function generateHeatStressPDF(data: HeatStressPDFData): Promise<js
   doc.setTextColor(...MEDIUM_GRAY);
   doc.setFontSize(7);
   doc.setFont('helvetica', 'italic');
-  const note = 'Avaliação baseada na Norma de Higiene Ocupacional NHO 06 da FUNDACENTRO — Avaliação da exposição ocupacional ao calor. Os limites de tolerância são interpretados conforme a taxa metabólica média informada.';
-  const noteLines = doc.splitTextToSize(note, pageWidth - margin * 2);
+  const noteLines = doc.splitTextToSize(t('methodNote'), pageWidth - margin * 2);
   doc.text(noteLines, margin, y);
 
   // Footer
   addPDFFooter(
     doc,
     data.branding?.name || 'Portal de HSSE',
-    `Heat Stress — ${data.shipName}`,
+    t('footerTitle', { ship: data.shipName }),
   );
 
   return doc;
@@ -213,6 +216,8 @@ export async function generateHeatStressPDF(data: HeatStressPDFData): Promise<js
 
 export async function downloadHeatStressPDF(data: HeatStressPDFData) {
   const doc = await generateHeatStressPDF(data);
-  const filename = `heat-stress_${data.shipName.replace(/\s+/g, '-')}_${format(new Date(data.measuredAt), 'yyyyMMdd-HHmm')}.pdf`;
+  const base = (i18n.t('heatStress.pdf.fileName') as string) || 'heat-stress';
+  const filename = `${base}_${data.shipName.replace(/\s+/g, '-')}_${format(new Date(data.measuredAt), 'yyyyMMdd-HHmm')}.pdf`;
   doc.save(filename);
 }
+
