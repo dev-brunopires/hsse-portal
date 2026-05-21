@@ -336,18 +336,9 @@ export default function HeatStress() {
                   <Label className="flex items-center gap-2">
                     <ShipIcon className="h-3.5 w-3.5 text-muted-foreground" /> {t('heatStress.info.ship')}
                   </Label>
-                  <Select value={shipId} onValueChange={setShipId} disabled={shipsLoading}>
-                    <SelectTrigger><SelectValue placeholder={t('heatStress.info.shipPlaceholder')} /></SelectTrigger>
-                    <SelectContent>
-                      {ships.length === 0 ? (
-                        <div className="px-3 py-2 text-sm text-muted-foreground">
-                          {t('heatStress.info.noShips')}
-                        </div>
-                      ) : ships.map(s => (
-                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex h-10 items-center rounded-md border border-input bg-muted/40 px-3 text-sm">
+                    {selectedShip?.name || t('heatStress.info.shipPlaceholder')}
+                  </div>
                 </div>
 
                 <div className="space-y-2">
