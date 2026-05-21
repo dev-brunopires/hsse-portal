@@ -70,6 +70,8 @@ import { useEquipmentDocuments, useDeleteDocument, type EquipmentDocument } from
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
 import { EquipmentRelationshipsEditor } from './EquipmentRelationshipsEditor';
+import { AreaCombobox } from '@/components/ships/AreaCombobox';
+
 
 const createEquipmentSchema = (t: (key: string) => string) => z.object({
   // Dados Gerais
