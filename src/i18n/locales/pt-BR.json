@@ -1757,7 +1757,15 @@
     "auditRecords": "Registros de Auditoria",
     "recordsFound": "{{count}} registro(s) encontrado(s)",
     "inspections": "Inspeções",
-    "ships": "Embarcações"
+    "ships": "Embarcações",
+    "revertAction": "Reverter",
+    "revertedBadge": "Revertido",
+    "revertedBy": "Revertido por {{name}} em {{date}}",
+    "revertConfirmTitle": "Reverter esta alteração?",
+    "revertConfirmDescription": "Esta ação irá desfazer a mudança registrada, restaurando o estado anterior do registro. Apenas o Admin Master pode executar este \"Ctrl+Z\". Tem certeza?",
+    "revertConfirm": "Sim, reverter",
+    "revertSuccess": "Alteração revertida com sucesso",
+    "revertError": "Não foi possível reverter"
   },
   "equipmentForm": {
     "newEquipment": "Novo Equipamento",
