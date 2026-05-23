@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { History, Search, Filter, ChevronDown, ChevronUp, Package, ClipboardCheck, User, Calendar, ArrowRight, Ship, Settings, UserCircle, Download, FileSpreadsheet, FileText, Eye } from 'lucide-react';
+import { History, Search, Filter, ChevronDown, ChevronUp, Package, ClipboardCheck, User, Calendar, ArrowRight, Ship, Settings, UserCircle, Download, FileSpreadsheet, FileText, Eye, Undo2, ShieldCheck } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { format } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
@@ -14,12 +14,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useAuditLogs, AuditLog } from '@/hooks/useAuditLogs';
 import { useShips } from '@/hooks/useShips';
 import { Skeleton } from '@/components/ui/skeleton';
 import { exportAuditLogsPDF, exportAuditLogsExcel } from '@/utils/exportAuditLogs';
 import { useOrganizationBranding } from '@/hooks/useOrganizationBranding';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 const getActionLabels = (t: (key: string) => string) => ({
   INSERT: { label: t('auditLogPage.actionCreate'), color: 'bg-green-500/20 text-green-600 border-green-500/30' },
