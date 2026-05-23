@@ -144,6 +144,12 @@ function AuditLogItem({ log, canRevert, onRevert, isReverting }: { log: AuditLog
                     <Badge variant="outline" className={action.color}>
                       {action.label}
                     </Badge>
+                    {log.reverted_at && (
+                      <Badge variant="outline" className="bg-amber-500/15 text-amber-600 border-amber-500/30 gap-1">
+                        <Undo2 className="h-3 w-3" />
+                        {t('auditLogPage.revertedBadge')}
+                      </Badge>
+                    )}
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5 truncate">
                     {getChangeSummary()}
