@@ -71,7 +71,7 @@ const getFieldLabels = (t: (key: string) => string): Record<string, string> => (
   code: t('auditLogPage.fieldCode'),
 });
 
-function AuditLogItem({ log }: { log: AuditLog }) {
+function AuditLogItem({ log, canRevert, onRevert, isReverting }: { log: AuditLog; canRevert: boolean; onRevert: (id: string) => void; isReverting: boolean }) {
   const { t } = useTranslation();
   const actionLabels = getActionLabels(t);
   const tableLabels = getTableLabels(t);
