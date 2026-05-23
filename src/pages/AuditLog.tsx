@@ -279,6 +279,32 @@ export default function AuditLogPage() {
   
   const { data: logs = [], isLoading } = useAuditLogs({ limit: 200 });
   const { data: ships = [] } = useShips();
+  const { isAdminMaster } = useAuth();
+  const queryClient = useQueryClient();
+
+  const revertMutation = useMutation({
+    mutationFn: async (logId: string) => {
+      const { data, error } = await supabase.rpc('revert_audit_log' as any, { _log_id: logId });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast.success(t('auditLogPage.revertSuccess'));
+      queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment'] });
+      queryClient.invalidateQueries({ queryKey: ['inspections'] });
+      queryClient.invalidateQueries({ queryKey: ['ships'] });
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      queryClient.invalidateQueries({ queryKey: ['certificates'] });
+      queryClient.invalidateQueries({ queryKey: ['maintenance-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['heat-stress'] });
+      queryClient.invalidateQueries({ queryKey: ['ship-areas'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+    },
+    onError: (err: any) => {
+      toast.error(t('auditLogPage.revertError'), { description: err?.message });
+    },
+  });
 
   // Create a map of ship IDs to names for filtering
   const shipMap = useMemo(() => {
