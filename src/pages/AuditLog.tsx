@@ -199,15 +199,55 @@ function AuditLogItem({ log, canRevert, onRevert, isReverting }: { log: AuditLog
                   </pre>
                 </div>
               )}
-              <div className="mt-3 pt-3 border-t border-border/50 flex items-center gap-4 text-xs text-muted-foreground sm:hidden">
-                <div className="flex items-center gap-1">
-                  <User className="h-3 w-3" />
-                  <span>{log.user_name || t('auditLogPage.system')}</span>
+              <div className="mt-3 pt-3 border-t border-border/50 flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-4 text-xs text-muted-foreground sm:hidden">
+                  <div className="flex items-center gap-1">
+                    <User className="h-3 w-3" />
+                    <span>{log.user_name || t('auditLogPage.system')}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    <span>{format(new Date(log.created_at), "dd/MM/yyyy HH:mm", { locale: dateLocale })}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Calendar className="h-3 w-3" />
-                  <span>{format(new Date(log.created_at), "dd/MM/yyyy HH:mm", { locale: dateLocale })}</span>
-                </div>
+                {log.reverted_at ? (
+                  <div className="text-xs text-amber-600 flex items-center gap-1 ml-auto">
+                    <ShieldCheck className="h-3 w-3" />
+                    {t('auditLogPage.revertedBy', {
+                      name: log.reverted_by_name || t('auditLogPage.system'),
+                      date: format(new Date(log.reverted_at), 'dd/MM/yyyy HH:mm', { locale: dateLocale }),
+                    })}
+                  </div>
+                ) : canRevert && REVERTABLE_TABLES.includes(log.table_name) ? (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="ml-auto gap-2" disabled={isReverting}>
+                        <Undo2 className="h-3.5 w-3.5" />
+                        {t('auditLogPage.revertAction')}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>{t('auditLogPage.revertConfirmTitle')}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {t('auditLogPage.revertConfirmDescription')}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onRevert(log.id);
+                          }}
+                          className="bg-amber-600 hover:bg-amber-700"
+                        >
+                          {t('auditLogPage.revertConfirm')}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                ) : null}
               </div>
             </div>
           </CardContent>
@@ -216,6 +256,12 @@ function AuditLogItem({ log, canRevert, onRevert, isReverting }: { log: AuditLog
     </Collapsible>
   );
 }
+
+const REVERTABLE_TABLES = [
+  'equipment', 'inspections', 'ships', 'categories', 'profiles',
+  'certificates', 'maintenance_requests', 'heat_stress_measurements',
+  'ship_areas', 'equipment_relationships',
+];
 
 export default function AuditLogPage() {
   const { t } = useTranslation();
