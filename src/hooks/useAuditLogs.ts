@@ -12,6 +12,9 @@ export interface AuditLog {
   user_id: string | null;
   user_name: string | null;
   created_at: string;
+  reverted_at: string | null;
+  reverted_by: string | null;
+  reverted_by_name: string | null;
 }
 
 interface UseAuditLogsOptions {
