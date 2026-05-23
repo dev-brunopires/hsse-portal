@@ -548,7 +548,14 @@ export default function AuditLogPage() {
               </div>
             ) : (
               filteredLogs.map(log => (
-                <AuditLogItem key={log.id} log={log} />
+                <AuditLogItem
+                  key={log.id}
+                  log={log}
+                  canRevert={isAdminMaster}
+                  onRevert={(id) => revertMutation.mutate(id)}
+                  isReverting={revertMutation.isPending}
+                />
+
               ))
             )}
           </ScrollArea>
