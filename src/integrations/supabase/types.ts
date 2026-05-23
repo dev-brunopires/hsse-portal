@@ -23,6 +23,10 @@ export type Database = {
           new_data: Json | null
           old_data: Json | null
           record_id: string
+          revert_log_id: string | null
+          reverted_at: string | null
+          reverted_by: string | null
+          reverted_by_name: string | null
           table_name: string
           user_id: string | null
           user_name: string | null
@@ -35,6 +39,10 @@ export type Database = {
           new_data?: Json | null
           old_data?: Json | null
           record_id: string
+          revert_log_id?: string | null
+          reverted_at?: string | null
+          reverted_by?: string | null
+          reverted_by_name?: string | null
           table_name: string
           user_id?: string | null
           user_name?: string | null
@@ -47,6 +55,10 @@ export type Database = {
           new_data?: Json | null
           old_data?: Json | null
           record_id?: string
+          revert_log_id?: string | null
+          reverted_at?: string | null
+          reverted_by?: string | null
+          reverted_by_name?: string | null
           table_name?: string
           user_id?: string | null
           user_name?: string | null
@@ -1598,6 +1610,7 @@ export type Database = {
         Args: { _category_id: string }
         Returns: number
       }
+      revert_audit_log: { Args: { _log_id: string }; Returns: Json }
       user_belongs_to_organization: {
         Args: { _organization_id: string; _user_id: string }
         Returns: boolean

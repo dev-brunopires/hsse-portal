@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { History, Search, Filter, ChevronDown, ChevronUp, Package, ClipboardCheck, User, Calendar, ArrowRight, Ship, Settings, UserCircle, Download, FileSpreadsheet, FileText, Eye } from 'lucide-react';
+import { History, Search, Filter, ChevronDown, ChevronUp, Package, ClipboardCheck, User, Calendar, ArrowRight, Ship, Settings, UserCircle, Download, FileSpreadsheet, FileText, Eye, Undo2, ShieldCheck } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { format } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
@@ -14,12 +14,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useAuditLogs, AuditLog } from '@/hooks/useAuditLogs';
 import { useShips } from '@/hooks/useShips';
 import { Skeleton } from '@/components/ui/skeleton';
 import { exportAuditLogsPDF, exportAuditLogsExcel } from '@/utils/exportAuditLogs';
 import { useOrganizationBranding } from '@/hooks/useOrganizationBranding';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 const getActionLabels = (t: (key: string) => string) => ({
   INSERT: { label: t('auditLogPage.actionCreate'), color: 'bg-green-500/20 text-green-600 border-green-500/30' },
@@ -67,7 +71,7 @@ const getFieldLabels = (t: (key: string) => string): Record<string, string> => (
   code: t('auditLogPage.fieldCode'),
 });
 
-function AuditLogItem({ log }: { log: AuditLog }) {
+function AuditLogItem({ log, canRevert, onRevert, isReverting }: { log: AuditLog; canRevert: boolean; onRevert: (id: string) => void; isReverting: boolean }) {
   const { t } = useTranslation();
   const actionLabels = getActionLabels(t);
   const tableLabels = getTableLabels(t);
@@ -140,6 +144,12 @@ function AuditLogItem({ log }: { log: AuditLog }) {
                     <Badge variant="outline" className={action.color}>
                       {action.label}
                     </Badge>
+                    {log.reverted_at && (
+                      <Badge variant="outline" className="bg-amber-500/15 text-amber-600 border-amber-500/30 gap-1">
+                        <Undo2 className="h-3 w-3" />
+                        {t('auditLogPage.revertedBadge')}
+                      </Badge>
+                    )}
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5 truncate">
                     {getChangeSummary()}
@@ -189,15 +199,55 @@ function AuditLogItem({ log }: { log: AuditLog }) {
                   </pre>
                 </div>
               )}
-              <div className="mt-3 pt-3 border-t border-border/50 flex items-center gap-4 text-xs text-muted-foreground sm:hidden">
-                <div className="flex items-center gap-1">
-                  <User className="h-3 w-3" />
-                  <span>{log.user_name || t('auditLogPage.system')}</span>
+              <div className="mt-3 pt-3 border-t border-border/50 flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-4 text-xs text-muted-foreground sm:hidden">
+                  <div className="flex items-center gap-1">
+                    <User className="h-3 w-3" />
+                    <span>{log.user_name || t('auditLogPage.system')}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    <span>{format(new Date(log.created_at), "dd/MM/yyyy HH:mm", { locale: dateLocale })}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Calendar className="h-3 w-3" />
-                  <span>{format(new Date(log.created_at), "dd/MM/yyyy HH:mm", { locale: dateLocale })}</span>
-                </div>
+                {log.reverted_at ? (
+                  <div className="text-xs text-amber-600 flex items-center gap-1 ml-auto">
+                    <ShieldCheck className="h-3 w-3" />
+                    {t('auditLogPage.revertedBy', {
+                      name: log.reverted_by_name || t('auditLogPage.system'),
+                      date: format(new Date(log.reverted_at), 'dd/MM/yyyy HH:mm', { locale: dateLocale }),
+                    })}
+                  </div>
+                ) : canRevert && REVERTABLE_TABLES.includes(log.table_name) ? (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="ml-auto gap-2" disabled={isReverting}>
+                        <Undo2 className="h-3.5 w-3.5" />
+                        {t('auditLogPage.revertAction')}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>{t('auditLogPage.revertConfirmTitle')}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {t('auditLogPage.revertConfirmDescription')}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onRevert(log.id);
+                          }}
+                          className="bg-amber-600 hover:bg-amber-700"
+                        >
+                          {t('auditLogPage.revertConfirm')}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                ) : null}
               </div>
             </div>
           </CardContent>
@@ -206,6 +256,12 @@ function AuditLogItem({ log }: { log: AuditLog }) {
     </Collapsible>
   );
 }
+
+const REVERTABLE_TABLES = [
+  'equipment', 'inspections', 'ships', 'categories', 'profiles',
+  'certificates', 'maintenance_requests', 'heat_stress_measurements',
+  'ship_areas', 'equipment_relationships',
+];
 
 export default function AuditLogPage() {
   const { t } = useTranslation();
@@ -223,6 +279,32 @@ export default function AuditLogPage() {
   
   const { data: logs = [], isLoading } = useAuditLogs({ limit: 200 });
   const { data: ships = [] } = useShips();
+  const { isAdminMaster } = useAuth();
+  const queryClient = useQueryClient();
+
+  const revertMutation = useMutation({
+    mutationFn: async (logId: string) => {
+      const { data, error } = await supabase.rpc('revert_audit_log' as any, { _log_id: logId });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast.success(t('auditLogPage.revertSuccess'));
+      queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment'] });
+      queryClient.invalidateQueries({ queryKey: ['inspections'] });
+      queryClient.invalidateQueries({ queryKey: ['ships'] });
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      queryClient.invalidateQueries({ queryKey: ['certificates'] });
+      queryClient.invalidateQueries({ queryKey: ['maintenance-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['heat-stress'] });
+      queryClient.invalidateQueries({ queryKey: ['ship-areas'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+    },
+    onError: (err: any) => {
+      toast.error(t('auditLogPage.revertError'), { description: err?.message });
+    },
+  });
 
   // Create a map of ship IDs to names for filtering
   const shipMap = useMemo(() => {
@@ -466,7 +548,14 @@ export default function AuditLogPage() {
               </div>
             ) : (
               filteredLogs.map(log => (
-                <AuditLogItem key={log.id} log={log} />
+                <AuditLogItem
+                  key={log.id}
+                  log={log}
+                  canRevert={isAdminMaster}
+                  onRevert={(id) => revertMutation.mutate(id)}
+                  isReverting={revertMutation.isPending}
+                />
+
               ))
             )}
           </ScrollArea>
