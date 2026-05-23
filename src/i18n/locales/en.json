@@ -1757,7 +1757,15 @@
     "auditRecords": "Audit Records",
     "recordsFound": "{{count}} record(s) found",
     "inspections": "Inspections",
-    "ships": "Ships"
+    "ships": "Ships",
+    "revertAction": "Revert",
+    "revertedBadge": "Reverted",
+    "revertedBy": "Reverted by {{name}} on {{date}}",
+    "revertConfirmTitle": "Revert this change?",
+    "revertConfirmDescription": "This will undo the recorded change and restore the record to its previous state. Only Admin Master can perform this \"Ctrl+Z\". Are you sure?",
+    "revertConfirm": "Yes, revert",
+    "revertSuccess": "Change reverted successfully",
+    "revertError": "Could not revert"
   },
   "equipmentForm": {
     "newEquipment": "New Equipment",
