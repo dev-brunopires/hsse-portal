@@ -172,7 +172,16 @@ export function AppSidebar() {
             <NavItem to="/heat-stress" icon={<Thermometer size={20} />} label={t('navigation.heatStress')} collapsed={collapsed} />
           </div>
         </NavGroup>
+
+        {(isAdminMaster || isPlatformOwner) && (
+          <NavGroup label={t('navigation.groupSafety')} collapsed={collapsed}>
+            <div data-tour="obs-cards">
+              <NavItem to="/obs-cards" icon={<ShieldAlert size={20} />} label={t('navigation.obsCards')} collapsed={collapsed} />
+            </div>
+          </NavGroup>
+        )}
       </nav>
+
 
       {/* Bottom Section - Admin only items */}
       {isAdmin && (
