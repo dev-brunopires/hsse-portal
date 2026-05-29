@@ -151,6 +151,7 @@ function buildRecord(
   const closeDate = parseDate(get('close_date'));
   const dueDate = parseDate(get('due_date'));
   const description = (get('description') ?? '').toString();
+  const daysToClose = daysBetweenLocalDates(creationDate, closeDate);
 
   return {
     dataset_id: datasetId,
@@ -167,7 +168,7 @@ function buildRecord(
     close_date: closeDate,
     category: deriveCategory(description),
     severity: deriveSeverity(obsType, status, description),
-    time_to_close_days: Math.max(0, daysBetweenLocalDates(creationDate, closeDate) ?? 0),
+    time_to_close_days: daysToClose == null ? null : Math.max(0, daysToClose),
     is_open: !closeDate,
     month: creationDate ? Number(creationDate.slice(5, 7)) : null,
     year: creationDate ? Number(creationDate.slice(0, 4)) : null,
