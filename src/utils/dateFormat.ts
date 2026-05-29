@@ -156,3 +156,14 @@ export function calculateNextDateByFrequency(dateString: string, frequency: stri
   
   return formatLocalDate(date);
 }
+
+/**
+ * Calculates full days between two YYYY-MM-DD date strings using local time.
+ */
+export function daysBetweenLocalDates(startDateString: string | null | undefined, endDateString: string | null | undefined): number | null {
+  const start = parseLocalDate(startDateString);
+  const end = parseLocalDate(endDateString);
+  if (!start || !end || isNaN(start.getTime()) || isNaN(end.getTime())) return null;
+
+  return Math.round((end.getTime() - start.getTime()) / 86400000);
+}
