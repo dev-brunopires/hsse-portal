@@ -18,6 +18,7 @@ const MAX_OBS_CARD_FILE_SIZE_MB = 8;
 function getUploadErrorMessage(message: string | undefined, t: ReturnType<typeof useTranslation>['t']) {
   if (message?.includes('WORKER_RESOURCE_LIMIT')) return t('obsCards.upload.resourceLimitError');
   if (message?.includes('row_limit_exceeded')) return t('obsCards.upload.rowLimitError');
+  if (message?.includes('file_too_large')) return t('obsCards.upload.fileTooLarge', { size: MAX_OBS_CARD_FILE_SIZE_MB });
   return message;
 }
 
