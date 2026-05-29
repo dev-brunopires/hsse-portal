@@ -1144,6 +1144,149 @@ export type Database = {
           },
         ]
       }
+      obs_card_datasets: {
+        Row: {
+          column_mapping: Json | null
+          created_at: string
+          error_message: string | null
+          id: string
+          name: string
+          organization_id: string
+          original_filename: string | null
+          row_count: number
+          source_storage_path: string | null
+          status: string
+          updated_at: string
+          uploaded_by: string | null
+          uploaded_by_name: string | null
+        }
+        Insert: {
+          column_mapping?: Json | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          original_filename?: string | null
+          row_count?: number
+          source_storage_path?: string | null
+          status?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+        }
+        Update: {
+          column_mapping?: Json | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          original_filename?: string | null
+          row_count?: number
+          source_storage_path?: string | null
+          status?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "obs_card_datasets_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      obs_cards: {
+        Row: {
+          action_taken: string | null
+          area: string | null
+          category: string | null
+          close_date: string | null
+          created_at: string
+          creation_date: string | null
+          dataset_id: string
+          department: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          is_open: boolean | null
+          month: number | null
+          obs_type: string | null
+          organization_id: string
+          raw_row: Json | null
+          responsible: string | null
+          severity: string | null
+          status: string | null
+          time_to_close_days: number | null
+          year: number | null
+        }
+        Insert: {
+          action_taken?: string | null
+          area?: string | null
+          category?: string | null
+          close_date?: string | null
+          created_at?: string
+          creation_date?: string | null
+          dataset_id: string
+          department?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          is_open?: boolean | null
+          month?: number | null
+          obs_type?: string | null
+          organization_id: string
+          raw_row?: Json | null
+          responsible?: string | null
+          severity?: string | null
+          status?: string | null
+          time_to_close_days?: number | null
+          year?: number | null
+        }
+        Update: {
+          action_taken?: string | null
+          area?: string | null
+          category?: string | null
+          close_date?: string | null
+          created_at?: string
+          creation_date?: string | null
+          dataset_id?: string
+          department?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          is_open?: boolean | null
+          month?: number | null
+          obs_type?: string | null
+          organization_id?: string
+          raw_row?: Json | null
+          responsible?: string | null
+          severity?: string | null
+          status?: string | null
+          time_to_close_days?: number | null
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "obs_cards_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "obs_card_datasets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obs_cards_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           created_at: string | null
