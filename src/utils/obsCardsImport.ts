@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { formatLocalDate, parseLocalDate } from '@/utils/dateFormat';
+import { daysBetweenLocalDates, formatLocalDate, parseLocalDate } from '@/utils/dateFormat';
 import { supabase } from '@/integrations/supabase/client';
 
 const INSERT_CHUNK_SIZE = 250;
@@ -133,13 +133,6 @@ function getCell(sheet: XLSX.WorkSheet, rowIndex: number, columnIndex: number): 
   return cell?.v ?? null;
 }
 
-function diffDays(start: string | null, end: string | null): number | null {
-  const startDate = parseLocalDate(start);
-  const endDate = parseLocalDate(end);
-  if (!startDate || !endDate) return null;
-  return Math.max(0, Math.round((endDate.getTime() - startDate.getTime()) / 86400000));
-}
-
 function toNullableText(value: unknown): string | null {
   const text = (value ?? '').toString();
   return text || null;
@@ -174,7 +167,7 @@ function buildRecord(
     close_date: closeDate,
     category: deriveCategory(description),
     severity: deriveSeverity(obsType, status, description),
-    time_to_close_days: diffDays(creationDate, closeDate),
+    time_to_close_days: Math.max(0, daysBetweenLocalDates(creationDate, closeDate) ?? 0),
     is_open: !closeDate,
     month: creationDate ? Number(creationDate.slice(5, 7)) : null,
     year: creationDate ? Number(creationDate.slice(0, 4)) : null,
