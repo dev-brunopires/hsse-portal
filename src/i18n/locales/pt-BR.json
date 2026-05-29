@@ -218,7 +218,9 @@
       "requiredName": "Informe um nome para a base",
       "fileTooLarge": "O arquivo é muito grande. Envie uma planilha com até {{size}} MB ou divida a base em arquivos menores.",
       "resourceLimitError": "O arquivo excedeu os recursos disponíveis para processamento. Reduza o tamanho da planilha ou divida a importação em bases menores.",
-      "rowLimitError": "A planilha excedeu o limite de linhas para importação. Divida a base em arquivos menores."
+      "rowLimitError": "A planilha excedeu o limite de linhas para importação. Divida a base em arquivos menores.",
+      "missingHeaders": "Não foi possível identificar os cabeçalhos da planilha.",
+      "emptySheet": "A planilha não possui registros para importar."
     },
     "filters": {
       "title": "Filtros",
