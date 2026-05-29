@@ -297,8 +297,7 @@ Deno.serve(async (req) => {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     try {
-      const body = await req.clone().json();
-      if (body?.dataset_id) {
+      if (datasetIdForFailure) {
         const admin = createClient(
           Deno.env.get("SUPABASE_URL")!,
           Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -306,7 +305,7 @@ Deno.serve(async (req) => {
         await admin
           .from("obs_card_datasets")
           .update({ status: "failed", error_message: msg })
-          .eq("id", body.dataset_id);
+          .eq("id", datasetIdForFailure);
       }
     } catch (_) {}
     return new Response(JSON.stringify({ error: msg }), {
