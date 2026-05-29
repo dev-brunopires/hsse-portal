@@ -19,6 +19,7 @@ import {
   Award,
   Activity,
   Thermometer,
+  ShieldAlert,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -171,7 +172,16 @@ export function AppSidebar() {
             <NavItem to="/heat-stress" icon={<Thermometer size={20} />} label={t('navigation.heatStress')} collapsed={collapsed} />
           </div>
         </NavGroup>
+
+        {(isAdminMaster || isPlatformOwner) && (
+          <NavGroup label={t('navigation.groupSafety')} collapsed={collapsed}>
+            <div data-tour="obs-cards">
+              <NavItem to="/obs-cards" icon={<ShieldAlert size={20} />} label={t('navigation.obsCards')} collapsed={collapsed} />
+            </div>
+          </NavGroup>
+        )}
       </nav>
+
 
       {/* Bottom Section - Admin only items */}
       {isAdmin && (

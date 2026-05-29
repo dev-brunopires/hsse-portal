@@ -1,41 +1,112 @@
-## Problema
 
-O preview do Lovable fica servindo partes antigas do app porque o **Service Worker (PWA)** está ativo também em ambiente de preview/desenvolvimento. O `vite-plugin-pwa` está configurado com `registerType: "autoUpdate"` e várias estratégias de cache (`StaleWhileRevalidate`, `CacheFirst`) que guardam JS, CSS, imagens e fontes. Resultado: ao abrir o preview, o navegador entrega primeiro a versão em cache e só depois (às vezes) busca a nova — dando a sensação de "app antigo".
+# Plano: Módulo OBS Cards (BCO / PSO) no Portal
 
-Além disso, o `main.tsx` tem um auto-recover que limpa caches e faz reload, mas só dispara em `import.meta.env.PROD` e apenas quando detecta erro de chunk — não resolve o caso normal de "está exibindo versão velha".
+Adicionar módulo de análise de Observation Cards offshore ao portal, reutilizando arquitetura, autenticação multi-tenant, design system e padrões de UI/UX existentes.
 
-## Solução proposta
+**Acesso fase 1:**
+- **Admin Master + Platform Owner**: upload, gerenciar datasets, excluir observações.
+- **Demais papéis (Admin, Supervisor, Technician, Viewer)**: sem acesso ao módulo nesta fase — fica preparado para liberar visualização depois (RLS de SELECT já incluída, mas item do menu oculto).
 
-Registrar o Service Worker **somente no domínio publicado** (`sbm-inspect.lovable.app`), e **desativá-lo no preview** (`*.lovable.app/id-preview--*` e em desenvolvimento). Assim:
+Multi-tenant: cada organização vê e gerencia apenas seus próprios datasets (`organization_id` em todas as tabelas + Storage isolado).
 
-- **Preview Lovable**: sempre versão fresca, sem cache de SW.
-- **App publicado / PWA instalado**: continua funcionando offline normalmente.
+## 1. Arquitetura & Integração
 
-### Mudanças
+- Novo grupo no `AppSidebar` — "Segurança / HSE" com item **OBS Cards** (ícone `ShieldAlert`). Visível somente se `isAdminMaster || isPlatformOwner` na fase 1.
+- Novas rotas em `src/App.tsx`, todas protegidas por `ProtectedRoute requiredRole="admin_master"` (com bypass de Platform Owner já existente):
+  - `/obs-cards` — Dashboard interativo
+  - `/obs-cards/upload` — Importação
+  - `/obs-cards/datasets` — Lista de uploads (gerenciar/excluir)
+  - `/obs-cards/table` — Tabela detalhada drill-down
+- Reuso obrigatório: `AppLayout`, `PageHeader`, `Card`, `StatCard`, `Button`, `Tabs`, `Select`, `Popover`, `Calendar`, `Tooltip`, `Spinner` (padrão do projeto), `DashboardFilters` como referência visual.
+- i18n: novas chaves em `pt-BR.json` e `en.json` sob `obsCards.*` (zero strings hardcoded, conforme memória).
+- Datas via `src/utils/dateFormat.ts`.
+- Query keys padrão: `['obs-datasets', orgId]`, `['obs-cards', datasetId, filters]`, `['obs-stats', datasetId, filters]`.
 
-1. **`vite.config.ts`**
-   - Trocar `registerType: "autoUpdate"` por `registerType: "prompt"` (mais previsível) **ou** manter `autoUpdate` e adicionar `devOptions: { enabled: false }` (já é o default, só explicitar).
-   - Nenhuma mudança estrutural no Workbox.
+## 2. Modelo de Dados (Lovable Cloud)
 
-2. **`src/main.tsx`** (principal correção)
-   - Adicionar um bloco que, ao detectar que o host é o domínio de **preview** do Lovable (`id-preview--*.lovable.app` ou qualquer host que não seja o publicado), executa no boot:
-     - `navigator.serviceWorker.getRegistrations()` → `unregister()` em todos.
-     - `caches.keys()` → `caches.delete()` em todos.
-   - Isso garante que, mesmo que um SW tenha sido instalado antes nesse host, ele é removido na próxima visita.
-   - Não afeta o domínio publicado nem PWAs instalados pelos usuários finais.
+Duas tabelas novas, multi-tenant via `organization_id`:
 
-3. **Opcional (recomendado)**: adicionar um pequeno helper `src/utils/previewEnvironment.ts` com `isLovablePreviewHost()` para centralizar a detecção (`hostname.includes('id-preview--')` ou `hostname.endsWith('.lovable.app') && hostname !== 'sbm-inspect.lovable.app'`).
+**`obs_card_datasets`** — um registro por upload  
+Campos: `id`, `organization_id`, `name`, `original_filename`, `row_count`, `status` (processing/ready/failed), `column_mapping` (jsonb), `uploaded_by`, `uploaded_at`, `source_storage_path`.
 
-### O que NÃO muda
+**`obs_cards`** — um registro por observação  
+Campos: `id`, `dataset_id` (FK cascade), `organization_id`,  
+- Mapeados: `obs_type` (`BCO`|`PSO`), `status` (`SAFE`|`UNSAFE`), `creation_date`, `area`, `department`, `description`, `action_taken`, `responsible`, `due_date`, `close_date`  
+- Derivados: `category` (PPE/Housekeeping/Behavior/Equipment/Dropped Objects/Process Failure/Other), `severity` (low/medium/high), `time_to_close_days`, `is_open` (bool), `month`, `year`, `nlp_confidence`  
+- `raw_row` jsonb (linha original para tooltips ricos)
 
-- Comportamento offline do app publicado.
-- Estratégias de cache do Workbox em produção.
-- Lazy loading / `lazyWithRetry`.
-- Nada de UI.
+**Storage**: bucket privado `obs-cards-uploads`, isolado por `organization_id/dataset_id/arquivo`.
 
-## Resultado esperado
+**RLS (fase 1)**:
+- SELECT: usuários da mesma organização OU platform_owner — permissivo para liberar futura visualização.
+- INSERT/UPDATE/DELETE: somente `is_admin_master(auth.uid())` OR `is_platform_owner(auth.uid())` + org match.
 
-- No preview do Lovable: cada reload busca os assets novos direto da rede; sem "fantasmas" de versões antigas.
-- No app publicado: PWA continua igual, com cache e funcionamento offline.
+**Auditoria**: trigger `log_generic_changes` nas duas tabelas + adicionar `obs_card_datasets` e `obs_cards` ao allowlist de `revert_audit_log`.
 
-Quer que eu siga por esse caminho (desativar SW só no preview) ou prefere algo mais agressivo, tipo desligar o PWA inteiro em qualquer ambiente que não seja produção publicada?
+## 3. Pipeline de Upload & Classificação
+
+**Edge Function `obs-cards-import`** (Deno):
+1. Recebe `dataset_id` + arquivo via signed URL do Storage.
+2. Parse XLSX/CSV com `npm:xlsx`.
+3. Auto-detecção de colunas por fuzzy-match PT/EN nos headers.
+4. Derivação automática:
+   - `time_to_close_days` = close_date − creation_date
+   - `month`/`year` de creation_date
+   - `category` via regex de keywords no description (configurável)
+   - `severity` heurística (palavras-chave + UNSAFE + PSO)
+5. NLP via Lovable AI (`google/gemini-3-flash-preview`) em lote para reclassificar `BCO` (humano/comportamento) vs `PSO` (processo/equipamento) quando ausente/ambíguo. Cache por hash de description.
+6. Bulk insert em chunks de 500.
+7. Retorna sumário (linhas processadas, ignoradas, mapeamento).
+
+**Edge Function `obs-cards-insights`**: gera Smart Insights via Lovable AI sobre stats agregadas. Cache 1h por dataset+filtros.
+
+**Frontend de upload**: drag-and-drop, preview do mapeamento detectado com ajuste manual, barra de progresso, validação prévia. Padrão visual igual ao `ImportEquipmentDialog`.
+
+## 4. Telas do Dashboard
+
+Layout "21st.dev style" usando tokens semânticos. Adicionar paleta SBM como tokens em `index.css`:
+- `--obs-primary: 207 80% 21%` (#0B3C5D)
+- `--obs-secondary: 204 56% 46%` (#3282B8)
+- `--obs-accent: 14 87% 55%` (#F05A28)
+
+Estrutura com `Tabs`:
+
+1. **Executive Overview** — KPIs (`StatCard`): Total, % SAFE/UNSAFE, BCO, PSO, Open vs Closed, Avg Closing Time + tendência mensal (Recharts).
+2. **BCO Analysis** — top comportamentos inseguros, trend, áreas críticas, recorrência.
+3. **PSO Analysis** — alta severidade, equipment-related, process failures, distribuição por área.
+4. **Critical Areas** — heatmap Área × Categoria.
+5. **Performance** — ranking de departamentos, eficiência de fechamento, top SAFE contributors.
+
+**Filtros globais** (`ObsCardsFilters` inspirado em `DashboardFilters`): toggle BCO/PSO obrigatório, Área, Depto, Status, Período, Categoria, Severidade. Estado via `ObsCardsFilterContext`.
+
+**Tooltips ricos** (`ObsTooltipCard` sobre `Tooltip` shadcn): descrição completa, ação tomada, área, depto, status, data, responsável.
+
+## 5. Recursos Avançados
+
+- **Smart Insights** — card no topo do Overview com texto gerado pela Edge Function.
+- **Alertas** — badges para overdue (due_date < hoje && aberto) e PSO de alta severidade.
+- **Drill-down** — clique em qualquer chart abre `Sheet` lateral com tabela filtrada.
+- **Data Table** (`/obs-cards/table`) — TanStack Table com busca, filtros por coluna, exportação CSV/XLSX (base em `exportEquipment`).
+
+## 6. Segurança & Auditoria
+
+- Todas mutações: RLS + checagem de role server-side via funções existentes.
+- Datasets e observações no allowlist de `revert_audit_log` (Ctrl+Z).
+- Excluir dataset → cascade nas observações + remoção do arquivo do Storage.
+
+## 7. Entregáveis
+
+1. **Migration**: tabelas + RLS + bucket + grants + triggers de auditoria + allowlist do revert.
+2. **Edge Functions**: `obs-cards-import`, `obs-cards-insights`.
+3. **Páginas**: `ObsCardsDashboard.tsx`, `ObsCardsUpload.tsx`, `ObsCardsDatasets.tsx`, `ObsCardsTable.tsx`.
+4. **Componentes**: `ObsCardsFilters`, `ObsTooltipCard`, `ExecutiveOverview`, `BCOAnalysis`, `PSOAnalysis`, `CriticalAreasHeatmap`, `PerformancePanel`, `SmartInsightsCard`, `ObsCardsImportDialog`.
+5. **Hooks**: `useObsDatasets`, `useObsCards`, `useObsStats`, `useObsInsights`.
+6. **i18n** PT/EN completo, item no sidebar, rota protegida.
+7. **Tokens SBM** em `index.css` + extensão em `tailwind.config.ts`.
+
+## Notas Técnicas
+
+- A página inteira oculta para roles abaixo de Admin Master, mas as RLS de SELECT já cobrem todas as organizações para evitar nova migration quando liberarmos visualização.
+- Toda navegação respeita o seletor de organização atual (`OrganizationContext`).
+- Recharts (já presente no projeto) para todos os gráficos.
+

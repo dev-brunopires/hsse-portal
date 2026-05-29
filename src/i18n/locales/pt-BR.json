@@ -157,7 +157,112 @@
     "expand": "Expandir",
     "healthCheck": "Health Check",
     "platformAdmin": "Admin Plataforma",
-    "supervisor": "Supervisor"
+    "supervisor": "Supervisor",
+    "groupSafety": "Segurança / HSE",
+    "obsCards": "OBS Cards"
+  },
+  "obsCards": {
+    "title": "OBS Cards",
+    "subtitle": "Análise de cartões de observação (BCO / PSO)",
+    "tabs": {
+      "overview": "Visão Executiva",
+      "bco": "Análise BCO",
+      "pso": "Análise PSO",
+      "areas": "Áreas Críticas",
+      "performance": "Desempenho"
+    },
+    "nav": {
+      "dashboard": "Dashboard",
+      "upload": "Importar",
+      "datasets": "Bases de Dados"
+    },
+    "datasets": {
+      "title": "Bases de Dados",
+      "subtitle": "Gerenciar arquivos importados de OBS Cards",
+      "empty": "Nenhuma base importada ainda",
+      "newUpload": "Novo Upload",
+      "name": "Nome",
+      "filename": "Arquivo",
+      "rows": "Registros",
+      "status": "Status",
+      "uploadedBy": "Importado por",
+      "uploadedAt": "Data",
+      "actions": "Ações",
+      "view": "Visualizar",
+      "delete": "Excluir",
+      "deleteConfirmTitle": "Excluir base?",
+      "deleteConfirmDescription": "Esta ação removerá a base e todas as observações relacionadas. Não pode ser desfeita.",
+      "deleted": "Base excluída",
+      "deleteError": "Erro ao excluir base"
+    },
+    "status": {
+      "processing": "Processando",
+      "ready": "Pronto",
+      "failed": "Falhou"
+    },
+    "upload": {
+      "title": "Importar OBS Cards",
+      "subtitle": "Envie um arquivo Excel (.xlsx) ou CSV com os cartões de observação",
+      "datasetName": "Nome da base",
+      "datasetNamePlaceholder": "Ex.: OBS Cards - Janeiro 2026",
+      "file": "Arquivo",
+      "dropzone": "Arraste o arquivo aqui ou clique para selecionar",
+      "supportedFormats": "Formatos suportados: .xlsx, .xls, .csv",
+      "submit": "Importar",
+      "processing": "Processando arquivo...",
+      "success": "Importação concluída",
+      "successDescription": "{{count}} registros importados com sucesso",
+      "error": "Erro na importação",
+      "back": "Voltar",
+      "selectFile": "Selecionar arquivo",
+      "requiredName": "Informe um nome para a base"
+    },
+    "filters": {
+      "title": "Filtros",
+      "dataset": "Base de dados",
+      "type": "Tipo",
+      "all": "Todos",
+      "area": "Área",
+      "department": "Departamento",
+      "status": "Status",
+      "severity": "Severidade",
+      "period": "Período",
+      "clear": "Limpar filtros",
+      "selectDataset": "Selecione uma base de dados"
+    },
+    "kpis": {
+      "total": "Total de Observações",
+      "safe": "SAFE",
+      "unsafe": "UNSAFE",
+      "bco": "BCO",
+      "pso": "PSO",
+      "open": "Abertas",
+      "closed": "Fechadas",
+      "avgClosingTime": "Tempo médio de fechamento",
+      "days": "dias",
+      "overdue": "Atrasadas"
+    },
+    "charts": {
+      "monthlyTrend": "Tendência Mensal",
+      "byCategory": "Por Categoria",
+      "byArea": "Por Área",
+      "byDepartment": "Por Departamento",
+      "bySeverity": "Por Severidade",
+      "typeDistribution": "Distribuição BCO vs PSO",
+      "topAreas": "Top Áreas Críticas",
+      "criticalAreasHeatmap": "Mapa de Áreas Críticas",
+      "performanceRanking": "Ranking de Departamentos"
+    },
+    "severity": {
+      "low": "Baixa",
+      "medium": "Média",
+      "high": "Alta"
+    },
+    "empty": {
+      "noDataset": "Selecione uma base de dados para visualizar o dashboard",
+      "noData": "Nenhum dado encontrado para os filtros selecionados",
+      "uploadFirst": "Importe uma base de dados para começar"
+    }
   },
   "healthCheck": {
     "title": "Health Check do Sistema",

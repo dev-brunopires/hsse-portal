@@ -157,7 +157,112 @@
     "expand": "Expand",
     "healthCheck": "Health Check",
     "platformAdmin": "Platform Admin",
-    "supervisor": "Supervisor"
+    "supervisor": "Supervisor",
+    "groupSafety": "Safety / HSE",
+    "obsCards": "OBS Cards"
+  },
+  "obsCards": {
+    "title": "OBS Cards",
+    "subtitle": "Observation card analytics (BCO / PSO)",
+    "tabs": {
+      "overview": "Executive Overview",
+      "bco": "BCO Analysis",
+      "pso": "PSO Analysis",
+      "areas": "Critical Areas",
+      "performance": "Performance"
+    },
+    "nav": {
+      "dashboard": "Dashboard",
+      "upload": "Upload",
+      "datasets": "Datasets"
+    },
+    "datasets": {
+      "title": "Datasets",
+      "subtitle": "Manage imported OBS Card files",
+      "empty": "No datasets imported yet",
+      "newUpload": "New Upload",
+      "name": "Name",
+      "filename": "File",
+      "rows": "Records",
+      "status": "Status",
+      "uploadedBy": "Uploaded by",
+      "uploadedAt": "Date",
+      "actions": "Actions",
+      "view": "View",
+      "delete": "Delete",
+      "deleteConfirmTitle": "Delete dataset?",
+      "deleteConfirmDescription": "This will remove the dataset and all related observations. Cannot be undone.",
+      "deleted": "Dataset deleted",
+      "deleteError": "Error deleting dataset"
+    },
+    "status": {
+      "processing": "Processing",
+      "ready": "Ready",
+      "failed": "Failed"
+    },
+    "upload": {
+      "title": "Upload OBS Cards",
+      "subtitle": "Upload an Excel (.xlsx) or CSV file with observation cards",
+      "datasetName": "Dataset name",
+      "datasetNamePlaceholder": "e.g.: OBS Cards - January 2026",
+      "file": "File",
+      "dropzone": "Drag the file here or click to select",
+      "supportedFormats": "Supported formats: .xlsx, .xls, .csv",
+      "submit": "Upload",
+      "processing": "Processing file...",
+      "success": "Upload complete",
+      "successDescription": "{{count}} records imported successfully",
+      "error": "Upload error",
+      "back": "Back",
+      "selectFile": "Select file",
+      "requiredName": "Enter a dataset name"
+    },
+    "filters": {
+      "title": "Filters",
+      "dataset": "Dataset",
+      "type": "Type",
+      "all": "All",
+      "area": "Area",
+      "department": "Department",
+      "status": "Status",
+      "severity": "Severity",
+      "period": "Period",
+      "clear": "Clear filters",
+      "selectDataset": "Select a dataset"
+    },
+    "kpis": {
+      "total": "Total Observations",
+      "safe": "SAFE",
+      "unsafe": "UNSAFE",
+      "bco": "BCO",
+      "pso": "PSO",
+      "open": "Open",
+      "closed": "Closed",
+      "avgClosingTime": "Average closing time",
+      "days": "days",
+      "overdue": "Overdue"
+    },
+    "charts": {
+      "monthlyTrend": "Monthly Trend",
+      "byCategory": "By Category",
+      "byArea": "By Area",
+      "byDepartment": "By Department",
+      "bySeverity": "By Severity",
+      "typeDistribution": "BCO vs PSO Distribution",
+      "topAreas": "Top Critical Areas",
+      "criticalAreasHeatmap": "Critical Areas Heatmap",
+      "performanceRanking": "Department Ranking"
+    },
+    "severity": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High"
+    },
+    "empty": {
+      "noDataset": "Select a dataset to view the dashboard",
+      "noData": "No data found for the selected filters",
+      "uploadFirst": "Upload a dataset to get started"
+    }
   },
   "healthCheck": {
     "title": "System Health Check",
