@@ -164,6 +164,8 @@ function buildRecord(
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  let datasetIdForFailure: string | null = null;
+
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -198,6 +200,7 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
     const { dataset_id, storage_path } = body as { dataset_id: string; storage_path: string };
+    datasetIdForFailure = dataset_id || null;
     if (!dataset_id || !storage_path) {
       return new Response(JSON.stringify({ error: "missing_params" }), {
         status: 400,
@@ -219,12 +222,26 @@ Deno.serve(async (req) => {
     if (fErr || !file) throw new Error(`download_failed: ${fErr?.message}`);
 
     const buf = new Uint8Array(await file.arrayBuffer());
-    const wb = XLSX.read(buf, { type: "array", cellDates: false });
+    const wb = XLSX.read(buf, {
+      type: "array",
+      cellDates: false,
+      sheetRows: MAX_IMPORT_ROWS + 1,
+    });
     const sheet = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { defval: null });
-    if (!rows.length) throw new Error("empty_sheet");
+    const ref = sheet?.["!ref"];
+    if (!sheet || !ref) throw new Error("empty_sheet");
 
-    const headers = Object.keys(rows[0]);
+    const range = XLSX.utils.decode_range(ref);
+    const headerRow = range.s.r;
+    const headerEntries: Array<{ header: string; columnIndex: number }> = [];
+    for (let columnIndex = range.s.c; columnIndex <= range.e.c; columnIndex += 1) {
+      const value = getCell(sheet, headerRow, columnIndex);
+      const header = value == null ? "" : String(value).trim();
+      if (header) headerEntries.push({ header, columnIndex });
+    }
+    if (!headerEntries.length) throw new Error("missing_headers");
+
+    const headers = headerEntries.map(({ header }) => header);
     const mapping = detectMapping(headers);
 
     // Profile name
@@ -234,57 +251,33 @@ Deno.serve(async (req) => {
       .eq("user_id", userId)
       .maybeSingle();
 
-    const records = rows.map((row) => {
-      const get = (f: string) => (mapping[f] ? row[mapping[f]] : null);
-      const obs_type = normalizeType(get("obs_type")) || normalizeType(get("description")) || "BCO";
-      const status = normalizeStatus(get("status")) || (obs_type === "PSO" ? "UNSAFE" : "SAFE");
-      const creation_date = parseDate(get("creation_date"));
-      const close_date = parseDate(get("close_date"));
-      const due_date = parseDate(get("due_date"));
-      const description = (get("description") ?? "").toString();
-      const ttc =
-        creation_date && close_date
-          ? Math.max(
-              0,
-              Math.round(
-                (new Date(close_date).getTime() - new Date(creation_date).getTime()) /
-                  86400000,
-              ),
-            )
-          : null;
-      const dateObj = creation_date ? new Date(creation_date) : null;
-      return {
-        dataset_id,
-        organization_id: dataset.organization_id,
-        obs_type,
-        status,
-        creation_date,
-        area: (get("area") ?? "").toString() || null,
-        department: (get("department") ?? "").toString() || null,
-        description: description || null,
-        action_taken: (get("action_taken") ?? "").toString() || null,
-        responsible: (get("responsible") ?? "").toString() || null,
-        due_date,
-        close_date,
-        category: deriveCategory(description),
-        severity: deriveSeverity(obs_type, status, description),
-        time_to_close_days: ttc,
-        is_open: !close_date,
-        month: dateObj ? dateObj.getUTCMonth() + 1 : null,
-        year: dateObj ? dateObj.getUTCFullYear() : null,
-        raw_row: row,
-      };
-    });
-
-    // Bulk insert in chunks
-    const chunkSize = 500;
     let inserted = 0;
-    for (let i = 0; i < records.length; i += chunkSize) {
-      const chunk = records.slice(i, i + chunkSize);
+    let chunk: ReturnType<typeof buildRecord>[] = [];
+    for (let rowIndex = headerRow + 1; rowIndex <= range.e.r; rowIndex += 1) {
+      const row: Record<string, any> = {};
+      let hasValue = false;
+      for (const { header, columnIndex } of headerEntries) {
+        const value = getCell(sheet, rowIndex, columnIndex);
+        row[header] = value;
+        if (value !== null && value !== "") hasValue = true;
+      }
+      if (!hasValue) continue;
+
+      chunk.push(buildRecord(row, mapping, dataset_id, dataset.organization_id));
+      if (chunk.length >= INSERT_CHUNK_SIZE) {
+        const { error: insErr } = await admin.from("obs_cards").insert(chunk);
+        if (insErr) throw new Error(`insert_failed: ${insErr.message}`);
+        inserted += chunk.length;
+        chunk = [];
+      }
+    }
+
+    if (chunk.length) {
       const { error: insErr } = await admin.from("obs_cards").insert(chunk);
       if (insErr) throw new Error(`insert_failed: ${insErr.message}`);
       inserted += chunk.length;
     }
+    if (!inserted) throw new Error("empty_sheet");
 
     await admin
       .from("obs_card_datasets")
