@@ -9,7 +9,7 @@ import { SystemLogo } from '@/components/ui/SystemLogo';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: 'admin' | 'technician' | 'viewer' | 'supervisor';
+  requiredRole?: 'admin_master' | 'admin' | 'technician' | 'viewer' | 'supervisor';
 }
 
 export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
@@ -74,7 +74,11 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
   }
 
   // Check role if required
-  if (requiredRole === 'admin') {
+  if (requiredRole === 'admin_master') {
+    if (role !== 'admin_master') {
+      return <Navigate to="/" replace />;
+    }
+  } else if (requiredRole === 'admin') {
     const isAdminUser = role === 'admin' || role === 'admin_master';
     if (!isAdminUser) {
       return <Navigate to="/" replace />;

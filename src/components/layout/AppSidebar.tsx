@@ -19,7 +19,7 @@ import {
   Award,
   Activity,
   Thermometer,
-} from 'lucide-react';
+  ShieldAlert,
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
