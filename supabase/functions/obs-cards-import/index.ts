@@ -3,6 +3,7 @@ import * as XLSX from "https://esm.sh/xlsx@0.18.5";
 
 const INSERT_CHUNK_SIZE = 100;
 const MAX_IMPORT_ROWS = 15000;
+const MAX_IMPORT_FILE_SIZE_BYTES = 8 * 1024 * 1024;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -220,6 +221,7 @@ Deno.serve(async (req) => {
       .from("obs-cards-uploads")
       .download(storage_path);
     if (fErr || !file) throw new Error(`download_failed: ${fErr?.message}`);
+    if (file.size > MAX_IMPORT_FILE_SIZE_BYTES) throw new Error("file_too_large_8mb");
 
     const buf = new Uint8Array(await file.arrayBuffer());
     const wb = XLSX.read(buf, {
