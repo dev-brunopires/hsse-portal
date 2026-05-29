@@ -20,6 +20,7 @@ import {
   Activity,
   Thermometer,
   ShieldAlert,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
