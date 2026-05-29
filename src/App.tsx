@@ -36,6 +36,9 @@ const Diagnostics = lazyWithRetry(() => import("./pages/Diagnostics"));
 const HealthCheck = lazyWithRetry(() => import("./pages/HealthCheck"));
 const Supervisor = lazyWithRetry(() => import("./pages/Supervisor"));
 const HeatStress = lazyWithRetry(() => import("./pages/HeatStress"));
+const ObsCardsDashboard = lazyWithRetry(() => import("./pages/ObsCardsDashboard"));
+const ObsCardsUpload = lazyWithRetry(() => import("./pages/ObsCardsUpload"));
+const ObsCardsDatasets = lazyWithRetry(() => import("./pages/ObsCardsDatasets"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -261,6 +264,37 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
+                <Route
+                  path="/obs-cards"
+                  element={
+                    <ProtectedRoute requiredRole="admin_master">
+                      <AppLayout>
+                        <ObsCardsDashboard />
+                      </AppLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/obs-cards/upload"
+                  element={
+                    <ProtectedRoute requiredRole="admin_master">
+                      <AppLayout>
+                        <ObsCardsUpload />
+                      </AppLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/obs-cards/datasets"
+                  element={
+                    <ProtectedRoute requiredRole="admin_master">
+                      <AppLayout>
+                        <ObsCardsDatasets />
+                      </AppLayout>
+                    </ProtectedRoute>
+                  }
+                />
+
                 <Route path="*" element={<NotFound />} />
               </Routes>
                   </Suspense>
