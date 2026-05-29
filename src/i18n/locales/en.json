@@ -218,7 +218,9 @@
       "requiredName": "Enter a dataset name",
       "fileTooLarge": "The file is too large. Upload a spreadsheet up to {{size}} MB or split the dataset into smaller files.",
       "resourceLimitError": "The file exceeded the available processing resources. Reduce the spreadsheet size or split the upload into smaller datasets.",
-      "rowLimitError": "The spreadsheet exceeded the row limit for import. Split the dataset into smaller files."
+      "rowLimitError": "The spreadsheet exceeded the row limit for import. Split the dataset into smaller files.",
+      "missingHeaders": "The spreadsheet headers could not be identified.",
+      "emptySheet": "The spreadsheet has no records to import."
     },
     "filters": {
       "title": "Filters",
