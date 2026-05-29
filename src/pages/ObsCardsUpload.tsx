@@ -2,24 +2,30 @@ import { useState, useRef } from 'react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { Upload, ShieldAlert, ArrowLeft, FileSpreadsheet, Loader2 } from 'lucide-react';
+import { Upload, ShieldAlert, ArrowLeft, FileSpreadsheet } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
+import { Spinner } from '@/components/ui/spinner';
 import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
+import { importObsCardsFromFile } from '@/utils/obsCardsImport';
 
-const MAX_OBS_CARD_FILE_SIZE_MB = 8;
+const MAX_OBS_CARD_FILE_SIZE_MB = 25;
 
 function getUploadErrorMessage(message: string | undefined, t: TFunction) {
   if (message?.includes('WORKER_RESOURCE_LIMIT')) return t('obsCards.upload.resourceLimitError');
   if (message?.includes('row_limit_exceeded')) return t('obsCards.upload.rowLimitError');
   if (message?.includes('file_too_large')) return t('obsCards.upload.fileTooLarge', { size: MAX_OBS_CARD_FILE_SIZE_MB });
+  if (message?.includes('missing_headers')) return t('obsCards.upload.missingHeaders');
+  if (message?.includes('empty_sheet')) return t('obsCards.upload.emptySheet');
   return message;
 }
 
@@ -28,12 +34,14 @@ export default function ObsCardsUpload() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { organization } = useOrganization();
+  const { user, profile } = useAuth();
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   const handleSubmit = async () => {
     if (!name.trim()) {
@@ -50,6 +58,8 @@ export default function ObsCardsUpload() {
       return;
     }
     setBusy(true);
+    setProgress(0);
+    let datasetId: string | null = null;
     try {
       // 1. Create dataset row
       const { data: ds, error: dsErr } = await supabase
@@ -64,6 +74,8 @@ export default function ObsCardsUpload() {
         .single();
       if (dsErr) throw dsErr;
       const dataset: any = ds;
+      datasetId = dataset.id;
+      setProgress(3);
 
       // 2. Upload to storage
       const path = `${organization.id}/${dataset.id}/${file.name}`;
@@ -71,26 +83,47 @@ export default function ObsCardsUpload() {
         .from('obs-cards-uploads')
         .upload(path, file, { upsert: true });
       if (upErr) throw upErr;
+      setProgress(8);
 
       await supabase
         .from('obs_card_datasets' as any)
         .update({ source_storage_path: path })
         .eq('id', dataset.id);
 
-      // 3. Invoke edge function
-      const { data: result, error: fnErr } = await supabase.functions.invoke('obs-cards-import', {
-        body: { dataset_id: dataset.id, storage_path: path },
+      // 3. Process locally and insert in small chunks to avoid Edge Function compute limits
+      const result = await importObsCardsFromFile({
+        file,
+        datasetId: dataset.id,
+        organizationId: organization.id,
+        onProgress: setProgress,
       });
-      if (fnErr) throw fnErr;
-      if (result?.error) throw new Error(result.error);
+
+      const { error: updateErr } = await supabase
+        .from('obs_card_datasets' as any)
+        .update({
+          status: 'ready',
+          row_count: result.inserted,
+          column_mapping: result.mapping,
+          uploaded_by: user?.id ?? null,
+          uploaded_by_name: profile?.full_name || user?.user_metadata?.full_name || null,
+        })
+        .eq('id', dataset.id);
+      if (updateErr) throw updateErr;
+      setProgress(100);
 
       toast({
         title: t('obsCards.upload.success'),
-        description: t('obsCards.upload.successDescription', { count: result?.inserted ?? 0 }),
+        description: t('obsCards.upload.successDescription', { count: result.inserted }),
       });
       qc.invalidateQueries({ queryKey: ['obs-datasets'] });
       navigate(`/obs-cards?dataset=${dataset.id}`);
     } catch (e: any) {
+      if (datasetId) {
+        await supabase
+          .from('obs_card_datasets' as any)
+          .update({ status: 'failed', error_message: e.message })
+          .eq('id', datasetId);
+      }
       toast({
         title: t('obsCards.upload.error'),
         description: getUploadErrorMessage(e.message, t),
@@ -98,6 +131,7 @@ export default function ObsCardsUpload() {
       });
     } finally {
       setBusy(false);
+      setProgress(0);
     }
   };
 
@@ -174,10 +208,20 @@ export default function ObsCardsUpload() {
             </div>
           </div>
 
+          {busy && (
+            <div className="space-y-2" aria-live="polite">
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <span>{t('obsCards.upload.processing')}</span>
+                <span>{progress}%</span>
+              </div>
+              <Progress value={progress} />
+            </div>
+          )}
+
           <Button onClick={handleSubmit} disabled={busy || !file} className="w-full">
             {busy ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Spinner inline size="sm" iconClassName="mr-2 text-primary-foreground" />
                 {t('obsCards.upload.processing')}
               </>
             ) : (
