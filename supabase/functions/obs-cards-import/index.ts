@@ -1,6 +1,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import * as XLSX from "https://esm.sh/xlsx@0.18.5";
 
+const INSERT_CHUNK_SIZE = 100;
+const MAX_IMPORT_ROWS = 15000;
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -102,6 +105,60 @@ function deriveSeverity(type: string | null, status: string | null, desc: string
   if (type === "PSO" && status === "UNSAFE") return "high";
   if (status === "UNSAFE") return "medium";
   return "low";
+}
+
+function getCell(sheet: XLSX.WorkSheet, rowIndex: number, columnIndex: number): any {
+  const cell = sheet[XLSX.utils.encode_cell({ r: rowIndex, c: columnIndex })];
+  return cell?.v ?? null;
+}
+
+function buildRecord(
+  row: Record<string, any>,
+  mapping: Record<string, string>,
+  datasetId: string,
+  organizationId: string,
+) {
+  const get = (f: string) => (mapping[f] ? row[mapping[f]] : null);
+  const obs_type = normalizeType(get("obs_type")) || normalizeType(get("description")) || "BCO";
+  const status = normalizeStatus(get("status")) || (obs_type === "PSO" ? "UNSAFE" : "SAFE");
+  const creation_date = parseDate(get("creation_date"));
+  const close_date = parseDate(get("close_date"));
+  const due_date = parseDate(get("due_date"));
+  const description = (get("description") ?? "").toString();
+  const ttc =
+    creation_date && close_date
+      ? Math.max(
+          0,
+          Math.round(
+            (Date.parse(`${close_date}T00:00:00Z`) - Date.parse(`${creation_date}T00:00:00Z`)) /
+              86400000,
+          ),
+        )
+      : null;
+  const year = creation_date ? Number(creation_date.slice(0, 4)) : null;
+  const month = creation_date ? Number(creation_date.slice(5, 7)) : null;
+
+  return {
+    dataset_id: datasetId,
+    organization_id: organizationId,
+    obs_type,
+    status,
+    creation_date,
+    area: (get("area") ?? "").toString() || null,
+    department: (get("department") ?? "").toString() || null,
+    description: description || null,
+    action_taken: (get("action_taken") ?? "").toString() || null,
+    responsible: (get("responsible") ?? "").toString() || null,
+    due_date,
+    close_date,
+    category: deriveCategory(description),
+    severity: deriveSeverity(obs_type, status, description),
+    time_to_close_days: ttc,
+    is_open: !close_date,
+    month,
+    year,
+    raw_row: null,
+  };
 }
 
 Deno.serve(async (req) => {
