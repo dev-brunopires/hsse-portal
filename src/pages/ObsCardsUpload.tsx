@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Upload, ShieldAlert, ArrowLeft, FileSpreadsheet, Loader2 } from 'lucide-react';
@@ -15,7 +16,7 @@ import { cn } from '@/lib/utils';
 
 const MAX_OBS_CARD_FILE_SIZE_MB = 8;
 
-function getUploadErrorMessage(message: string | undefined, t: ReturnType<typeof useTranslation>['t']) {
+function getUploadErrorMessage(message: string | undefined, t: TFunction) {
   if (message?.includes('WORKER_RESOURCE_LIMIT')) return t('obsCards.upload.resourceLimitError');
   if (message?.includes('row_limit_exceeded')) return t('obsCards.upload.rowLimitError');
   if (message?.includes('file_too_large')) return t('obsCards.upload.fileTooLarge', { size: MAX_OBS_CARD_FILE_SIZE_MB });
