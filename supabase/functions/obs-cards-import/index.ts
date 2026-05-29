@@ -232,6 +232,13 @@ Deno.serve(async (req) => {
     if (!sheet || !ref) throw new Error("empty_sheet");
 
     const range = XLSX.utils.decode_range(ref);
+    const fullRef = sheet["!fullref"] as string | undefined;
+    if (fullRef) {
+      const fullRange = XLSX.utils.decode_range(fullRef);
+      const totalDataRows = Math.max(0, fullRange.e.r - fullRange.s.r);
+      if (totalDataRows > MAX_IMPORT_ROWS) throw new Error(`row_limit_exceeded_${MAX_IMPORT_ROWS}`);
+    }
+
     const headerRow = range.s.r;
     const headerEntries: Array<{ header: string; columnIndex: number }> = [];
     for (let columnIndex = range.s.c; columnIndex <= range.e.c; columnIndex += 1) {
