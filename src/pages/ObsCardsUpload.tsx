@@ -13,6 +13,14 @@ import { Label } from '@/components/ui/label';
 import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 
+const MAX_OBS_CARD_FILE_SIZE_MB = 8;
+
+function getUploadErrorMessage(message: string | undefined, t: ReturnType<typeof useTranslation>['t']) {
+  if (message?.includes('WORKER_RESOURCE_LIMIT')) return t('obsCards.upload.resourceLimitError');
+  if (message?.includes('row_limit_exceeded')) return t('obsCards.upload.rowLimitError');
+  return message;
+}
+
 export default function ObsCardsUpload() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -31,6 +39,14 @@ export default function ObsCardsUpload() {
       return;
     }
     if (!file || !organization?.id) return;
+    if (file.size > MAX_OBS_CARD_FILE_SIZE_MB * 1024 * 1024) {
+      toast({
+        title: t('obsCards.upload.error'),
+        description: t('obsCards.upload.fileTooLarge', { size: MAX_OBS_CARD_FILE_SIZE_MB }),
+        variant: 'destructive',
+      });
+      return;
+    }
     setBusy(true);
     try {
       // 1. Create dataset row
@@ -73,7 +89,11 @@ export default function ObsCardsUpload() {
       qc.invalidateQueries({ queryKey: ['obs-datasets'] });
       navigate(`/obs-cards?dataset=${dataset.id}`);
     } catch (e: any) {
-      toast({ title: t('obsCards.upload.error'), description: e.message, variant: 'destructive' });
+      toast({
+        title: t('obsCards.upload.error'),
+        description: getUploadErrorMessage(e.message, t),
+        variant: 'destructive',
+      });
     } finally {
       setBusy(false);
     }
