@@ -48,8 +48,8 @@ export function ClassifyDatasetButton({ datasetId, disabled }: Props) {
         description: t('obsCards.classify.successDesc', { count: totalProcessed }),
       });
       window.dispatchEvent(new CustomEvent('obs-cards:refresh', { detail: { datasetId } }));
-    } catch (e: any) {
-      const msg = String(e?.message || '');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e || '');
       let desc = msg;
       if (msg.includes('rate_limited') || msg.includes('429')) desc = t('obsCards.classify.rateLimited');
       else if (msg.includes('payment_required') || msg.includes('402')) desc = t('obsCards.classify.paymentRequired');
