@@ -47,7 +47,7 @@ export function ClassifyDatasetButton({ datasetId, disabled }: Props) {
         title: t('obsCards.classify.success'),
         description: t('obsCards.classify.successDesc', { count: totalProcessed }),
       });
-      window.dispatchEvent(new CustomEvent('obs-cards:refresh', { detail: { datasetId } }));
+      window.dispatchEvent(new CustomEvent('obs-cards:refresh', { detail: { datasetId, rebuildSummary: true } }));
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e || '');
       let desc = msg;
