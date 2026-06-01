@@ -17,6 +17,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { importObsCardsFromFile } from '@/utils/obsCardsImport';
+import { withObsCardsDashboardSummary } from '@/utils/obsCardsSummary';
 
 const MAX_OBS_CARD_FILE_SIZE_MB = 20;
 
@@ -103,7 +104,7 @@ export default function ObsCardsUpload() {
         .update({
           status: 'ready',
           row_count: result.inserted,
-          column_mapping: result.mapping,
+          column_mapping: withObsCardsDashboardSummary(result.mapping, result.dashboardSummary),
           uploaded_by: user?.id ?? null,
           uploaded_by_name: profile?.full_name || user?.user_metadata?.full_name || null,
         })
