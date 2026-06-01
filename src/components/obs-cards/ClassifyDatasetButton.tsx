@@ -4,7 +4,6 @@ import { Sparkles, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { useToast } from '@/hooks/use-toast';
-import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import {
   DropdownMenu,
@@ -21,7 +20,6 @@ interface Props {
 export function ClassifyDatasetButton({ datasetId, disabled }: Props) {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const qc = useQueryClient();
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<{ processed: number; remaining: number } | null>(null);
 
@@ -49,7 +47,7 @@ export function ClassifyDatasetButton({ datasetId, disabled }: Props) {
         title: t('obsCards.classify.success'),
         description: t('obsCards.classify.successDesc', { count: totalProcessed }),
       });
-      qc.invalidateQueries({ queryKey: ['obs-cards', datasetId] });
+      window.dispatchEvent(new CustomEvent('obs-cards:refresh', { detail: { datasetId } }));
     } catch (e: any) {
       const msg = String(e?.message || '');
       let desc = msg;
