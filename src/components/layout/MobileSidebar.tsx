@@ -16,6 +16,8 @@ import {
   Award,
   ChevronDown,
   Thermometer,
+  ShieldAlert,
+  Activity,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetHeader } from '@/components/ui/sheet';
