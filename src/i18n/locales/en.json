@@ -294,6 +294,17 @@
       "noDataset": "Select a dataset to view the dashboard",
       "noData": "No data found for the selected filters",
       "uploadFirst": "Upload a dataset to get started"
+    },
+    "classify": {
+      "button": "Classify with AI",
+      "tooltip": "Use AI to identify the safety category of each description",
+      "starting": "Starting…",
+      "progress": "Processing ({{processed}} done · {{remaining}} left)",
+      "success": "Classification finished",
+      "successDesc": "{{count}} cards classified by AI",
+      "error": "Classification error",
+      "rateLimited": "Rate limit reached. Please try again shortly.",
+      "paymentRequired": "AI credits exhausted. Please top up to continue."
     }
   },
   "healthCheck": {

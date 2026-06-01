@@ -1,1 +1,4 @@
 project_id = "mxyxnnjcsmkswqbosaex"
+
+[functions.classify-obs-cards]
+verify_jwt = true

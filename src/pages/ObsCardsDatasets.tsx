@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useObsDatasets } from '@/hooks/useObsCards';
 import { formatDateTime } from '@/utils/dateFormat';
+import { ClassifyDatasetButton } from '@/components/obs-cards/ClassifyDatasetButton';
 
 const statusVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   ready: 'default',
@@ -100,7 +101,8 @@ export default function ObsCardsDatasets() {
                     <TableCell className="text-sm">{d.uploaded_by_name || '—'}</TableCell>
                     <TableCell className="text-sm">{formatDateTime(d.created_at)}</TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
+                      <div className="flex justify-end gap-1 items-center">
+                        <ClassifyDatasetButton datasetId={d.id} disabled={d.status !== 'ready'} />
                         <Button
                           size="sm"
                           variant="ghost"

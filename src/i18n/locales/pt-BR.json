@@ -294,6 +294,17 @@
       "noDataset": "Selecione uma base de dados para visualizar o dashboard",
       "noData": "Nenhum dado encontrado para os filtros selecionados",
       "uploadFirst": "Importe uma base de dados para começar"
+    },
+    "classify": {
+      "button": "Classificar com IA",
+      "tooltip": "Usa IA para identificar a categoria de segurança de cada descrição",
+      "starting": "Iniciando…",
+      "progress": "Processando ({{processed}} feitos · {{remaining}} restantes)",
+      "success": "Classificação concluída",
+      "successDesc": "{{count}} cartões classificados pela IA",
+      "error": "Erro ao classificar",
+      "rateLimited": "Limite de requisições atingido. Tente novamente em alguns instantes.",
+      "paymentRequired": "Créditos da IA esgotados. Adicione créditos para continuar."
     }
   },
   "healthCheck": {

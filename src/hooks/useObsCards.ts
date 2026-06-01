@@ -30,6 +30,7 @@ export interface ObsCard {
   due_date: string | null;
   close_date: string | null;
   category: string | null;
+  ai_category: string | null;
   severity: string | null;
   time_to_close_days: number | null;
   is_open: boolean | null;
