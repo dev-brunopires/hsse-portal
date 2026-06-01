@@ -115,7 +115,7 @@ export default function ObsCardsDashboard() {
   const branding = useOrganizationBranding();
   const { data: datasets, isLoading: dsLoading } = useObsDatasets();
   const [datasetId, setDatasetId] = useState<string | null>(params.get('dataset'));
-  const { data: cards, isLoading: cardsLoading } = useObsCards(datasetId);
+  const { data: cards, isLoading: cardsLoading, isFetching: cardsFetching, error: cardsError } = useObsCards(datasetId);
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
 
   useEffect(() => {
@@ -277,7 +277,7 @@ export default function ObsCardsDashboard() {
             {datasetId && <ClassifyDatasetButton datasetId={datasetId} />}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" disabled={!currentDataset || filtered.length === 0}>
+                <Button variant="outline" size="sm" disabled={!currentDataset || filtered.length === 0 || cardsFetching}>
                   <FileDown className="h-4 w-4 mr-2" />
                   {t('obsCards.pdf.exportButton')}
                 </Button>
@@ -404,7 +404,14 @@ export default function ObsCardsDashboard() {
         </CardContent>
       </Card>
 
-      {cardsLoading ? (
+      {cardsError && (!cards || cards.length === 0) ? (
+        <Card>
+          <CardContent className="p-12 text-center text-muted-foreground">
+            <AlertTriangle className="h-12 w-12 mx-auto mb-3 opacity-40" />
+            <p>{t('common.errorLoadingData')}</p>
+          </CardContent>
+        </Card>
+      ) : cardsLoading ? (
         <div className="p-12 flex justify-center"><Spinner size="lg" /></div>
       ) : (
         <Tabs defaultValue="overview" className="space-y-4">
