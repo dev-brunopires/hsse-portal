@@ -290,6 +290,7 @@
       "department": "Departamento",
       "status": "Status",
       "severity": "Severidade",
+      "riskLevel": "Nível de Risco",
       "period": "Período",
       "clear": "Limpar filtros",
       "selectDataset": "Selecione uma base de dados"
