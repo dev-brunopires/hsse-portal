@@ -26,7 +26,7 @@ import { fetchAllObsCards, useObsDatasets, useObsCards, type ObsCard } from '@/h
 import { useOrganizationBranding } from '@/hooks/useOrganizationBranding';
 import { ClassifyDatasetButton } from '@/components/obs-cards/ClassifyDatasetButton';
 import { exportObsCardsConsolidated, exportObsCardsBySector } from '@/utils/obsCardsPdfExport';
-import { getObsCardTimeToCloseStats, getObsCardWeight } from '@/utils/obsCardsSummary';
+import { deriveObsCardShipName, getObsCardTimeToCloseStats, getObsCardWeight } from '@/utils/obsCardsSummary';
 import { format } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
 import i18n from '@/i18n';
@@ -57,6 +57,9 @@ type Filters = {
   status: string;
   severity: string;
   riskLevel: string;
+  month: string;
+  year: string;
+  ship: string;
   period: Period;
 };
 
@@ -67,6 +70,9 @@ const DEFAULT_FILTERS: Filters = {
   status: 'ALL',
   severity: 'ALL',
   riskLevel: 'ALL',
+  month: 'ALL',
+  year: 'ALL',
+  ship: 'ALL',
   period: 'month',
 };
 
@@ -80,6 +86,9 @@ function applyFilters(cards: ObsCard[], f: Filters): ObsCard[] {
     if (f.status !== 'ALL' && c.status !== f.status) return false;
     if (f.severity !== 'ALL' && c.severity !== f.severity) return false;
     if (f.riskLevel !== 'ALL' && (c.ai_risk_level || '') !== f.riskLevel) return false;
+    if (f.month !== 'ALL' && String(c.month || '') !== f.month) return false;
+    if (f.year !== 'ALL' && String(c.year || '') !== f.year) return false;
+    if (f.ship !== 'ALL' && (deriveObsCardShipName(c) || '—') !== f.ship) return false;
     return true;
   });
 }
