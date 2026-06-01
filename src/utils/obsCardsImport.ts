@@ -26,7 +26,6 @@ type ObsCardInsert = {
   is_open: boolean;
   month: number | null;
   year: number | null;
-  ship_name: string | null;
   raw_row: null;
 };
 
@@ -50,7 +49,6 @@ const FIELD_ALIASES: Record<string, string[]> = {
   responsible: ['responsavel', 'responsible', 'owner', 'dono', 'encarregado'],
   due_date: ['prazo', 'due date', 'data prazo', 'vencimento'],
   close_date: ['data fechamento', 'close date', 'closed', 'encerramento', 'data encerramento'],
-  ship_name: ['navio', 'embarcacao', 'embarcação', 'vessel', 'ship', 'unidade', 'unit', 'rig'],
 };
 
 const yieldToBrowser = () => new Promise((resolve) => window.setTimeout(resolve, 0));
@@ -131,19 +129,6 @@ function deriveSeverity(type: string | null, status: string | null, desc: string
   return 'low';
 }
 
-function deriveShipName(value: unknown, area: unknown, department: unknown): string | null {
-  const candidates = [value, department, area].filter((item) => item != null && item !== '') as unknown[];
-  for (const candidate of candidates) {
-    const text = String(candidate).trim();
-    const upper = text.toUpperCase();
-    if (['ESS', 'CDA'].includes(upper)) return upper;
-    const labelled = text.match(/(?:navio|embarca(?:ç|c)[aã]o|vessel|ship)\s*[:\-]?\s*([A-Z0-9-]{2,12})/i);
-    if (labelled?.[1]) return labelled[1].toUpperCase();
-    if (/^[A-Z]{2,4}[0-9]{0,3}$/.test(upper) && !['BCO', 'PSO', 'SAFE', 'UNSAFE', 'HSE', 'HSSE', 'SMS', 'EPI', 'PPE'].includes(upper)) return upper;
-  }
-  return null;
-}
-
 function getCell(sheet: XLSX.WorkSheet, rowIndex: number, columnIndex: number): unknown {
   const cell = sheet[XLSX.utils.encode_cell({ r: rowIndex, c: columnIndex })];
   return cell?.v ?? null;
@@ -190,7 +175,6 @@ function buildRecord(
     is_open: !closeDate,
     month: creationDate ? Number(creationDate.slice(5, 7)) : null,
     year: creationDate ? Number(creationDate.slice(0, 4)) : null,
-    ship_name: deriveShipName(get('ship_name'), area, department),
     raw_row: null,
   };
 }
