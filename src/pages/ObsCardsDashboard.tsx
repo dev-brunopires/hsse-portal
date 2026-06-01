@@ -158,12 +158,13 @@ export default function ObsCardsDashboard() {
     for (const c of filtered) {
       const pk = periodKey(c, filters.period);
       if (!pk) continue;
+      const weight = getObsCardWeight(c);
       if (!map.has(pk.key)) map.set(pk.key, { name: pk.label, BCO: 0, PSO: 0, UNSAFE: 0, total: 0 });
       const e = map.get(pk.key)!;
-      e.total++;
-      if (c.obs_type === 'BCO') e.BCO++;
-      if (c.obs_type === 'PSO') e.PSO++;
-      if (c.status === 'UNSAFE') e.UNSAFE++;
+      e.total += weight;
+      if (c.obs_type === 'BCO') e.BCO += weight;
+      if (c.obs_type === 'PSO') e.PSO += weight;
+      if (c.status === 'UNSAFE') e.UNSAFE += weight;
     }
     return Array.from(map.entries())
       .sort(([a], [b]) => a.localeCompare(b))
@@ -176,10 +177,11 @@ export default function ObsCardsDashboard() {
     for (const c of filtered) {
       const pk = periodKey(c, filters.period);
       if (!pk) continue;
+      const weight = getObsCardWeight(c);
       if (!map.has(pk.key)) map.set(pk.key, { name: pk.label, low: 0, medium: 0, high: 0, critical: 0 });
       const e = map.get(pk.key)!;
       const lvl = (c.ai_risk_level || 'medium') as keyof typeof RISK_COLOR;
-      if (lvl === 'low' || lvl === 'medium' || lvl === 'high' || lvl === 'critical') e[lvl]++;
+      if (lvl === 'low' || lvl === 'medium' || lvl === 'high' || lvl === 'critical') e[lvl] += weight;
     }
     return Array.from(map.entries())
       .sort(([a], [b]) => a.localeCompare(b))
