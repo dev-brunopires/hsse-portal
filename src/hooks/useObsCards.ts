@@ -103,11 +103,16 @@ export function useObsCards(datasetId: string | null, dataset?: ObsDataset | nul
   const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [rebuildSummaryKey, setRebuildSummaryKey] = useState(0);
 
   useEffect(() => {
     const handleRefresh = (event: Event) => {
-      const targetDatasetId = (event as CustomEvent<{ datasetId?: string }>).detail?.datasetId;
-      if (!targetDatasetId || targetDatasetId === datasetId) setReloadKey((value) => value + 1);
+      const detail = (event as CustomEvent<{ datasetId?: string; rebuildSummary?: boolean }>).detail;
+      const targetDatasetId = detail?.datasetId;
+      if (!targetDatasetId || targetDatasetId === datasetId) {
+        setReloadKey((value) => value + 1);
+        if (detail?.rebuildSummary) setRebuildSummaryKey((value) => value + 1);
+      }
     };
 
     window.addEventListener('obs-cards:refresh', handleRefresh);
@@ -127,7 +132,7 @@ export function useObsCards(datasetId: string | null, dataset?: ObsDataset | nul
         return;
       }
 
-      const savedSummary = getObsCardsDashboardSummary(dataset?.column_mapping);
+      const savedSummary = rebuildSummaryKey === 0 ? getObsCardsDashboardSummary(dataset?.column_mapping) : null;
       if (savedSummary) {
         setData(summaryToObsCards(savedSummary, { datasetId, organizationId: dataset?.organization_id }));
         setIsLoading(false);
@@ -188,7 +193,7 @@ export function useObsCards(datasetId: string | null, dataset?: ObsDataset | nul
     return () => {
       cancelled = true;
     };
-  }, [datasetId, dataset?.column_mapping, dataset?.organization_id, reloadKey]);
+  }, [datasetId, dataset?.column_mapping, dataset?.organization_id, reloadKey, rebuildSummaryKey]);
 
   return { data, isLoading, isFetching, error };
 }
