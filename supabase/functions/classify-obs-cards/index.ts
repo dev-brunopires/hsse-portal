@@ -237,8 +237,8 @@ Deno.serve(async (req) => {
         processed++;
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.error("Batch failed:", msg);
+      const msg = serializeError(err);
+      console.error("Batch failed:", msg, err);
       return new Response(
         JSON.stringify({
           error: msg,
@@ -260,11 +260,24 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error("classify-obs-cards error:", message);
+    const message = serializeError(err);
+    console.error("classify-obs-cards error:", message, err);
     return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
+
+function serializeError(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (err && typeof err === "object") {
+    const e = err as Record<string, unknown>;
+    const parts = [e.message, e.details, e.hint, e.code]
+      .filter(Boolean)
+      .map(String);
+    if (parts.length) return parts.join(" | ");
+    try { return JSON.stringify(err); } catch { return String(err); }
+  }
+  return String(err);
+}
