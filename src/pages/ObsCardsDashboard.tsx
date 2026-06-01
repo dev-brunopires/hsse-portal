@@ -236,10 +236,23 @@ export default function ObsCardsDashboard() {
     () => Array.from(new Set((cards || []).map((c) => c.department).filter(Boolean))) as string[],
     [cards],
   );
+  const allYears = useMemo(
+    () => Array.from(new Set((cards || []).map((c) => c.year).filter(Boolean).map(String))).sort(),
+    [cards],
+  );
+  const allMonths = useMemo(
+    () => Array.from(new Set((cards || []).map((c) => c.month).filter(Boolean).map(String)))
+      .sort((a, b) => Number(a) - Number(b)),
+    [cards],
+  );
+  const allShips = useMemo(
+    () => Array.from(new Set((cards || []).map((c) => deriveObsCardShipName(c)).filter(Boolean))).sort() as string[],
+    [cards],
+  );
 
   const sectorsForPdf = useMemo(
-    () => Array.from(new Set((cards || []).map((c) => c.area).filter(Boolean))).sort() as string[],
-    [cards],
+    () => Array.from(new Set(filtered.map((c) => c.area).filter(Boolean))).sort() as string[],
+    [filtered],
   );
 
   const handleExportConsolidated = async () => {
@@ -253,7 +266,7 @@ export default function ObsCardsDashboard() {
 
   const handleExportSector = async (sector: string) => {
     if (!currentDataset || !datasetId) return;
-    const fullCards = await fetchAllObsCards(datasetId);
+    const fullCards = applyFilters(await fetchAllObsCards(datasetId), filters);
     await exportObsCardsBySector(fullCards, sector, {
       datasetName: currentDataset.name,
       branding,
