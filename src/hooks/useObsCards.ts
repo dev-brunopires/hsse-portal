@@ -48,12 +48,12 @@ export function useObsDatasets() {
     enabled: !!organization?.id,
     queryFn: async (): Promise<ObsDataset[]> => {
       const { data, error } = await supabase
-        .from('obs_card_datasets' as any)
+        .from('obs_card_datasets')
         .select('*')
         .eq('organization_id', organization!.id)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data || []) as any;
+      return (data || []) as unknown as ObsDataset[];
     },
   });
 }
@@ -98,7 +98,7 @@ export function useObsCards(datasetId: string | null) {
       try {
         while (!cancelled) {
           const query = supabase
-            .from('obs_cards' as any)
+            .from('obs_cards')
             .select('*')
             .eq('dataset_id', datasetId)
             .order('created_at', { ascending: true })
@@ -109,7 +109,7 @@ export function useObsCards(datasetId: string | null) {
 
           if (batchError) throw batchError;
 
-          const rows = (batch || []) as any as ObsCard[];
+          const rows = (batch || []) as unknown as ObsCard[];
           all.push(...rows);
 
           if (cancelled) return;
