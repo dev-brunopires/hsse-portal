@@ -109,7 +109,7 @@ export default function ObsCardsDashboard() {
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [filtered]);
 
-  const byCategory = useMemo(() => groupCount(filtered, (c) => c.category).sort((a, b) => b.value - a.value), [filtered]);
+  const byCategory = useMemo(() => groupCount(filtered, (c) => c.ai_category || c.category).sort((a, b) => b.value - a.value), [filtered]);
   const byArea = useMemo(() => groupCount(filtered, (c) => c.area).sort((a, b) => b.value - a.value).slice(0, 10), [filtered]);
   const byDept = useMemo(() => groupCount(filtered, (c) => c.department).sort((a, b) => b.value - a.value).slice(0, 10), [filtered]);
   const bySeverity = useMemo(() => groupCount(filtered, (c) => c.severity), [filtered]);
