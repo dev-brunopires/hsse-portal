@@ -342,7 +342,9 @@
       "successDesc": "{{count}} cartões classificados pela IA",
       "error": "Erro ao classificar",
       "rateLimited": "Limite de requisições atingido. Tente novamente em alguns instantes.",
-      "paymentRequired": "Créditos da IA esgotados. Adicione créditos para continuar."
+      "paymentRequired": "Créditos da IA esgotados. Adicione créditos para continuar.",
+      "runIncremental": "Classificar pendentes",
+      "runReclassify": "Reclassificar tudo (sobrescreve)"
     }
   },
   "healthCheck": {
