@@ -168,15 +168,19 @@ Deno.serve(async (req) => {
     const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
 
-    const { datasetId, reclassify = false } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const datasetId = body.dataset_id ?? body.datasetId;
+    const reclassify = body.reclassify === true;
+    const batchSize = Math.max(1, Math.min(50, Number(body.batch_size) || 15));
+
     if (!datasetId) {
-      return new Response(JSON.stringify({ error: "datasetId is required" }), {
+      return new Response(JSON.stringify({ error: "dataset_id is required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Reset existing classifications when reclassify=true
+    // Reset existing classifications when reclassify=true (only on the first call)
     if (reclassify) {
       await supabase
         .from("obs_cards")
@@ -184,65 +188,74 @@ Deno.serve(async (req) => {
         .eq("dataset_id", datasetId);
     }
 
-    // Fetch only cards needing classification
+    // Count total still pending
+    const { count: pendingBefore } = await supabase
+      .from("obs_cards")
+      .select("id", { count: "exact", head: true })
+      .eq("dataset_id", datasetId)
+      .is("ai_category", null);
+
+    // Fetch ONE batch
     const { data: cards, error: fetchError } = await supabase
       .from("obs_cards")
       .select(
         "id, description, immediate_action, recommended_action, obs_type, area, department",
       )
       .eq("dataset_id", datasetId)
-      .is("ai_category", null);
+      .is("ai_category", null)
+      .limit(batchSize);
 
     if (fetchError) throw fetchError;
+
     if (!cards || cards.length === 0) {
       return new Response(
-        JSON.stringify({ success: true, processed: 0, message: "Nothing to classify" }),
+        JSON.stringify({ success: true, processed: 0, remaining: 0, done: true }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    const BATCH_SIZE = 15;
     let processed = 0;
-    const errors: string[] = [];
+    try {
+      const results = await classifyBatch(cards as ObsCardRow[], GEMINI_API_KEY);
+      const byId = new Map(results.map((r) => [r.id, r]));
 
-    for (let i = 0; i < cards.length; i += BATCH_SIZE) {
-      const batch = cards.slice(i, i + BATCH_SIZE);
-      try {
-        const results = await classifyBatch(batch as ObsCardRow[], GEMINI_API_KEY);
-        const byId = new Map(results.map((r) => [r.id, r]));
+      for (const card of cards) {
+        const r = byId.get(card.id);
+        const update = r
+          ? {
+              ai_category: r.category,
+              ai_risk_level: r.risk_level,
+              ai_reasoning: r.reasoning,
+            }
+          : {
+              ai_category: "Ato inseguro",
+              ai_risk_level: "medium",
+              ai_reasoning: "Classificação automática padrão (modelo não retornou).",
+            };
 
-        for (const card of batch) {
-          const r = byId.get(card.id);
-          const update = r
-            ? {
-                ai_category: r.category,
-                ai_risk_level: r.risk_level,
-                ai_reasoning: r.reasoning,
-              }
-            : {
-                ai_category: "Ato inseguro",
-                ai_risk_level: "medium",
-                ai_reasoning: "Classificação automática padrão (modelo não retornou).",
-              };
-
-          await supabase.from("obs_cards").update(update).eq("id", card.id);
-          processed++;
-        }
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        console.error(`Batch ${i / BATCH_SIZE} failed:`, msg);
-        errors.push(msg);
-        // small backoff before next batch
-        await new Promise((r) => setTimeout(r, 1500));
+        await supabase.from("obs_cards").update(update).eq("id", card.id);
+        processed++;
       }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("Batch failed:", msg);
+      return new Response(
+        JSON.stringify({
+          error: msg,
+          processed: 0,
+          remaining: pendingBefore ?? cards.length,
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
+    const remaining = Math.max(0, (pendingBefore ?? cards.length) - processed);
     return new Response(
       JSON.stringify({
         success: true,
         processed,
-        total: cards.length,
-        errors: errors.slice(0, 5),
+        remaining,
+        done: remaining === 0,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
