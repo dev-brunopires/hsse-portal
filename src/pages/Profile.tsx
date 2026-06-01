@@ -80,6 +80,7 @@ interface ProfileData {
 
 export default function Profile() {
   const { user, refreshProfile } = useAuth();
+  const { organization } = useOrganization();
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
   const { t } = useTranslation();
