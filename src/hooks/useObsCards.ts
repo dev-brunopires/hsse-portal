@@ -94,22 +94,20 @@ export function useObsCards(datasetId: string | null) {
       const all: ObsCard[] = [];
       const pageSize = 1000;
       let from = 0;
-      let expectedCount: number | null = null;
 
       try {
         while (!cancelled) {
-          const query = (expectedCount === null
-            ? supabase.from('obs_cards' as any).select('*', { count: 'exact' })
-            : supabase.from('obs_cards' as any).select('*'))
+          const query = supabase
+            .from('obs_cards' as any)
+            .select('*')
             .eq('dataset_id', datasetId)
             .order('created_at', { ascending: true })
             .order('id', { ascending: true })
             .range(from, from + pageSize - 1);
 
-          const { data: batch, error: batchError, count } = await query;
+          const { data: batch, error: batchError } = await query;
 
           if (batchError) throw batchError;
-          if (expectedCount === null) expectedCount = count;
 
           const rows = (batch || []) as any as ObsCard[];
           all.push(...rows);
@@ -117,14 +115,13 @@ export function useObsCards(datasetId: string | null) {
           if (cancelled) return;
 
           const isFirstBatch = from === 0;
-          const loadedAllKnownRows = expectedCount !== null && all.length >= expectedCount;
           const reachedLastPage = rows.length < pageSize;
-          const shouldFlush = isFirstBatch || loadedAllKnownRows || reachedLastPage || all.length % 5000 === 0;
+          const shouldFlush = isFirstBatch || reachedLastPage || all.length % 5000 === 0;
 
           if (shouldFlush) setData([...all]);
           if (isFirstBatch) setIsLoading(false);
 
-          if (loadedAllKnownRows || reachedLastPage) break;
+          if (reachedLastPage) break;
 
           from += pageSize;
           await new Promise((resolve) => window.setTimeout(resolve, 0));
