@@ -161,6 +161,32 @@
     "groupSafety": "Segurança / HSE",
     "obsCards": "OBS Cards"
   },
+  "mobileHome": {
+    "greeting": "Bem-vindo",
+    "greetingWithName": "Olá, {{name}}",
+    "subtitle": "Escolha uma seção para começar",
+    "sectionsTitle": "Seções",
+    "sectionsLabel": "Seções principais",
+    "access": "Acessar",
+    "sections": {
+      "equipment": {
+        "title": "Gestão de Equipamentos",
+        "subtitle": "Inventário, certificados e inspeções"
+      },
+      "health": {
+        "title": "Gestão de Saúde",
+        "subtitle": "Health Check e monitoramento"
+      },
+      "vv": {
+        "title": "V&V",
+        "subtitle": "Verificação e validação"
+      },
+      "hsse": {
+        "title": "Gestão de HSSE",
+        "subtitle": "Segurança, saúde e meio ambiente"
+      }
+    }
+  },
   "obsCards": {
     "title": "OBS Cards",
     "subtitle": "Análise de cartões de observação (BCO / PSO)",
