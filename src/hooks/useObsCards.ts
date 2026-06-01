@@ -46,6 +46,7 @@ export interface ObsCard {
   is_open: boolean | null;
   month: number | null;
   year: number | null;
+  ship_name?: string | null;
   __summary_count?: number;
   __summary_time_to_close_sum?: number;
   __summary_time_to_close_count?: number;
