@@ -198,10 +198,10 @@ export default function ObsCardsDashboard() {
 
   const byRiskLevel = useMemo(() => {
     const out = [
-      { name: t('obsCards.riskLevel.low'), key: 'low', value: filtered.filter((c) => c.ai_risk_level === 'low').length },
-      { name: t('obsCards.riskLevel.medium'), key: 'medium', value: filtered.filter((c) => c.ai_risk_level === 'medium').length },
-      { name: t('obsCards.riskLevel.high'), key: 'high', value: filtered.filter((c) => c.ai_risk_level === 'high').length },
-      { name: t('obsCards.riskLevel.critical'), key: 'critical', value: filtered.filter((c) => c.ai_risk_level === 'critical').length },
+      { name: t('obsCards.riskLevel.low'), key: 'low', value: filtered.filter((c) => c.ai_risk_level === 'low').reduce((sum, c) => sum + getObsCardWeight(c), 0) },
+      { name: t('obsCards.riskLevel.medium'), key: 'medium', value: filtered.filter((c) => c.ai_risk_level === 'medium').reduce((sum, c) => sum + getObsCardWeight(c), 0) },
+      { name: t('obsCards.riskLevel.high'), key: 'high', value: filtered.filter((c) => c.ai_risk_level === 'high').reduce((sum, c) => sum + getObsCardWeight(c), 0) },
+      { name: t('obsCards.riskLevel.critical'), key: 'critical', value: filtered.filter((c) => c.ai_risk_level === 'critical').reduce((sum, c) => sum + getObsCardWeight(c), 0) },
     ];
     return out.filter((o) => o.value > 0);
   }, [filtered, t]);
@@ -234,16 +234,18 @@ export default function ObsCardsDashboard() {
   );
 
   const handleExportConsolidated = async () => {
-    if (!currentDataset) return;
-    await exportObsCardsConsolidated(filtered, {
+    if (!currentDataset || !datasetId) return;
+    const fullCards = applyFilters(await fetchAllObsCards(datasetId), filters);
+    await exportObsCardsConsolidated(fullCards, {
       datasetName: currentDataset.name,
       branding,
     });
   };
 
   const handleExportSector = async (sector: string) => {
-    if (!currentDataset || !cards) return;
-    await exportObsCardsBySector(cards, sector, {
+    if (!currentDataset || !datasetId) return;
+    const fullCards = await fetchAllObsCards(datasetId);
+    await exportObsCardsBySector(fullCards, sector, {
       datasetName: currentDataset.name,
       branding,
     });
