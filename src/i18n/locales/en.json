@@ -193,10 +193,42 @@
     "subtitle": "Observation card analytics (BCO / PSO)",
     "tabs": {
       "overview": "Executive Overview",
+      "risk": "Risk Types",
       "bco": "BCO Analysis",
       "pso": "PSO Analysis",
       "areas": "Critical Areas",
       "performance": "Performance"
+    },
+    "period": {
+      "month": "Month/Year",
+      "quarter": "Quarter",
+      "year": "Year"
+    },
+    "riskLevel": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "critical": "Critical"
+    },
+    "pdf": {
+      "exportButton": "Export PDF",
+      "consolidated": "Consolidated report",
+      "bySector": "By sector",
+      "title": "Obs Cards Report",
+      "generatedAt": "Generated at",
+      "dataset": "Dataset",
+      "executiveSummary": "Executive Summary",
+      "byRiskType": "By Risk Type",
+      "monthlyTrend": "Monthly Trend",
+      "byArea": "By Area/Sector",
+      "openUnsafe": "Open UNSAFE observations",
+      "month": "Month",
+      "riskType": "Risk Type",
+      "riskLevel": "Level",
+      "description": "Description",
+      "kpiCritical": "Critical",
+      "kpiHigh": "High",
+      "noAiData": "Run AI classification to view risk types."
     },
     "nav": {
       "dashboard": "Dashboard",
@@ -258,6 +290,7 @@
       "department": "Department",
       "status": "Status",
       "severity": "Severity",
+      "riskLevel": "Risk Level",
       "period": "Period",
       "clear": "Clear filters",
       "selectDataset": "Select a dataset"
@@ -276,14 +309,19 @@
     },
     "charts": {
       "monthlyTrend": "Monthly Trend",
+      "trend": "Trend by Period",
       "byCategory": "By Category",
       "byArea": "By Area",
       "byDepartment": "By Department",
       "bySeverity": "By Severity",
+      "byRiskType": "By Risk Type",
+      "byRiskLevel": "By Risk Level",
+      "severityOverTime": "Severity Over Time",
       "typeDistribution": "BCO vs PSO Distribution",
       "topAreas": "Top Critical Areas",
       "criticalAreasHeatmap": "Critical Areas Heatmap",
-      "performanceRanking": "Department Ranking"
+      "performanceRanking": "Department Ranking",
+      "runAiFirst": "Click \"Classify with AI\" to generate this analysis."
     },
     "severity": {
       "low": "Low",
@@ -304,7 +342,9 @@
       "successDesc": "{{count}} cards classified by AI",
       "error": "Classification error",
       "rateLimited": "Rate limit reached. Please try again shortly.",
-      "paymentRequired": "AI credits exhausted. Please top up to continue."
+      "paymentRequired": "AI credits exhausted. Please top up to continue.",
+      "runIncremental": "Classify pending",
+      "runReclassify": "Reclassify all (overwrite)"
     }
   },
   "healthCheck": {

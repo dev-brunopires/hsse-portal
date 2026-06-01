@@ -1,4 +1,4 @@
-// Edge function: classify obs_cards descriptions into safety categories via Lovable AI.
+// Edge function: classify obs_cards descriptions into HSSE risk types via Lovable AI.
 // Deploy: `supabase functions deploy classify-obs-cards --project-ref ovugummbxablwmbpbbhj`
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
@@ -9,34 +9,49 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-const CATEGORIES = [
-  'PPE',
+// Granular HSSE risk-type taxonomy. NO generic "Other" — model must commit.
+const RISK_TYPES = [
+  'Queda de altura',
+  'Queda de objetos',
+  'Esmagamento/Prensagem',
+  'Impacto/Choque mecânico',
+  'Corte/Perfuração',
+  'Escorregão e tropeço',
+  'Exposição a produtos químicos',
+  'Vazamento/Derramamento',
+  'Choque elétrico',
+  'Arco elétrico',
+  'Queimadura/Fogo',
+  'Estresse térmico',
+  'Postura/Esforço repetitivo',
+  'Levantamento manual',
+  'Pressão/Liberação de energia',
+  'Atmosfera explosiva',
+  'EPI ausente/inadequado',
+  'Permissão de trabalho',
+  'Sinalização/Isolamento',
+  'Içamento/Rigging',
+  'Espaço confinado',
+  'Trabalho a quente',
+  'Vazamento ao mar',
+  'Resíduos',
+  'Ato inseguro',
+  'Falta de atenção',
   'Housekeeping',
-  'Dropped Objects',
-  'Working at Height',
-  'Hot Work',
-  'Confined Space',
-  'Lifting Operations',
-  'Tools & Equipment',
-  'Slips, Trips & Falls',
-  'Hazardous Materials',
-  'Permit to Work',
-  'Environment',
-  'Ergonomics',
-  'Behavior',
-  'Process Safety',
-  'Fire Safety',
-  'Electrical Safety',
-  'Other',
+  'Ferramenta/Equipamento inadequado',
 ];
 
-const SYSTEM_PROMPT = `You are an HSSE safety analyst. Classify each safety observation card description into EXACTLY ONE category from this fixed taxonomy: ${CATEGORIES.join(
-  ', ',
-)}.
+const RISK_LEVELS = ['low', 'medium', 'high', 'critical'];
+
+const SYSTEM_PROMPT = `You are a senior HSSE risk analyst. For each safety observation card description, you MUST:
+1. Pick EXACTLY ONE risk type from this fixed taxonomy: ${RISK_TYPES.join(', ')}.
+2. Assess severity (risk_level): low | medium | high | critical.
+3. Provide a one-sentence Portuguese reasoning (max 140 chars) explaining the choice.
+
 Rules:
-- Read the description (Portuguese or English) and identify the core safety topic.
-- If multiple topics apply, pick the most critical/specific one.
-- Use "Other" only if nothing fits.
+- Read in Portuguese or English. Identify the most probable risk type — NEVER use generic labels.
+- If the description is vague (e.g. "área desorganizada"), use context to infer (e.g. Housekeeping).
+- If multiple risks apply, pick the most critical/specific.
 - Return ONLY via the provided tool call.`;
 
 interface Card {
@@ -44,51 +59,57 @@ interface Card {
   description: string | null;
 }
 
-async function classifyBatch(cards: Card[], apiKey: string): Promise<Record<string, string>> {
+interface Classification {
+  category: string;
+  risk_level: string;
+  reasoning: string;
+}
+
+async function classifyBatch(
+  cards: Card[],
+  apiKey: string,
+): Promise<Record<string, Classification>> {
   const userText = cards
     .map((c, i) => `${i + 1}. [id=${c.id}] ${(c.description || '').slice(0, 600)}`)
     .join('\n');
 
   const resp = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
+    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'google/gemini-2.5-flash-lite',
+      model: 'google/gemini-2.5-flash',
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: `Classify each card:\n${userText}` },
       ],
-      tools: [
-        {
-          type: 'function',
-          function: {
-            name: 'submit_classifications',
-            description: 'Return one category per card id.',
-            parameters: {
-              type: 'object',
-              properties: {
+      tools: [{
+        type: 'function',
+        function: {
+          name: 'submit_classifications',
+          description: 'Return one risk classification per card id.',
+          parameters: {
+            type: 'object',
+            properties: {
+              items: {
+                type: 'array',
                 items: {
-                  type: 'array',
-                  items: {
-                    type: 'object',
-                    properties: {
-                      id: { type: 'string' },
-                      category: { type: 'string', enum: CATEGORIES },
-                    },
-                    required: ['id', 'category'],
-                    additionalProperties: false,
+                  type: 'object',
+                  properties: {
+                    id: { type: 'string' },
+                    category: { type: 'string', enum: RISK_TYPES },
+                    risk_level: { type: 'string', enum: RISK_LEVELS },
+                    reasoning: { type: 'string', maxLength: 200 },
                   },
+                  required: ['id', 'category', 'risk_level', 'reasoning'],
+                  additionalProperties: false,
                 },
               },
-              required: ['items'],
-              additionalProperties: false,
             },
+            required: ['items'],
+            additionalProperties: false,
           },
         },
-      ],
+      }],
       tool_choice: { type: 'function', function: { name: 'submit_classifications' } },
     }),
   });
@@ -101,10 +122,16 @@ async function classifyBatch(cards: Card[], apiKey: string): Promise<Record<stri
   const data = await resp.json();
   const call = data?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
   if (!call) throw new Error('ai_no_tool_call');
-  const parsed = JSON.parse(call) as { items: Array<{ id: string; category: string }> };
-  const out: Record<string, string> = {};
+  const parsed = JSON.parse(call) as { items: Array<Classification & { id: string }> };
+  const out: Record<string, Classification> = {};
   for (const it of parsed.items) {
-    if (CATEGORIES.includes(it.category)) out[it.id] = it.category;
+    if (RISK_TYPES.includes(it.category) && RISK_LEVELS.includes(it.risk_level)) {
+      out[it.id] = {
+        category: it.category,
+        risk_level: it.risk_level,
+        reasoning: (it.reasoning || '').slice(0, 200),
+      };
+    }
   }
   return out;
 }
@@ -123,12 +150,20 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } },
     );
 
-    const { dataset_id, batch_size = 40 } = await req.json();
+    const { dataset_id, batch_size = 25, reclassify = false } = await req.json();
     if (!dataset_id) {
       return new Response(JSON.stringify({ error: 'dataset_id required' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    // If reclassify=true on first call, clear AI fields so everything reprocesses
+    if (reclassify) {
+      await supabase
+        .from('obs_cards')
+        .update({ ai_category: null, ai_risk_level: null, ai_reasoning: null })
+        .eq('dataset_id', dataset_id);
     }
 
     // Fetch unclassified rows with non-empty description
@@ -144,7 +179,6 @@ Deno.serve(async (req) => {
     const cards = (rows || []) as Card[];
 
     if (cards.length === 0) {
-      // Count remaining (should be 0 of "classifiable")
       const { count } = await supabase
         .from('obs_cards')
         .select('id', { count: 'exact', head: true })
@@ -157,11 +191,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    let mapping: Record<string, string> = {};
+    let mapping: Record<string, Classification> = {};
     try {
       mapping = await classifyBatch(cards, apiKey);
     } catch (err: any) {
-      // Surface rate-limit / payment errors clearly
       const msg = String(err?.message || err);
       if (msg.includes('429')) {
         return new Response(JSON.stringify({ error: 'rate_limited' }), {
@@ -178,13 +211,22 @@ Deno.serve(async (req) => {
       throw err;
     }
 
-    // Update rows; mark unanswered as 'Other' so we don't reprocess forever
+    // Fallback: if model skipped a card, default to 'Ato inseguro' / 'medium'
+    // (never "Other" — user requirement).
     let processed = 0;
     const updates: Array<Promise<unknown>> = [];
     for (const c of cards) {
-      const category = mapping[c.id] || 'Other';
+      const cls = mapping[c.id] || {
+        category: 'Ato inseguro',
+        risk_level: 'medium',
+        reasoning: 'Classificação padrão — IA não retornou categoria específica.',
+      };
       updates.push(
-        supabase.from('obs_cards').update({ ai_category: category }).eq('id', c.id),
+        supabase.from('obs_cards').update({
+          ai_category: cls.category,
+          ai_risk_level: cls.risk_level,
+          ai_reasoning: cls.reasoning,
+        }).eq('id', c.id),
       );
       processed += 1;
     }
