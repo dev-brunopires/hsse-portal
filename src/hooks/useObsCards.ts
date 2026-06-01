@@ -91,6 +91,8 @@ export function useObsCards(datasetId: string | null) {
             .from('obs_cards' as any)
             .select('*', expectedCount === null ? { count: 'exact' } : undefined)
             .eq('dataset_id', datasetId)
+            .order('created_at', { ascending: true })
+            .order('id', { ascending: true })
             .range(from, from + pageSize - 1);
 
           const { data: batch, error: batchError, count } = await query;
