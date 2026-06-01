@@ -63,6 +63,17 @@ export function useObsCards(datasetId: string | null) {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  useEffect(() => {
+    const handleRefresh = (event: Event) => {
+      const targetDatasetId = (event as CustomEvent<{ datasetId?: string }>).detail?.datasetId;
+      if (!targetDatasetId || targetDatasetId === datasetId) setReloadKey((value) => value + 1);
+    };
+
+    window.addEventListener('obs-cards:refresh', handleRefresh);
+    return () => window.removeEventListener('obs-cards:refresh', handleRefresh);
+  }, [datasetId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -87,9 +98,9 @@ export function useObsCards(datasetId: string | null) {
 
       try {
         while (!cancelled) {
-          const query = supabase
-            .from('obs_cards' as any)
-            .select('*', expectedCount === null ? { count: 'exact' } : undefined)
+          const query = (expectedCount === null
+            ? supabase.from('obs_cards' as any).select('*', { count: 'exact' })
+            : supabase.from('obs_cards' as any).select('*'))
             .eq('dataset_id', datasetId)
             .order('created_at', { ascending: true })
             .order('id', { ascending: true })
@@ -136,7 +147,7 @@ export function useObsCards(datasetId: string | null) {
     return () => {
       cancelled = true;
     };
-  }, [datasetId]);
+  }, [datasetId, reloadKey]);
 
   return { data, isLoading, isFetching, error };
 }
