@@ -48,6 +48,7 @@ import {
 } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import { supabase } from '@/integrations/supabase/client';
 import { SignaturePad } from '@/components/inspections/SignaturePad';
 import { AvatarCropDialog } from '@/components/profile/AvatarCropDialog';
@@ -79,6 +80,7 @@ interface ProfileData {
 
 export default function Profile() {
   const { user, refreshProfile } = useAuth();
+  const { organization } = useOrganization();
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
   const { t } = useTranslation();
@@ -131,7 +133,7 @@ export default function Profile() {
         setProfileData(data as ProfileData);
         form.reset({
           full_name: data.full_name || '',
-          email: data.email || '',
+          email: data.email || user.email || '',
           phone: data.phone || '',
           position: data.position || '',
           department: data.department || '',
@@ -143,6 +145,29 @@ export default function Profile() {
         if (data.avatar_url) {
           setAvatarPreview(data.avatar_url);
         }
+      } else {
+        // No profile row yet — initialize empty profile so user can create it on save
+        setProfileData({
+          id: '',
+          user_id: user.id,
+          full_name: (user.user_metadata as any)?.full_name || '',
+          email: user.email || '',
+          phone: null,
+          position: null,
+          department: null,
+          avatar_url: null,
+          default_signature: null,
+          auto_sign_inspections: false,
+          notification_email: true,
+          notification_app: true,
+        });
+        form.reset({
+          full_name: (user.user_metadata as any)?.full_name || '',
+          email: user.email || '',
+          phone: '',
+          position: '',
+          department: '',
+        });
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -208,21 +233,28 @@ export default function Profile() {
         }
       }
 
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          full_name: data.full_name,
-          phone: data.phone || null,
-          position: data.position || null,
-          department: data.department || null,
-          avatar_url: avatarUrl,
-          default_signature: signatureData,
-          auto_sign_inspections: autoSign,
-          notification_email: notificationEmail,
-          notification_app: notificationApp,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', user.id);
+      const isNewProfile = !profileData.id;
+      const payload: Record<string, any> = {
+        user_id: user.id,
+        full_name: data.full_name,
+        email: user.email || profileData.email,
+        phone: data.phone || null,
+        position: data.position || null,
+        department: data.department || null,
+        avatar_url: avatarUrl,
+        default_signature: signatureData,
+        auto_sign_inspections: autoSign,
+        notification_email: notificationEmail,
+        notification_app: notificationApp,
+        updated_at: new Date().toISOString(),
+      };
+      if (isNewProfile && organization?.id) {
+        payload.organization_id = organization.id;
+      }
+
+      const { error } = isNewProfile
+        ? await supabase.from('profiles').insert([payload as any])
+        : await supabase.from('profiles').update(payload as any).eq('user_id', user.id);
 
       if (error) throw error;
 
