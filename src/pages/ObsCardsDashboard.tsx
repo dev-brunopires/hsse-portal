@@ -176,7 +176,7 @@ export default function ObsCardsDashboard() {
       if (!map.has(pk.key)) map.set(pk.key, { name: pk.label, low: 0, medium: 0, high: 0, critical: 0 });
       const e = map.get(pk.key)!;
       const lvl = (c.ai_risk_level || 'medium') as keyof typeof RISK_COLOR;
-      if (lvl in e) (e as any)[lvl]++;
+      if (lvl === 'low' || lvl === 'medium' || lvl === 'high' || lvl === 'critical') e[lvl]++;
     }
     return Array.from(map.entries())
       .sort(([a], [b]) => a.localeCompare(b))
@@ -347,7 +347,7 @@ export default function ObsCardsDashboard() {
             </div>
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">{t('obsCards.filters.type')}</label>
-              <Select value={filters.type} onValueChange={(v: any) => setFilters({ ...filters, type: v })}>
+              <Select value={filters.type} onValueChange={(v) => setFilters({ ...filters, type: v as Filters['type'] })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ALL">{t('obsCards.filters.all')}</SelectItem>
