@@ -22,10 +22,11 @@ import {
   DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { ModernKPICard } from '@/components/dashboard/ModernKPICard';
-import { useObsDatasets, useObsCards, type ObsCard } from '@/hooks/useObsCards';
+import { fetchAllObsCards, useObsDatasets, useObsCards, type ObsCard } from '@/hooks/useObsCards';
 import { useOrganizationBranding } from '@/hooks/useOrganizationBranding';
 import { ClassifyDatasetButton } from '@/components/obs-cards/ClassifyDatasetButton';
 import { exportObsCardsConsolidated, exportObsCardsBySector } from '@/utils/obsCardsPdfExport';
+import { getObsCardTimeToCloseStats, getObsCardWeight } from '@/utils/obsCardsSummary';
 import { format } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
 import i18n from '@/i18n';
@@ -83,11 +84,11 @@ function applyFilters(cards: ObsCard[], f: Filters): ObsCard[] {
   });
 }
 
-function groupCount<T>(items: T[], key: (i: T) => string | null | undefined) {
+function groupCount<T extends Partial<ObsCard>>(items: T[], key: (i: T) => string | null | undefined) {
   const map = new Map<string, number>();
   for (const it of items) {
     const k = (key(it) || '—').toString().trim() || '—';
-    map.set(k, (map.get(k) || 0) + 1);
+    map.set(k, (map.get(k) || 0) + getObsCardWeight(it));
   }
   return Array.from(map.entries()).map(([name, value]) => ({ name, value }));
 }
