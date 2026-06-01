@@ -16,6 +16,8 @@ import {
   Award,
   ChevronDown,
   Thermometer,
+  ShieldAlert,
+  Activity,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetHeader } from '@/components/ui/sheet';
@@ -75,7 +77,7 @@ interface MobileSidebarProps {
 
 export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
   const { t } = useTranslation();
-  const { isAdmin, isPlatformOwner } = useAuth();
+  const { isAdmin, isAdminMaster, isPlatformOwner } = useAuth();
 
   const handleNavClick = () => {
     onOpenChange(false);
@@ -103,21 +105,31 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
             <MobileNavItem to="/reports" icon={<FileText size={20} />} label={t('navigation.reports')} onClick={handleNavClick} />
             <MobileNavItem to="/alerts" icon={<Bell size={20} />} label={t('navigation.alerts')} onClick={handleNavClick} />
             <MobileNavItem to="/categories" icon={<FolderOpen size={20} />} label={t('navigation.categories')} onClick={handleNavClick} />
+            <MobileNavItem to="/supervisor" icon={<Users size={20} />} label={t('navigation.supervisor')} onClick={handleNavClick} />
           </MobileNavGroup>
 
           <MobileNavGroup label={t('navigation.groupHealth')}>
             <MobileNavItem to="/heat-stress" icon={<Thermometer size={20} />} label={t('navigation.heatStress')} onClick={handleNavClick} />
           </MobileNavGroup>
+
+          {(isAdminMaster || isPlatformOwner) && (
+            <MobileNavGroup label={t('navigation.groupSafety')}>
+              <MobileNavItem to="/obs-cards" icon={<ShieldAlert size={20} />} label={t('navigation.obsCards')} onClick={handleNavClick} />
+            </MobileNavGroup>
+          )}
         </nav>
 
-        {/* Admin Section - Only admin-specific items */}
-        {(isAdmin || isPlatformOwner) && (
+        {/* Admin Section */}
+        {(isAdmin || isAdminMaster || isPlatformOwner) && (
           <div className="border-t border-sidebar-border p-3 space-y-1 shrink-0 pb-safe">
             {isAdmin && (
               <>
                 <MobileNavItem to="/users" icon={<Users size={20} />} label={t('navigation.users')} onClick={handleNavClick} />
                 <MobileNavItem to="/audit-log" icon={<History size={20} />} label={t('navigation.auditLog')} onClick={handleNavClick} />
               </>
+            )}
+            {(isAdminMaster || isPlatformOwner) && (
+              <MobileNavItem to="/health-check" icon={<Activity size={20} />} label={t('navigation.healthCheck')} onClick={handleNavClick} />
             )}
             {isPlatformOwner && (
               <MobileNavItem to="/platform-admin" icon={<Building2 size={20} />} label={t('navigation.platformAdmin')} onClick={handleNavClick} />
