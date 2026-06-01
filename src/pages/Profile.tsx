@@ -233,21 +233,28 @@ export default function Profile() {
         }
       }
 
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          full_name: data.full_name,
-          phone: data.phone || null,
-          position: data.position || null,
-          department: data.department || null,
-          avatar_url: avatarUrl,
-          default_signature: signatureData,
-          auto_sign_inspections: autoSign,
-          notification_email: notificationEmail,
-          notification_app: notificationApp,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', user.id);
+      const isNewProfile = !profileData.id;
+      const payload: Record<string, any> = {
+        user_id: user.id,
+        full_name: data.full_name,
+        email: user.email || profileData.email,
+        phone: data.phone || null,
+        position: data.position || null,
+        department: data.department || null,
+        avatar_url: avatarUrl,
+        default_signature: signatureData,
+        auto_sign_inspections: autoSign,
+        notification_email: notificationEmail,
+        notification_app: notificationApp,
+        updated_at: new Date().toISOString(),
+      };
+      if (isNewProfile && organization?.id) {
+        payload.organization_id = organization.id;
+      }
+
+      const { error } = isNewProfile
+        ? await supabase.from('profiles').insert(payload)
+        : await supabase.from('profiles').update(payload).eq('user_id', user.id);
 
       if (error) throw error;
 
