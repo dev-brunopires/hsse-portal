@@ -26,6 +26,7 @@ type ObsCardInsert = {
   is_open: boolean;
   month: number | null;
   year: number | null;
+  ship_name: string | null;
   raw_row: null;
 };
 
@@ -49,6 +50,7 @@ const FIELD_ALIASES: Record<string, string[]> = {
   responsible: ['responsavel', 'responsible', 'owner', 'dono', 'encarregado'],
   due_date: ['prazo', 'due date', 'data prazo', 'vencimento'],
   close_date: ['data fechamento', 'close date', 'closed', 'encerramento', 'data encerramento'],
+  ship_name: ['navio', 'embarcacao', 'embarcação', 'vessel', 'ship', 'unidade', 'unit', 'rig'],
 };
 
 const yieldToBrowser = () => new Promise((resolve) => window.setTimeout(resolve, 0));
