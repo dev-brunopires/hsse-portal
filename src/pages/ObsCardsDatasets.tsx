@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useObsDatasets } from '@/hooks/useObsCards';
 import { formatDateTime } from '@/utils/dateFormat';
+import { ClassifyDatasetButton } from '@/components/obs-cards/ClassifyDatasetButton';
 
 const statusVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   ready: 'default',
