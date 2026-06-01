@@ -4,12 +4,12 @@ import { MobileHome } from '@/components/home/MobileHome';
 const Index = () => {
   return (
     <>
-      {/* Mobile-only home with section shortcuts */}
-      <div className="md:hidden">
+      {/* Mobile & tablet home with section shortcuts */}
+      <div className="lg:hidden">
         <MobileHome />
       </div>
-      {/* Desktop / tablet keep the full Dashboard */}
-      <div className="hidden md:block">
+      {/* Desktop keeps the full Dashboard */}
+      <div className="hidden lg:block">
         <Dashboard />
       </div>
     </>
