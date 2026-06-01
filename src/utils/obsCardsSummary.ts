@@ -1,4 +1,5 @@
 import type { ObsCard } from '@/hooks/useObsCards';
+import type { Json } from '@/integrations/supabase/types';
 
 const SUMMARY_VERSION = 1;
 
@@ -117,10 +118,14 @@ export function getObsCardsDashboardSummary(value: unknown): ObsCardsDashboardSu
   return summary as unknown as ObsCardsDashboardSummary;
 }
 
-export function withObsCardsDashboardSummary(value: unknown, summary: ObsCardsDashboardSummary) {
-  if (!isObject(value)) return { fields: value ?? {}, dashboard_summary: summary };
-  if ('dashboard_summary' in value || 'fields' in value) return { ...value, dashboard_summary: summary };
-  return { fields: value, dashboard_summary: summary };
+export function withObsCardsDashboardSummary(value: unknown, summary: ObsCardsDashboardSummary): Json {
+  const nextValue = !isObject(value)
+    ? { fields: value ?? {}, dashboard_summary: summary }
+    : ('dashboard_summary' in value || 'fields' in value)
+      ? { ...value, dashboard_summary: summary }
+      : { fields: value, dashboard_summary: summary };
+
+  return JSON.parse(JSON.stringify(nextValue)) as Json;
 }
 
 export function summaryToObsCards(
