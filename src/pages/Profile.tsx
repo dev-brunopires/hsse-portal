@@ -48,6 +48,7 @@ import {
 } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import { supabase } from '@/integrations/supabase/client';
 import { SignaturePad } from '@/components/inspections/SignaturePad';
 import { AvatarCropDialog } from '@/components/profile/AvatarCropDialog';
