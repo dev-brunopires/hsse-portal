@@ -351,7 +351,7 @@ export default function ObsCardsDashboard() {
       {/* Filters */}
       <Card>
         <CardContent className="p-4">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-10 gap-3">
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">{t('obsCards.filters.dataset')}</label>
               <Select value={datasetId || ''} onValueChange={(v) => { setDatasetId(v); setParams({ dataset: v }, { replace: true }); }}>
@@ -371,6 +371,36 @@ export default function ObsCardsDashboard() {
                   <SelectItem value="month">{t('obsCards.period.month')}</SelectItem>
                   <SelectItem value="quarter">{t('obsCards.period.quarter')}</SelectItem>
                   <SelectItem value="year">{t('obsCards.period.year')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">{t('obsCards.filters.year')}</label>
+              <Select value={filters.year} onValueChange={(v) => setFilters({ ...filters, year: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">{t('obsCards.filters.all')}</SelectItem>
+                  {allYears.map((y) => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">{t('obsCards.filters.month')}</label>
+              <Select value={filters.month} onValueChange={(v) => setFilters({ ...filters, month: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">{t('obsCards.filters.all')}</SelectItem>
+                  {allMonths.map((m) => <SelectItem key={m} value={m}>{m.padStart(2, '0')}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">{t('obsCards.filters.ship')}</label>
+              <Select value={filters.ship} onValueChange={(v) => setFilters({ ...filters, ship: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">{t('obsCards.filters.all')}</SelectItem>
+                  {allShips.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
