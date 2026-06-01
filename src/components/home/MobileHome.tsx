@@ -124,7 +124,7 @@ export function MobileHome() {
           </h2>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
           {SECTIONS.map((section) => {
             const Icon = section.icon;
             const tone = TONE_CLASSES[section.tone];
