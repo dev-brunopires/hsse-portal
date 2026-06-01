@@ -16,6 +16,7 @@ export type ObsCardsSummaryRow = Pick<
   | 'is_open'
   | 'month'
   | 'year'
+  | 'ship_name'
 > & {
   count: number;
   time_to_close_sum: number;
@@ -76,6 +77,7 @@ export function buildObsCardsDashboardSummary(cards: SummarySourceCard[]): ObsCa
       card.is_open ?? null,
       card.month || null,
       card.year || null,
+      card.ship_name || null,
     ]);
 
     const existing = groups.get(key);
@@ -98,6 +100,7 @@ export function buildObsCardsDashboardSummary(cards: SummarySourceCard[]): ObsCa
       is_open: card.is_open ?? null,
       month: card.month || null,
       year: card.year || null,
+      ship_name: card.ship_name || null,
       count,
       time_to_close_sum: closeStats.sum,
       time_to_close_count: closeStats.count,
@@ -155,6 +158,7 @@ export function summaryToObsCards(
     is_open: row.is_open,
     month: row.month,
     year: row.year,
+    ship_name: row.ship_name,
     __summary_count: row.count,
     __summary_time_to_close_sum: row.time_to_close_sum,
     __summary_time_to_close_count: row.time_to_close_count,
