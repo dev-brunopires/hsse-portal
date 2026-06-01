@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx';
 import { daysBetweenLocalDates, formatLocalDate, parseLocalDate } from '@/utils/dateFormat';
 import { supabase } from '@/integrations/supabase/client';
+import { buildObsCardsDashboardSummary } from '@/utils/obsCardsSummary';
 
 const INSERT_CHUNK_SIZE = 250;
 
@@ -77,7 +78,7 @@ function parseDate(v: unknown): string | null {
   }
 
   const s = String(v).trim();
-  const br = s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})/);
+  const br = s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})/);
   if (br) {
     const [, d, m, y] = br;
     const yy = y.length === 2 ? `20${y}` : y;
@@ -209,6 +210,7 @@ export async function importObsCardsFromFile({
   const totalRows = Math.max(1, range.e.r - headerRow);
   let inserted = 0;
   let chunk: ObsCardInsert[] = [];
+  const summaryRows: ObsCardInsert[] = [];
 
   onProgress?.(12);
 
@@ -222,10 +224,14 @@ export async function importObsCardsFromFile({
       if (value !== null && value !== '') hasValue = true;
     }
 
-    if (hasValue) chunk.push(buildRecord(row, mapping, datasetId, organizationId));
+    if (hasValue) {
+      const record = buildRecord(row, mapping, datasetId, organizationId);
+      chunk.push(record);
+      summaryRows.push(record);
+    }
 
     if (chunk.length >= INSERT_CHUNK_SIZE || (rowIndex === range.e.r && chunk.length)) {
-      const { error } = await supabase.from('obs_cards' as any).insert(chunk);
+      const { error } = await supabase.from('obs_cards').insert(chunk);
       if (error) throw new Error(`insert_failed: ${error.message}`);
       inserted += chunk.length;
       chunk = [];
@@ -237,5 +243,5 @@ export async function importObsCardsFromFile({
   if (!inserted) throw new Error('empty_sheet');
   onProgress?.(98);
 
-  return { inserted, mapping };
+  return { inserted, mapping, dashboardSummary: buildObsCardsDashboardSummary(summaryRows) };
 }

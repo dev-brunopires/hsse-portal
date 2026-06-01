@@ -2,6 +2,12 @@ import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import {
+  buildObsCardsDashboardSummary,
+  getObsCardsDashboardSummary,
+  summaryToObsCards,
+  withObsCardsDashboardSummary,
+} from '@/utils/obsCardsSummary';
 
 export interface ObsDataset {
   id: string;
@@ -14,6 +20,7 @@ export interface ObsDataset {
   uploaded_by: string | null;
   created_at: string;
   error_message: string | null;
+  column_mapping: unknown;
 }
 
 export interface ObsCard {
@@ -39,6 +46,38 @@ export interface ObsCard {
   is_open: boolean | null;
   month: number | null;
   year: number | null;
+  __summary_count?: number;
+  __summary_time_to_close_sum?: number;
+  __summary_time_to_close_count?: number;
+}
+
+async function fetchObsCardsPage(datasetId: string, from: number, pageSize: number): Promise<ObsCard[]> {
+  const { data, error } = await supabase
+    .from('obs_cards')
+    .select('*')
+    .eq('dataset_id', datasetId)
+    .order('created_at', { ascending: true })
+    .order('id', { ascending: true })
+    .range(from, from + pageSize - 1);
+
+  if (error) throw error;
+  return (data || []) as unknown as ObsCard[];
+}
+
+export async function fetchAllObsCards(datasetId: string): Promise<ObsCard[]> {
+  const all: ObsCard[] = [];
+  const pageSize = 1000;
+  let from = 0;
+
+  while (true) {
+    const rows = await fetchObsCardsPage(datasetId, from, pageSize);
+    all.push(...rows);
+    if (rows.length < pageSize) break;
+    from += pageSize;
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
+  }
+
+  return all;
 }
 
 export function useObsDatasets() {
@@ -58,17 +97,26 @@ export function useObsDatasets() {
   });
 }
 
-export function useObsCards(datasetId: string | null) {
+export function useObsCards(datasetId: string | null, dataset?: ObsDataset | null) {
   const [data, setData] = useState<ObsCard[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [rebuildSummaryKey, setRebuildSummaryKey] = useState(0);
+  const [localSummary, setLocalSummary] = useState<{
+    datasetId: string;
+    summary: ReturnType<typeof buildObsCardsDashboardSummary>;
+  } | null>(null);
 
   useEffect(() => {
     const handleRefresh = (event: Event) => {
-      const targetDatasetId = (event as CustomEvent<{ datasetId?: string }>).detail?.datasetId;
-      if (!targetDatasetId || targetDatasetId === datasetId) setReloadKey((value) => value + 1);
+      const detail = (event as CustomEvent<{ datasetId?: string; rebuildSummary?: boolean }>).detail;
+      const targetDatasetId = detail?.datasetId;
+      if (!targetDatasetId || targetDatasetId === datasetId) {
+        setReloadKey((value) => value + 1);
+        if (detail?.rebuildSummary) setRebuildSummaryKey((value) => value + 1);
+      }
     };
 
     window.addEventListener('obs-cards:refresh', handleRefresh);
@@ -88,6 +136,16 @@ export function useObsCards(datasetId: string | null) {
         return;
       }
 
+      const savedSummary = rebuildSummaryKey === 0
+        ? (localSummary?.datasetId === datasetId ? localSummary.summary : null) || getObsCardsDashboardSummary(dataset?.column_mapping)
+        : null;
+      if (savedSummary) {
+        setData(summaryToObsCards(savedSummary, { datasetId, organizationId: dataset?.organization_id }));
+        setIsLoading(false);
+        setIsFetching(false);
+        return;
+      }
+
       setIsLoading(true);
       setIsFetching(true);
 
@@ -97,19 +155,7 @@ export function useObsCards(datasetId: string | null) {
 
       try {
         while (!cancelled) {
-          const query = supabase
-            .from('obs_cards')
-            .select('*')
-            .eq('dataset_id', datasetId)
-            .order('created_at', { ascending: true })
-            .order('id', { ascending: true })
-            .range(from, from + pageSize - 1);
-
-          const { data: batch, error: batchError } = await query;
-
-          if (batchError) throw batchError;
-
-          const rows = (batch || []) as unknown as ObsCard[];
+          const rows = await fetchObsCardsPage(datasetId, from, pageSize);
           all.push(...rows);
 
           if (cancelled) return;
@@ -125,6 +171,17 @@ export function useObsCards(datasetId: string | null) {
 
           from += pageSize;
           await new Promise((resolve) => window.setTimeout(resolve, 0));
+        }
+
+        if (!cancelled && all.length > 0) {
+          const summary = buildObsCardsDashboardSummary(all);
+          setLocalSummary({ datasetId, summary });
+          setData(summaryToObsCards(summary, { datasetId, organizationId: dataset?.organization_id }));
+          await supabase
+            .from('obs_card_datasets')
+            .update({ column_mapping: withObsCardsDashboardSummary(dataset?.column_mapping, summary) })
+            .eq('id', datasetId);
+          setRebuildSummaryKey(0);
         }
       } catch (err) {
         if (!cancelled) {
@@ -144,7 +201,7 @@ export function useObsCards(datasetId: string | null) {
     return () => {
       cancelled = true;
     };
-  }, [datasetId, reloadKey]);
+  }, [datasetId, dataset?.column_mapping, dataset?.organization_id, localSummary, reloadKey, rebuildSummaryKey]);
 
   return { data, isLoading, isFetching, error };
 }

@@ -17,6 +17,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { importObsCardsFromFile } from '@/utils/obsCardsImport';
+import { withObsCardsDashboardSummary } from '@/utils/obsCardsSummary';
 
 const MAX_OBS_CARD_FILE_SIZE_MB = 20;
 
@@ -63,7 +64,7 @@ export default function ObsCardsUpload() {
     try {
       // 1. Create dataset row
       const { data: ds, error: dsErr } = await supabase
-        .from('obs_card_datasets' as any)
+        .from('obs_card_datasets')
         .insert({
           organization_id: organization.id,
           name: name.trim(),
@@ -73,7 +74,7 @@ export default function ObsCardsUpload() {
         .select()
         .single();
       if (dsErr) throw dsErr;
-      const dataset: any = ds;
+      const dataset = ds;
       datasetId = dataset.id;
       setProgress(3);
 
@@ -86,7 +87,7 @@ export default function ObsCardsUpload() {
       setProgress(8);
 
       await supabase
-        .from('obs_card_datasets' as any)
+        .from('obs_card_datasets')
         .update({ source_storage_path: path })
         .eq('id', dataset.id);
 
@@ -99,11 +100,11 @@ export default function ObsCardsUpload() {
       });
 
       const { error: updateErr } = await supabase
-        .from('obs_card_datasets' as any)
+        .from('obs_card_datasets')
         .update({
           status: 'ready',
           row_count: result.inserted,
-          column_mapping: result.mapping,
+          column_mapping: withObsCardsDashboardSummary(result.mapping, result.dashboardSummary),
           uploaded_by: user?.id ?? null,
           uploaded_by_name: profile?.full_name || user?.user_metadata?.full_name || null,
         })
@@ -117,16 +118,17 @@ export default function ObsCardsUpload() {
       });
       qc.invalidateQueries({ queryKey: ['obs-datasets'] });
       navigate(`/obs-cards?dataset=${dataset.id}`);
-    } catch (e: any) {
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
       if (datasetId) {
         await supabase
-          .from('obs_card_datasets' as any)
-          .update({ status: 'failed', error_message: e.message })
+          .from('obs_card_datasets')
+          .update({ status: 'failed', error_message: message })
           .eq('id', datasetId);
       }
       toast({
         title: t('obsCards.upload.error'),
-        description: getUploadErrorMessage(e.message, t),
+        description: getUploadErrorMessage(message, t),
         variant: 'destructive',
       });
     } finally {

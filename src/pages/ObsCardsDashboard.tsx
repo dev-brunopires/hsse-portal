@@ -22,10 +22,11 @@ import {
   DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { ModernKPICard } from '@/components/dashboard/ModernKPICard';
-import { useObsDatasets, useObsCards, type ObsCard } from '@/hooks/useObsCards';
+import { fetchAllObsCards, useObsDatasets, useObsCards, type ObsCard } from '@/hooks/useObsCards';
 import { useOrganizationBranding } from '@/hooks/useOrganizationBranding';
 import { ClassifyDatasetButton } from '@/components/obs-cards/ClassifyDatasetButton';
 import { exportObsCardsConsolidated, exportObsCardsBySector } from '@/utils/obsCardsPdfExport';
+import { getObsCardTimeToCloseStats, getObsCardWeight } from '@/utils/obsCardsSummary';
 import { format } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
 import i18n from '@/i18n';
@@ -83,11 +84,11 @@ function applyFilters(cards: ObsCard[], f: Filters): ObsCard[] {
   });
 }
 
-function groupCount<T>(items: T[], key: (i: T) => string | null | undefined) {
+function groupCount<T extends Partial<ObsCard>>(items: T[], key: (i: T) => string | null | undefined) {
   const map = new Map<string, number>();
   for (const it of items) {
     const k = (key(it) || '—').toString().trim() || '—';
-    map.set(k, (map.get(k) || 0) + 1);
+    map.set(k, (map.get(k) || 0) + getObsCardWeight(it));
   }
   return Array.from(map.entries()).map(([name, value]) => ({ name, value }));
 }
@@ -115,7 +116,11 @@ export default function ObsCardsDashboard() {
   const branding = useOrganizationBranding();
   const { data: datasets, isLoading: dsLoading } = useObsDatasets();
   const [datasetId, setDatasetId] = useState<string | null>(params.get('dataset'));
-  const { data: cards, isLoading: cardsLoading, isFetching: cardsFetching, error: cardsError } = useObsCards(datasetId);
+  const currentDataset = useMemo(
+    () => datasets?.find((d) => d.id === datasetId) || null,
+    [datasets, datasetId],
+  );
+  const { data: cards, isLoading: cardsLoading, isFetching: cardsFetching, error: cardsError } = useObsCards(datasetId, currentDataset);
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
 
   useEffect(() => {
@@ -129,23 +134,21 @@ export default function ObsCardsDashboard() {
   }, [datasets, datasetId, setParams]);
 
   const filtered = useMemo(() => (cards ? applyFilters(cards, filters) : []), [cards, filters]);
-  const currentDataset = useMemo(
-    () => datasets?.find((d) => d.id === datasetId) || null,
-    [datasets, datasetId],
-  );
-
   const stats = useMemo(() => {
-    const total = filtered.length;
-    const safe = filtered.filter((c) => c.status === 'SAFE').length;
-    const unsafe = filtered.filter((c) => c.status === 'UNSAFE').length;
-    const bco = filtered.filter((c) => c.obs_type === 'BCO').length;
-    const pso = filtered.filter((c) => c.obs_type === 'PSO').length;
-    const open = filtered.filter((c) => c.is_open).length;
+    const total = filtered.reduce((sum, c) => sum + getObsCardWeight(c), 0);
+    const safe = filtered.filter((c) => c.status === 'SAFE').reduce((sum, c) => sum + getObsCardWeight(c), 0);
+    const unsafe = filtered.filter((c) => c.status === 'UNSAFE').reduce((sum, c) => sum + getObsCardWeight(c), 0);
+    const bco = filtered.filter((c) => c.obs_type === 'BCO').reduce((sum, c) => sum + getObsCardWeight(c), 0);
+    const pso = filtered.filter((c) => c.obs_type === 'PSO').reduce((sum, c) => sum + getObsCardWeight(c), 0);
+    const open = filtered.filter((c) => c.is_open).reduce((sum, c) => sum + getObsCardWeight(c), 0);
     const closed = total - open;
-    const ttcArr = filtered.map((c) => c.time_to_close_days).filter((v): v is number => v != null);
-    const avgTtc = ttcArr.length ? Math.round(ttcArr.reduce((a, b) => a + b, 0) / ttcArr.length) : 0;
-    const critical = filtered.filter((c) => c.ai_risk_level === 'critical').length;
-    const high = filtered.filter((c) => c.ai_risk_level === 'high').length;
+    const ttc = filtered.reduce((acc, c) => {
+      const item = getObsCardTimeToCloseStats(c);
+      return { sum: acc.sum + item.sum, count: acc.count + item.count };
+    }, { sum: 0, count: 0 });
+    const avgTtc = ttc.count ? Math.round(ttc.sum / ttc.count) : 0;
+    const critical = filtered.filter((c) => c.ai_risk_level === 'critical').reduce((sum, c) => sum + getObsCardWeight(c), 0);
+    const high = filtered.filter((c) => c.ai_risk_level === 'high').reduce((sum, c) => sum + getObsCardWeight(c), 0);
     return { total, safe, unsafe, bco, pso, open, closed, avgTtc, critical, high };
   }, [filtered]);
 
@@ -155,12 +158,13 @@ export default function ObsCardsDashboard() {
     for (const c of filtered) {
       const pk = periodKey(c, filters.period);
       if (!pk) continue;
+      const weight = getObsCardWeight(c);
       if (!map.has(pk.key)) map.set(pk.key, { name: pk.label, BCO: 0, PSO: 0, UNSAFE: 0, total: 0 });
       const e = map.get(pk.key)!;
-      e.total++;
-      if (c.obs_type === 'BCO') e.BCO++;
-      if (c.obs_type === 'PSO') e.PSO++;
-      if (c.status === 'UNSAFE') e.UNSAFE++;
+      e.total += weight;
+      if (c.obs_type === 'BCO') e.BCO += weight;
+      if (c.obs_type === 'PSO') e.PSO += weight;
+      if (c.status === 'UNSAFE') e.UNSAFE += weight;
     }
     return Array.from(map.entries())
       .sort(([a], [b]) => a.localeCompare(b))
@@ -173,10 +177,11 @@ export default function ObsCardsDashboard() {
     for (const c of filtered) {
       const pk = periodKey(c, filters.period);
       if (!pk) continue;
+      const weight = getObsCardWeight(c);
       if (!map.has(pk.key)) map.set(pk.key, { name: pk.label, low: 0, medium: 0, high: 0, critical: 0 });
       const e = map.get(pk.key)!;
       const lvl = (c.ai_risk_level || 'medium') as keyof typeof RISK_COLOR;
-      if (lvl === 'low' || lvl === 'medium' || lvl === 'high' || lvl === 'critical') e[lvl]++;
+      if (lvl === 'low' || lvl === 'medium' || lvl === 'high' || lvl === 'critical') e[lvl] += weight;
     }
     return Array.from(map.entries())
       .sort(([a], [b]) => a.localeCompare(b))
@@ -193,10 +198,10 @@ export default function ObsCardsDashboard() {
 
   const byRiskLevel = useMemo(() => {
     const out = [
-      { name: t('obsCards.riskLevel.low'), key: 'low', value: filtered.filter((c) => c.ai_risk_level === 'low').length },
-      { name: t('obsCards.riskLevel.medium'), key: 'medium', value: filtered.filter((c) => c.ai_risk_level === 'medium').length },
-      { name: t('obsCards.riskLevel.high'), key: 'high', value: filtered.filter((c) => c.ai_risk_level === 'high').length },
-      { name: t('obsCards.riskLevel.critical'), key: 'critical', value: filtered.filter((c) => c.ai_risk_level === 'critical').length },
+      { name: t('obsCards.riskLevel.low'), key: 'low', value: filtered.filter((c) => c.ai_risk_level === 'low').reduce((sum, c) => sum + getObsCardWeight(c), 0) },
+      { name: t('obsCards.riskLevel.medium'), key: 'medium', value: filtered.filter((c) => c.ai_risk_level === 'medium').reduce((sum, c) => sum + getObsCardWeight(c), 0) },
+      { name: t('obsCards.riskLevel.high'), key: 'high', value: filtered.filter((c) => c.ai_risk_level === 'high').reduce((sum, c) => sum + getObsCardWeight(c), 0) },
+      { name: t('obsCards.riskLevel.critical'), key: 'critical', value: filtered.filter((c) => c.ai_risk_level === 'critical').reduce((sum, c) => sum + getObsCardWeight(c), 0) },
     ];
     return out.filter((o) => o.value > 0);
   }, [filtered, t]);
@@ -229,16 +234,18 @@ export default function ObsCardsDashboard() {
   );
 
   const handleExportConsolidated = async () => {
-    if (!currentDataset) return;
-    await exportObsCardsConsolidated(filtered, {
+    if (!currentDataset || !datasetId) return;
+    const fullCards = applyFilters(await fetchAllObsCards(datasetId), filters);
+    await exportObsCardsConsolidated(fullCards, {
       datasetName: currentDataset.name,
       branding,
     });
   };
 
   const handleExportSector = async (sector: string) => {
-    if (!currentDataset || !cards) return;
-    await exportObsCardsBySector(cards, sector, {
+    if (!currentDataset || !datasetId) return;
+    const fullCards = await fetchAllObsCards(datasetId);
+    await exportObsCardsBySector(fullCards, sector, {
       datasetName: currentDataset.name,
       branding,
     });
