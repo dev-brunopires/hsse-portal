@@ -131,6 +131,19 @@ function deriveSeverity(type: string | null, status: string | null, desc: string
   return 'low';
 }
 
+function deriveShipName(value: unknown, area: unknown, department: unknown): string | null {
+  const candidates = [value, department, area].filter((item) => item != null && item !== '') as unknown[];
+  for (const candidate of candidates) {
+    const text = String(candidate).trim();
+    const upper = text.toUpperCase();
+    if (['ESS', 'CDA'].includes(upper)) return upper;
+    const labelled = text.match(/(?:navio|embarca(?:ç|c)[aã]o|vessel|ship)\s*[:\-]?\s*([A-Z0-9-]{2,12})/i);
+    if (labelled?.[1]) return labelled[1].toUpperCase();
+    if (/^[A-Z]{2,4}[0-9]{0,3}$/.test(upper) && !['BCO', 'PSO', 'SAFE', 'UNSAFE', 'HSE', 'HSSE', 'SMS', 'EPI', 'PPE'].includes(upper)) return upper;
+  }
+  return null;
+}
+
 function getCell(sheet: XLSX.WorkSheet, rowIndex: number, columnIndex: number): unknown {
   const cell = sheet[XLSX.utils.encode_cell({ r: rowIndex, c: columnIndex })];
   return cell?.v ?? null;
@@ -155,6 +168,8 @@ function buildRecord(
   const dueDate = parseDate(get('due_date'));
   const description = (get('description') ?? '').toString();
   const daysToClose = daysBetweenLocalDates(creationDate, closeDate);
+  const area = toNullableText(get('area'));
+  const department = toNullableText(get('department'));
 
   return {
     dataset_id: datasetId,
@@ -162,8 +177,8 @@ function buildRecord(
     obs_type: obsType,
     status,
     creation_date: creationDate,
-    area: toNullableText(get('area')),
-    department: toNullableText(get('department')),
+    area,
+    department,
     description: description || null,
     action_taken: toNullableText(get('action_taken')),
     responsible: toNullableText(get('responsible')),
@@ -175,6 +190,7 @@ function buildRecord(
     is_open: !closeDate,
     month: creationDate ? Number(creationDate.slice(5, 7)) : null,
     year: creationDate ? Number(creationDate.slice(0, 4)) : null,
+    ship_name: deriveShipName(get('ship_name'), area, department),
     raw_row: null,
   };
 }
