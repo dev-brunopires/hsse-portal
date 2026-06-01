@@ -116,7 +116,11 @@ export default function ObsCardsDashboard() {
   const branding = useOrganizationBranding();
   const { data: datasets, isLoading: dsLoading } = useObsDatasets();
   const [datasetId, setDatasetId] = useState<string | null>(params.get('dataset'));
-  const { data: cards, isLoading: cardsLoading, isFetching: cardsFetching, error: cardsError } = useObsCards(datasetId);
+  const currentDataset = useMemo(
+    () => datasets?.find((d) => d.id === datasetId) || null,
+    [datasets, datasetId],
+  );
+  const { data: cards, isLoading: cardsLoading, isFetching: cardsFetching, error: cardsError } = useObsCards(datasetId, currentDataset);
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
 
   useEffect(() => {
@@ -130,23 +134,21 @@ export default function ObsCardsDashboard() {
   }, [datasets, datasetId, setParams]);
 
   const filtered = useMemo(() => (cards ? applyFilters(cards, filters) : []), [cards, filters]);
-  const currentDataset = useMemo(
-    () => datasets?.find((d) => d.id === datasetId) || null,
-    [datasets, datasetId],
-  );
-
   const stats = useMemo(() => {
-    const total = filtered.length;
-    const safe = filtered.filter((c) => c.status === 'SAFE').length;
-    const unsafe = filtered.filter((c) => c.status === 'UNSAFE').length;
-    const bco = filtered.filter((c) => c.obs_type === 'BCO').length;
-    const pso = filtered.filter((c) => c.obs_type === 'PSO').length;
-    const open = filtered.filter((c) => c.is_open).length;
+    const total = filtered.reduce((sum, c) => sum + getObsCardWeight(c), 0);
+    const safe = filtered.filter((c) => c.status === 'SAFE').reduce((sum, c) => sum + getObsCardWeight(c), 0);
+    const unsafe = filtered.filter((c) => c.status === 'UNSAFE').reduce((sum, c) => sum + getObsCardWeight(c), 0);
+    const bco = filtered.filter((c) => c.obs_type === 'BCO').reduce((sum, c) => sum + getObsCardWeight(c), 0);
+    const pso = filtered.filter((c) => c.obs_type === 'PSO').reduce((sum, c) => sum + getObsCardWeight(c), 0);
+    const open = filtered.filter((c) => c.is_open).reduce((sum, c) => sum + getObsCardWeight(c), 0);
     const closed = total - open;
-    const ttcArr = filtered.map((c) => c.time_to_close_days).filter((v): v is number => v != null);
-    const avgTtc = ttcArr.length ? Math.round(ttcArr.reduce((a, b) => a + b, 0) / ttcArr.length) : 0;
-    const critical = filtered.filter((c) => c.ai_risk_level === 'critical').length;
-    const high = filtered.filter((c) => c.ai_risk_level === 'high').length;
+    const ttc = filtered.reduce((acc, c) => {
+      const item = getObsCardTimeToCloseStats(c);
+      return { sum: acc.sum + item.sum, count: acc.count + item.count };
+    }, { sum: 0, count: 0 });
+    const avgTtc = ttc.count ? Math.round(ttc.sum / ttc.count) : 0;
+    const critical = filtered.filter((c) => c.ai_risk_level === 'critical').reduce((sum, c) => sum + getObsCardWeight(c), 0);
+    const high = filtered.filter((c) => c.ai_risk_level === 'high').reduce((sum, c) => sum + getObsCardWeight(c), 0);
     return { total, safe, unsafe, bco, pso, open, closed, avgTtc, critical, high };
   }, [filtered]);
 
