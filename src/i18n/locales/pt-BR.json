@@ -292,6 +292,9 @@
       "severity": "Severidade",
       "riskLevel": "Nível de Risco",
       "period": "Período",
+      "month": "Mês",
+      "year": "Ano",
+      "ship": "Navio",
       "clear": "Limpar filtros",
       "selectDataset": "Selecione uma base de dados"
     },
@@ -343,6 +346,7 @@
       "error": "Erro ao classificar",
       "rateLimited": "Limite de requisições atingido. Tente novamente em alguns instantes.",
       "paymentRequired": "Créditos da IA esgotados. Adicione créditos para continuar.",
+      "functionUnavailable": "A função de IA ainda não está publicada no projeto externo. Faça o deploy de classify-obs-cards e tente novamente.",
       "runIncremental": "Classificar pendentes",
       "runReclassify": "Reclassificar tudo (sobrescreve)"
     }
