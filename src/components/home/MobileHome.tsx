@@ -34,7 +34,7 @@ const SECTIONS: Section[] = [
     titleKey: 'mobileHome.sections.health.title',
     subtitleKey: 'mobileHome.sections.health.subtitle',
     icon: HeartPulse,
-    path: '/health-check',
+    path: '/heat-stress',
     tone: 'success',
   },
   {
@@ -42,7 +42,7 @@ const SECTIONS: Section[] = [
     titleKey: 'mobileHome.sections.vv.title',
     subtitleKey: 'mobileHome.sections.vv.subtitle',
     icon: ClipboardCheck,
-    path: '/inspections',
+    path: '',
     tone: 'warning',
   },
   {
@@ -50,7 +50,7 @@ const SECTIONS: Section[] = [
     titleKey: 'mobileHome.sections.hsse.title',
     subtitleKey: 'mobileHome.sections.hsse.subtitle',
     icon: ShieldAlert,
-    path: '/heat-stress',
+    path: '/obs-cards',
     tone: 'danger',
   },
 ];
