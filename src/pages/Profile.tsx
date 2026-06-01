@@ -253,8 +253,8 @@ export default function Profile() {
       }
 
       const { error } = isNewProfile
-        ? await supabase.from('profiles').insert(payload)
-        : await supabase.from('profiles').update(payload).eq('user_id', user.id);
+        ? await supabase.from('profiles').insert([payload as any])
+        : await supabase.from('profiles').update(payload as any).eq('user_id', user.id);
 
       if (error) throw error;
 
