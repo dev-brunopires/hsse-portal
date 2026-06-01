@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -47,37 +48,103 @@ export function useObsDatasets() {
     enabled: !!organization?.id,
     queryFn: async (): Promise<ObsDataset[]> => {
       const { data, error } = await supabase
-        .from('obs_card_datasets' as any)
+        .from('obs_card_datasets')
         .select('*')
         .eq('organization_id', organization!.id)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data || []) as any;
+      return (data || []) as unknown as ObsDataset[];
     },
   });
 }
 
 export function useObsCards(datasetId: string | null) {
-  return useQuery({
-    queryKey: ['obs-cards', datasetId],
-    enabled: !!datasetId,
-    queryFn: async (): Promise<ObsCard[]> => {
-      const all: ObsCard[] = [];
-      let from = 0;
-      const pageSize = 1000;
-      while (true) {
-        const { data, error } = await supabase
-          .from('obs_cards' as any)
-          .select('*')
-          .eq('dataset_id', datasetId!)
-          .range(from, from + pageSize - 1);
-        if (error) throw error;
-        const rows = (data || []) as any as ObsCard[];
-        all.push(...rows);
-        if (rows.length < pageSize) break;
-        from += pageSize;
+  const [data, setData] = useState<ObsCard[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  useEffect(() => {
+    const handleRefresh = (event: Event) => {
+      const targetDatasetId = (event as CustomEvent<{ datasetId?: string }>).detail?.datasetId;
+      if (!targetDatasetId || targetDatasetId === datasetId) setReloadKey((value) => value + 1);
+    };
+
+    window.addEventListener('obs-cards:refresh', handleRefresh);
+    return () => window.removeEventListener('obs-cards:refresh', handleRefresh);
+  }, [datasetId]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCards() {
+      setData([]);
+      setError(null);
+
+      if (!datasetId) {
+        setIsLoading(false);
+        setIsFetching(false);
+        return;
       }
-      return all;
-    },
-  });
+
+      setIsLoading(true);
+      setIsFetching(true);
+
+      const all: ObsCard[] = [];
+      const pageSize = 1000;
+      let from = 0;
+
+      try {
+        while (!cancelled) {
+          const query = supabase
+            .from('obs_cards')
+            .select('*')
+            .eq('dataset_id', datasetId)
+            .order('created_at', { ascending: true })
+            .order('id', { ascending: true })
+            .range(from, from + pageSize - 1);
+
+          const { data: batch, error: batchError } = await query;
+
+          if (batchError) throw batchError;
+
+          const rows = (batch || []) as unknown as ObsCard[];
+          all.push(...rows);
+
+          if (cancelled) return;
+
+          const isFirstBatch = from === 0;
+          const reachedLastPage = rows.length < pageSize;
+          const shouldFlush = isFirstBatch || reachedLastPage || all.length % 5000 === 0;
+
+          if (shouldFlush) setData([...all]);
+          if (isFirstBatch) setIsLoading(false);
+
+          if (reachedLastPage) break;
+
+          from += pageSize;
+          await new Promise((resolve) => window.setTimeout(resolve, 0));
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err : new Error('Failed to load OBS cards'));
+          if (all.length > 0) setData([...all]);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+          setIsFetching(false);
+        }
+      }
+    }
+
+    loadCards();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [datasetId, reloadKey]);
+
+  return { data, isLoading, isFetching, error };
 }
