@@ -1,252 +1,257 @@
-// Edge function: classify obs_cards descriptions into HSSE risk types via Lovable AI.
-// Deploy: `supabase functions deploy classify-obs-cards --project-ref ovugummbxablwmbpbbhj`
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+// @ts-nocheck
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers':
-    'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-// Granular HSSE risk-type taxonomy. NO generic "Other" — model must commit.
-const RISK_TYPES = [
-  'Queda de altura',
-  'Queda de objetos',
-  'Esmagamento/Prensagem',
-  'Impacto/Choque mecânico',
-  'Corte/Perfuração',
-  'Escorregão e tropeço',
-  'Exposição a produtos químicos',
-  'Vazamento/Derramamento',
-  'Choque elétrico',
-  'Arco elétrico',
-  'Queimadura/Fogo',
-  'Estresse térmico',
-  'Postura/Esforço repetitivo',
-  'Levantamento manual',
-  'Pressão/Liberação de energia',
-  'Atmosfera explosiva',
-  'EPI ausente/inadequado',
-  'Permissão de trabalho',
-  'Sinalização/Isolamento',
-  'Içamento/Rigging',
-  'Espaço confinado',
-  'Trabalho a quente',
-  'Vazamento ao mar',
-  'Resíduos',
-  'Ato inseguro',
-  'Falta de atenção',
-  'Housekeeping',
-  'Ferramenta/Equipamento inadequado',
+const GEMINI_MODEL = "gemini-2.5-flash";
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+
+const RISK_LEVELS = ["low", "medium", "high", "critical"] as const;
+
+const CATEGORIES = [
+  "Queda de mesmo nível",
+  "Queda de altura",
+  "Queda de objeto",
+  "Impacto / Prensagem",
+  "Corte / Perfuração",
+  "Choque elétrico",
+  "Incêndio / Explosão",
+  "Vazamento de produto químico",
+  "Exposição a substância perigosa",
+  "Exposição a ruído",
+  "Exposição a calor / frio",
+  "Espaço confinado",
+  "Trabalho a quente",
+  "Içamento de carga",
+  "Movimentação de carga",
+  "Operação de equipamento",
+  "Veículo / Transporte",
+  "Ergonomia / Postura",
+  "EPI ausente ou inadequado",
+  "Sinalização ausente ou inadequada",
+  "Bloqueio / Etiquetagem (LOTO)",
+  "Permissão de trabalho",
+  "Procedimento não seguido",
+  "Treinamento / Competência",
+  "Housekeeping / Organização",
+  "Meio ambiente / Derrame",
+  "Saúde ocupacional",
+  "Ato inseguro",
 ];
 
-const RISK_LEVELS = ['low', 'medium', 'high', 'critical'];
-
-const SYSTEM_PROMPT = `You are a senior HSSE risk analyst. For each safety observation card description, you MUST:
-1. Pick EXACTLY ONE risk type from this fixed taxonomy: ${RISK_TYPES.join(', ')}.
-2. Assess severity (risk_level): low | medium | high | critical.
-3. Provide a one-sentence Portuguese reasoning (max 140 chars) explaining the choice.
-
-Rules:
-- Read in Portuguese or English. Identify the most probable risk type — NEVER use generic labels.
-- If the description is vague (e.g. "área desorganizada"), use context to infer (e.g. Housekeeping).
-- If multiple risks apply, pick the most critical/specific.
-- Return ONLY via the provided tool call.`;
-
-interface Card {
+interface ObsCardRow {
   id: string;
   description: string | null;
+  immediate_action: string | null;
+  recommended_action: string | null;
+  obs_type: string | null;
+  area: string | null;
+  department: string | null;
 }
 
-interface Classification {
-  category: string;
-  risk_level: string;
-  reasoning: string;
+function buildPrompt(cards: ObsCardRow[]) {
+  return `You are an HSSE (Health, Safety, Security, Environment) specialist analyzing offshore/maritime observation cards.
+
+For EACH card below, classify:
+1. "category" — choose EXACTLY ONE from this list (do not invent new ones):
+${CATEGORIES.map((c) => `- ${c}`).join("\n")}
+
+2. "risk_level" — one of: low | medium | high | critical
+   - low: minor issue, no immediate harm potential
+   - medium: could cause injury without PPE / controls
+   - high: serious injury likely if not addressed
+   - critical: imminent danger, fatality potential
+
+3. "reasoning" — 1 short sentence in Portuguese explaining why.
+
+You MUST classify every card. Do not skip any. Commit to the closest match.
+
+Cards (JSON):
+${JSON.stringify(
+  cards.map((c) => ({
+    id: c.id,
+    type: c.obs_type,
+    area: c.area,
+    department: c.department,
+    description: c.description,
+    immediate_action: c.immediate_action,
+    recommended_action: c.recommended_action,
+  })),
+  null,
+  2,
+)}
+
+Return STRICT JSON in this exact shape (no markdown, no commentary):
+{"classifications":[{"id":"<card id>","category":"<one of list>","risk_level":"low|medium|high|critical","reasoning":"<pt-BR>"}]}`;
 }
 
-async function classifyBatch(
-  cards: Card[],
-  apiKey: string,
-): Promise<Record<string, Classification>> {
-  const userText = cards
-    .map((c, i) => `${i + 1}. [id=${c.id}] ${(c.description || '').slice(0, 600)}`)
-    .join('\n');
-
-  const resp = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'google/gemini-2.5-flash',
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: `Classify each card:\n${userText}` },
-      ],
-      tools: [{
-        type: 'function',
-        function: {
-          name: 'submit_classifications',
-          description: 'Return one risk classification per card id.',
-          parameters: {
-            type: 'object',
-            properties: {
-              items: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    id: { type: 'string' },
-                    category: { type: 'string', enum: RISK_TYPES },
-                    risk_level: { type: 'string', enum: RISK_LEVELS },
-                    reasoning: { type: 'string', maxLength: 200 },
-                  },
-                  required: ['id', 'category', 'risk_level', 'reasoning'],
-                  additionalProperties: false,
-                },
+async function classifyBatch(cards: ObsCardRow[], apiKey: string) {
+  const body = {
+    contents: [
+      {
+        role: "user",
+        parts: [{ text: buildPrompt(cards) }],
+      },
+    ],
+    generationConfig: {
+      temperature: 0.2,
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: "OBJECT",
+        properties: {
+          classifications: {
+            type: "ARRAY",
+            items: {
+              type: "OBJECT",
+              properties: {
+                id: { type: "STRING" },
+                category: { type: "STRING", enum: CATEGORIES },
+                risk_level: { type: "STRING", enum: [...RISK_LEVELS] },
+                reasoning: { type: "STRING" },
               },
+              required: ["id", "category", "risk_level", "reasoning"],
             },
-            required: ['items'],
-            additionalProperties: false,
           },
         },
-      }],
-      tool_choice: { type: 'function', function: { name: 'submit_classifications' } },
-    }),
+        required: ["classifications"],
+      },
+    },
+  };
+
+  const resp = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
   });
 
   if (!resp.ok) {
-    const txt = await resp.text();
-    throw new Error(`ai_gateway_${resp.status}: ${txt.slice(0, 300)}`);
+    const text = await resp.text();
+    throw new Error(`Gemini API ${resp.status}: ${text}`);
   }
 
-  const data = await resp.json();
-  const call = data?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
-  if (!call) throw new Error('ai_no_tool_call');
-  const parsed = JSON.parse(call) as { items: Array<Classification & { id: string }> };
-  const out: Record<string, Classification> = {};
-  for (const it of parsed.items) {
-    if (RISK_TYPES.includes(it.category) && RISK_LEVELS.includes(it.risk_level)) {
-      out[it.id] = {
-        category: it.category,
-        risk_level: it.risk_level,
-        reasoning: (it.reasoning || '').slice(0, 200),
-      };
-    }
+  const json = await resp.json();
+  const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error("Empty response from Gemini");
+
+  let parsed: { classifications: Array<{ id: string; category: string; risk_level: string; reasoning: string }> };
+  try {
+    parsed = JSON.parse(text);
+  } catch (e) {
+    throw new Error(`Invalid JSON from Gemini: ${text.slice(0, 200)}`);
   }
-  return out;
+  return parsed.classifications ?? [];
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
 
   try {
-    const apiKey = Deno.env.get('LOVABLE_API_KEY');
-    if (!apiKey) throw new Error('LOVABLE_API_KEY not configured');
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    if (!GEMINI_API_KEY) {
+      return new Response(
+        JSON.stringify({
+          error:
+            "GEMINI_API_KEY não configurado. Adicione a secret no projeto Supabase.",
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
 
-    const authHeader = req.headers.get('Authorization') || '';
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-      { global: { headers: { Authorization: authHeader } } },
-    );
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
 
-    const { dataset_id, batch_size = 25, reclassify = false } = await req.json();
-    if (!dataset_id) {
-      return new Response(JSON.stringify({ error: 'dataset_id required' }), {
+    const { datasetId, reclassify = false } = await req.json();
+    if (!datasetId) {
+      return new Response(JSON.stringify({ error: "datasetId is required" }), {
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // If reclassify=true on first call, clear AI fields so everything reprocesses
+    // Reset existing classifications when reclassify=true
     if (reclassify) {
       await supabase
-        .from('obs_cards')
+        .from("obs_cards")
         .update({ ai_category: null, ai_risk_level: null, ai_reasoning: null })
-        .eq('dataset_id', dataset_id);
+        .eq("dataset_id", datasetId);
     }
 
-    // Fetch unclassified rows with non-empty description
-    const { data: rows, error: selErr } = await supabase
-      .from('obs_cards')
-      .select('id, description')
-      .eq('dataset_id', dataset_id)
-      .is('ai_category', null)
-      .not('description', 'is', null)
-      .limit(batch_size);
-    if (selErr) throw selErr;
+    // Fetch only cards needing classification
+    const { data: cards, error: fetchError } = await supabase
+      .from("obs_cards")
+      .select(
+        "id, description, immediate_action, recommended_action, obs_type, area, department",
+      )
+      .eq("dataset_id", datasetId)
+      .is("ai_category", null);
 
-    const cards = (rows || []) as Card[];
-
-    if (cards.length === 0) {
-      const { count } = await supabase
-        .from('obs_cards')
-        .select('id', { count: 'exact', head: true })
-        .eq('dataset_id', dataset_id)
-        .is('ai_category', null)
-        .not('description', 'is', null);
+    if (fetchError) throw fetchError;
+    if (!cards || cards.length === 0) {
       return new Response(
-        JSON.stringify({ processed: 0, remaining: count || 0, done: true }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        JSON.stringify({ success: true, processed: 0, message: "Nothing to classify" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    let mapping: Record<string, Classification> = {};
-    try {
-      mapping = await classifyBatch(cards, apiKey);
-    } catch (err: any) {
-      const msg = String(err?.message || err);
-      if (msg.includes('429')) {
-        return new Response(JSON.stringify({ error: 'rate_limited' }), {
-          status: 429,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      if (msg.includes('402')) {
-        return new Response(JSON.stringify({ error: 'payment_required' }), {
-          status: 402,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      throw err;
-    }
-
-    // Fallback: if model skipped a card, default to 'Ato inseguro' / 'medium'
-    // (never "Other" — user requirement).
+    const BATCH_SIZE = 15;
     let processed = 0;
-    const updates: Array<Promise<unknown>> = [];
-    for (const c of cards) {
-      const cls = mapping[c.id] || {
-        category: 'Ato inseguro',
-        risk_level: 'medium',
-        reasoning: 'Classificação padrão — IA não retornou categoria específica.',
-      };
-      updates.push(
-        supabase.from('obs_cards').update({
-          ai_category: cls.category,
-          ai_risk_level: cls.risk_level,
-          ai_reasoning: cls.reasoning,
-        }).eq('id', c.id),
-      );
-      processed += 1;
-    }
-    await Promise.all(updates);
+    const errors: string[] = [];
 
-    const { count: remaining } = await supabase
-      .from('obs_cards')
-      .select('id', { count: 'exact', head: true })
-      .eq('dataset_id', dataset_id)
-      .is('ai_category', null)
-      .not('description', 'is', null);
+    for (let i = 0; i < cards.length; i += BATCH_SIZE) {
+      const batch = cards.slice(i, i + BATCH_SIZE);
+      try {
+        const results = await classifyBatch(batch as ObsCardRow[], GEMINI_API_KEY);
+        const byId = new Map(results.map((r) => [r.id, r]));
+
+        for (const card of batch) {
+          const r = byId.get(card.id);
+          const update = r
+            ? {
+                ai_category: r.category,
+                ai_risk_level: r.risk_level,
+                ai_reasoning: r.reasoning,
+              }
+            : {
+                ai_category: "Ato inseguro",
+                ai_risk_level: "medium",
+                ai_reasoning: "Classificação automática padrão (modelo não retornou).",
+              };
+
+          await supabase.from("obs_cards").update(update).eq("id", card.id);
+          processed++;
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`Batch ${i / BATCH_SIZE} failed:`, msg);
+        errors.push(msg);
+        // small backoff before next batch
+        await new Promise((r) => setTimeout(r, 1500));
+      }
+    }
 
     return new Response(
-      JSON.stringify({ processed, remaining: remaining || 0, done: (remaining || 0) === 0 }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      JSON.stringify({
+        success: true,
+        processed,
+        total: cards.length,
+        errors: errors.slice(0, 5),
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
-  } catch (e: any) {
-    return new Response(JSON.stringify({ error: e?.message || 'unknown' }), {
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("classify-obs-cards error:", message);
+    return new Response(JSON.stringify({ error: message }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
