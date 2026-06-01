@@ -18,7 +18,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { importObsCardsFromFile } from '@/utils/obsCardsImport';
 
-const MAX_OBS_CARD_FILE_SIZE_MB = 25;
+const MAX_OBS_CARD_FILE_SIZE_MB = 20;
 
 function getUploadErrorMessage(message: string | undefined, t: TFunction) {
   if (message?.includes('WORKER_RESOURCE_LIMIT')) return t('obsCards.upload.resourceLimitError');
