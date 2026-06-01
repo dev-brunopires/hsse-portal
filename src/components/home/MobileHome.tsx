@@ -95,6 +95,7 @@ export function MobileHome() {
   }, [profile?.full_name, user?.email]);
 
   const handleNavigate = (path: string) => {
+    if (!path) return;
     hapticButton();
     navigate(path);
   };
