@@ -31,6 +31,8 @@ export interface ObsCard {
   close_date: string | null;
   category: string | null;
   ai_category: string | null;
+  ai_risk_level: string | null;
+  ai_reasoning: string | null;
   severity: string | null;
   time_to_close_days: number | null;
   is_open: boolean | null;
