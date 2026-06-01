@@ -41,6 +41,12 @@ async function flushNow() {
   if (queue.length === 0) return;
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
 
+  // Skip remote flush when the user is not authenticated — the edge function
+  // requires a valid JWT and would return 401, which would surface as a noisy
+  // runtime error on public routes (e.g. /auth).
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return;
+
   const batch = queue.splice(0, queue.length);
 
   // Best-effort: keep local copy
@@ -48,7 +54,6 @@ async function flushNow() {
   writeBuffer([...persisted, ...batch]);
 
   try {
-    // This uses the current user's auth automatically (when available).
     await supabase.functions.invoke('client-telemetry', {
       body: { events: batch },
     });
