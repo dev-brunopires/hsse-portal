@@ -193,10 +193,42 @@
     "subtitle": "Análise de cartões de observação (BCO / PSO)",
     "tabs": {
       "overview": "Visão Executiva",
+      "risk": "Tipos de Risco",
       "bco": "Análise BCO",
       "pso": "Análise PSO",
       "areas": "Áreas Críticas",
       "performance": "Desempenho"
+    },
+    "period": {
+      "month": "Mês/Ano",
+      "quarter": "Trimestre",
+      "year": "Ano"
+    },
+    "riskLevel": {
+      "low": "Baixo",
+      "medium": "Médio",
+      "high": "Alto",
+      "critical": "Crítico"
+    },
+    "pdf": {
+      "exportButton": "Exportar PDF",
+      "consolidated": "Relatório consolidado",
+      "bySector": "Por setor",
+      "title": "Relatório Obs Cards",
+      "generatedAt": "Gerado em",
+      "dataset": "Base",
+      "executiveSummary": "Sumário Executivo",
+      "byRiskType": "Por Tipo de Risco",
+      "monthlyTrend": "Tendência Mensal",
+      "byArea": "Por Área/Setor",
+      "openUnsafe": "Observações UNSAFE em aberto",
+      "month": "Mês",
+      "riskType": "Tipo de Risco",
+      "riskLevel": "Nível",
+      "description": "Descrição",
+      "kpiCritical": "Críticos",
+      "kpiHigh": "Altos",
+      "noAiData": "Execute a classificação por IA para visualizar tipos de risco."
     },
     "nav": {
       "dashboard": "Dashboard",
@@ -276,14 +308,19 @@
     },
     "charts": {
       "monthlyTrend": "Tendência Mensal",
+      "trend": "Tendência por Período",
       "byCategory": "Por Categoria",
       "byArea": "Por Área",
       "byDepartment": "Por Departamento",
       "bySeverity": "Por Severidade",
+      "byRiskType": "Por Tipo de Risco",
+      "byRiskLevel": "Por Nível de Risco",
+      "severityOverTime": "Severidade ao Longo do Tempo",
       "typeDistribution": "Distribuição BCO vs PSO",
       "topAreas": "Top Áreas Críticas",
       "criticalAreasHeatmap": "Mapa de Áreas Críticas",
-      "performanceRanking": "Ranking de Departamentos"
+      "performanceRanking": "Ranking de Departamentos",
+      "runAiFirst": "Clique em \"Classificar com IA\" para gerar a análise."
     },
     "severity": {
       "low": "Baixa",
