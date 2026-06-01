@@ -34,7 +34,7 @@ const SECTIONS: Section[] = [
     titleKey: 'mobileHome.sections.health.title',
     subtitleKey: 'mobileHome.sections.health.subtitle',
     icon: HeartPulse,
-    path: '/health-check',
+    path: '/heat-stress',
     tone: 'success',
   },
   {
@@ -42,7 +42,7 @@ const SECTIONS: Section[] = [
     titleKey: 'mobileHome.sections.vv.title',
     subtitleKey: 'mobileHome.sections.vv.subtitle',
     icon: ClipboardCheck,
-    path: '/inspections',
+    path: '',
     tone: 'warning',
   },
   {
@@ -50,7 +50,7 @@ const SECTIONS: Section[] = [
     titleKey: 'mobileHome.sections.hsse.title',
     subtitleKey: 'mobileHome.sections.hsse.subtitle',
     icon: ShieldAlert,
-    path: '/heat-stress',
+    path: '/obs-cards',
     tone: 'danger',
   },
 ];
@@ -95,6 +95,7 @@ export function MobileHome() {
   }, [profile?.full_name, user?.email]);
 
   const handleNavigate = (path: string) => {
+    if (!path) return;
     hapticButton();
     navigate(path);
   };
@@ -128,23 +129,26 @@ export function MobileHome() {
           {SECTIONS.map((section) => {
             const Icon = section.icon;
             const tone = TONE_CLASSES[section.tone];
+            const isDisabled = !section.path;
             return (
               <button
                 key={section.key}
                 onClick={() => handleNavigate(section.path)}
-                onTouchStart={() => prefetchRouteChunk(section.path)}
-                onMouseEnter={() => prefetchRouteChunk(section.path)}
+                onTouchStart={() => section.path && prefetchRouteChunk(section.path)}
+                onMouseEnter={() => section.path && prefetchRouteChunk(section.path)}
+                disabled={isDisabled}
                 className={cn(
                   'group relative flex flex-col items-start gap-3 p-4 rounded-2xl',
                   'bg-card border border-border shadow-sm',
                   'transition-all touch-manipulation',
                   'active:scale-[0.97] active:shadow-none',
-                  'min-h-[150px] text-left'
+                  'min-h-[150px] text-left',
+                  isDisabled && 'opacity-60 cursor-not-allowed active:scale-100'
                 )}
                 aria-label={t(section.titleKey)}
               >
                 <span className="text-[10px] text-muted-foreground font-medium">
-                  {todayLabel}
+                  {isDisabled ? t('mobileHome.comingSoon') : todayLabel}
                 </span>
 
                 <div
@@ -167,7 +171,7 @@ export function MobileHome() {
 
                 <div className="flex items-center justify-between w-full pt-1 border-t border-border/60">
                   <span className="text-[11px] font-medium text-muted-foreground">
-                    {t('mobileHome.access')}
+                    {isDisabled ? t('mobileHome.comingSoon') : t('mobileHome.access')}
                   </span>
                   <ChevronRight className={cn('h-4 w-4', tone.iconFg)} />
                 </div>
