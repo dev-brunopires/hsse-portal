@@ -1,7 +1,7 @@
 import type { ObsCard } from '@/hooks/useObsCards';
 import type { Json } from '@/integrations/supabase/types';
 
-const SUMMARY_VERSION = 1;
+const SUMMARY_VERSION = 2;
 
 export type ObsCardsSummaryRow = Pick<
   ObsCard,
@@ -16,6 +16,7 @@ export type ObsCardsSummaryRow = Pick<
   | 'is_open'
   | 'month'
   | 'year'
+  | 'ship_name'
 > & {
   count: number;
   time_to_close_sum: number;
@@ -34,6 +35,8 @@ type SummarySourceCard = Partial<ObsCard> & {
   __summary_time_to_close_sum?: number;
   __summary_time_to_close_count?: number;
 };
+
+const COMMON_NON_SHIP_CODES = new Set(['BCO', 'PSO', 'SAFE', 'UNSAFE', 'HSE', 'HSSE', 'SMS', 'EPI', 'PPE', 'NA']);
 
 const isObject = (value: unknown): value is Record<string, unknown> => (
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -58,12 +61,29 @@ export function getObsCardTimeToCloseStats(card: Partial<ObsCard>) {
     : { sum: 0, count: 0 };
 }
 
+export function deriveObsCardShipName(card: Partial<ObsCard>): string | null {
+  if (card.ship_name?.trim()) return card.ship_name.trim().toUpperCase();
+
+  const candidates = [card.department, card.area].filter(Boolean) as string[];
+  for (const value of candidates) {
+    const text = value.trim();
+    const upper = text.toUpperCase();
+    if (['ESS', 'CDA'].includes(upper)) return upper;
+    const labelled = text.match(/(?:navio|embarca(?:ç|c)[aã]o|vessel|ship)\s*[:\-]?\s*([A-Z0-9-]{2,12})/i);
+    if (labelled?.[1]) return labelled[1].toUpperCase();
+    if (/^[A-Z]{2,4}[0-9]{0,3}$/.test(upper) && !COMMON_NON_SHIP_CODES.has(upper)) return upper;
+  }
+
+  return null;
+}
+
 export function buildObsCardsDashboardSummary(cards: SummarySourceCard[]): ObsCardsDashboardSummary {
   const groups = new Map<string, ObsCardsSummaryRow>();
 
   for (const card of cards) {
     const count = getObsCardWeight(card);
     const closeStats = getObsCardTimeToCloseStats(card);
+    const shipName = deriveObsCardShipName(card);
     const key = JSON.stringify([
       card.obs_type || null,
       card.status || null,
@@ -76,6 +96,7 @@ export function buildObsCardsDashboardSummary(cards: SummarySourceCard[]): ObsCa
       card.is_open ?? null,
       card.month || null,
       card.year || null,
+      shipName,
     ]);
 
     const existing = groups.get(key);
@@ -98,6 +119,7 @@ export function buildObsCardsDashboardSummary(cards: SummarySourceCard[]): ObsCa
       is_open: card.is_open ?? null,
       month: card.month || null,
       year: card.year || null,
+      ship_name: shipName,
       count,
       time_to_close_sum: closeStats.sum,
       time_to_close_count: closeStats.count,
@@ -155,6 +177,7 @@ export function summaryToObsCards(
     is_open: row.is_open,
     month: row.month,
     year: row.year,
+    ship_name: row.ship_name,
     __summary_count: row.count,
     __summary_time_to_close_sum: row.time_to_close_sum,
     __summary_time_to_close_count: row.time_to_close_count,

@@ -153,6 +153,8 @@ function buildRecord(
   const dueDate = parseDate(get('due_date'));
   const description = (get('description') ?? '').toString();
   const daysToClose = daysBetweenLocalDates(creationDate, closeDate);
+  const area = toNullableText(get('area'));
+  const department = toNullableText(get('department'));
 
   return {
     dataset_id: datasetId,
@@ -160,8 +162,8 @@ function buildRecord(
     obs_type: obsType,
     status,
     creation_date: creationDate,
-    area: toNullableText(get('area')),
-    department: toNullableText(get('department')),
+    area,
+    department,
     description: description || null,
     action_taken: toNullableText(get('action_taken')),
     responsible: toNullableText(get('responsible')),

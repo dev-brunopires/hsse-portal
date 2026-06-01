@@ -53,6 +53,9 @@ export function ClassifyDatasetButton({ datasetId, disabled }: Props) {
       let desc = msg;
       if (msg.includes('rate_limited') || msg.includes('429')) desc = t('obsCards.classify.rateLimited');
       else if (msg.includes('payment_required') || msg.includes('402')) desc = t('obsCards.classify.paymentRequired');
+      else if (msg.includes('Failed to send a request') || msg.includes('Failed to fetch')) {
+        desc = t('obsCards.classify.functionUnavailable');
+      }
       toast({ title: t('obsCards.classify.error'), description: desc, variant: 'destructive' });
     } finally {
       setBusy(false);

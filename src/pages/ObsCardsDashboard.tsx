@@ -26,7 +26,7 @@ import { fetchAllObsCards, useObsDatasets, useObsCards, type ObsCard } from '@/h
 import { useOrganizationBranding } from '@/hooks/useOrganizationBranding';
 import { ClassifyDatasetButton } from '@/components/obs-cards/ClassifyDatasetButton';
 import { exportObsCardsConsolidated, exportObsCardsBySector } from '@/utils/obsCardsPdfExport';
-import { getObsCardTimeToCloseStats, getObsCardWeight } from '@/utils/obsCardsSummary';
+import { deriveObsCardShipName, getObsCardTimeToCloseStats, getObsCardWeight } from '@/utils/obsCardsSummary';
 import { format } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
 import i18n from '@/i18n';
@@ -57,6 +57,9 @@ type Filters = {
   status: string;
   severity: string;
   riskLevel: string;
+  month: string;
+  year: string;
+  ship: string;
   period: Period;
 };
 
@@ -67,6 +70,9 @@ const DEFAULT_FILTERS: Filters = {
   status: 'ALL',
   severity: 'ALL',
   riskLevel: 'ALL',
+  month: 'ALL',
+  year: 'ALL',
+  ship: 'ALL',
   period: 'month',
 };
 
@@ -80,6 +86,9 @@ function applyFilters(cards: ObsCard[], f: Filters): ObsCard[] {
     if (f.status !== 'ALL' && c.status !== f.status) return false;
     if (f.severity !== 'ALL' && c.severity !== f.severity) return false;
     if (f.riskLevel !== 'ALL' && (c.ai_risk_level || '') !== f.riskLevel) return false;
+    if (f.month !== 'ALL' && String(c.month || '') !== f.month) return false;
+    if (f.year !== 'ALL' && String(c.year || '') !== f.year) return false;
+    if (f.ship !== 'ALL' && (deriveObsCardShipName(c) || '—') !== f.ship) return false;
     return true;
   });
 }
@@ -227,10 +236,23 @@ export default function ObsCardsDashboard() {
     () => Array.from(new Set((cards || []).map((c) => c.department).filter(Boolean))) as string[],
     [cards],
   );
+  const allYears = useMemo(
+    () => Array.from(new Set((cards || []).map((c) => c.year).filter(Boolean).map(String))).sort(),
+    [cards],
+  );
+  const allMonths = useMemo(
+    () => Array.from(new Set((cards || []).map((c) => c.month).filter(Boolean).map(String)))
+      .sort((a, b) => Number(a) - Number(b)),
+    [cards],
+  );
+  const allShips = useMemo(
+    () => Array.from(new Set((cards || []).map((c) => deriveObsCardShipName(c)).filter(Boolean))).sort() as string[],
+    [cards],
+  );
 
   const sectorsForPdf = useMemo(
-    () => Array.from(new Set((cards || []).map((c) => c.area).filter(Boolean))).sort() as string[],
-    [cards],
+    () => Array.from(new Set(filtered.map((c) => c.area).filter(Boolean))).sort() as string[],
+    [filtered],
   );
 
   const handleExportConsolidated = async () => {
@@ -244,7 +266,7 @@ export default function ObsCardsDashboard() {
 
   const handleExportSector = async (sector: string) => {
     if (!currentDataset || !datasetId) return;
-    const fullCards = await fetchAllObsCards(datasetId);
+    const fullCards = applyFilters(await fetchAllObsCards(datasetId), filters);
     await exportObsCardsBySector(fullCards, sector, {
       datasetName: currentDataset.name,
       branding,
@@ -329,7 +351,7 @@ export default function ObsCardsDashboard() {
       {/* Filters */}
       <Card>
         <CardContent className="p-4">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-10 gap-3">
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">{t('obsCards.filters.dataset')}</label>
               <Select value={datasetId || ''} onValueChange={(v) => { setDatasetId(v); setParams({ dataset: v }, { replace: true }); }}>
@@ -349,6 +371,36 @@ export default function ObsCardsDashboard() {
                   <SelectItem value="month">{t('obsCards.period.month')}</SelectItem>
                   <SelectItem value="quarter">{t('obsCards.period.quarter')}</SelectItem>
                   <SelectItem value="year">{t('obsCards.period.year')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">{t('obsCards.filters.year')}</label>
+              <Select value={filters.year} onValueChange={(v) => setFilters({ ...filters, year: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">{t('obsCards.filters.all')}</SelectItem>
+                  {allYears.map((y) => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">{t('obsCards.filters.month')}</label>
+              <Select value={filters.month} onValueChange={(v) => setFilters({ ...filters, month: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">{t('obsCards.filters.all')}</SelectItem>
+                  {allMonths.map((m) => <SelectItem key={m} value={m}>{m.padStart(2, '0')}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">{t('obsCards.filters.ship')}</label>
+              <Select value={filters.ship} onValueChange={(v) => setFilters({ ...filters, ship: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">{t('obsCards.filters.all')}</SelectItem>
+                  {allShips.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
