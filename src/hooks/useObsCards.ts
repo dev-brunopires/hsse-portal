@@ -104,7 +104,10 @@ export function useObsCards(datasetId: string | null, dataset?: ObsDataset | nul
   const [error, setError] = useState<Error | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [rebuildSummaryKey, setRebuildSummaryKey] = useState(0);
-  const [localSummary, setLocalSummary] = useState<ReturnType<typeof buildObsCardsDashboardSummary> | null>(null);
+  const [localSummary, setLocalSummary] = useState<{
+    datasetId: string;
+    summary: ReturnType<typeof buildObsCardsDashboardSummary>;
+  } | null>(null);
 
   useEffect(() => {
     const handleRefresh = (event: Event) => {
@@ -133,7 +136,9 @@ export function useObsCards(datasetId: string | null, dataset?: ObsDataset | nul
         return;
       }
 
-      const savedSummary = rebuildSummaryKey === 0 ? localSummary || getObsCardsDashboardSummary(dataset?.column_mapping) : null;
+      const savedSummary = rebuildSummaryKey === 0
+        ? (localSummary?.datasetId === datasetId ? localSummary.summary : null) || getObsCardsDashboardSummary(dataset?.column_mapping)
+        : null;
       if (savedSummary) {
         setData(summaryToObsCards(savedSummary, { datasetId, organizationId: dataset?.organization_id }));
         setIsLoading(false);
@@ -170,7 +175,7 @@ export function useObsCards(datasetId: string | null, dataset?: ObsDataset | nul
 
         if (!cancelled && all.length > 0) {
           const summary = buildObsCardsDashboardSummary(all);
-          setLocalSummary(summary);
+          setLocalSummary({ datasetId, summary });
           setData(summaryToObsCards(summary, { datasetId, organizationId: dataset?.organization_id }));
           await supabase
             .from('obs_card_datasets')
