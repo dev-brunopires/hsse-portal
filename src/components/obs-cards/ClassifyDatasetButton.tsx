@@ -1,11 +1,17 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
 
 interface Props {
   datasetId: string;
@@ -19,15 +25,18 @@ export function ClassifyDatasetButton({ datasetId, disabled }: Props) {
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<{ processed: number; remaining: number } | null>(null);
 
-  const run = async () => {
+  const run = async (reclassify: boolean) => {
     setBusy(true);
     setProgress(null);
     let totalProcessed = 0;
     try {
-      // Loop until done. Cap iterations to avoid infinite loops.
       for (let i = 0; i < 2000; i++) {
         const { data, error } = await supabase.functions.invoke('classify-obs-cards', {
-          body: { dataset_id: datasetId, batch_size: 40 },
+          body: {
+            dataset_id: datasetId,
+            batch_size: 25,
+            reclassify: reclassify && i === 0,
+          },
         });
         if (error) throw error;
         const res = data as { processed: number; remaining: number; done: boolean; error?: string };
@@ -52,27 +61,35 @@ export function ClassifyDatasetButton({ datasetId, disabled }: Props) {
     }
   };
 
+  if (busy) {
+    return (
+      <Button size="sm" variant="outline" disabled>
+        <Spinner inline size="xs" iconClassName="mr-2" />
+        {progress
+          ? t('obsCards.classify.progress', { processed: progress.processed, remaining: progress.remaining })
+          : t('obsCards.classify.starting')}
+      </Button>
+    );
+  }
+
   return (
-    <Button
-      size="sm"
-      variant="outline"
-      onClick={run}
-      disabled={busy || disabled}
-      title={t('obsCards.classify.tooltip')}
-    >
-      {busy ? (
-        <>
-          <Spinner inline size="xs" iconClassName="mr-2" />
-          {progress
-            ? t('obsCards.classify.progress', { processed: progress.processed, remaining: progress.remaining })
-            : t('obsCards.classify.starting')}
-        </>
-      ) : (
-        <>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button size="sm" variant="outline" disabled={disabled} title={t('obsCards.classify.tooltip')}>
           <Sparkles className="h-4 w-4 mr-2" />
           {t('obsCards.classify.button')}
-        </>
-      )}
-    </Button>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => run(false)}>
+          <Sparkles className="h-4 w-4 mr-2" />
+          {t('obsCards.classify.runIncremental')}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => run(true)}>
+          <RefreshCw className="h-4 w-4 mr-2" />
+          {t('obsCards.classify.runReclassify')}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
