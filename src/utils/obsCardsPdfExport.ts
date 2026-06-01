@@ -274,8 +274,28 @@ async function buildReport(
     { label: t('obsCards.pdf.kpiHigh'), value: String(high), color: RISK_COLORS.high },
   ], pageWidth);
 
-  // ===== Risk types
   yPos += 2;
+  const monthly = monthlyAggregation(cards);
+  const half = (pageWidth - 36) / 2;
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(...BORDER_GRAY);
+  doc.roundedRect(14, yPos, half, 68, 3, 3, 'FD');
+  doc.roundedRect(22 + half, yPos, half, 68, 3, 3, 'FD');
+  drawDonutChart(doc, 20, yPos + 8, [
+    { name: 'BCO', value: bco, color: SBM_BLUE },
+    { name: 'PSO', value: pso, color: [234, 88, 12] },
+    { name: 'UNSAFE', value: unsafe, color: DANGER_RED },
+  ], t('obsCards.charts.typeDistribution'));
+  drawTrendBars(
+    doc,
+    28 + half,
+    yPos + 8,
+    monthly.map((m) => ({ name: m.name, total: m.total, unsafe: m.unsafe })),
+    t('obsCards.pdf.monthlyTrend'),
+  );
+  yPos += 76;
+
+  // ===== Risk types
   yPos = addSectionHeader(doc, yPos, t('obsCards.pdf.byRiskType'), SBM_BLUE, pageWidth - 28);
   yPos += 4;
   const byRisk = groupCount(cards, (c) => c.ai_category)
@@ -291,7 +311,6 @@ async function buildReport(
   }
 
   // ===== Monthly trend table
-  const monthly = monthlyAggregation(cards);
   if (monthly.length > 0) {
     if (yPos > 160) {
       doc.addPage();
