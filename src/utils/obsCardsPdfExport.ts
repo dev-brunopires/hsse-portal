@@ -112,6 +112,94 @@ function drawHorizontalBars(
   return yPos + data.length * (barHeight + 4) + 4;
 }
 
+function drawDonutLegend(
+  doc: jsPDF,
+  x: number,
+  y: number,
+  data: Array<{ name: string; value: number; color: [number, number, number] }>,
+) {
+  data.forEach((d, i) => {
+    const rowY = y + i * 7;
+    doc.setFillColor(...d.color);
+    doc.circle(x, rowY - 1.5, 1.7, 'F');
+    doc.setFontSize(8);
+    doc.setTextColor(...DARK_GRAY);
+    doc.text(`${d.name}: ${d.value}`, x + 5, rowY);
+  });
+}
+
+function drawDonutChart(
+  doc: jsPDF,
+  x: number,
+  y: number,
+  data: Array<{ name: string; value: number; color: [number, number, number] }>,
+  title: string,
+) {
+  const total = data.reduce((sum, item) => sum + item.value, 0);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...DARK_GRAY);
+  doc.text(title, x, y);
+  if (!total) return;
+
+  let start = -90;
+  data.forEach((d) => {
+    const angle = (d.value / total) * 360;
+    doc.setFillColor(...d.color);
+    doc.setDrawColor(255, 255, 255);
+    doc.setLineWidth(0.8);
+    // jsPDF has no native donut segment, so pieChart gives a clean visual summary.
+    (doc as any).pieChart?.(x + 28, y + 29, 22, [{ value: d.value, name: d.name, color: d.color }], { startAngle: start });
+    start += angle;
+  });
+
+  if (!(doc as any).pieChart) {
+    data.forEach((d, i) => {
+      doc.setFillColor(...d.color);
+      doc.circle(x + 14 + i * 9, y + 22, 4 + Math.min(8, (d.value / total) * 14), 'F');
+    });
+  }
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...SBM_BLUE);
+  doc.text(String(total), x + 28, y + 31, { align: 'center' });
+  drawDonutLegend(doc, x + 58, y + 16, data);
+}
+
+function drawTrendBars(
+  doc: jsPDF,
+  x: number,
+  y: number,
+  data: Array<{ name: string; total: number; unsafe: number }>,
+  title: string,
+) {
+  const chartWidth = 120;
+  const chartHeight = 42;
+  const max = Math.max(1, ...data.map((d) => d.total));
+  const visible = data.slice(-12);
+  const barWidth = Math.max(3, chartWidth / Math.max(1, visible.length) - 2);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...DARK_GRAY);
+  doc.text(title, x, y);
+  doc.setDrawColor(...BORDER_GRAY);
+  doc.line(x, y + chartHeight + 8, x + chartWidth, y + chartHeight + 8);
+  visible.forEach((d, i) => {
+    const barX = x + i * (barWidth + 2);
+    const h = (d.total / max) * chartHeight;
+    const uh = (d.unsafe / max) * chartHeight;
+    doc.setFillColor(...SBM_BLUE);
+    doc.rect(barX, y + chartHeight + 8 - h, barWidth, h, 'F');
+    doc.setFillColor(...DANGER_RED);
+    doc.rect(barX, y + chartHeight + 8 - uh, barWidth, uh, 'F');
+    if (i % 2 === 0 || visible.length <= 6) {
+      doc.setFontSize(6);
+      doc.setTextColor(...MEDIUM_GRAY);
+      doc.text(d.name, barX, y + chartHeight + 14, { angle: 25 });
+    }
+  });
+}
+
 function groupCount<T>(items: T[], key: (i: T) => string | null | undefined) {
   const map = new Map<string, number>();
   for (const it of items) {
