@@ -78,7 +78,7 @@ function parseDate(v: unknown): string | null {
   }
 
   const s = String(v).trim();
-  const br = s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})/);
+  const br = s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})/);
   if (br) {
     const [, d, m, y] = br;
     const yy = y.length === 2 ? `20${y}` : y;
@@ -231,7 +231,7 @@ export async function importObsCardsFromFile({
     }
 
     if (chunk.length >= INSERT_CHUNK_SIZE || (rowIndex === range.e.r && chunk.length)) {
-      const { error } = await supabase.from('obs_cards' as any).insert(chunk);
+      const { error } = await supabase.from('obs_cards').insert(chunk);
       if (error) throw new Error(`insert_failed: ${error.message}`);
       inserted += chunk.length;
       chunk = [];
