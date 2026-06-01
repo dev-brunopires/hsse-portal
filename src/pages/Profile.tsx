@@ -133,7 +133,7 @@ export default function Profile() {
         setProfileData(data as ProfileData);
         form.reset({
           full_name: data.full_name || '',
-          email: data.email || '',
+          email: data.email || user.email || '',
           phone: data.phone || '',
           position: data.position || '',
           department: data.department || '',
@@ -145,6 +145,29 @@ export default function Profile() {
         if (data.avatar_url) {
           setAvatarPreview(data.avatar_url);
         }
+      } else {
+        // No profile row yet — initialize empty profile so user can create it on save
+        setProfileData({
+          id: '',
+          user_id: user.id,
+          full_name: (user.user_metadata as any)?.full_name || '',
+          email: user.email || '',
+          phone: null,
+          position: null,
+          department: null,
+          avatar_url: null,
+          default_signature: null,
+          auto_sign_inspections: false,
+          notification_email: true,
+          notification_app: true,
+        });
+        form.reset({
+          full_name: (user.user_metadata as any)?.full_name || '',
+          email: user.email || '',
+          phone: '',
+          position: '',
+          department: '',
+        });
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
