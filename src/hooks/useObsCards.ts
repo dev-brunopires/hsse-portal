@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -58,26 +59,82 @@ export function useObsDatasets() {
 }
 
 export function useObsCards(datasetId: string | null) {
-  return useQuery({
-    queryKey: ['obs-cards', datasetId],
-    enabled: !!datasetId,
-    queryFn: async (): Promise<ObsCard[]> => {
-      const all: ObsCard[] = [];
-      let from = 0;
-      const pageSize = 1000;
-      while (true) {
-        const { data, error } = await supabase
-          .from('obs_cards' as any)
-          .select('*')
-          .eq('dataset_id', datasetId!)
-          .range(from, from + pageSize - 1);
-        if (error) throw error;
-        const rows = (data || []) as any as ObsCard[];
-        all.push(...rows);
-        if (rows.length < pageSize) break;
-        from += pageSize;
+  const [data, setData] = useState<ObsCard[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCards() {
+      setData([]);
+      setError(null);
+
+      if (!datasetId) {
+        setIsLoading(false);
+        setIsFetching(false);
+        return;
       }
-      return all;
-    },
-  });
+
+      setIsLoading(true);
+      setIsFetching(true);
+
+      const all: ObsCard[] = [];
+      const pageSize = 1000;
+      let from = 0;
+      let expectedCount: number | null = null;
+
+      try {
+        while (!cancelled) {
+          const query = supabase
+            .from('obs_cards' as any)
+            .select('*', expectedCount === null ? { count: 'exact' } : undefined)
+            .eq('dataset_id', datasetId)
+            .range(from, from + pageSize - 1);
+
+          const { data: batch, error: batchError, count } = await query;
+
+          if (batchError) throw batchError;
+          if (expectedCount === null) expectedCount = count;
+
+          const rows = (batch || []) as any as ObsCard[];
+          all.push(...rows);
+
+          if (cancelled) return;
+
+          const isFirstBatch = from === 0;
+          const loadedAllKnownRows = expectedCount !== null && all.length >= expectedCount;
+          const reachedLastPage = rows.length < pageSize;
+          const shouldFlush = isFirstBatch || loadedAllKnownRows || reachedLastPage || all.length % 5000 === 0;
+
+          if (shouldFlush) setData([...all]);
+          if (isFirstBatch) setIsLoading(false);
+
+          if (loadedAllKnownRows || reachedLastPage) break;
+
+          from += pageSize;
+          await new Promise((resolve) => window.setTimeout(resolve, 0));
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err : new Error('Failed to load OBS cards'));
+          if (all.length > 0) setData([...all]);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+          setIsFetching(false);
+        }
+      }
+    }
+
+    loadCards();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [datasetId]);
+
+  return { data, isLoading, isFetching, error };
 }
