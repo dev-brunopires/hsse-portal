@@ -1,7 +1,7 @@
 import type { ObsCard } from '@/hooks/useObsCards';
 import type { Json } from '@/integrations/supabase/types';
 
-const SUMMARY_VERSION = 2;
+const SUMMARY_VERSION = 3;
 
 export type ObsCardsSummaryRow = Pick<
   ObsCard,
