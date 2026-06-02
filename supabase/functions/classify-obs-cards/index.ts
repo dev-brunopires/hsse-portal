@@ -47,45 +47,21 @@ const CATEGORIES = [
 interface ObsCardRow {
   id: string;
   description: string | null;
-  action_taken: string | null;
-  obs_type: string | null;
-  area: string | null;
-  department: string | null;
 }
 
 function buildPrompt(cards: ObsCardRow[]) {
-  return `You are an HSSE (Health, Safety, Security, Environment) specialist analyzing offshore/maritime observation cards.
-
-For EACH card below, classify:
-1. "category" — choose EXACTLY ONE from this list (do not invent new ones):
+  return `You are an HSSE specialist. For EACH observation below, classify:
+1. "category" — EXACTLY ONE from:
 ${CATEGORIES.map((c) => `- ${c}`).join("\n")}
+2. "risk_level": low | medium | high | critical
+3. "reasoning": 1 short sentence in pt-BR.
 
-2. "risk_level" — one of: low | medium | high | critical
-   - low: minor issue, no immediate harm potential
-   - medium: could cause injury without PPE / controls
-   - high: serious injury likely if not addressed
-   - critical: imminent danger, fatality potential
+Classify every item. Use ONLY the description. Commit to the closest match.
 
-3. "reasoning" — 1 short sentence in Portuguese explaining why.
+Observations (JSON):
+${JSON.stringify(cards.map((c) => ({ id: c.id, d: c.description ?? "" })))}
 
-You MUST classify every card. Do not skip any. Commit to the closest match.
-
-Cards (JSON):
-${JSON.stringify(
-  cards.map((c) => ({
-    id: c.id,
-    type: c.obs_type,
-    area: c.area,
-    department: c.department,
-    description: c.description,
-    action_taken: c.action_taken,
-  })),
-  null,
-  2,
-)}
-
-Return STRICT JSON in this exact shape (no markdown, no commentary):
-{"classifications":[{"id":"<card id>","category":"<one of list>","risk_level":"low|medium|high|critical","reasoning":"<pt-BR>"}]}`;
+Return STRICT JSON: {"classifications":[{"id":"...","category":"...","risk_level":"...","reasoning":"..."}]}`;
 }
 
 async function classifyBatch(cards: ObsCardRow[], apiKey: string) {
@@ -169,7 +145,7 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const datasetId = body.dataset_id ?? body.datasetId;
     const reclassify = body.reclassify === true;
-    const batchSize = Math.max(1, Math.min(50, Number(body.batch_size) || 15));
+    const batchSize = Math.max(1, Math.min(80, Number(body.batch_size) || 40));
 
     if (!datasetId) {
       return new Response(JSON.stringify({ error: "dataset_id is required" }), {
@@ -197,7 +173,7 @@ Deno.serve(async (req) => {
     const { data: cards, error: fetchError } = await supabase
       .from("obs_cards")
       .select(
-        "id, description, action_taken, obs_type, area, department",
+        "id, description",
       )
       .eq("dataset_id", datasetId)
       .is("ai_category", null)

@@ -24,6 +24,7 @@ const FIELD_ALIASES: Record<string, string[]> = {
   obs_type: ["tipo", "tipo de observacao", "tipo observacao", "type", "obs type", "category type", "bco pso", "categoria principal"],
   status: ["status", "condicao", "condition", "safe unsafe", "classificacao"],
   creation_date: ["data", "data criacao", "creation date", "data de criacao", "created", "data abertura", "data observacao"],
+  vessel: ["navio", "vessel", "embarcacao", "ship", "unidade", "asset", "plataforma", "platform", "rig"],
   area: ["area", "local", "location", "place", "setor"],
   department: ["departamento", "department", "depto", "area responsavel", "responsible area"],
   description: ["descricao", "description", "observacao", "comentario", "details", "detalhes", "what", "o que"],
@@ -158,7 +159,10 @@ function buildRecord(
     is_open: !close_date,
     month,
     year,
-    raw_row: null,
+    raw_row: (() => {
+      const vessel = (get("vessel") ?? "").toString().trim();
+      return vessel ? { vessel } : null;
+    })(),
   };
 }
 

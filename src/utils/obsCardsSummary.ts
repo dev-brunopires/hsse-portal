@@ -64,6 +64,10 @@ export function getObsCardTimeToCloseStats(card: Partial<ObsCard>) {
 export function deriveObsCardShipName(card: Partial<ObsCard>): string | null {
   if (card.ship_name?.trim()) return card.ship_name.trim().toUpperCase();
 
+  const raw = (card as any).raw_row;
+  const fromRaw = raw && typeof raw === 'object' ? (raw.vessel ?? raw.navio ?? raw.ship) : null;
+  if (typeof fromRaw === 'string' && fromRaw.trim()) return fromRaw.trim().toUpperCase();
+
   const candidates = [card.department, card.area].filter(Boolean) as string[];
   for (const value of candidates) {
     const text = value.trim();
