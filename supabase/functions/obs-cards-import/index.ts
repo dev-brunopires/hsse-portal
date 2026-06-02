@@ -140,6 +140,9 @@ function buildRecord(
   const year = creation_date ? Number(creation_date.slice(0, 4)) : null;
   const month = creation_date ? Number(creation_date.slice(5, 7)) : null;
 
+  const vesselRaw = (get("vessel") ?? "").toString().trim();
+  const ship_name = vesselRaw ? vesselRaw.toUpperCase() : null;
+
   return {
     dataset_id: datasetId,
     organization_id: organizationId,
@@ -159,10 +162,8 @@ function buildRecord(
     is_open: !close_date,
     month,
     year,
-    raw_row: (() => {
-      const vessel = (get("vessel") ?? "").toString().trim();
-      return vessel ? { vessel } : null;
-    })(),
+    ship_name,
+    raw_row: vesselRaw ? { vessel: vesselRaw } : null,
   };
 }
 
