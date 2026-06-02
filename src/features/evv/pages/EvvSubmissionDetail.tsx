@@ -17,7 +17,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { SignaturePad } from '@/components/inspections/SignaturePad';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
-import { useUserRoles } from '@/hooks/useUserRoles';
+
 import { useOrganizationBranding } from '@/hooks/useOrganizationBranding';
 import { useShips } from '@/hooks/useShips';
 import { supabase } from '@/integrations/supabase/client';
