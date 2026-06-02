@@ -157,29 +157,11 @@ export default function EvvWizard() {
     }));
   }
 
-  const scopeValid = useMemo(() => {
-    const base = scope.environment
-      && scope.vessel_ids.length > 0
-      && scope.department
-      && scope.your_organization
-      && scope.your_role
-      && scope.task_description.trim().length > 0;
-    if (!base) return false;
-    if (isLeaders) return !!(scope.observed_organization && scope.observed_role);
-    return true;
-  }, [scope, isLeaders]);
-
-  const categoriesValid = useMemo(() => {
-    const answered = Object.values(answers).some((a) => a.rating !== null);
-    if (!answered) return false;
-    for (const a of Object.values(answers)) {
-      if (a.rating === 'not_effective' && (!a.deficiencies || a.deficiencies.length === 0)) return false;
-    }
-    return true;
-  }, [answers]);
+  // Validação relaxada: permite avançar/salvar mesmo com campos vazios.
+  const scopeValid = true;
+  const categoriesValid = true;
 
   async function handleSubmit() {
-    if (!comments.trim()) { toast.error(t('evv.wizard.commentsRequired')); return; }
     const submitted_at = new Date().toISOString();
     const isOnline = navigator.onLine && !!user && !!organization?.id;
 
