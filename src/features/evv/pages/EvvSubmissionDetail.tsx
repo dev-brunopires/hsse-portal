@@ -69,14 +69,9 @@ export default function EvvSubmissionDetail() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isAdmin, isSupervisor } = useAuth();
   const { organization } = useOrganization();
-  const { isAdmin, isAdminMaster, isSupervisor } = useUserRoles();
-  const branding = useOrganizationBranding();
-  const { data: ships = [] } = useShips();
-  const qc = useQueryClient();
-
-  const canReview = isAdmin || isAdminMaster || isSupervisor;
+  const canReview = isAdmin || isSupervisor;
 
   const [signOpen, setSignOpen] = useState(false);
   const [reviewNotes, setReviewNotes] = useState('');
