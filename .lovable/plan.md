@@ -1,100 +1,83 @@
-## Objetivo
 
-Refinar o módulo Obs Cards em 4 frentes: gráficos mais ricos, exportação PDF setorizada (padrão app), agregação temporal por mês/ano e classificação IA mais detalhada (eliminar "Outros").
+# Módulo eV&V — Plano de Implementação
 
----
-
-## 1. Eliminar "Outros" — IA mais granular
-
-**Problema:** muitos cards caem em `Other` porque a taxonomia atual é genérica e o prompt aceita "Other" como saída válida.
-
-**Mudanças em `supabase/functions/classify-obs-cards/index.ts`:**
-
-- Expandir taxonomia para refletir **tipos de risco HSSE reais** (não só temas):
-  - Risco físico: Queda de altura, Queda de objetos, Esmagamento/Prensagem, Impacto/Choque mecânico, Corte/Perfuração, Escorregão e tropeço.
-  - Risco químico: Exposição a produtos químicos, Vazamento/Derramamento.
-  - Risco elétrico: Choque elétrico, Arco elétrico.
-  - Risco térmico: Queimadura/Fogo, Estresse térmico.
-  - Risco ergonômico: Postura/Esforço repetitivo, Levantamento manual.
-  - Risco de processo: Pressão/Liberação de energia, Atmosfera explosiva.
-  - Risco operacional: EPI ausente/inadequado, Permissão de trabalho, Sinalização/Isolamento, Içamento/Rigging, Espaço confinado, Trabalho a quente.
-  - Risco ambiental: Vazamento ao mar, Resíduos.
-  - Comportamental: Ato inseguro, Falta de atenção.
-  - Organização: Housekeeping, Ferramenta/Equipamento inadequado.
-- **Remover `Other` do enum.** Forçar o modelo a escolher a categoria mais provável.
-- Reforçar prompt: "NUNCA retorne categoria genérica. Sempre identifique o tipo de risco mais provável com base no contexto."
-- Adicionar campo `ai_risk_level` (`low`/`medium`/`high`/`critical`) e `ai_reasoning` curto (1 frase) no tool schema — alimenta detalhamento.
-- Trocar modelo para `google/gemini-2.5-flash` (mais preciso que `flash-lite`) e reduzir batch para 25 (melhor qualidade).
-- Reprocessamento: novo botão "Reclassificar tudo" que zera `ai_category` antes de rodar.
-
-**Migration:** adicionar colunas `ai_risk_level text` e `ai_reasoning text` em `obs_cards`. Entregue como SQL bruto + comando CLI no chat (backend externo `ovugummbxablwmbpbbhj`).
+Funcionalidade nova baseada no spec "All Safe - Digital Tool". Será integrada como uma nova **seção na sidebar** (grupo "eV&V") com submenu: Forms, History, Reports.
 
 ---
 
-## 2. Visão temporal mês/ano
+## 1. Backend (Supabase externo `ovugummbxablwmbpbbhj`)
 
-**Problema:** datas vêm por dia, gráfico "Tendência mensal" funciona, mas filtros e detalhamento mostram granularidade diária.
+Como o backend real é externo, vou **gerar o SQL completo no chat** para você colar manualmente no Supabase Dashboard. Sem `supabase--migration`.
 
-**Mudanças em `ObsCardsDashboard.tsx`:**
+### Tabelas novas (schema `public`)
 
-- Novo filtro **"Período"**: `Mês/Ano` (default) | `Trimestre` | `Ano`.
-- Toda agregação temporal (`monthly`, tendências, séries) respeita o seletor.
-- Eixo X formatado humanizado: `Jan/2025`, `Q1 2025`, `2025`.
-- Em cards/tabelas que exibem data individual, mostrar apenas mês/ano via `formatMonthYear()` em `src/utils/dateFormat.ts` (adicionar helper se não existir).
-- Remover qualquer referência a `due_date` diária em KPIs — converter "Atrasados" para "Atrasados neste mês".
+- **`evv_locations`** — `id`, `name` (Guyana/Angola/Brazil), `organization_id`, `created_at`
+- **`evv_vessels`** — `id`, `location_id` FK, `name` (FPSO Unity, Destiny, Prosperity, Cidade de Anchieta...), `organization_id`
+- **`evv_submissions`** — `id`, `organization_id`, `user_id`, `form_type` (safeguard/leaders/workers/tlo/aar), `status` (draft/completed/not_synced), `scope` jsonb (environment, location_id, vessel_id, department, your_org, your_role, task_description, observed_org, observed_role), `answers` jsonb (categorias → perguntas → {rating, deficiencies[]}), `comments`, `submitted_at`, `client_id` (uuid do cliente para idempotência offline), `created_at`, `updated_at`
+- Seed inicial dos locations + vessels (Guyana → Unity/Destiny/Prosperity; Brazil → Cidade de Anchieta).
 
----
+GRANTs + RLS:
+- SELECT para `authenticated` na mesma `organization_id` (via `user_belongs_to_organization`).
+- INSERT/UPDATE submissions: dono (`user_id = auth.uid()`).
+- Locations/Vessels: read-only para org members; manage para admin_master.
 
-## 3. Gráficos melhores
-
-**Mudanças em `ObsCardsDashboard.tsx`:**
-
-- Substituir Pies simples por **donut com label central** (total no meio).
-- Tendência mensal: trocar `LineChart` por `AreaChart` empilhado com gradiente (BCO vs PSO) + linha de tendência.
-- "Por categoria": ordenar desc, top 12, com barras horizontais + valores ao final.
-- Novo gráfico **"Heatmap Área × Tipo de Risco"** (matriz colorida) no tab Áreas.
-- Novo gráfico **"Severidade ao longo do tempo"** (stacked bar mensal: low/medium/high/critical).
-- KPI cards: adicionar mini-sparkline (últimos 6 meses) nos principais.
-- Cores via tokens semânticos do `index.css` (não hardcoded HSL).
+### Catálogo de perguntas
+Hard-coded em TS (`src/features/evv/catalog.ts`) — 17 categorias LSR, com as 3 obrigatórias do spec totalmente preenchidas (Confined Space, Bypassing Safety Controls, Hot Work) e as deficiências específicas de Hot Work conforme listadas. Demais categorias ficam como stubs configuráveis para evolução futura.
 
 ---
 
-## 4. Exportação PDF setorizada
+## 2. Frontend
 
-**Padrão do app:** seguir `src/utils/pdfExport.ts` (ou similar usado em relatórios atuais — A4, header com logo branding, footer com data/usuário, fontes 8pt, fotos Base64 — memória `padrao-metadados-e-layout-relatorios`).
+### Sidebar (`AppSidebar.tsx` + `MobileSidebar.tsx`)
+Adicionar novo `NavGroup` **"eV&V"** com ícone `ClipboardList`/`ShieldCheck`:
+- `/evv` — Home (botão Sync + atalhos)
+- `/evv/forms` — Seleção do formulário (5 cards)
+- `/evv/forms/:formType` — Wizard multi-step
+- `/evv/history` — Tabela de submissões
+- `/evv/reports` — Dashboard (gate: admin/admin_master/platform_owner)
 
-**Novo arquivo `src/utils/obsCardsPdfExport.ts`:**
+### Componentes (`src/features/evv/`)
+- `EvvHome.tsx` — KPIs + botão Sync com estados (idle/ongoing/completed)
+- `FormSelector.tsx` — 5 cards (Safeguard, Leaders Engagement, Workers Engagement, TLO, AAR)
+- `EvvWizard.tsx` — Stepper 3 passos
+  - **Step 1 ScopeStep** — Environment, Location, Vessel (dependente), Department, Your Organization, Your Role, Task Description. Para Leaders Engagement: campos extras "Organization being observed", "Role being observed".
+  - **Step 2 CategoriesStep** — Accordion das 17 categorias; cada pergunta com 3 botões `Effective / Not Effective / Not Assessed`. Ao marcar **Not Effective**, expande bloco de checkboxes de deficiências (≥1 obrigatório para avançar — validação Zod).
+  - **Step 3 CloseStep** — Textarea "Comments: Explain your intervention" + Submit.
+- `HistoryTable.tsx` — colunas Form Type / Date / Status; permite reabrir drafts.
+- `ReportsDashboard.tsx` — filtros (Environment, Location, Vessel, Date Range) + gráfico (Recharts) dos "Not Effective" mais frequentes; gate por role.
 
-- Função `exportObsCardsDashboardPDF({ dataset, cards, filters, sector? })`:
-  - **Capa:** logo da organização, título "Relatório Obs Cards — {Setor}", período, filtros aplicados, total.
-  - **Sumário executivo:** KPIs em grid.
-  - **Por tipo de risco:** ranking + gráfico de barras.
-  - **Por área/setor:** uma seção por área (quebra de página) com KPIs locais, top 5 riscos, lista de cards UNSAFE em aberto.
-  - **Tendência mensal:** gráfico + tabela.
-  - **Apêndice:** lista completa de cards filtrados.
-- Gráficos renderizados via `html2canvas` em containers off-screen (pattern já usado no app) OU SVG → PNG do recharts.
+### Offline-first (`src/features/evv/offline.ts`)
+- `localforage` (já no projeto via offlineStorage) para persistir drafts em tempo real (debounce 500ms) e submissions `not_synced`.
+- Cada submission tem `client_id` (uuid) para idempotência.
+- Hook `useEvvSync()` — detecta `navigator.onLine`, faz upsert em lote em `evv_submissions` por `client_id`.
+- Botão Sync na Home: estados via toast (sonner) "Synchronization ongoing" → "Synchronization completed".
 
-**UI:**
-
-- Botão "Exportar PDF" no `PageHeader` do dashboard com dropdown:
-  - "Relatório consolidado"
-  - "Relatório por setor" → submenu lista cada área/departamento → gera PDF específico ou ZIP com um PDF por setor.
-
----
-
-## Detalhes técnicos
-
-- **Backend externo:** todas as alterações de schema (`ai_risk_level`, `ai_reasoning`) e deploy da função `classify-obs-cards` serão entregues como SQL bruto + comandos CLI para você aplicar manualmente no projeto `ovugummbxablwmbpbbhj`. Após migration, comando `supabase gen types typescript --project-id ovugummbxablwmbpbbhj` para regenerar `types.ts`.
-- **i18n:** todos os novos labels em `src/locales/{pt,en,es}/translation.json` sob `obsCards.*`.
-- **Sem alterações de layout fora de Obs Cards.** Mantém UI/UX, espaçamentos, tipografia, navegação.
-- **Loader:** componente `Spinner` padrão (memória loader-spinner-standard).
-- **Datas:** somente helpers de `src/utils/dateFormat.ts`.
+### i18n
+Novas chaves em `pt-BR.json` e `en.json` sob `evv.*` (zero strings hardcoded).
 
 ---
 
-## Entregas nesta ordem
+## 3. Design
+Reaproveita tokens do design system existente (Navy Blue & White). Botões de rating em variantes semânticas (success/destructive/muted) sem cores cruas. Mobile-first: cards stack, touch targets ≥44px, accordion full-width.
 
-1. Migration SQL + redeploy da edge function (com nova taxonomia, sem "Outros", com risk_level/reasoning).
-2. Frontend: filtro de período, gráficos melhorados, novos charts.
-3. Exportação PDF (consolidado + por setor).
-4. i18n completo para tudo acima.
+---
+
+## 4. Permissões
+- Forms/History: qualquer usuário autenticado da org.
+- Reports: `isAdmin || isAdminMaster || isPlatformOwner` (mesmo padrão de `obs-cards`).
+
+---
+
+## 5. Entregáveis no chat
+1. **SQL bruto** (CREATE TABLE + GRANT + RLS + seed) para colar no Dashboard.
+2. **Comando** `supabase gen types typescript --project-id ovugummbxablwmbpbbhj > src/integrations/supabase/types.ts`.
+3. Código React/TS completo no projeto.
+
+---
+
+## Fora de escopo nesta primeira entrega
+- SBM SSO real (usa auth existente; "Your Role" é select manual).
+- Conteúdo completo das 14 categorias LSR restantes (apenas placeholders editáveis; 3 obrigatórias do spec entregues completas).
+- Export PDF do report (pode vir em iteração futura).
+
+Confirma para eu seguir com a implementação?

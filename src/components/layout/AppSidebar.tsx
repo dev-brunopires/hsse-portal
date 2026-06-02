@@ -20,6 +20,7 @@ import {
   Activity,
   Thermometer,
   ShieldAlert,
+  ShieldCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -180,6 +181,15 @@ export function AppSidebar() {
             </div>
           </NavGroup>
         )}
+
+        <NavGroup label={t('navigation.groupVV')} collapsed={collapsed}>
+          <NavItem to="/evv" icon={<ShieldCheck size={20} />} label={t('navigation.evvHome')} collapsed={collapsed} />
+          <NavItem to="/evv/forms" icon={<ClipboardCheck size={20} />} label={t('navigation.evvForms')} collapsed={collapsed} />
+          <NavItem to="/evv/history" icon={<History size={20} />} label={t('navigation.evvHistory')} collapsed={collapsed} />
+          {(isAdmin || isAdminMaster || isPlatformOwner) && (
+            <NavItem to="/evv/reports" icon={<FileText size={20} />} label={t('navigation.evvReports')} collapsed={collapsed} />
+          )}
+        </NavGroup>
       </nav>
 
 

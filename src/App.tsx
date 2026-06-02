@@ -39,6 +39,11 @@ const HeatStress = lazyWithRetry(() => import("./pages/HeatStress"));
 const ObsCardsDashboard = lazyWithRetry(() => import("./pages/ObsCardsDashboard"));
 const ObsCardsUpload = lazyWithRetry(() => import("./pages/ObsCardsUpload"));
 const ObsCardsDatasets = lazyWithRetry(() => import("./pages/ObsCardsDatasets"));
+const EvvHome = lazyWithRetry(() => import("./features/evv/pages/EvvHome"));
+const EvvFormSelector = lazyWithRetry(() => import("./features/evv/pages/FormSelector"));
+const EvvWizard = lazyWithRetry(() => import("./features/evv/pages/EvvWizard"));
+const EvvHistory = lazyWithRetry(() => import("./features/evv/pages/EvvHistory"));
+const EvvReports = lazyWithRetry(() => import("./features/evv/pages/EvvReports"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -294,6 +299,12 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
+
+                <Route path="/evv" element={<ProtectedRoute><AppLayout><EvvHome /></AppLayout></ProtectedRoute>} />
+                <Route path="/evv/forms" element={<ProtectedRoute><AppLayout><EvvFormSelector /></AppLayout></ProtectedRoute>} />
+                <Route path="/evv/forms/:formType" element={<ProtectedRoute><AppLayout><EvvWizard /></AppLayout></ProtectedRoute>} />
+                <Route path="/evv/history" element={<ProtectedRoute><AppLayout><EvvHistory /></AppLayout></ProtectedRoute>} />
+                <Route path="/evv/reports" element={<ProtectedRoute requiredRole="admin"><AppLayout><EvvReports /></AppLayout></ProtectedRoute>} />
 
                 <Route path="*" element={<NotFound />} />
               </Routes>
