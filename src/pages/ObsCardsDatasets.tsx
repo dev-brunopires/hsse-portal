@@ -36,8 +36,11 @@ export default function ObsCardsDatasets() {
 
   const deleteMut = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('obs_card_datasets' as any).delete().eq('id', id);
+      const { data, error } = await (supabase as any).rpc('delete_obs_card_dataset', {
+        _dataset_id: id,
+      });
       if (error) throw error;
+      if (data && data.success === false) throw new Error(data.error || 'delete_failed');
     },
     onSuccess: () => {
       toast({ title: t('obsCards.datasets.deleted') });
