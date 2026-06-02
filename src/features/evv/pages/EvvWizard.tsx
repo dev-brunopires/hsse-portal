@@ -68,6 +68,12 @@ export default function EvvWizard() {
 
   // === Auto-fill sources ===
   const { data: userShips = [] } = useUserShips(user?.id);
+  const { data: orgShips = [] } = useShips();
+
+  // Fallback: if user has no explicit ship assignments, allow all org ships
+  const availableShips = userShips.length > 0
+    ? userShips.map((us) => ({ id: us.ship_id, name: us.ship?.name ?? us.ship_id }))
+    : orgShips.map((s) => ({ id: s.id, name: s.name }));
 
   const { data: profile } = useQuery({
     queryKey: ['evv-profile', user?.id],
@@ -75,22 +81,8 @@ export default function EvvWizard() {
     queryFn: async () => {
       const { data } = await supabase
         .from('profiles')
-        .select('department, full_name')
+        .select('department, position, full_name')
         .eq('user_id', user!.id)
-        .maybeSingle();
-      return data;
-    },
-  });
-
-  const { data: roleRow } = useQuery({
-    queryKey: ['evv-role', user?.id, organization?.id],
-    enabled: !!user?.id && !!organization?.id,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user!.id)
-        .eq('organization_id', organization!.id)
         .maybeSingle();
       return data;
     },
@@ -111,15 +103,16 @@ export default function EvvWizard() {
     })();
   }, [draftIdParam]);
 
-  // Auto-populate read-only fields from logged user
+  // Auto-populate read-only fields from logged user.
+  // Department now pulls from profile.position (cargo) first, then profile.department.
   useEffect(() => {
     setScope((prev) => ({
       ...prev,
       your_organization: prev.your_organization || organization?.name || '',
-      your_role: prev.your_role || (roleRow?.role as string) || '',
-      department: prev.department || profile?.department || '',
+      department: prev.department || profile?.position || profile?.department || '',
     }));
-  }, [organization?.name, roleRow?.role, profile?.department]);
+  }, [organization?.name, profile?.position, profile?.department]);
+
 
   // Auto-save draft
   useEffect(() => {
