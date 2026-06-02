@@ -44,6 +44,7 @@ const EvvFormSelector = lazyWithRetry(() => import("./features/evv/pages/FormSel
 const EvvWizard = lazyWithRetry(() => import("./features/evv/pages/EvvWizard"));
 const EvvHistory = lazyWithRetry(() => import("./features/evv/pages/EvvHistory"));
 const EvvReports = lazyWithRetry(() => import("./features/evv/pages/EvvReports"));
+const EvvSubmissionDetail = lazyWithRetry(() => import("./features/evv/pages/EvvSubmissionDetail"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
