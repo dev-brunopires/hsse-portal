@@ -305,6 +305,7 @@ function App() {
                 <Route path="/evv/forms" element={<ProtectedRoute><AppLayout><EvvFormSelector /></AppLayout></ProtectedRoute>} />
                 <Route path="/evv/forms/:formType" element={<ProtectedRoute><AppLayout><EvvWizard /></AppLayout></ProtectedRoute>} />
                 <Route path="/evv/history" element={<ProtectedRoute><AppLayout><EvvHistory /></AppLayout></ProtectedRoute>} />
+                <Route path="/evv/history/:id" element={<ProtectedRoute><AppLayout><EvvSubmissionDetail /></AppLayout></ProtectedRoute>} />
                 <Route path="/evv/reports" element={<ProtectedRoute requiredRole="admin"><AppLayout><EvvReports /></AppLayout></ProtectedRoute>} />
 
                 <Route path="*" element={<NotFound />} />
