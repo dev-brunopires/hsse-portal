@@ -19,6 +19,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useUserShips } from '@/hooks/useUserShips';
+import { useShips } from '@/hooks/useShips';
 import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { EVV_CATEGORIES, type EvvFormType, type Rating } from '../catalog';
@@ -36,6 +37,7 @@ const EMPTY_SCOPE: EvvScope = {
   department: '', your_organization: '', your_role: '',
   task_description: '', observed_organization: '', observed_role: '',
 };
+
 
 const FORM_TITLE_KEY: Record<EvvFormType, string> = {
   safeguard: 'evv.forms.safeguard.title',
@@ -66,6 +68,12 @@ export default function EvvWizard() {
 
   // === Auto-fill sources ===
   const { data: userShips = [] } = useUserShips(user?.id);
+  const { data: orgShips = [] } = useShips();
+
+  // Fallback: if user has no explicit ship assignments, allow all org ships
+  const availableShips = userShips.length > 0
+    ? userShips.map((us) => ({ id: us.ship_id, name: us.ship?.name ?? us.ship_id }))
+    : orgShips.map((s) => ({ id: s.id, name: s.name }));
 
   const { data: profile } = useQuery({
     queryKey: ['evv-profile', user?.id],
@@ -73,22 +81,8 @@ export default function EvvWizard() {
     queryFn: async () => {
       const { data } = await supabase
         .from('profiles')
-        .select('department, full_name')
+        .select('department, position, full_name')
         .eq('user_id', user!.id)
-        .maybeSingle();
-      return data;
-    },
-  });
-
-  const { data: roleRow } = useQuery({
-    queryKey: ['evv-role', user?.id, organization?.id],
-    enabled: !!user?.id && !!organization?.id,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user!.id)
-        .eq('organization_id', organization!.id)
         .maybeSingle();
       return data;
     },
@@ -109,15 +103,16 @@ export default function EvvWizard() {
     })();
   }, [draftIdParam]);
 
-  // Auto-populate read-only fields from logged user
+  // Auto-populate read-only fields from logged user.
+  // Department now pulls from profile.position (cargo) first, then profile.department.
   useEffect(() => {
     setScope((prev) => ({
       ...prev,
       your_organization: prev.your_organization || organization?.name || '',
-      your_role: prev.your_role || (roleRow?.role as string) || '',
-      department: prev.department || profile?.department || '',
+      department: prev.department || profile?.position || profile?.department || '',
     }));
-  }, [organization?.name, roleRow?.role, profile?.department]);
+  }, [organization?.name, profile?.position, profile?.department]);
+
 
   // Auto-save draft
   useEffect(() => {
@@ -242,43 +237,34 @@ export default function EvvWizard() {
               <Input value={scope.your_organization} readOnly className="bg-muted/40" />
             </div>
 
-            {/* Your Role (auto, read-only) */}
-            <div className="space-y-2">
-              <Label>{t('evv.scope.yourRole')}</Label>
-              <Input value={scope.your_role} readOnly className="bg-muted/40" />
-            </div>
-
-            {/* Department (auto from profile, editable if empty) */}
+            {/* Department (auto from profile cargo, read-only) */}
             <div className="space-y-2">
               <Label>{t('evv.scope.department')}</Label>
-              <Input
-                value={scope.department}
-                onChange={(e) => setScope({ ...scope, department: e.target.value })}
-                placeholder={t('evv.scope.select')}
-              />
+              <Input value={scope.department} readOnly className="bg-muted/40" />
             </div>
 
-            {/* Sites / Vessels (multi-select, from user's assigned ships) */}
+            {/* Sites / Vessels (multi-select) */}
             <div className="space-y-2 md:col-span-2">
               <Label>{t('evv.scope.vessel')}</Label>
-              {userShips.length === 0 ? (
+              {availableShips.length === 0 ? (
                 <p className="text-sm text-muted-foreground rounded-md border p-3">
                   {t('evv.scope.noVesselsAssigned')}
                 </p>
               ) : (
                 <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 rounded-md border p-3">
-                  {userShips.map((us) => (
-                    <label key={us.ship_id} className="flex items-center gap-2 text-sm cursor-pointer">
+                  {availableShips.map((s) => (
+                    <label key={s.id} className="flex items-center gap-2 text-sm cursor-pointer">
                       <Checkbox
-                        checked={scope.vessel_ids.includes(us.ship_id)}
-                        onCheckedChange={() => toggleVessel(us.ship_id)}
+                        checked={scope.vessel_ids.includes(s.id)}
+                        onCheckedChange={() => toggleVessel(s.id)}
                       />
-                      <span>{us.ship?.name ?? us.ship_id}</span>
+                      <span>{s.name}</span>
                     </label>
                   ))}
                 </div>
               )}
             </div>
+
 
             {isLeaders && (
               <>
