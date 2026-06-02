@@ -193,6 +193,7 @@ Deno.serve(async (req) => {
       const results = await classifyBatch(cards as ObsCardRow[], GEMINI_API_KEY);
       const byId = new Map(results.map((r) => [r.id, r]));
 
+      const updates = [];
       for (const card of cards) {
         const r = byId.get(card.id);
         const update = r
@@ -207,9 +208,11 @@ Deno.serve(async (req) => {
               ai_reasoning: "Classificação automática padrão (modelo não retornou).",
             };
 
-        await supabase.from("obs_cards").update(update).eq("id", card.id);
+        updates.push({ id: card.id, ...update });
         processed++;
       }
+      const { error: updateError } = await supabase.from("obs_cards").upsert(updates, { onConflict: "id" });
+      if (updateError) throw updateError;
     } catch (err) {
       const msg = serializeError(err);
       console.error("Batch failed:", msg, err);
