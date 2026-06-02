@@ -216,6 +216,7 @@
       "environment": "Environment",
       "location": "Location",
       "vessel": "Site / Vessel",
+      "noVesselsAssigned": "Nenhum Site/Vessel atribuído ao seu usuário. Solicite a um administrador.",
       "department": "Department",
       "yourOrg": "Your Organization",
       "yourRole": "Your Role",
