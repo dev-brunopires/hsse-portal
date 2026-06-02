@@ -24,32 +24,37 @@ export default function EvvHome() {
 
   useEffect(() => {
     refresh();
-    const on = () => setOnline(true);
+    const on = () => { setOnline(true); void handleSync(true); };
     const off = () => setOnline(false);
     window.addEventListener('online', on);
     window.addEventListener('offline', off);
+    // auto-sync on mount if online
+    if (typeof navigator !== 'undefined' && navigator.onLine) void handleSync(true);
     return () => {
       window.removeEventListener('online', on);
       window.removeEventListener('offline', off);
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, organization?.id]);
 
-  async function handleSync() {
+  async function handleSync(silent = false) {
     if (!user || !organization?.id) {
-      toast.error(t('evv.sync.noContext'));
+      if (!silent) toast.error(t('evv.sync.noContext'));
       return;
     }
     if (!navigator.onLine) {
-      toast.error(t('evv.sync.offline'));
+      if (!silent) toast.error(t('evv.sync.offline'));
       return;
     }
+    const pendingNow = await countUnsynced();
+    if (pendingNow === 0) { if (!silent) toast.info(t('evv.sync.pending', { count: 0 })); return; }
     setSyncing(true);
-    const id = toast.loading(t('evv.sync.ongoing'));
-    const { synced, failed } = await syncAllUnsynced(organization.id, user.id);
-    toast.dismiss(id);
+    const id = silent ? null : toast.loading(t('evv.sync.ongoing'));
+    const { synced, failed, lastError } = await syncAllUnsynced(organization.id, user.id);
+    if (id) toast.dismiss(id);
     if (failed > 0) {
-      toast.error(t('evv.sync.partial', { synced, failed }));
-    } else {
+      toast.error(`${t('evv.sync.partial', { synced, failed })}${lastError ? ` — ${lastError}` : ''}`);
+    } else if (synced > 0) {
       toast.success(t('evv.sync.completed', { count: synced }));
     }
     setSyncing(false);
