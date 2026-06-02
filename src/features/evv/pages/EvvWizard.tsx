@@ -19,6 +19,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useUserShips } from '@/hooks/useUserShips';
+import { useShips } from '@/hooks/useShips';
 import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { EVV_CATEGORIES, type EvvFormType, type Rating } from '../catalog';
@@ -36,6 +37,7 @@ const EMPTY_SCOPE: EvvScope = {
   department: '', your_organization: '', your_role: '',
   task_description: '', observed_organization: '', observed_role: '',
 };
+
 
 const FORM_TITLE_KEY: Record<EvvFormType, string> = {
   safeguard: 'evv.forms.safeguard.title',
