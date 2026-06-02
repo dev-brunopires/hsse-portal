@@ -347,8 +347,10 @@
       "rateLimited": "Limite de requisições atingido. Tente novamente em alguns instantes.",
       "paymentRequired": "Créditos da IA esgotados. Adicione créditos para continuar.",
       "functionUnavailable": "A função de IA ainda não está publicada no projeto externo. Faça o deploy de classify-obs-cards e tente novamente.",
-      "runIncremental": "Classificar pendentes",
-      "runReclassify": "Reclassificar tudo (sobrescreve)"
+      "runIncremental": "Classificar todos pendentes",
+      "runReclassify": "Reclassificar tudo (sobrescreve)",
+      "runFilteredPending": "Classificar somente filtrados ({{count}})",
+      "runFilteredReclassify": "Reclassificar filtrados ({{count}})"
     }
   },
   "healthCheck": {
