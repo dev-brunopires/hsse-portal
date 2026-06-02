@@ -47,8 +47,7 @@ const CATEGORIES = [
 interface ObsCardRow {
   id: string;
   description: string | null;
-  immediate_action: string | null;
-  recommended_action: string | null;
+  action_taken: string | null;
   obs_type: string | null;
   area: string | null;
   department: string | null;
@@ -79,8 +78,7 @@ ${JSON.stringify(
     area: c.area,
     department: c.department,
     description: c.description,
-    immediate_action: c.immediate_action,
-    recommended_action: c.recommended_action,
+    action_taken: c.action_taken,
   })),
   null,
   2,
@@ -199,7 +197,7 @@ Deno.serve(async (req) => {
     const { data: cards, error: fetchError } = await supabase
       .from("obs_cards")
       .select(
-        "id, description, immediate_action, recommended_action, obs_type, area, department",
+        "id, description, action_taken, obs_type, area, department",
       )
       .eq("dataset_id", datasetId)
       .is("ai_category", null)
