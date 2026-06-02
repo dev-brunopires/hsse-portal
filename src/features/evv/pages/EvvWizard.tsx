@@ -237,43 +237,34 @@ export default function EvvWizard() {
               <Input value={scope.your_organization} readOnly className="bg-muted/40" />
             </div>
 
-            {/* Your Role (auto, read-only) */}
-            <div className="space-y-2">
-              <Label>{t('evv.scope.yourRole')}</Label>
-              <Input value={scope.your_role} readOnly className="bg-muted/40" />
-            </div>
-
-            {/* Department (auto from profile, editable if empty) */}
+            {/* Department (auto from profile cargo, read-only) */}
             <div className="space-y-2">
               <Label>{t('evv.scope.department')}</Label>
-              <Input
-                value={scope.department}
-                onChange={(e) => setScope({ ...scope, department: e.target.value })}
-                placeholder={t('evv.scope.select')}
-              />
+              <Input value={scope.department} readOnly className="bg-muted/40" />
             </div>
 
-            {/* Sites / Vessels (multi-select, from user's assigned ships) */}
+            {/* Sites / Vessels (multi-select) */}
             <div className="space-y-2 md:col-span-2">
               <Label>{t('evv.scope.vessel')}</Label>
-              {userShips.length === 0 ? (
+              {availableShips.length === 0 ? (
                 <p className="text-sm text-muted-foreground rounded-md border p-3">
                   {t('evv.scope.noVesselsAssigned')}
                 </p>
               ) : (
                 <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 rounded-md border p-3">
-                  {userShips.map((us) => (
-                    <label key={us.ship_id} className="flex items-center gap-2 text-sm cursor-pointer">
+                  {availableShips.map((s) => (
+                    <label key={s.id} className="flex items-center gap-2 text-sm cursor-pointer">
                       <Checkbox
-                        checked={scope.vessel_ids.includes(us.ship_id)}
-                        onCheckedChange={() => toggleVessel(us.ship_id)}
+                        checked={scope.vessel_ids.includes(s.id)}
+                        onCheckedChange={() => toggleVessel(s.id)}
                       />
-                      <span>{us.ship?.name ?? us.ship_id}</span>
+                      <span>{s.name}</span>
                     </label>
                   ))}
                 </div>
               )}
             </div>
+
 
             {isLeaders && (
               <>
