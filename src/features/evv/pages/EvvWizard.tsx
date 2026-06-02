@@ -243,27 +243,31 @@ export default function EvvWizard() {
               <Input value={scope.department} readOnly className="bg-muted/40" />
             </div>
 
-            {/* Sites / Vessels (multi-select) */}
+            {/* Site / Vessel (standard select) */}
             <div className="space-y-2 md:col-span-2">
               <Label>{t('evv.scope.vessel')}</Label>
-              {availableShips.length === 0 ? (
-                <p className="text-sm text-muted-foreground rounded-md border p-3">
-                  {t('evv.scope.noVesselsAssigned')}
-                </p>
-              ) : (
-                <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 rounded-md border p-3">
+              <Select
+                value={scope.vessel_ids[0] ?? ''}
+                onValueChange={(v) => setScope({ ...scope, vessel_ids: v ? [v] : [] })}
+                disabled={availableShips.length === 0}
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      availableShips.length === 0
+                        ? t('evv.scope.noVesselsAssigned')
+                        : t('evv.scope.select')
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
                   {availableShips.map((s) => (
-                    <label key={s.id} className="flex items-center gap-2 text-sm cursor-pointer">
-                      <Checkbox
-                        checked={scope.vessel_ids.includes(s.id)}
-                        onCheckedChange={() => toggleVessel(s.id)}
-                      />
-                      <span>{s.name}</span>
-                    </label>
+                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                   ))}
-                </div>
-              )}
+                </SelectContent>
+              </Select>
             </div>
+
 
 
             {isLeaders && (
