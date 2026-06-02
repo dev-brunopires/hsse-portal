@@ -159,7 +159,10 @@ function buildRecord(
     is_open: !close_date,
     month,
     year,
-    raw_row: null,
+    raw_row: (() => {
+      const vessel = (get("vessel") ?? "").toString().trim();
+      return vessel ? { vessel } : null;
+    })(),
   };
 }
 
