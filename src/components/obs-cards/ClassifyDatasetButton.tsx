@@ -32,7 +32,7 @@ export function ClassifyDatasetButton({ datasetId, disabled }: Props) {
         const { data, error } = await supabase.functions.invoke('classify-obs-cards', {
           body: {
             dataset_id: datasetId,
-            batch_size: 25,
+            batch_size: 80,
             reclassify: reclassify && i === 0,
           },
         });
