@@ -18,11 +18,11 @@ import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { useUserShips } from '@/hooks/useUserShips';
 import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { EVV_CATEGORIES, type EvvFormType, type Rating } from '../catalog';
 import type { EvvAnswers, EvvScope, EvvSubmission } from '../types';
-import { fetchLocations, fetchVessels } from '../data';
 import { getSubmissionLocal, saveSubmissionLocal } from '../offline';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -32,7 +32,7 @@ function newClientId(): string {
 }
 
 const EMPTY_SCOPE: EvvScope = {
-  environment: '', location_id: '', vessel_id: '',
+  environment: '', vessel_ids: [],
   department: '', your_organization: '', your_role: '',
   task_description: '', observed_organization: '', observed_role: '',
 };
@@ -64,13 +64,43 @@ export default function EvvWizard() {
   const [comments, setComments] = useState('');
   const [loaded, setLoaded] = useState(false);
 
-  // Hydrate from draft (if any)
+  // === Auto-fill sources ===
+  const { data: userShips = [] } = useUserShips(user?.id);
+
+  const { data: profile } = useQuery({
+    queryKey: ['evv-profile', user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('department, full_name')
+        .eq('user_id', user!.id)
+        .maybeSingle();
+      return data;
+    },
+  });
+
+  const { data: roleRow } = useQuery({
+    queryKey: ['evv-role', user?.id, organization?.id],
+    enabled: !!user?.id && !!organization?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user!.id)
+        .eq('organization_id', organization!.id)
+        .maybeSingle();
+      return data;
+    },
+  });
+
+  // Hydrate draft
   useEffect(() => {
     (async () => {
       if (draftIdParam) {
         const draft = await getSubmissionLocal(draftIdParam);
         if (draft) {
-          setScope(draft.scope);
+          setScope({ ...EMPTY_SCOPE, ...draft.scope });
           setAnswers(draft.answers);
           setComments(draft.comments);
         }
@@ -78,6 +108,16 @@ export default function EvvWizard() {
       setLoaded(true);
     })();
   }, [draftIdParam]);
+
+  // Auto-populate read-only fields from logged user
+  useEffect(() => {
+    setScope((prev) => ({
+      ...prev,
+      your_organization: prev.your_organization || organization?.name || '',
+      your_role: prev.your_role || (roleRow?.role as string) || '',
+      department: prev.department || profile?.department || '',
+    }));
+  }, [organization?.name, roleRow?.role, profile?.department]);
 
   // Auto-save draft
   useEffect(() => {
@@ -95,16 +135,6 @@ export default function EvvWizard() {
     return () => clearTimeout(handle);
   }, [loaded, clientId, formId, scope, answers, comments]);
 
-  const { data: locations = [] } = useQuery({
-    queryKey: ['evv-locations'],
-    queryFn: fetchLocations,
-  });
-  const { data: vessels = [] } = useQuery({
-    queryKey: ['evv-vessels', scope.location_id],
-    queryFn: () => fetchVessels(scope.location_id || undefined),
-    enabled: !!scope.location_id,
-  });
-
   function setAnswer(qid: string, patch: Partial<EvvAnswers[string]>) {
     setAnswers((prev) => ({
       ...prev,
@@ -118,20 +148,28 @@ export default function EvvWizard() {
     setAnswer(qid, { deficiencies: next });
   }
 
-  // Validation
+  function toggleVessel(shipId: string) {
+    setScope((prev) => ({
+      ...prev,
+      vessel_ids: prev.vessel_ids.includes(shipId)
+        ? prev.vessel_ids.filter((id) => id !== shipId)
+        : [...prev.vessel_ids, shipId],
+    }));
+  }
+
   const scopeValid = useMemo(() => {
-    const base = scope.environment && scope.location_id && scope.vessel_id
-      && scope.department && scope.your_organization && scope.your_role
+    const base = scope.environment
+      && scope.vessel_ids.length > 0
+      && scope.department
+      && scope.your_organization
+      && scope.your_role
       && scope.task_description.trim().length > 0;
     if (!base) return false;
-    if (isLeaders) {
-      return !!(scope.observed_organization && scope.observed_role);
-    }
+    if (isLeaders) return !!(scope.observed_organization && scope.observed_role);
     return true;
   }, [scope, isLeaders]);
 
   const categoriesValid = useMemo(() => {
-    // require at least one answered question AND for every "not_effective" >= 1 deficiency
     const answered = Object.values(answers).some((a) => a.rating !== null);
     if (!answered) return false;
     for (const a of Object.values(answers)) {
@@ -141,10 +179,7 @@ export default function EvvWizard() {
   }, [answers]);
 
   async function handleSubmit() {
-    if (!comments.trim()) {
-      toast.error(t('evv.wizard.commentsRequired'));
-      return;
-    }
+    if (!comments.trim()) { toast.error(t('evv.wizard.commentsRequired')); return; }
     const submitted_at = new Date().toISOString();
     const isOnline = navigator.onLine && !!user && !!organization?.id;
 
@@ -187,7 +222,6 @@ export default function EvvWizard() {
     <div className="space-y-6">
       <PageHeader icon={ClipboardList} title={t(FORM_TITLE_KEY[formId])} description={t('evv.wizard.subtitle')} />
 
-      {/* Stepper */}
       <div className="flex items-center gap-2 text-sm">
         {[0, 1, 2].map((s) => (
           <div key={s} className="flex items-center gap-2">
@@ -219,62 +253,49 @@ export default function EvvWizard() {
                 </SelectContent>
               </Select>
             </div>
-            {/* Location */}
-            <div className="space-y-2">
-              <Label>{t('evv.scope.location')}</Label>
-              <Select value={scope.location_id} onValueChange={(v) => setScope({ ...scope, location_id: v, vessel_id: '' })}>
-                <SelectTrigger><SelectValue placeholder={t('evv.scope.select')} /></SelectTrigger>
-                <SelectContent>
-                  {locations.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            {/* Vessel */}
-            <div className="space-y-2">
-              <Label>{t('evv.scope.vessel')}</Label>
-              <Select value={scope.vessel_id} onValueChange={(v) => setScope({ ...scope, vessel_id: v })} disabled={!scope.location_id}>
-                <SelectTrigger><SelectValue placeholder={scope.location_id ? t('evv.scope.select') : t('evv.scope.selectLocationFirst')} /></SelectTrigger>
-                <SelectContent>
-                  {vessels.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            {/* Department */}
-            <div className="space-y-2">
-              <Label>{t('evv.scope.department')}</Label>
-              <Select value={scope.department} onValueChange={(v) => setScope({ ...scope, department: v as any })}>
-                <SelectTrigger><SelectValue placeholder={t('evv.scope.select')} /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cargo">Cargo</SelectItem>
-                  <SelectItem value="production">Production</SelectItem>
-                  <SelectItem value="brownfield">Brownfield</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {/* Your Org */}
+
+            {/* Your Organization (auto, read-only) */}
             <div className="space-y-2">
               <Label>{t('evv.scope.yourOrg')}</Label>
-              <Select value={scope.your_organization} onValueChange={(v) => setScope({ ...scope, your_organization: v as any })}>
-                <SelectTrigger><SelectValue placeholder={t('evv.scope.select')} /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="sbm">SBM</SelectItem>
-                  <SelectItem value="contractor">Contractor</SelectItem>
-                  <SelectItem value="client">Client</SelectItem>
-                </SelectContent>
-              </Select>
+              <Input value={scope.your_organization} readOnly className="bg-muted/40" />
             </div>
-            {/* Your Role */}
+
+            {/* Your Role (auto, read-only) */}
             <div className="space-y-2">
               <Label>{t('evv.scope.yourRole')}</Label>
-              <Select value={scope.your_role} onValueChange={(v) => setScope({ ...scope, your_role: v as any })}>
-                <SelectTrigger><SelectValue placeholder={t('evv.scope.select')} /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="first_line_supervisor">First Line Supervisor</SelectItem>
-                  <SelectItem value="onshore_manager">Onshore Manager</SelectItem>
-                  <SelectItem value="senior_manager">Senior Manager</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                </SelectContent>
-              </Select>
+              <Input value={scope.your_role} readOnly className="bg-muted/40" />
+            </div>
+
+            {/* Department (auto from profile, editable if empty) */}
+            <div className="space-y-2">
+              <Label>{t('evv.scope.department')}</Label>
+              <Input
+                value={scope.department}
+                onChange={(e) => setScope({ ...scope, department: e.target.value })}
+                placeholder={t('evv.scope.select')}
+              />
+            </div>
+
+            {/* Sites / Vessels (multi-select, from user's assigned ships) */}
+            <div className="space-y-2 md:col-span-2">
+              <Label>{t('evv.scope.vessel')}</Label>
+              {userShips.length === 0 ? (
+                <p className="text-sm text-muted-foreground rounded-md border p-3">
+                  {t('evv.scope.noVesselsAssigned')}
+                </p>
+              ) : (
+                <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 rounded-md border p-3">
+                  {userShips.map((us) => (
+                    <label key={us.ship_id} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <Checkbox
+                        checked={scope.vessel_ids.includes(us.ship_id)}
+                        onCheckedChange={() => toggleVessel(us.ship_id)}
+                      />
+                      <span>{us.ship?.name ?? us.ship_id}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
             </div>
 
             {isLeaders && (

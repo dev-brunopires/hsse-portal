@@ -12,18 +12,16 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { PageHeader } from '@/components/layout/PageHeader';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
-import { fetchLocations, fetchVessels } from '../data';
 import { EVV_CATEGORIES } from '../catalog';
 
 interface Filters {
   environment: string;
-  location_id: string;
   vessel_id: string;
   from: string;
   to: string;
 }
 
-const EMPTY: Filters = { environment: 'all', location_id: 'all', vessel_id: 'all', from: '', to: '' };
+const EMPTY: Filters = { environment: 'all', vessel_id: 'all', from: '', to: '' };
 
 export default function EvvReports() {
   const { t } = useTranslation();
