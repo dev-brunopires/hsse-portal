@@ -145,7 +145,7 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const datasetId = body.dataset_id ?? body.datasetId;
     const reclassify = body.reclassify === true;
-    const batchSize = Math.max(1, Math.min(50, Number(body.batch_size) || 15));
+    const batchSize = Math.max(1, Math.min(80, Number(body.batch_size) || 40));
 
     if (!datasetId) {
       return new Response(JSON.stringify({ error: "dataset_id is required" }), {
