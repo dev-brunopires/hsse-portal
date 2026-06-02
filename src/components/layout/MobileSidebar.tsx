@@ -17,6 +17,7 @@ import {
   ChevronDown,
   Thermometer,
   ShieldAlert,
+  ShieldCheck,
   Activity,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -117,6 +118,15 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
               <MobileNavItem to="/obs-cards" icon={<ShieldAlert size={20} />} label={t('navigation.obsCards')} onClick={handleNavClick} />
             </MobileNavGroup>
           )}
+
+          <MobileNavGroup label={t('navigation.groupVV')}>
+            <MobileNavItem to="/evv" icon={<ShieldCheck size={20} />} label={t('navigation.evvHome')} onClick={handleNavClick} />
+            <MobileNavItem to="/evv/forms" icon={<ClipboardCheck size={20} />} label={t('navigation.evvForms')} onClick={handleNavClick} />
+            <MobileNavItem to="/evv/history" icon={<History size={20} />} label={t('navigation.evvHistory')} onClick={handleNavClick} />
+            {(isAdmin || isAdminMaster || isPlatformOwner) && (
+              <MobileNavItem to="/evv/reports" icon={<FileText size={20} />} label={t('navigation.evvReports')} onClick={handleNavClick} />
+            )}
+          </MobileNavGroup>
         </nav>
 
         {/* Admin Section */}
