@@ -347,8 +347,10 @@
       "rateLimited": "Rate limit reached. Please try again shortly.",
       "paymentRequired": "AI credits exhausted. Please top up to continue.",
       "functionUnavailable": "The AI function is not deployed in the external project yet. Deploy classify-obs-cards and try again.",
-      "runIncremental": "Classify pending",
-      "runReclassify": "Reclassify all (overwrite)"
+      "runIncremental": "Classify all pending",
+      "runReclassify": "Reclassify all (overwrite)",
+      "runFilteredPending": "Classify filtered only ({{count}})",
+      "runFilteredReclassify": "Reclassify filtered ({{count}})"
     }
   },
   "healthCheck": {
