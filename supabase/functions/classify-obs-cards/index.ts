@@ -47,8 +47,7 @@ const CATEGORIES = [
 interface ObsCardRow {
   id: string;
   description: string | null;
-  immediate_action: string | null;
-  recommended_action: string | null;
+  action_taken: string | null;
   obs_type: string | null;
   area: string | null;
   department: string | null;
