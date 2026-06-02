@@ -306,8 +306,19 @@ export default function ObsCardsDashboard() {
             {datasetId && (
               <ClassifyDatasetButton
                 datasetId={datasetId}
-                filteredAllIds={filtered.map((c) => c.id)}
-                filteredPendingIds={filtered.filter((c) => !c.ai_category).map((c) => c.id)}
+                filteredCount={stats.total}
+                filteredPendingCount={Math.max(
+                  0,
+                  filtered
+                    .filter((c) => !c.ai_category)
+                    .reduce((sum, c) => sum + getObsCardWeight(c), 0),
+                )}
+                resolveFilteredIds={async (mode) => {
+                  const all = await fetchAllObsCards(datasetId);
+                  const matched = applyFilters(all, filters);
+                  const scoped = mode === 'pending' ? matched.filter((c) => !c.ai_category) : matched;
+                  return scoped.map((c) => c.id);
+                }}
               />
             )}
             <DropdownMenu>
