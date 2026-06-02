@@ -16,15 +16,23 @@ import {
 interface Props {
   datasetId: string;
   disabled?: boolean;
-  /** IDs already filtered on screen still needing classification (ai_category == null). */
-  filteredPendingIds?: string[];
-  /** All IDs in current filter (for reclassify-filtered). */
-  filteredAllIds?: string[];
+  /** Display count of filtered rows (weighted = real row count). */
+  filteredCount?: number;
+  /** Display count of filtered rows still pending classification. */
+  filteredPendingCount?: number;
+  /** Resolve real DB card IDs at click time. mode: 'pending' returns only unclassified; 'all' returns everything in filter. */
+  resolveFilteredIds?: (mode: 'pending' | 'all') => Promise<string[]>;
 }
 
 const BATCH = 80;
 
-export function ClassifyDatasetButton({ datasetId, disabled, filteredPendingIds, filteredAllIds }: Props) {
+export function ClassifyDatasetButton({
+  datasetId,
+  disabled,
+  filteredCount = 0,
+  filteredPendingCount = 0,
+  resolveFilteredIds,
+}: Props) {
   const { t } = useTranslation();
   const { toast } = useToast();
   const [busy, setBusy] = useState(false);
@@ -76,8 +84,13 @@ export function ClassifyDatasetButton({ datasetId, disabled, filteredPendingIds,
       let totalProcessed = 0;
       if (mode === 'all') totalProcessed = await runAll(false);
       else if (mode === 'all-reclassify') totalProcessed = await runAll(true);
-      else if (mode === 'filtered') totalProcessed = await runChunked(filteredPendingIds || [], false);
-      else if (mode === 'filtered-reclassify') totalProcessed = await runChunked(filteredAllIds || [], true);
+      else if (mode === 'filtered') {
+        const ids = (await resolveFilteredIds?.('pending')) || [];
+        totalProcessed = await runChunked(ids, false);
+      } else if (mode === 'filtered-reclassify') {
+        const ids = (await resolveFilteredIds?.('all')) || [];
+        totalProcessed = await runChunked(ids, true);
+      }
 
       toast({
         title: t('obsCards.classify.success'),
@@ -109,8 +122,7 @@ export function ClassifyDatasetButton({ datasetId, disabled, filteredPendingIds,
     );
   }
 
-  const pendingFilteredCount = filteredPendingIds?.length ?? 0;
-  const allFilteredCount = filteredAllIds?.length ?? 0;
+  const canFilter = !!resolveFilteredIds && filteredCount > 0;
 
   return (
     <DropdownMenu>
@@ -121,19 +133,19 @@ export function ClassifyDatasetButton({ datasetId, disabled, filteredPendingIds,
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        {pendingFilteredCount > 0 && (
+        {canFilter && filteredPendingCount > 0 && (
           <DropdownMenuItem onClick={() => run('filtered')}>
             <Filter className="h-4 w-4 mr-2" />
-            {t('obsCards.classify.runFilteredPending', { count: pendingFilteredCount })}
+            {t('obsCards.classify.runFilteredPending', { count: filteredPendingCount })}
           </DropdownMenuItem>
         )}
-        {allFilteredCount > 0 && (
+        {canFilter && (
           <DropdownMenuItem onClick={() => run('filtered-reclassify')}>
             <RefreshCw className="h-4 w-4 mr-2" />
-            {t('obsCards.classify.runFilteredReclassify', { count: allFilteredCount })}
+            {t('obsCards.classify.runFilteredReclassify', { count: filteredCount })}
           </DropdownMenuItem>
         )}
-        {(pendingFilteredCount > 0 || allFilteredCount > 0) && <DropdownMenuSeparator />}
+        {canFilter && <DropdownMenuSeparator />}
         <DropdownMenuItem onClick={() => run('all')}>
           <Sparkles className="h-4 w-4 mr-2" />
           {t('obsCards.classify.runIncremental')}
