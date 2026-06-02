@@ -42,7 +42,7 @@ const SECTIONS: Section[] = [
     titleKey: 'mobileHome.sections.vv.title',
     subtitleKey: 'mobileHome.sections.vv.subtitle',
     icon: ClipboardCheck,
-    path: '',
+    path: '/evv',
     tone: 'warning',
   },
   {
