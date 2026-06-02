@@ -50,10 +50,11 @@ export async function countUnsynced(): Promise<number> {
 export async function syncAllUnsynced(
   organizationId: string,
   userId: string,
-): Promise<{ synced: number; failed: number }> {
+): Promise<{ synced: number; failed: number; lastError?: string }> {
   const pending = (await listSubmissionsLocal()).filter((s) => s.status === 'not_synced');
   let synced = 0;
   let failed = 0;
+  let lastError: string | undefined;
   for (const sub of pending) {
     try {
       const { error } = await supabase
@@ -75,9 +76,11 @@ export async function syncAllUnsynced(
       if (error) throw error;
       await saveSubmissionLocal({ ...sub, status: 'completed' });
       synced += 1;
-    } catch {
+    } catch (e: any) {
+      console.error('[evv.sync] failed to sync submission', sub.client_id, e);
+      lastError = e?.message || String(e);
       failed += 1;
     }
   }
-  return { synced, failed };
+  return { synced, failed, lastError };
 }
