@@ -173,7 +173,7 @@ Deno.serve(async (req) => {
     const { data: cards, error: fetchError } = await supabase
       .from("obs_cards")
       .select(
-        "id, description, action_taken, obs_type, area, department",
+        "id, description",
       )
       .eq("dataset_id", datasetId)
       .is("ai_category", null)
