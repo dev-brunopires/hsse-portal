@@ -159,8 +159,93 @@
     "platformAdmin": "Admin Plataforma",
     "supervisor": "Supervisor",
     "groupSafety": "Segurança / HSE",
-    "obsCards": "OBS Cards"
+    "obsCards": "OBS Cards",
+    "groupVV": "eV&V",
+    "evvHome": "Início eV&V",
+    "evvForms": "Formulários",
+    "evvHistory": "Histórico",
+    "evvReports": "Relatórios"
   },
+  "evv": {
+    "title": "eV&V",
+    "subtitle": "electronic Validation & Verification",
+    "nav": { "forms": "Formulários", "history": "Histórico", "reports": "Relatórios" },
+    "home": {
+      "formsDesc": "Iniciar um novo formulário de V&V",
+      "historyDesc": "Ver submissões anteriores e rascunhos",
+      "reportsDesc": "Painel consolidado de desvios"
+    },
+    "sync": {
+      "title": "Sincronização",
+      "button": "Sincronizar ({{count}})",
+      "online": "Online",
+      "offline": "Sem conexão — registros ficarão como Não Sincronizados",
+      "pending": "{{count}} pendentes",
+      "ongoing": "Sincronização em andamento…",
+      "completed": "Sincronização concluída ({{count}})",
+      "partial": "Parcial: {{synced}} ok, {{failed}} falhas",
+      "noContext": "Usuário ou organização não disponíveis"
+    },
+    "forms": {
+      "title": "Formulários",
+      "subtitle": "Selecione um dos formulários do programa All Safe",
+      "safeguard": { "title": "V&V Safeguard", "desc": "Verificação de barreiras críticas em campo" },
+      "leaders": { "title": "V&V Leaders Engagement", "desc": "Engajamento de lideranças com observação reversa" },
+      "workers": { "title": "V&V Workers Engagement", "desc": "Engajamento direto com a equipe de trabalho" },
+      "tlo": { "title": "Targeted Learning Observation (TLO)", "desc": "Observação focada para aprendizado" },
+      "aar": { "title": "After Action Review (AAR)", "desc": "Revisão pós-ação após evento ou tarefa crítica" }
+    },
+    "wizard": {
+      "subtitle": "Preencha os passos para enviar a observação",
+      "step1": "Escopo",
+      "step2": "Categorias e Perguntas",
+      "step3": "Fechamento",
+      "selectDeficiencies": "Selecione ao menos uma deficiência:",
+      "commentsLabel": "Comments: Explain your intervention",
+      "commentsPlaceholder": "Descreva a intervenção realizada…",
+      "commentsRequired": "Comentário obrigatório antes do envio",
+      "submit": "Submit",
+      "saveDraft": "Salvar rascunho",
+      "draftSaved": "Rascunho salvo",
+      "submitted": "Formulário enviado",
+      "savedOffline": "Salvo offline — sincronizar quando houver conexão"
+    },
+    "scope": {
+      "select": "Selecione",
+      "selectLocationFirst": "Selecione a Location primeiro",
+      "environment": "Environment",
+      "location": "Location",
+      "vessel": "Site / Vessel",
+      "department": "Department",
+      "yourOrg": "Your Organization",
+      "yourRole": "Your Role",
+      "task": "Task Description",
+      "taskPlaceholder": "Descreva a tarefa observada…",
+      "observedOrg": "Organization being observed",
+      "observedRole": "Role being observed"
+    },
+    "rating": { "effective": "Effective", "not_effective": "Not Effective", "not_assessed": "Not Assessed" },
+    "status": { "draft": "Rascunho", "completed": "Concluído", "not_synced": "Não Sincronizado" },
+    "history": {
+      "title": "Histórico eV&V",
+      "subtitle": "Submissões e rascunhos",
+      "new": "Novo formulário",
+      "allSubmissions": "Todas as submissões",
+      "empty": "Nenhuma submissão ainda",
+      "formType": "Tipo de Formulário",
+      "date": "Data",
+      "resume": "Continuar",
+      "view": "Ver"
+    },
+    "reports": {
+      "title": "Relatórios eV&V",
+      "subtitle": "Painel consolidado de desvios da frota",
+      "filters": "Filtros",
+      "from": "De",
+      "to": "Até",
+      "topDeviations": "Desvios 'Not Effective' mais frequentes",
+      "totalSubmissions": "Total de submissões: {{count}}"
+    }
   "mobileHome": {
     "greeting": "Bem-vindo",
     "greetingWithName": "Olá, {{name}}",
