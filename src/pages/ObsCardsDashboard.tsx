@@ -303,7 +303,13 @@ export default function ObsCardsDashboard() {
         subtitle={t('obsCards.subtitle')}
         actions={
           <div className="flex flex-wrap gap-2">
-            {datasetId && <ClassifyDatasetButton datasetId={datasetId} />}
+            {datasetId && (
+              <ClassifyDatasetButton
+                datasetId={datasetId}
+                filteredAllIds={filtered.map((c) => c.id)}
+                filteredPendingIds={filtered.filter((c) => !c.ai_category).map((c) => c.id)}
+              />
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" disabled={!currentDataset || filtered.length === 0 || cardsFetching}>
