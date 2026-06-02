@@ -27,9 +27,10 @@ export default function EvvHistory() {
   return (
     <div className="space-y-6">
       <PageHeader
+        icon={Plus}
         title={t('evv.history.title')}
         description={t('evv.history.subtitle')}
-        action={(
+        actions={(
           <Button asChild><Link to="/evv/forms"><Plus />{t('evv.history.new')}</Link></Button>
         )}
       />

@@ -17,7 +17,7 @@ export default function FormSelector() {
   const { t } = useTranslation();
   return (
     <div className="space-y-6">
-      <PageHeader title={t('evv.forms.title')} description={t('evv.forms.subtitle')} />
+      <PageHeader icon={ClipboardList} title={t('evv.forms.title')} description={t('evv.forms.subtitle')} />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {EVV_FORMS.map((f) => {
           const Icon = ICONS[f.id];

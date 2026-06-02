@@ -185,7 +185,7 @@ export default function EvvWizard() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t(FORM_TITLE_KEY[formId])} description={t('evv.wizard.subtitle')} />
+      <PageHeader icon={ClipboardList} title={t(FORM_TITLE_KEY[formId])} description={t('evv.wizard.subtitle')} />
 
       {/* Stepper */}
       <div className="flex items-center gap-2 text-sm">

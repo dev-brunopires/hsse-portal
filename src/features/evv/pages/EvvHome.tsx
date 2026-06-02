@@ -60,7 +60,7 @@ export default function EvvHome() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t('evv.title')} description={t('evv.subtitle')} />
+      <PageHeader icon={ShieldCheck} title={t('evv.title')} description={t('evv.subtitle')} />
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">

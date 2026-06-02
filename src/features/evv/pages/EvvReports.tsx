@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { BarChart3 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import {
@@ -81,7 +82,7 @@ export default function EvvReports() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t('evv.reports.title')} description={t('evv.reports.subtitle')} />
+      <PageHeader icon={BarChart3} title={t('evv.reports.title')} description={t('evv.reports.subtitle')} />
 
       <Card>
         <CardHeader><CardTitle>{t('evv.reports.filters')}</CardTitle></CardHeader>
