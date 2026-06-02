@@ -1,0 +1,116 @@
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
+import { Cloud, CloudOff, ClipboardList, History, BarChart3, RefreshCw } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { useOrganization } from '@/contexts/OrganizationContext';
+import { countUnsynced, syncAllUnsynced } from '../offline';
+import { PageHeader } from '@/components/layout/PageHeader';
+
+export default function EvvHome() {
+  const { t } = useTranslation();
+  const { user, isAdmin, isAdminMaster, isPlatformOwner } = useAuth();
+  const { organization } = useOrganization();
+  const [pending, setPending] = useState(0);
+  const [online, setOnline] = useState<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
+  const [syncing, setSyncing] = useState(false);
+
+  async function refresh() {
+    setPending(await countUnsynced());
+  }
+
+  useEffect(() => {
+    refresh();
+    const on = () => setOnline(true);
+    const off = () => setOnline(false);
+    window.addEventListener('online', on);
+    window.addEventListener('offline', off);
+    return () => {
+      window.removeEventListener('online', on);
+      window.removeEventListener('offline', off);
+    };
+  }, []);
+
+  async function handleSync() {
+    if (!user || !organization?.id) {
+      toast.error(t('evv.sync.noContext'));
+      return;
+    }
+    if (!navigator.onLine) {
+      toast.error(t('evv.sync.offline'));
+      return;
+    }
+    setSyncing(true);
+    const id = toast.loading(t('evv.sync.ongoing'));
+    const { synced, failed } = await syncAllUnsynced(organization.id, user.id);
+    toast.dismiss(id);
+    if (failed > 0) {
+      toast.error(t('evv.sync.partial', { synced, failed }));
+    } else {
+      toast.success(t('evv.sync.completed', { count: synced }));
+    }
+    setSyncing(false);
+    refresh();
+  }
+
+  const canReports = isAdmin || isAdminMaster || isPlatformOwner;
+
+  return (
+    <div className="space-y-6">
+      <PageHeader title={t('evv.title')} description={t('evv.subtitle')} />
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div className="flex items-center gap-2">
+            {online ? <Cloud className="h-5 w-5 text-primary" /> : <CloudOff className="h-5 w-5 text-muted-foreground" />}
+            <CardTitle className="text-lg">{t('evv.sync.title')}</CardTitle>
+          </div>
+          <Button onClick={handleSync} disabled={syncing || pending === 0 || !online}>
+            <RefreshCw className={syncing ? 'animate-spin' : ''} />
+            {t('evv.sync.button', { count: pending })}
+          </Button>
+        </CardHeader>
+        <CardContent className="text-sm text-muted-foreground">
+          {online ? t('evv.sync.online') : t('evv.sync.offline')}
+          {' · '}
+          {t('evv.sync.pending', { count: pending })}
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <Link to="/evv/forms">
+          <Card className="hover:border-primary transition-colors h-full">
+            <CardHeader>
+              <ClipboardList className="h-6 w-6 text-primary" />
+              <CardTitle className="text-base mt-2">{t('evv.nav.forms')}</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">{t('evv.home.formsDesc')}</CardContent>
+          </Card>
+        </Link>
+        <Link to="/evv/history">
+          <Card className="hover:border-primary transition-colors h-full">
+            <CardHeader>
+              <History className="h-6 w-6 text-primary" />
+              <CardTitle className="text-base mt-2">{t('evv.nav.history')}</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">{t('evv.home.historyDesc')}</CardContent>
+          </Card>
+        </Link>
+        {canReports && (
+          <Link to="/evv/reports">
+            <Card className="hover:border-primary transition-colors h-full">
+              <CardHeader>
+                <BarChart3 className="h-6 w-6 text-primary" />
+                <CardTitle className="text-base mt-2">{t('evv.nav.reports')}</CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground">{t('evv.home.reportsDesc')}</CardContent>
+            </Card>
+          </Link>
+        )}
+      </div>
+    </div>
+  );
+}
