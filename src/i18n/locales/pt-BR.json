@@ -246,6 +246,7 @@
       "topDeviations": "Desvios 'Not Effective' mais frequentes",
       "totalSubmissions": "Total de submissões: {{count}}"
     }
+  },
   "mobileHome": {
     "greeting": "Bem-vindo",
     "greetingWithName": "Olá, {{name}}",
