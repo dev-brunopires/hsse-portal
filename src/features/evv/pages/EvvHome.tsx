@@ -73,7 +73,7 @@ export default function EvvHome() {
             {online ? <Cloud className="h-5 w-5 text-primary" /> : <CloudOff className="h-5 w-5 text-muted-foreground" />}
             <CardTitle className="text-lg">{t('evv.sync.title')}</CardTitle>
           </div>
-          <Button onClick={handleSync} disabled={syncing || pending === 0 || !online}>
+          <Button onClick={() => handleSync(false)} disabled={syncing || pending === 0 || !online}>
             <RefreshCw className={syncing ? 'animate-spin' : ''} />
             {t('evv.sync.button', { count: pending })}
           </Button>
