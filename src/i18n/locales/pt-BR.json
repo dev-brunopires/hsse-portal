@@ -169,7 +169,11 @@
   "evv": {
     "title": "eV&V",
     "subtitle": "electronic Validation & Verification",
-    "nav": { "forms": "Formulários", "history": "Histórico", "reports": "Relatórios" },
+    "nav": {
+      "forms": "Formulários",
+      "history": "Histórico",
+      "reports": "Relatórios"
+    },
     "home": {
       "formsDesc": "Iniciar um novo formulário de V&V",
       "historyDesc": "Ver submissões anteriores e rascunhos",
@@ -189,11 +193,26 @@
     "forms": {
       "title": "Formulários",
       "subtitle": "Selecione um dos formulários do programa All Safe",
-      "safeguard": { "title": "V&V Safeguard", "desc": "Verificação de barreiras críticas em campo" },
-      "leaders": { "title": "V&V Leaders Engagement", "desc": "Engajamento de lideranças com observação reversa" },
-      "workers": { "title": "V&V Workers Engagement", "desc": "Engajamento direto com a equipe de trabalho" },
-      "tlo": { "title": "Targeted Learning Observation (TLO)", "desc": "Observação focada para aprendizado" },
-      "aar": { "title": "After Action Review (AAR)", "desc": "Revisão pós-ação após evento ou tarefa crítica" }
+      "safeguard": {
+        "title": "V&V Safeguard",
+        "desc": "Verificação de barreiras críticas em campo"
+      },
+      "leaders": {
+        "title": "V&V Leaders Engagement",
+        "desc": "Engajamento de lideranças com observação reversa"
+      },
+      "workers": {
+        "title": "V&V Workers Engagement",
+        "desc": "Engajamento direto com a equipe de trabalho"
+      },
+      "tlo": {
+        "title": "Targeted Learning Observation (TLO)",
+        "desc": "Observação focada para aprendizado"
+      },
+      "aar": {
+        "title": "After Action Review (AAR)",
+        "desc": "Revisão pós-ação após evento ou tarefa crítica"
+      }
     },
     "wizard": {
       "subtitle": "Preencha os passos para enviar a observação",
@@ -225,8 +244,16 @@
       "observedOrg": "Organization being observed",
       "observedRole": "Role being observed"
     },
-    "rating": { "effective": "Effective", "not_effective": "Not Effective", "not_assessed": "Not Assessed" },
-    "status": { "draft": "Rascunho", "completed": "Concluído", "not_synced": "Não Sincronizado" },
+    "rating": {
+      "effective": "Effective",
+      "not_effective": "Not Effective",
+      "not_assessed": "Not Assessed"
+    },
+    "status": {
+      "draft": "Rascunho",
+      "completed": "Concluído",
+      "not_synced": "Não Sincronizado"
+    },
     "history": {
       "title": "Histórico eV&V",
       "subtitle": "Submissões e rascunhos",
@@ -236,7 +263,8 @@
       "formType": "Tipo de Formulário",
       "date": "Data",
       "resume": "Continuar",
-      "view": "Ver"
+      "view": "Ver",
+      "openDetail": "Abrir"
     },
     "reports": {
       "title": "Relatórios eV&V",
@@ -246,6 +274,48 @@
       "to": "Até",
       "topDeviations": "Desvios 'Not Effective' mais frequentes",
       "totalSubmissions": "Total de submissões: {{count}}"
+    },
+    "review": {
+      "pending": "Pendente",
+      "approved": "Aprovado",
+      "rejected": "Rejeitado"
+    },
+    "detail": {
+      "subtitle": "Detalhes da submissão",
+      "submittedAt": "Enviado em",
+      "signedAt": "Assinado em",
+      "sign": "Assinar",
+      "signedToast": "Assinatura registrada",
+      "approvedToast": "Submissão aprovada",
+      "rejectedToast": "Submissão rejeitada",
+      "exportPdf": "Exportar PDF",
+      "reviewTitle": "Revisão",
+      "reviewNotes": "Comentários da revisão",
+      "attachments": "Anexos",
+      "uploadFile": "Adicionar arquivo",
+      "uploaded": "Arquivo adicionado",
+      "noAttachments": "Nenhum anexo"
+    },
+    "pdf": {
+      "scopeSection": "Escopo",
+      "authorSection": "Autor",
+      "observationsSection": "Observações",
+      "commentsSection": "Comentários",
+      "reviewSection": "Revisão",
+      "signatureSection": "Assinatura",
+      "noObservations": "Nenhuma observação registrada",
+      "category": "Categoria",
+      "verification": "Verificação",
+      "rating": "Avaliação",
+      "deficiencies": "Deficiências",
+      "author": "Autor",
+      "submittedAt": "Enviado em",
+      "position": "Cargo",
+      "department": "Departamento",
+      "reviewStatus": "Status da revisão",
+      "reviewer": "Revisor",
+      "reviewedAt": "Revisado em",
+      "reviewNotes": "Notas"
     }
   },
   "mobileHome": {
