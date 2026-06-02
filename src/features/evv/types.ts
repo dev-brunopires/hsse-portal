@@ -4,11 +4,10 @@ export type EvvStatus = 'draft' | 'completed' | 'not_synced';
 
 export interface EvvScope {
   environment: 'fpso' | 'project' | 'office' | '';
-  location_id: string;
-  vessel_id: string;
-  department: 'cargo' | 'production' | 'brownfield' | '';
-  your_organization: 'sbm' | 'contractor' | 'client' | '';
-  your_role: 'first_line_supervisor' | 'onshore_manager' | 'senior_manager' | 'admin' | '';
+  vessel_ids: string[];                       // multi-select – from user's assigned ships
+  department: string;                          // auto-fill from profile.department (editable)
+  your_organization: string;                   // auto-fill from current organization name (read-only)
+  your_role: string;                           // auto-fill from user_roles (read-only)
   task_description: string;
   // Extras for Leaders Engagement:
   observed_organization?: 'sbm' | 'contractor' | 'client' | '';
@@ -23,7 +22,7 @@ export interface EvvAnswer {
 export type EvvAnswers = Record<string /*questionId*/, EvvAnswer>;
 
 export interface EvvSubmission {
-  client_id: string; // local uuid for idempotency
+  client_id: string;
   id?: string;
   form_type: EvvFormType;
   status: EvvStatus;
@@ -34,13 +33,7 @@ export interface EvvSubmission {
   updated_at: string;
 }
 
-export interface EvvLocation {
-  id: string;
-  name: string;
-}
-
 export interface EvvVessel {
   id: string;
-  location_id: string;
   name: string;
 }

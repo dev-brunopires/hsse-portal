@@ -12,28 +12,33 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { PageHeader } from '@/components/layout/PageHeader';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
-import { fetchLocations, fetchVessels } from '../data';
 import { EVV_CATEGORIES } from '../catalog';
 
 interface Filters {
   environment: string;
-  location_id: string;
   vessel_id: string;
   from: string;
   to: string;
 }
 
-const EMPTY: Filters = { environment: 'all', location_id: 'all', vessel_id: 'all', from: '', to: '' };
+const EMPTY: Filters = { environment: 'all', vessel_id: 'all', from: '', to: '' };
 
 export default function EvvReports() {
   const { t } = useTranslation();
   const { organization } = useOrganization();
   const [filters, setFilters] = useState<Filters>(EMPTY);
 
-  const { data: locations = [] } = useQuery({ queryKey: ['evv-locations'], queryFn: fetchLocations });
   const { data: vessels = [] } = useQuery({
-    queryKey: ['evv-vessels-all', filters.location_id],
-    queryFn: () => fetchVessels(filters.location_id !== 'all' ? filters.location_id : undefined),
+    queryKey: ['evv-org-ships', organization?.id],
+    enabled: !!organization?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('ships')
+        .select('id, name')
+        .eq('organization_id', organization!.id)
+        .order('name');
+      return (data ?? []) as { id: string; name: string }[];
+    },
   });
 
   const { data: rows = [] } = useQuery({
@@ -52,8 +57,7 @@ export default function EvvReports() {
       return (data as any[]).filter((r) => {
         const s = r.scope || {};
         if (filters.environment !== 'all' && s.environment !== filters.environment) return false;
-        if (filters.location_id !== 'all' && s.location_id !== filters.location_id) return false;
-        if (filters.vessel_id !== 'all' && s.vessel_id !== filters.vessel_id) return false;
+        if (filters.vessel_id !== 'all' && !(s.vessel_ids ?? []).includes(filters.vessel_id)) return false;
         return true;
       });
     },
@@ -96,16 +100,6 @@ export default function EvvReports() {
                 <SelectItem value="fpso">FPSO</SelectItem>
                 <SelectItem value="project">Project</SelectItem>
                 <SelectItem value="office">Office</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>{t('evv.scope.location')}</Label>
-            <Select value={filters.location_id} onValueChange={(v) => setFilters({ ...filters, location_id: v, vessel_id: 'all' })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('common.all')}</SelectItem>
-                {locations.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
