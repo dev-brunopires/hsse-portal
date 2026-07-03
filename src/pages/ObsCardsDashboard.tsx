@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ShieldAlert, Upload, Database, AlertTriangle, CheckCircle2,
-  Clock, TrendingUp, Activity, Users, FileDown, Flame,
+  Clock, TrendingUp, Activity, Users, FileDown, Flame, Sparkles,
 } from 'lucide-react';
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
@@ -13,6 +13,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -24,7 +25,7 @@ import {
 import { ModernKPICard } from '@/components/dashboard/ModernKPICard';
 import { fetchAllObsCards, useObsDatasets, useObsCards, type ObsCard } from '@/hooks/useObsCards';
 import { useOrganizationBranding } from '@/hooks/useOrganizationBranding';
-import { ClassifyDatasetButton } from '@/components/obs-cards/ClassifyDatasetButton';
+import { ClassifyDatasetButton, type ClassificationProgress } from '@/components/obs-cards/ClassifyDatasetButton';
 import { exportObsCardsConsolidated, exportObsCardsBySector } from '@/utils/obsCardsPdfExport';
 import { deriveObsCardShipName, getObsCardTimeToCloseStats, getObsCardWeight } from '@/utils/obsCardsSummary';
 import { format } from 'date-fns';
@@ -55,6 +56,8 @@ type Filters = {
   area: string;
   department: string;
   status: string;
+  aiAssessment: string;
+  alignment: string;
   severity: string;
   riskLevel: string;
   month: string;
@@ -68,6 +71,8 @@ const DEFAULT_FILTERS: Filters = {
   area: 'ALL',
   department: 'ALL',
   status: 'ALL',
+  aiAssessment: 'ALL',
+  alignment: 'ALL',
   severity: 'ALL',
   riskLevel: 'ALL',
   month: 'ALL',
@@ -84,6 +89,8 @@ function applyFilters(cards: ObsCard[], f: Filters): ObsCard[] {
     if (f.area !== 'ALL' && (c.area || '') !== f.area) return false;
     if (f.department !== 'ALL' && (c.department || '') !== f.department) return false;
     if (f.status !== 'ALL' && c.status !== f.status) return false;
+    if (f.aiAssessment !== 'ALL' && (c.ai_status_assessment || '') !== f.aiAssessment) return false;
+    if (f.alignment !== 'ALL' && (c.ai_status_alignment || '') !== f.alignment) return false;
     if (f.severity !== 'ALL' && c.severity !== f.severity) return false;
     if (f.riskLevel !== 'ALL' && (c.ai_risk_level || '') !== f.riskLevel) return false;
     if (f.month !== 'ALL' && String(c.month || '') !== f.month) return false;
@@ -131,6 +138,8 @@ export default function ObsCardsDashboard() {
   );
   const { data: cards, isLoading: cardsLoading, isFetching: cardsFetching, error: cardsError } = useObsCards(datasetId, currentDataset);
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
+  const [classificationProgress, setClassificationProgress] = useState<ClassificationProgress | null>(null);
+  const [isClassifying, setIsClassifying] = useState(false);
 
   useEffect(() => {
     if (!datasetId && datasets && datasets.length > 0) {
@@ -158,7 +167,43 @@ export default function ObsCardsDashboard() {
     const avgTtc = ttc.count ? Math.round(ttc.sum / ttc.count) : 0;
     const critical = filtered.filter((c) => c.ai_risk_level === 'critical').reduce((sum, c) => sum + getObsCardWeight(c), 0);
     const high = filtered.filter((c) => c.ai_risk_level === 'high').reduce((sum, c) => sum + getObsCardWeight(c), 0);
-    return { total, safe, unsafe, bco, pso, open, closed, avgTtc, critical, high };
+    const assessedUnsafe = filtered
+      .filter((c) => c.ai_status_assessment === 'UNSAFE')
+      .reduce((sum, c) => sum + getObsCardWeight(c), 0);
+    const mismatches = filtered
+      .filter((c) => c.ai_status_alignment && c.ai_status_alignment !== 'aligned')
+      .reduce((sum, c) => sum + getObsCardWeight(c), 0);
+    const followup = filtered
+      .filter((c) => c.ai_requires_followup)
+      .reduce((sum, c) => sum + getObsCardWeight(c), 0);
+    const weakActions = filtered
+      .filter((c) => c.ai_action_quality === 'none' || c.ai_action_quality === 'weak')
+      .reduce((sum, c) => sum + getObsCardWeight(c), 0);
+    const criticality = filtered.reduce((acc, c) => {
+      const score = typeof c.ai_criticality_score === 'number' ? c.ai_criticality_score : null;
+      const weight = getObsCardWeight(c);
+      return score == null
+        ? acc
+        : { sum: acc.sum + score * weight, count: acc.count + weight };
+    }, { sum: 0, count: 0 });
+    const avgCriticality = criticality.count ? Number((criticality.sum / criticality.count).toFixed(1)) : 0;
+    return {
+      total,
+      safe,
+      unsafe,
+      bco,
+      pso,
+      open,
+      closed,
+      avgTtc,
+      critical,
+      high,
+      assessedUnsafe,
+      mismatches,
+      followup,
+      weakActions,
+      avgCriticality,
+    };
   }, [filtered]);
 
   // Time-aggregated series respecting period selector
@@ -215,6 +260,55 @@ export default function ObsCardsDashboard() {
     return out.filter((o) => o.value > 0);
   }, [filtered, t]);
 
+  const byAssessedStatus = useMemo(() => [
+    { name: 'SAFE declarado', value: stats.safe, fill: RISK_COLOR.low },
+    { name: 'UNSAFE declarado', value: stats.unsafe, fill: RISK_COLOR.high },
+    { name: 'UNSAFE pela IA', value: stats.assessedUnsafe, fill: RISK_COLOR.critical },
+  ].filter((item) => item.value > 0), [stats]);
+
+  const byAlignment = useMemo(
+    () => groupCount(filtered.filter((c) => !!c.ai_status_alignment), (c) => c.ai_status_alignment)
+      .sort((a, b) => b.value - a.value),
+    [filtered],
+  );
+
+  const byBarrier = useMemo(
+    () => groupCount(filtered.filter((c) => !!c.ai_barrier_failure), (c) => c.ai_barrier_failure)
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 12),
+    [filtered],
+  );
+
+  const byActionQuality = useMemo(
+    () => groupCount(filtered.filter((c) => !!c.ai_action_quality), (c) => c.ai_action_quality)
+      .sort((a, b) => b.value - a.value),
+    [filtered],
+  );
+
+  const criticalAreas = useMemo(() => {
+    const map = new Map<string, { name: string; count: number; scoreSum: number; scoreCount: number; unsafe: number }>();
+    for (const c of filtered) {
+      const name = (c.area || '—').trim() || '—';
+      const weight = getObsCardWeight(c);
+      const score = typeof c.ai_criticality_score === 'number' ? c.ai_criticality_score : null;
+      if (!map.has(name)) map.set(name, { name, count: 0, scoreSum: 0, scoreCount: 0, unsafe: 0 });
+      const item = map.get(name)!;
+      item.count += weight;
+      if (score != null) {
+        item.scoreSum += score * weight;
+        item.scoreCount += weight;
+      }
+      if (c.ai_status_assessment === 'UNSAFE') item.unsafe += weight;
+    }
+    return Array.from(map.values())
+      .map((item) => ({
+        ...item,
+        avgScore: item.scoreCount ? Number((item.scoreSum / item.scoreCount).toFixed(1)) : 0,
+      }))
+      .sort((a, b) => (b.avgScore * b.unsafe) - (a.avgScore * a.unsafe))
+      .slice(0, 10);
+  }, [filtered]);
+
   const byArea = useMemo(
     () => groupCount(filtered, (c) => c.area).sort((a, b) => b.value - a.value).slice(0, 12),
     [filtered],
@@ -223,11 +317,6 @@ export default function ObsCardsDashboard() {
     () => groupCount(filtered, (c) => c.department).sort((a, b) => b.value - a.value).slice(0, 12),
     [filtered],
   );
-  const typeDist = useMemo(() => [
-    { name: 'BCO', value: stats.bco },
-    { name: 'PSO', value: stats.pso },
-  ], [stats]);
-
   const allAreas = useMemo(
     () => Array.from(new Set((cards || []).map((c) => c.area).filter(Boolean))) as string[],
     [cards],
@@ -306,6 +395,7 @@ export default function ObsCardsDashboard() {
             {datasetId && (
               <ClassifyDatasetButton
                 datasetId={datasetId}
+                disabled={cardsFetching}
                 filteredCount={stats.total}
                 filteredPendingCount={Math.max(
                   0,
@@ -319,11 +409,13 @@ export default function ObsCardsDashboard() {
                   const scoped = mode === 'pending' ? matched.filter((c) => !c.ai_category) : matched;
                   return scoped.map((c) => c.id);
                 }}
+                onProcessingChange={setIsClassifying}
+                onProgressChange={setClassificationProgress}
               />
             )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" disabled={!currentDataset || filtered.length === 0 || cardsFetching}>
+                <Button variant="outline" size="sm" disabled={!currentDataset || filtered.length === 0 || cardsFetching || isClassifying}>
                   <FileDown className="h-4 w-4 mr-2" />
                   {t('obsCards.pdf.exportButton')}
                 </Button>
@@ -368,7 +460,7 @@ export default function ObsCardsDashboard() {
       {/* Filters */}
       <Card>
         <CardContent className="p-4">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-10 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-12 gap-3">
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">{t('obsCards.filters.dataset')}</label>
               <Select value={datasetId || ''} onValueChange={(v) => { setDatasetId(v); setParams({ dataset: v }, { replace: true }); }}>
@@ -444,6 +536,31 @@ export default function ObsCardsDashboard() {
               </Select>
             </div>
             <div>
+              <label className="text-xs text-muted-foreground mb-1 block">{t('obsCards.filters.aiAssessment', 'IA Status')}</label>
+              <Select value={filters.aiAssessment} onValueChange={(v) => setFilters({ ...filters, aiAssessment: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">{t('obsCards.filters.all')}</SelectItem>
+                  <SelectItem value="SAFE">SAFE</SelectItem>
+                  <SelectItem value="UNSAFE">UNSAFE</SelectItem>
+                  <SelectItem value="UNCLEAR">UNCLEAR</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">{t('obsCards.filters.alignment', 'Consistencia')}</label>
+              <Select value={filters.alignment} onValueChange={(v) => setFilters({ ...filters, alignment: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">{t('obsCards.filters.all')}</SelectItem>
+                  <SelectItem value="aligned">{t('obsCards.alignment.aligned', 'Alinhado')}</SelectItem>
+                  <SelectItem value="declared_safe_but_unsafe">{t('obsCards.alignment.declaredSafeButUnsafe', 'SAFE declarado, UNSAFE pela IA')}</SelectItem>
+                  <SelectItem value="declared_unsafe_but_safe">{t('obsCards.alignment.declaredUnsafeButSafe', 'UNSAFE declarado, SAFE pela IA')}</SelectItem>
+                  <SelectItem value="insufficient_info">{t('obsCards.alignment.insufficientInfo', 'Informacao insuficiente')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
               <label className="text-xs text-muted-foreground mb-1 block">{t('obsCards.filters.area')}</label>
               <Select value={filters.area} onValueChange={(v) => setFilters({ ...filters, area: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -480,6 +597,44 @@ export default function ObsCardsDashboard() {
         </CardContent>
       </Card>
 
+      {classificationProgress && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <span>{t('obsCards.classify.processingTitle', 'Processando classificacao IA')}</span>
+                  <span className="text-xs text-muted-foreground">({classificationProgress.mode})</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {classificationProgress.phase === 'preparing'
+                    ? t('obsCards.classify.preparing', 'Preparando lote e contando cartoes...')
+                    : classificationProgress.phase === 'refreshing'
+                      ? t('obsCards.classify.refreshing', 'Atualizando dashboard e resumo...')
+                      : t('obsCards.classify.progressDetail', {
+                          processed: classificationProgress.processed,
+                          total: classificationProgress.total,
+                          remaining: classificationProgress.remaining,
+                          defaultValue: '{{processed}} de {{total}} processados · {{remaining}} restantes',
+                        })}
+                </p>
+              </div>
+              <div className="text-2xl font-bold tabular-nums text-primary">
+                {classificationProgress.percent}%
+              </div>
+            </div>
+            <Progress value={classificationProgress.percent} className="h-2" />
+            <p className="text-[11px] text-muted-foreground">
+              {t(
+                'obsCards.classify.processingImpact',
+                'Evite trocar de base, recarregar a pagina ou exportar PDF ate o processamento terminar.',
+              )}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {cardsError && (!cards || cards.length === 0) ? (
         <Card>
           <CardContent className="p-12 text-center text-muted-foreground">
@@ -505,7 +660,11 @@ export default function ObsCardsDashboard() {
               <ModernKPICard title={t('obsCards.kpis.total')} value={stats.total} icon={Activity} variant="info" />
               <ModernKPICard title={t('obsCards.kpis.safe')} value={stats.safe} icon={CheckCircle2} variant="success" />
               <ModernKPICard title={t('obsCards.kpis.unsafe')} value={stats.unsafe} icon={AlertTriangle} variant="danger" />
-              <ModernKPICard title={t('obsCards.kpis.open')} value={stats.open} icon={TrendingUp} variant="warning" />
+              <ModernKPICard title={t('obsCards.kpis.assessedUnsafe', 'UNSAFE pela IA')} value={stats.assessedUnsafe} icon={ShieldAlert} variant="danger" />
+              <ModernKPICard title={t('obsCards.kpis.mismatches', 'Divergencias SAFE/UNSAFE')} value={stats.mismatches} icon={AlertTriangle} variant="warning" />
+              <ModernKPICard title={t('obsCards.kpis.followup', 'Requer follow-up')} value={stats.followup} icon={TrendingUp} variant="warning" />
+              <ModernKPICard title={t('obsCards.kpis.weakActions', 'Acoes fracas/ausentes')} value={stats.weakActions} icon={Clock} variant="warning" />
+              <ModernKPICard title={t('obsCards.kpis.avgCriticality', 'Criticidade media')} value={stats.avgCriticality} icon={Flame} variant="danger" />
               <ModernKPICard title={t('obsCards.kpis.bco')} value={stats.bco} icon={Users} variant="default" />
               <ModernKPICard title={t('obsCards.kpis.pso')} value={stats.pso} icon={ShieldAlert} variant="default" />
               <ModernKPICard title={t('obsCards.riskLevel.critical')} value={stats.critical} icon={Flame} variant="danger" />
@@ -546,21 +705,20 @@ export default function ObsCardsDashboard() {
               </Card>
 
               <Card>
-                <CardHeader><CardTitle>{t('obsCards.charts.typeDistribution')}</CardTitle></CardHeader>
-                <CardContent className="h-72 relative">
+                <CardHeader><CardTitle>{t('obsCards.charts.statusAssurance', 'SAFE/UNSAFE: declarado vs IA')}</CardTitle></CardHeader>
+                <CardContent className="h-72">
                   <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie data={typeDist} dataKey="value" nameKey="name" innerRadius={60} outerRadius={95} paddingAngle={2}>
-                        {typeDist.map((_, i) => <Cell key={i} fill={PALETTE[i]} />)}
-                      </Pie>
+                    <BarChart data={byAssessedStatus}>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                      <XAxis dataKey="name" fontSize={11} />
+                      <YAxis fontSize={12} />
                       <Tooltip />
-                      <Legend />
-                    </PieChart>
+                      <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                        {byAssessedStatus.map((d) => <Cell key={d.name} fill={d.fill} />)}
+                        <LabelList dataKey="value" position="top" fontSize={11} />
+                      </Bar>
+                    </BarChart>
                   </ResponsiveContainer>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none -mt-6">
-                    <div className="text-3xl font-bold">{stats.total}</div>
-                    <div className="text-xs text-muted-foreground">{t('obsCards.kpis.total')}</div>
-                  </div>
                 </CardContent>
               </Card>
 
@@ -602,52 +760,50 @@ export default function ObsCardsDashboard() {
 
           {/* RISK TYPES */}
           <TabsContent value="risk" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('obsCards.charts.byRiskType')}</CardTitle>
-              </CardHeader>
-              <CardContent className="h-[500px]">
-                {byRiskType.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
-                    <Sparkle />
-                    <p className="mt-2">{t('obsCards.pdf.noAiData')}</p>
-                    <p className="text-xs mt-1">{t('obsCards.charts.runAiFirst')}</p>
-                  </div>
-                ) : (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={byRiskType} layout="vertical" margin={{ left: 140, right: 30 }}>
-                      <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                      <XAxis type="number" fontSize={12} />
-                      <YAxis type="category" dataKey="name" fontSize={11} width={140} />
-                      <Tooltip />
-                      <Bar dataKey="value" fill={PALETTE[0]} radius={[0, 4, 4, 0]}>
-                        <LabelList dataKey="value" position="right" fontSize={11} />
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                )}
-              </CardContent>
-            </Card>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              <RiskBarCard title={t('obsCards.charts.byRiskType')} data={byRiskType} emptyText={t('obsCards.pdf.noAiData')} />
+              <RiskBarCard title={t('obsCards.charts.byBarrier', 'Barreira / falha principal')} data={byBarrier} emptyText={t('obsCards.pdf.noAiData')} />
+              <RiskBarCard title={t('obsCards.charts.statusAlignment', 'Consistencia do status informado')} data={byAlignment} emptyText={t('obsCards.pdf.noAiData')} />
+              <RiskBarCard title={t('obsCards.charts.actionQuality', 'Qualidade da acao tomada')} data={byActionQuality} emptyText={t('obsCards.pdf.noAiData')} />
+            </div>
           </TabsContent>
 
           {/* AREAS */}
           <TabsContent value="areas">
-            <Card>
-              <CardHeader><CardTitle>{t('obsCards.charts.topAreas')}</CardTitle></CardHeader>
-              <CardContent className="h-96">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={byArea} layout="vertical" margin={{ left: 100, right: 30 }}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                    <XAxis type="number" fontSize={12} />
-                    <YAxis type="category" dataKey="name" fontSize={11} width={120} />
-                    <Tooltip />
-                    <Bar dataKey="value" fill={PALETTE[1]} radius={[0, 4, 4, 0]}>
-                      <LabelList dataKey="value" position="right" fontSize={11} />
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader><CardTitle>{t('obsCards.charts.topAreas')}</CardTitle></CardHeader>
+                <CardContent className="h-96">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={byArea} layout="vertical" margin={{ left: 100, right: 30 }}>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                      <XAxis type="number" fontSize={12} />
+                      <YAxis type="category" dataKey="name" fontSize={11} width={120} />
+                      <Tooltip />
+                      <Bar dataKey="value" fill={PALETTE[1]} radius={[0, 4, 4, 0]}>
+                        <LabelList dataKey="value" position="right" fontSize={11} />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader><CardTitle>{t('obsCards.charts.criticalAreas', 'Areas por criticidade real')}</CardTitle></CardHeader>
+                <CardContent className="h-96">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={criticalAreas} layout="vertical" margin={{ left: 100, right: 30 }}>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                      <XAxis type="number" fontSize={12} />
+                      <YAxis type="category" dataKey="name" fontSize={11} width={120} />
+                      <Tooltip />
+                      <Bar dataKey="unsafe" fill={RISK_COLOR.critical} radius={[0, 4, 4, 0]} name={t('obsCards.kpis.assessedUnsafe', 'UNSAFE pela IA')}>
+                        <LabelList dataKey="avgScore" position="right" fontSize={11} />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* PERFORMANCE */}
@@ -685,6 +841,47 @@ export default function ObsCardsDashboard() {
 
 function Sparkle() {
   return <ShieldAlert className="h-10 w-10 opacity-40" />;
+}
+
+function RiskBarCard({
+  title,
+  data,
+  emptyText,
+}: {
+  title: string;
+  data: Array<{ name: string; value: number }>;
+  emptyText: string;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="h-[420px]">
+        {data.length === 0 ? (
+          <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
+            <Sparkle />
+            <p className="mt-2">{emptyText}</p>
+            <p className="text-xs mt-1">{t('obsCards.charts.runAiFirst')}</p>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data} layout="vertical" margin={{ left: 150, right: 30 }}>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+              <XAxis type="number" fontSize={12} />
+              <YAxis type="category" dataKey="name" fontSize={11} width={150} />
+              <Tooltip />
+              <Bar dataKey="value" fill={PALETTE[0]} radius={[0, 4, 4, 0]}>
+                <LabelList dataKey="value" position="right" fontSize={11} />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </CardContent>
+    </Card>
+  );
 }
 
 function SubsetView({ cards, label }: { cards: ObsCard[]; label: string }) {

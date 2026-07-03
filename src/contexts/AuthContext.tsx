@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
 import { getOrganizationUrl } from '@/utils/organizationUrl';
 import { telemetry } from '@/utils/clientTelemetry';
+import { clearCachedData } from '@/utils/offlineStorage';
 
 interface Profile {
   id: string;
@@ -14,9 +15,16 @@ interface Profile {
   email: string;
   avatar_url: string | null;
   unit: string | null;
+  position: string | null;
+  department: string | null;
 }
 
 type AppRole = 'admin' | 'admin_master' | 'technician' | 'supervisor' | 'viewer';
+
+type QueryResult<T> = {
+  data: T | null;
+  error: { code?: string; message?: string } | null;
+};
 
 interface AuthContextType {
   user: User | null;
@@ -61,9 +69,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
 
   const fetchUserData = async (userId: string, force = false) => {
-    // Prevent concurrent fetch storms (especially around token refresh)
-    // Use force=true to bypass this check on initial load
-    if (fetchUserDataInFlightRef.current && !force) return;
+    // Initial session and auth events can fire together; one request is enough.
+    if (fetchUserDataInFlightRef.current) return;
 
     fetchUserDataInFlightRef.current = true;
     // Only show loading skeleton on initial load (no existing profile yet)
@@ -92,7 +99,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           supabase.from('platform_owners').select('id').eq('user_id', userId).maybeSingle(),
         ]),
         timeoutPromise.then(() => { throw new Error('timeout'); }),
-      ]) as any;
+      ]) as [
+        QueryResult<Profile>,
+        QueryResult<{ role: AppRole }>,
+        QueryResult<{ id: string }>
+      ];
 
       // If any request errored (network/auth), don't wipe previously loaded state.
       if (profileResult.error && profileResult.error.code !== 'PGRST116') throw profileResult.error;
@@ -116,7 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsPlatformOwner(!!platformOwnerResult.data);
       setProfileLoading(false);
       telemetry.debug('fetch_user_data_success', { userId });
-    } catch (error: any) {
+    } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
 
       // Timeouts are expected on flaky networks; don't spam logs
@@ -292,14 +303,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Pause Supabase auto-refresh when offline to avoid noisy ERR_INTERNET_DISCONNECTED errors
     const handleOffline = () => {
-      try { void supabase.auth.stopAutoRefresh(); } catch {}
+      try { void supabase.auth.stopAutoRefresh(); } catch { /* best effort */ }
     };
     const handleOnline = () => {
-      try { void supabase.auth.startAutoRefresh(); } catch {}
+      try { void supabase.auth.startAutoRefresh(); } catch { /* best effort */ }
       void refreshIfNeeded();
     };
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-      try { void supabase.auth.stopAutoRefresh(); } catch {}
+      try { void supabase.auth.stopAutoRefresh(); } catch { /* best effort */ }
     }
 
     window.addEventListener('focus', onFocus);
@@ -420,6 +431,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     await supabase.auth.signOut();
+    try {
+      await clearCachedData();
+    } catch (error) {
+      console.error('Error clearing offline cache on logout:', error);
+    }
     setUser(null);
     setSession(null);
     setProfile(null);

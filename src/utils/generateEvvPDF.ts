@@ -9,7 +9,7 @@ import {
 } from './pdfStyles';
 import i18n from '@/i18n';
 import type { OrganizationBranding } from '@/hooks/useOrganizationBranding';
-import { EVV_CATEGORIES, type EvvFormType, type Rating } from '@/features/evv/catalog';
+import { getEvvCategories, type EvvFormType, type Rating } from '@/features/evv/catalog';
 import type { EvvAnswers, EvvScope } from '@/features/evv/types';
 
 const getDateLocale = () => (i18n.language === 'en' ? enUS : ptBR);
@@ -104,8 +104,26 @@ export async function generateEvvPDF(data: EvvPDFData, options?: { preview?: boo
       [
         { content: `${t('evv.scope.environment')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } },
         data.submission.scope.environment || '-',
+        { content: `${t('evv.scope.area')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } },
+        data.submission.scope.area || '-',
+      ],
+      [
         { content: `${t('evv.scope.vessel')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } },
         data.ship?.name || '-',
+        { content: `${t('evv.scope.location')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } },
+        data.submission.scope.location || '-',
+      ],
+      [
+        { content: `${t('evv.scope.visitDate')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } },
+        data.submission.scope.visit_datetime || '-',
+        { content: `${t('evv.scope.permitToWork')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } },
+        data.submission.scope.permit_to_work || '-',
+      ],
+      [
+        { content: `${t('evv.scope.criticalActivity')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } },
+        data.submission.scope.critical_activity || '-',
+        '',
+        '',
       ],
       [
         { content: `${t('evv.scope.yourOrg')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } },
@@ -159,7 +177,7 @@ export async function generateEvvPDF(data: EvvPDFData, options?: { preview?: boo
 
   // === ANSWERS / OBSERVATIONS ===
   const rows: any[] = [];
-  EVV_CATEGORIES.forEach((cat) => {
+  getEvvCategories(data.submission.form_type).forEach((cat) => {
     cat.questions.forEach((q) => {
       const a = data.submission.answers[q.id];
       if (!a || !a.rating) return; // skip unanswered

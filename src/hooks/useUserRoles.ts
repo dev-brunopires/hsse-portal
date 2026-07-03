@@ -96,32 +96,34 @@ export function useDeleteUser() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { organization } = useOrganization();
 
   return useMutation({
     mutationFn: async (userId: string) => {
-      // Get the current session for authorization
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error(t('auth.notAuthenticated', 'Not authenticated'));
+      if (!organization?.id) {
+        throw new Error(t('userRoles.organizationNotFound', 'Organizacao nao encontrada'));
       }
 
-      // Call the edge function to delete the user completely
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-user`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({ userId }),
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { userId, organizationId: organization.id },
+      });
+
+      if (error) {
+        let message = error.message || t('userRoles.errorRemoving');
+        const response = (error as { context?: Response }).context;
+        if (response) {
+          try {
+            const payload = await response.clone().json() as { error?: string };
+            if (payload.error) message = payload.error;
+          } catch {
+            // Keep the SDK message when the response is not JSON.
+          }
         }
-      );
+        throw new Error(message);
+      }
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || t('userRoles.errorRemoving'));
+      if (data && typeof data === 'object' && 'error' in data) {
+        throw new Error(String(data.error || t('userRoles.errorRemoving')));
       }
 
       return data;

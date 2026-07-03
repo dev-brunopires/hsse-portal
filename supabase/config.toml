@@ -1,4 +1,7 @@
-project_id = "mxyxnnjcsmkswqbosaex"
+project_id = "ovugummbxablwmbpbbhj"
 
 [functions.classify-obs-cards]
+verify_jwt = true
+
+[functions.delete-user]
 verify_jwt = true

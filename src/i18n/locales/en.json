@@ -1,4 +1,24 @@
 {
+  "evv": {
+    "wizard": {
+      "requiredFieldsHint": "Required fields pending",
+      "missingFields": "Complete the following fields: {{fields}}"
+    },
+    "history": {
+      "edit": "Edit",
+      "delete": "Delete",
+      "view": "View",
+      "deleteConfirmTitle": "Delete eV&V record?",
+      "deleteConfirmDescription": "This action cannot be undone. The record will be permanently removed.",
+      "deleteConfirm": "Delete",
+      "deletedTitle": "Record deleted",
+      "deletedDescription": "The eV&V record was successfully removed.",
+      "deleteError": "Error deleting record",
+      "previewTitle": "View eV&V draft",
+      "previewDescription": "Summary of the data entered so far.",
+      "answeredItems": "Answered items"
+    }
+  },
   "errorBoundary": {
     "updateAvailable": "Update Available",
     "somethingWentWrong": "Something went wrong",
@@ -159,7 +179,9 @@
     "platformAdmin": "Platform Admin",
     "supervisor": "Supervisor",
     "groupSafety": "Safety / HSE",
-    "obsCards": "OBS Cards"
+    "obsCards": "OBS Cards",
+    "obsCardsAi": "Observation Card with AI",
+    "safetyObservation": "Safety Observation"
   },
   "mobileHome": {
     "greeting": "Welcome",
@@ -189,8 +211,8 @@
     }
   },
   "obsCards": {
-    "title": "OBS Cards",
-    "subtitle": "Observation card analytics (BCO / PSO)",
+    "title": "Observation Card with AI",
+    "subtitle": "AI-assisted observation card analytics (BCO / PSO)",
     "tabs": {
       "overview": "Executive Overview",
       "risk": "Risk Types",
@@ -287,6 +309,7 @@
       "type": "Type",
       "all": "All",
       "area": "Area",
+      "noRegionAssigned": "No region linked to the selected vessel",
       "department": "Department",
       "status": "Status",
       "severity": "Severity",
@@ -350,7 +373,18 @@
       "runIncremental": "Classify all pending",
       "runReclassify": "Reclassify all (overwrite)",
       "runFilteredPending": "Classify filtered only ({{count}})",
-      "runFilteredReclassify": "Reclassify filtered ({{count}})"
+      "runFilteredReclassify": "Reclassify filtered ({{count}})",
+      "processingTitle": "Processing AI classification",
+      "preparing": "Preparing batch and counting cards...",
+      "refreshing": "Updating dashboard and summary...",
+      "progressDetail": "{{processed}} of {{total}} processed · {{remaining}} remaining",
+      "processingImpact": "Avoid changing dataset, reloading the page, or exporting PDF until processing finishes.",
+      "mode": {
+        "all": "all pending",
+        "all-reclassify": "full reclassification",
+        "filtered": "filtered pending",
+        "filtered-reclassify": "filtered reclassification"
+      }
     }
   },
   "healthCheck": {
@@ -1317,7 +1351,7 @@
       "serialNumber": "Serial Number",
       "capacity": "Capacity",
       "unit": "Unit",
-      "location": "Location",
+      "location": "Vessel location",
       "status": "Status",
       "manufacturingDate": "Manufacturing Date",
       "acquisitionDate": "Acquisition Date",
@@ -1445,6 +1479,8 @@
     "phone": "Phone",
     "position": "Position",
     "department": "Department",
+    "selectDepartment": "Select department",
+    "departmentAutoFill": "This department will be filled automatically in forms such as eV&V.",
     "avatar": "Profile Picture",
     "changeAvatar": "Change Photo",
     "saveChanges": "Save Changes",
@@ -1526,6 +1562,35 @@
     "shipName": "Ship Name",
     "shipCode": "Code",
     "noShips": "No ships registered"
+  },
+  "regions": {
+    "regions": "Regions",
+    "short": "Regions",
+    "region": "Region",
+    "newRegion": "New Region",
+    "createRegion": "Create Region",
+    "editRegion": "Edit Region",
+    "deleteRegion": "Delete Region",
+    "registeredRegions": "Registered Regions",
+    "pageDescription": "Group countries and link ships to an operational region.",
+    "regionName": "Region Name",
+    "countries": "Countries",
+    "countriesHelp": "Select one or more countries that compose this region.",
+    "selected": "selected",
+    "searchCountries": "Search countries...",
+    "searchRegions": "Search regions...",
+    "searchShips": "Search ships...",
+    "formDescription": "A region represents a group of countries and can receive multiple ships.",
+    "descriptionPlaceholder": "E.g.: South America operations",
+    "selectRegion": "Select a region",
+    "noRegion": "No region",
+    "empty": "No regions registered",
+    "shipsLinked": "ships",
+    "linkedShips": "Linked ships",
+    "linkedShipsHelp": "Select all ships that belong to this region. A region can contain unlimited ships.",
+    "shipsSelected": "ships selected",
+    "noShipsAvailable": "No ships available",
+    "deleteConfirm": "Delete region {{name}}? Linked ships will be left without a region."
   },
   "alerts": {
     "title": "Alert Center",
@@ -1738,6 +1803,8 @@
     "phone": "Phone",
     "position": "Position",
     "department": "Department",
+    "selectDepartment": "Select department",
+    "departmentAutoFill": "This department will be filled automatically in forms such as eV&V.",
     "saveChanges": "Save Changes",
     "saving": "Saving...",
     "photoCropped": "Photo cropped",
@@ -2451,6 +2518,17 @@
       "deleted": "Equipment Deleted",
       "deletedDesc": "The equipment was deleted successfully.",
       "deleteError": "Error Deleting"
+    },
+    "ships": {
+      "created": "Unit Created",
+      "createdDesc": "The unit was created successfully.",
+      "createError": "Error Creating Unit",
+      "updated": "Unit Updated",
+      "updatedDesc": "The unit was updated successfully.",
+      "updateError": "Error Updating Unit",
+      "deleted": "Unit Deleted",
+      "deletedDesc": "The unit was deleted successfully.",
+      "deleteError": "Error Deleting Unit"
     },
     "inspection": {
       "created": "Inspection Registered",

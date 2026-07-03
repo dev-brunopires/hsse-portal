@@ -36,7 +36,6 @@ import { NonConformityResolutionCard } from '@/components/dashboard/NonConformit
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useShips } from '@/hooks/useShips';
 import { useCategories } from '@/hooks/useCategories';
-import { useRoutePrefetch } from '@/hooks/useRoutePrefetch';
 import { useShipFilter } from '@/contexts/ShipFilterContext';
 
 import { DashboardSkeleton } from '@/components/ui/SmartSkeletons';
@@ -53,14 +52,11 @@ export default function Dashboard() {
   const dateLocale = i18n.language === 'en' ? enUS : ptBR;
   const queryClient = useQueryClient();
   const { selectedShipId, setSelectedShipId, isFilterEnabled, isReady: isShipFilterReady } = useShipFilter();
-  const { data: stats, isLoading, error, refetch, isFetching } = useDashboardStats();
+  const { data: stats, isLoading, isPending, error, refetch, isFetching, failureCount } = useDashboardStats();
   const { data: ships = [] } = useShips();
   const { data: categories = [] } = useCategories();
   const branding = useOrganizationBranding();
   
-  // Prefetch data for common routes
-  useRoutePrefetch();
-
   // Sync dashboard filters with global ship filter
   const [filters, setFiltersState] = useState<DashboardFiltersState>({
     shipId: selectedShipId || 'all',
@@ -114,11 +110,15 @@ export default function Dashboard() {
 
   // While auth/ship filter is still initializing, the query is disabled and returns
   // no data — show skeleton instead of falling through to the error UI.
-  if (isLoading || !isShipFilterReady) {
+  const isTransientDashboardLoad =
+    !stats &&
+    (isLoading || isPending || isFetching || (failureCount > 0 && failureCount < 3));
+
+  if (!isShipFilterReady || isTransientDashboardLoad) {
     return <DashboardSkeleton />;
   }
 
-  if (error || !stats) {
+  if ((error && !isFetching) || !stats) {
     // Provide fallback text if translations aren't loaded
     const errorMessage = t('errors.generic', { defaultValue: 'Algo deu errado. Tente novamente.' });
     const tryAgainText = t('common.tryAgain', { defaultValue: 'Tentar novamente' });

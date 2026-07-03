@@ -23,7 +23,7 @@ import { useShips } from '@/hooks/useShips';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDateTime } from '@/utils/dateFormat';
 import { cn } from '@/lib/utils';
-import { EVV_CATEGORIES, type EvvFormType } from '../catalog';
+import { getEvvCategories, type EvvFormType } from '../catalog';
 import type { EvvAnswers, EvvScope } from '../types';
 import { generateEvvPDF } from '@/utils/generateEvvPDF';
 
@@ -141,6 +141,10 @@ export default function EvvSubmissionDetail() {
     const sid = submission?.scope.vessel_ids?.[0];
     return sid ? ships.find((s) => s.id === sid) ?? null : null;
   }, [submission, ships]);
+  const categories = useMemo(
+    () => submission ? getEvvCategories(submission.form_type) : [],
+    [submission?.form_type],
+  );
 
   async function saveReview(status: 'approved' | 'rejected') {
     if (!submission || !user) return;
@@ -272,7 +276,12 @@ export default function EvvSubmissionDetail() {
         <CardHeader><CardTitle>{t('evv.pdf.scopeSection')}</CardTitle></CardHeader>
         <CardContent className="grid gap-3 md:grid-cols-2 text-sm">
           <Field label={t('evv.scope.environment')} value={submission.scope.environment} />
+          <Field label={t('evv.scope.area')} value={submission.scope.area} />
           <Field label={t('evv.scope.vessel')} value={ship?.name} />
+          <Field label={t('evv.scope.location')} value={submission.scope.location} />
+          <Field label={t('evv.scope.visitDate')} value={submission.scope.visit_datetime} />
+          <Field label={t('evv.scope.permitToWork')} value={submission.scope.permit_to_work} />
+          <Field label={t('evv.scope.criticalActivity')} value={submission.scope.critical_activity} />
           <Field label={t('evv.scope.yourOrg')} value={submission.scope.your_organization} />
           <Field label={t('evv.scope.department')} value={submission.scope.department} />
           {submission.form_type === 'leaders_engagement' && (
@@ -289,7 +298,7 @@ export default function EvvSubmissionDetail() {
       <Card>
         <CardHeader><CardTitle>{t('evv.pdf.observationsSection')}</CardTitle></CardHeader>
         <CardContent className="space-y-3">
-          {EVV_CATEGORIES.map((cat) => {
+          {categories.map((cat) => {
             const rows = cat.questions
               .map((q) => ({ q, a: submission.answers[q.id] }))
               .filter((r) => r.a?.rating);
@@ -301,7 +310,12 @@ export default function EvvSubmissionDetail() {
                   {rows.map(({ q, a }) => (
                     <div key={q.id} className="text-sm">
                       <div className="flex items-start justify-between gap-2">
-                        <span className="flex-1">{q.text}</span>
+                        <span className="flex-1">
+                          {q.text}
+                          {q.guidance && (
+                            <span className="block text-xs text-muted-foreground mt-0.5">{q.guidance}</span>
+                          )}
+                        </span>
                         <Badge
                           variant="outline"
                           className={cn(

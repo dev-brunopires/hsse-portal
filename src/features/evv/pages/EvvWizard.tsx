@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Send, Save, ClipboardList } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Send, Save, ClipboardList, Globe2, Ship as ShipIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,18 +14,22 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import { DateTimePicker } from '@/components/ui/date-picker';
 import { toast } from 'sonner';
-import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useUserShips } from '@/hooks/useUserShips';
 import { useShips } from '@/hooks/useShips';
 import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { EVV_CATEGORIES, type EvvFormType, type Rating } from '../catalog';
+import { getEvvCategories, type EvvFormType, type Rating } from '../catalog';
 import type { EvvAnswers, EvvScope, EvvSubmission } from '../types';
 import { getSubmissionLocal, saveSubmissionLocal } from '../offline';
+import { getDepartmentLabel } from '@/data/departments';
+import { AreaCombobox } from '@/components/ships/AreaCombobox';
+import { useShipFilter } from '@/contexts/ShipFilterContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useRegions } from '@/hooks/useRegions';
 
 function newClientId(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
@@ -33,7 +37,8 @@ function newClientId(): string {
 }
 
 const EMPTY_SCOPE: EvvScope = {
-  environment: '', vessel_ids: [],
+  environment: '', area: '', location: '', visit_datetime: '',
+  permit_to_work: '', critical_activity: '', vessel_ids: [],
   department: '', your_organization: '', your_role: '',
   task_description: '', observed_organization: '', observed_role: '',
 };
@@ -48,16 +53,17 @@ const FORM_TITLE_KEY: Record<EvvFormType, string> = {
 };
 
 export default function EvvWizard() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { formType } = useParams<{ formType: EvvFormType }>();
   const [params] = useSearchParams();
   const draftIdParam = params.get('draft');
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile, role, isPlatformOwner } = useAuth();
   const { organization } = useOrganization();
 
   const formId = (formType ?? 'safeguard') as EvvFormType;
   const isLeaders = formId === 'leaders_engagement';
+  const categories = useMemo(() => getEvvCategories(formId), [formId]);
 
   const [clientId] = useState<string>(() => draftIdParam || newClientId());
   const [step, setStep] = useState(0);
@@ -65,28 +71,30 @@ export default function EvvWizard() {
   const [answers, setAnswers] = useState<EvvAnswers>({});
   const [comments, setComments] = useState('');
   const [loaded, setLoaded] = useState(false);
+  const [scopeValidationAttempted, setScopeValidationAttempted] = useState(false);
 
   // === Auto-fill sources ===
-  const { data: userShips = [] } = useUserShips(user?.id);
-  const { data: orgShips = [] } = useShips();
+  const { data: userShips = [], isLoading: userShipsLoading } = useUserShips(user?.id);
+  const { data: orgShips = [], isLoading: orgShipsLoading } = useShips();
+  const { data: regions = [], isLoading: regionsLoading } = useRegions();
+  const { selectedShipId, isReady: shipFilterReady } = useShipFilter();
+  const shipsLoading = userShipsLoading || orgShipsLoading || regionsLoading || !shipFilterReady;
 
-  // Fallback: if user has no explicit ship assignments, allow all org ships
+  const canUseAllOrganizationShips = role === 'admin' || role === 'admin_master' || isPlatformOwner;
   const availableShips = userShips.length > 0
     ? userShips.map((us) => ({ id: us.ship_id, name: us.ship?.name ?? us.ship_id }))
-    : orgShips.map((s) => ({ id: s.id, name: s.name }));
-
-  const { data: profile } = useQuery({
-    queryKey: ['evv-profile', user?.id],
-    enabled: !!user?.id,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('department, position, full_name')
-        .eq('user_id', user!.id)
-        .maybeSingle();
-      return data;
-    },
-  });
+    : canUseAllOrganizationShips
+      ? orgShips.map((s) => ({ id: s.id, name: s.name }))
+      : [];
+  const accountShipId = (
+    selectedShipId && availableShips.some((ship) => ship.id === selectedShipId)
+      ? selectedShipId
+      : availableShips[0]?.id
+  ) || '';
+  const shipId = scope.vessel_ids[0] || accountShipId;
+  const selectedShip = availableShips.find((ship) => ship.id === shipId);
+  const selectedShipRecord = orgShips.find((ship) => ship.id === shipId);
+  const selectedRegion = regions.find((region) => region.id === selectedShipRecord?.region_id);
 
   // Hydrate draft
   useEffect(() => {
@@ -103,15 +111,32 @@ export default function EvvWizard() {
     })();
   }, [draftIdParam]);
 
-  // Auto-populate read-only fields from logged user.
-  // Department now pulls from profile.position (cargo) first, then profile.department.
+  // Auto-populate read-only fields from the logged user's profile.
   useEffect(() => {
     setScope((prev) => ({
       ...prev,
       your_organization: prev.your_organization || organization?.name || '',
-      department: prev.department || profile?.position || profile?.department || '',
+      department: prev.department || getDepartmentLabel(profile?.department, i18n.resolvedLanguage) || profile?.position || '',
+      your_role: prev.your_role || role || '',
     }));
-  }, [organization?.name, profile?.position, profile?.department]);
+  }, [organization?.name, profile?.position, profile?.department, role, i18n.resolvedLanguage]);
+
+  useEffect(() => {
+    if (!accountShipId || draftIdParam || shipsLoading) return;
+    setScope((prev) => (
+      prev.vessel_ids[0] === accountShipId
+        ? prev
+        : { ...prev, vessel_ids: [accountShipId], location: '' }
+    ));
+  }, [accountShipId, draftIdParam, shipsLoading]);
+
+  useEffect(() => {
+    if (draftIdParam || shipsLoading) return;
+    setScope((prev) => ({
+      ...prev,
+      area: selectedRegion?.name || '',
+    }));
+  }, [draftIdParam, selectedRegion?.name, shipsLoading]);
 
 
   // Auto-save draft
@@ -143,20 +168,48 @@ export default function EvvWizard() {
     setAnswer(qid, { deficiencies: next });
   }
 
-  function toggleVessel(shipId: string) {
-    setScope((prev) => ({
-      ...prev,
-      vessel_ids: prev.vessel_ids.includes(shipId)
-        ? prev.vessel_ids.filter((id) => id !== shipId)
-        : [...prev.vessel_ids, shipId],
+  const scopeMissingFields = useMemo(() => {
+    const missing: string[] = [];
+    if (!scope.environment) missing.push(t('evv.scope.environment'));
+    if (!scope.area) missing.push(t('evv.scope.area'));
+    if (!scope.visit_datetime) missing.push(t('evv.scope.visitDate'));
+    if (!scope.your_organization) missing.push(t('evv.scope.yourOrg'));
+    if (!scope.department) missing.push(t('evv.scope.department'));
+    if (scope.vessel_ids.length === 0) missing.push(t('evv.scope.vessel'));
+    if (!scope.location) missing.push(t('evv.scope.location'));
+    if (!scope.permit_to_work) missing.push(t('evv.scope.permitToWork'));
+    if (!scope.critical_activity) missing.push(t('evv.scope.criticalActivity'));
+    if (isLeaders && !scope.observed_organization) missing.push(t('evv.scope.observedOrg'));
+    if (isLeaders && !scope.observed_role) missing.push(t('evv.scope.observedRole'));
+    if (scope.task_description.trim().length < 3) missing.push(t('evv.scope.task'));
+    return missing;
+  }, [isLeaders, scope, t]);
+  const scopeValid = scopeMissingFields.length === 0;
+  const categoriesValid = Object.entries(answers).some(([, a]) => !!a.rating)
+    && categories.every((cat) => cat.questions.every((q) => {
+      const answer = answers[q.id];
+      return answer?.rating !== 'not_effective' || (answer.deficiencies?.length ?? 0) > 0;
     }));
-  }
-
-  // Validação relaxada: permite avançar/salvar mesmo com campos vazios.
-  const scopeValid = true;
-  const categoriesValid = true;
+  const hasNotEffective = Object.values(answers).some((a) => a.rating === 'not_effective');
+  const closingValid = !hasNotEffective || comments.trim().length >= 3;
 
   async function handleSubmit() {
+    if (!scopeValid) {
+      toast.error(t('evv.wizard.scopeRequired'));
+      setStep(0);
+      return;
+    }
+    if (!categoriesValid) {
+      toast.error(t('evv.wizard.answersRequired'));
+      setStep(1);
+      return;
+    }
+    if (!closingValid) {
+      toast.error(t('evv.wizard.commentsRequired'));
+      setStep(2);
+      return;
+    }
+
     const submitted_at = new Date().toISOString();
     const isOnline = navigator.onLine && !!user && !!organization?.id;
 
@@ -220,50 +273,93 @@ export default function EvvWizard() {
           <CardContent className="grid gap-4 md:grid-cols-2">
             {/* Environment */}
             <div className="space-y-2">
-              <Label>{t('evv.scope.environment')}</Label>
+              <RequiredLabel>{t('evv.scope.environment')}</RequiredLabel>
               <Select value={scope.environment} onValueChange={(v) => setScope({ ...scope, environment: v as any })}>
                 <SelectTrigger><SelectValue placeholder={t('evv.scope.select')} /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="fpso">FPSO</SelectItem>
                   <SelectItem value="project">Project</SelectItem>
                   <SelectItem value="office">Office</SelectItem>
+                  <SelectItem value="yard">Yard</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
+            <div className="space-y-2">
+              <RequiredLabel>{t('evv.scope.area')}</RequiredLabel>
+              <div className="flex h-10 items-center gap-2 rounded-md border border-input bg-muted/40 px-3 text-sm">
+                <Globe2 className="h-4 w-4 shrink-0 text-primary" />
+                <span className="truncate">
+                  {shipsLoading
+                    ? t('common.loading')
+                    : scope.area || t('evv.scope.noRegionAssigned')}
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <RequiredLabel>{t('evv.scope.visitDate')}</RequiredLabel>
+              <DateTimePicker
+                value={scope.visit_datetime}
+                onChange={(value) => setScope({ ...scope, visit_datetime: value })}
+              />
+            </div>
+
             {/* Your Organization (auto, read-only) */}
             <div className="space-y-2">
-              <Label>{t('evv.scope.yourOrg')}</Label>
+              <RequiredLabel>{t('evv.scope.yourOrg')}</RequiredLabel>
               <Input value={scope.your_organization} readOnly className="bg-muted/40" />
             </div>
 
             {/* Department (auto from profile cargo, read-only) */}
             <div className="space-y-2">
-              <Label>{t('evv.scope.department')}</Label>
+              <RequiredLabel>{t('evv.scope.department')}</RequiredLabel>
               <Input value={scope.department} readOnly className="bg-muted/40" />
             </div>
 
-            {/* Site / Vessel (standard select) */}
+            {/* Vessel follows the global account selection, as in Heat Stress. */}
             <div className="space-y-2 md:col-span-2">
-              <Label>{t('evv.scope.vessel')}</Label>
-              <Select
-                value={scope.vessel_ids[0] ?? ''}
-                onValueChange={(v) => setScope({ ...scope, vessel_ids: v ? [v] : [] })}
-                disabled={availableShips.length === 0}
-              >
-                <SelectTrigger>
-                  <SelectValue
-                    placeholder={
-                      availableShips.length === 0
-                        ? t('evv.scope.noVesselsAssigned')
-                        : t('evv.scope.select')
-                    }
-                  />
-                </SelectTrigger>
+              <RequiredLabel>{t('evv.scope.vessel')}</RequiredLabel>
+              <div className="flex h-10 items-center gap-2 rounded-md border border-input bg-muted/40 px-3 text-sm">
+                <ShipIcon className="h-4 w-4 shrink-0 text-primary" />
+                <span className="truncate font-medium">
+                  {shipsLoading
+                    ? t('common.loading')
+                    : selectedShip?.name || t('evv.scope.noVesselsAssigned')}
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-2 md:col-span-2">
+              <RequiredLabel>{t('evv.scope.location')}</RequiredLabel>
+              <AreaCombobox
+                shipId={shipId}
+                value={scope.location}
+                onChange={(value) => setScope({ ...scope, location: value })}
+                placeholder={t('evv.scope.locationPlaceholder')}
+                disabled={shipsLoading || !shipId}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <RequiredLabel>{t('evv.scope.permitToWork')}</RequiredLabel>
+              <Select value={scope.permit_to_work} onValueChange={(v) => setScope({ ...scope, permit_to_work: v as any })}>
+                <SelectTrigger><SelectValue placeholder={t('evv.scope.select')} /></SelectTrigger>
                 <SelectContent>
-                  {availableShips.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                  ))}
+                  <SelectItem value="yes">{t('common.yes')}</SelectItem>
+                  <SelectItem value="no">{t('common.no')}</SelectItem>
+                  <SelectItem value="na">N/A</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <RequiredLabel>{t('evv.scope.criticalActivity')}</RequiredLabel>
+              <Select value={scope.critical_activity} onValueChange={(v) => setScope({ ...scope, critical_activity: v as any })}>
+                <SelectTrigger><SelectValue placeholder={t('evv.scope.select')} /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="yes">{t('common.yes')}</SelectItem>
+                  <SelectItem value="no">{t('common.no')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -273,7 +369,7 @@ export default function EvvWizard() {
             {isLeaders && (
               <>
                 <div className="space-y-2">
-                  <Label>{t('evv.scope.observedOrg')}</Label>
+                  <RequiredLabel>{t('evv.scope.observedOrg')}</RequiredLabel>
                   <Select value={scope.observed_organization || ''} onValueChange={(v) => setScope({ ...scope, observed_organization: v as any })}>
                     <SelectTrigger><SelectValue placeholder={t('evv.scope.select')} /></SelectTrigger>
                     <SelectContent>
@@ -284,7 +380,7 @@ export default function EvvWizard() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>{t('evv.scope.observedRole')}</Label>
+                  <RequiredLabel>{t('evv.scope.observedRole')}</RequiredLabel>
                   <Select value={scope.observed_role || ''} onValueChange={(v) => setScope({ ...scope, observed_role: v as any })}>
                     <SelectTrigger><SelectValue placeholder={t('evv.scope.select')} /></SelectTrigger>
                     <SelectContent>
@@ -298,7 +394,7 @@ export default function EvvWizard() {
             )}
 
             <div className="space-y-2 md:col-span-2">
-              <Label>{t('evv.scope.task')}</Label>
+              <RequiredLabel>{t('evv.scope.task')}</RequiredLabel>
               <Textarea
                 rows={3}
                 value={scope.task_description}
@@ -306,6 +402,12 @@ export default function EvvWizard() {
                 placeholder={t('evv.scope.taskPlaceholder')}
               />
             </div>
+            {scopeValidationAttempted && scopeMissingFields.length > 0 && (
+              <div className="rounded-md border border-primary/30 bg-primary/5 p-3 text-sm md:col-span-2">
+                <p className="font-medium text-primary">{t('evv.wizard.requiredFieldsHint')}</p>
+                <p className="mt-1 text-muted-foreground">{scopeMissingFields.join(', ')}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
@@ -315,7 +417,7 @@ export default function EvvWizard() {
           <CardHeader><CardTitle>{t('evv.wizard.step2')}</CardTitle></CardHeader>
           <CardContent>
             <Accordion type="multiple" className="w-full">
-              {EVV_CATEGORIES.map((cat) => (
+              {categories.map((cat) => (
                 <AccordionItem key={cat.id} value={cat.id}>
                   <AccordionTrigger className="text-left">{cat.name}</AccordionTrigger>
                   <AccordionContent className="space-y-4">
@@ -324,6 +426,9 @@ export default function EvvWizard() {
                       return (
                         <div key={q.id} className="rounded-md border p-3 space-y-2">
                           <p className="text-sm font-medium">{q.text}</p>
+                          {q.guidance && (
+                            <p className="text-xs text-muted-foreground">{q.guidance}</p>
+                          )}
                           <div className="flex flex-wrap gap-2">
                             {(['effective', 'not_effective', 'not_assessed'] as Rating[]).map((r) => (
                               <Button
@@ -389,19 +494,37 @@ export default function EvvWizard() {
           </Button>
           {step < 2 && (
             <Button
-              onClick={() => setStep(step + 1)}
-              disabled={(step === 0 && !scopeValid) || (step === 1 && !categoriesValid)}
+              onClick={() => {
+                if (step === 0 && !scopeValid) {
+                  setScopeValidationAttempted(true);
+                  toast.error(t('evv.wizard.missingFields', { fields: scopeMissingFields.join(', ') }));
+                  return;
+                }
+                if (step === 1 && !categoriesValid) {
+                  toast.error(t('evv.wizard.answersRequired'));
+                  return;
+                }
+                setStep(step + 1);
+              }}
             >
               {t('common.next')} <ChevronRight />
             </Button>
           )}
           {step === 2 && (
-            <Button onClick={handleSubmit}>
+            <Button onClick={handleSubmit} disabled={!closingValid}>
               <Send /> {t('evv.wizard.submit')}
             </Button>
           )}
         </div>
       </div>
     </div>
+  );
+}
+
+function RequiredLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <Label>
+      {children} <span className="text-primary" aria-hidden="true">*</span>
+    </Label>
   );
 }

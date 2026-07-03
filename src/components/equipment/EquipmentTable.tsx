@@ -140,6 +140,8 @@ export function EquipmentTable({
     annual: t('equipmentTable.frequencyAnnual'),
     custom: t('equipmentTable.frequencyCustom'),
   };
+  const categoryHeaderText = categoryDescription || categoryName;
+  const displayInspectionFrequency = inspectionFrequency || (categoryName ? 'monthly' : undefined);
 
   // Extract unique manufacturers and units for filters
   const manufacturers = useMemo(() => 
@@ -314,18 +316,20 @@ export function EquipmentTable({
     <>
       <div className="bg-card rounded-xl border border-border overflow-hidden">
         {/* Category Info Header */}
-        {categoryDescription && (
-          <div className="px-4 py-3 bg-primary/5 border-b border-border flex items-center gap-3">
-            <Info className="h-4 w-4 text-primary" />
-            <div className="flex-1">
-              <span className="text-sm text-foreground">{categoryDescription}</span>
-            </div>
-            {inspectionFrequency && (
+        {(categoryHeaderText || displayInspectionFrequency) && (
+          <div className="px-4 py-3 bg-primary/5 border-b border-border flex flex-col sm:flex-row sm:items-center gap-3">
+            {categoryHeaderText && (
+              <div className="flex items-center gap-3 flex-1">
+                <Info className="h-4 w-4 text-primary" />
+                <span className="text-sm text-foreground">{categoryHeaderText}</span>
+              </div>
+            )}
+            {displayInspectionFrequency && (
               <div className="flex items-center gap-2 text-sm">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 <span className="text-muted-foreground">{t('equipmentTable.inspectionFrequency')}:</span>
                 <span className="font-medium text-foreground">
-                  {frequencyLabels[inspectionFrequency] || inspectionFrequency}
+                  {frequencyLabels[displayInspectionFrequency] || displayInspectionFrequency}
                 </span>
               </div>
             )}

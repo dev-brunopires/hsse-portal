@@ -108,6 +108,21 @@ const getInitialOnlineState = () => {
 let globalCacheInProgress = false;
 let globalLastCacheCheck = 0;
 let pendingShipSync: string | null = null; // Bug #4: queue for pending ship sync
+let globalInitialOnlineSyncTriggered = false;
+let globalLastPendingRetryCheck = 0;
+
+async function getCurrentAuthenticatedUserId(): Promise<string | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  return user?.id ?? null;
+}
+
+function clearSessionCacheFlag() {
+  try {
+    sessionStorage.removeItem(SESSION_CACHE_KEY);
+  } catch {
+    // sessionStorage can be unavailable in restricted browser modes.
+  }
+}
 
 // ===== Singleton online/offline listener =====
 // Registered once globally, notifies all hook instances via callbacks set.
@@ -169,6 +184,80 @@ export interface SyncProgressState {
   type: 'inspection' | 'maintenance' | null;
 }
 
+type AccessContext = {
+  role: 'admin' | 'admin_master' | 'technician' | 'supervisor' | 'viewer' | null;
+  shipIds: string[] | null;
+};
+
+type AccessContextPayload = {
+  role?: AccessContext['role'];
+  ship_ids?: string[] | null;
+};
+
+type AccessContextRpcClient = {
+  rpc: (
+    fn: 'get_my_access_context'
+  ) => Promise<{ data: AccessContextPayload | AccessContextPayload[] | null; error: { message?: string } | null }>;
+};
+
+type MaintenancePlanRow = {
+  id: string;
+  equipment_id: string;
+  title: string;
+  description: string | null;
+  frequency: string;
+  next_due_date: string;
+  priority: string;
+  equipment?: {
+    name?: string | null;
+    internal_code?: string | null;
+    ship_id?: string | null;
+    ships?: { name?: string | null } | null;
+  } | null;
+};
+
+type LastInspectionRow = {
+  id: string;
+  equipment_id: string;
+  inspection_date: string;
+  status: string;
+  observations: string | null;
+  recommendations: string | null;
+  actions_taken: string | null;
+  profiles?: { full_name?: string | null } | null;
+};
+
+type SupabaseErrorWithCode = {
+  code?: string;
+};
+
+function getShipScopeKey(shipIds: string[] | null): string {
+  return shipIds === null ? 'all' : shipIds.slice().sort().join(',');
+}
+
+async function getMyAccessContext(userId: string): Promise<AccessContext> {
+  const { data, error } = await (supabase as unknown as AccessContextRpcClient).rpc('get_my_access_context');
+
+  if (!error && data) {
+    const payload = Array.isArray(data) ? data[0] : data;
+    return {
+      role: payload?.role ?? null,
+      shipIds: Array.isArray(payload?.ship_ids) ? payload.ship_ids : null,
+    };
+  }
+
+  // Compatibility fallback until the backend migration exposes get_my_access_context().
+  const [{ data: role }, { data: shipIds }] = await Promise.all([
+    supabase.rpc('get_user_role', { _user_id: userId }),
+    supabase.rpc('get_user_ship_ids', { _user_id: userId }),
+  ]);
+
+  return {
+    role: role ?? null,
+    shipIds: shipIds ?? [],
+  };
+}
+
 /**
  * Get the ship IDs accessible to the current user.
  * Admins/admin_master see all ships in their org; others see assigned ships.
@@ -177,10 +266,9 @@ async function getUserShipIds(): Promise<string[] | null> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  // Check if admin/admin_master (they see all ships in org)
-  const { data: role } = await supabase.rpc('get_user_role', { _user_id: user.id });
+  const access = await getMyAccessContext(user.id);
   
-  if (role === 'admin' || role === 'admin_master') {
+  if (access.role === 'admin' || access.role === 'admin_master') {
     // Check if user has a favorite ship — download only that one
     const { data: fav } = await supabase
       .from('user_favorites')
@@ -197,8 +285,7 @@ async function getUserShipIds(): Promise<string[] | null> {
   }
 
   // For technicians/supervisors/viewers, get assigned ships
-  const { data: shipIds } = await supabase.rpc('get_user_ship_ids', { _user_id: user.id });
-  return shipIds || [];
+  return access.shipIds || [];
 }
 
 export function useOfflineSync() {
@@ -222,11 +309,39 @@ export function useOfflineSync() {
   const syncedShipsRef = useRef<Map<string, number>>(new Map()); // shipId -> timestamp of last sync
   const SHIP_SYNC_COOLDOWN = 1000 * 60 * 5; // 5 min cooldown before re-syncing same ship
 
+  const refreshStatsForUser = useCallback(async (userId: string | null) => {
+    try {
+      const stats = userId
+        ? await offlineDB.getStorageStatsForUser(userId)
+        : await offlineDB.getStorageStats();
+      if (!mountedRef.current) return;
+      setCacheStats(stats);
+      setPendingCount(stats.pendingActionsCount);
+    } catch (error) {
+      console.error('Error refreshing stats:', error);
+    }
+  }, []);
+
+  const ensureCacheOwner = useCallback(async (userId: string): Promise<boolean> => {
+    const cacheOwner = await offlineDB.getCacheOwner();
+    if (!cacheOwner || cacheOwner === userId) {
+      return true;
+    }
+
+    console.warn('Offline cache belongs to another user. Clearing cached read-only data.');
+    await offlineDB.clearCachedData();
+    clearSessionCacheFlag();
+    syncedShipsRef.current.clear();
+    await refreshStatsForUser(userId);
+    return false;
+  }, [refreshStatsForUser]);
+
   // Load initial pending count
   useEffect(() => {
     const loadPendingCount = async () => {
       try {
-        const count = await offlineDB.getPendingActionsCount();
+        const userId = await getCurrentAuthenticatedUserId();
+        const count = await offlineDB.getPendingActionsCount(userId ?? undefined);
         setPendingCount(count);
       } catch (error) {
         console.error('Error loading pending count:', error);
@@ -237,15 +352,9 @@ export function useOfflineSync() {
 
   // Refresh storage stats
   const refreshStats = useCallback(async () => {
-    try {
-      const stats = await offlineDB.getStorageStats();
-      if (!mountedRef.current) return;
-      setCacheStats(stats);
-      setPendingCount(stats.pendingActionsCount);
-    } catch (error) {
-      console.error('Error refreshing stats:', error);
-    }
-  }, []);
+    const userId = await getCurrentAuthenticatedUserId();
+    await refreshStatsForUser(userId);
+  }, [refreshStatsForUser]);
 
   /**
    * Pre-cache data for offline use.
@@ -262,7 +371,20 @@ export function useOfflineSync() {
       console.log('Starting offline data caching...');
 
       // Determine which ships this user can access
+      const userId = await getCurrentAuthenticatedUserId();
+      if (!userId) return;
+      await ensureCacheOwner(userId);
       const userShipIds = await getUserShipIds();
+
+      const shipScopeKey = getShipScopeKey(userShipIds);
+      const previousShipScopeKey = await offlineDB.getMetadata<string>('cache_ship_scope');
+      if (previousShipScopeKey && previousShipScopeKey !== shipScopeKey) {
+        console.log('Offline ship access scope changed. Rebuilding cached read-only data.');
+        await offlineDB.clearCachedData();
+        await offlineDB.setCacheOwner(userId);
+        clearSessionCacheFlag();
+      }
+
       const lastSyncTs = await offlineDB.getLastSyncTimestamp();
       const isFullSync = !lastSyncTs;
       const syncStartTime = new Date().toISOString();
@@ -296,6 +418,8 @@ export function useOfflineSync() {
 
       // Save sync timestamp
       await offlineDB.setLastSyncTimestamp(syncStartTime);
+      await offlineDB.setMetadata('cache_ship_scope', shipScopeKey);
+      await offlineDB.setCacheOwner(userId);
       await offlineDB.setCacheTimestamp();
       await refreshStats();
 
@@ -331,11 +455,16 @@ export function useOfflineSync() {
         syncForShipInternal(shipId);
       }
     }
-  }, [isOnline, t, refreshStats]);
+  }, [isOnline, t, refreshStats, ensureCacheOwner]);
 
   // ===== Sync helper functions =====
 
   async function fullSyncEquipment(shipIds: string[] | null): Promise<number> {
+    if (shipIds && shipIds.length === 0) {
+      await offlineDB.cacheEquipment([]);
+      return 0;
+    }
+
     // Get total count with ship filter
     let countQuery = supabase
       .from('equipment')
@@ -384,6 +513,11 @@ export function useOfflineSync() {
   }
 
   async function deltaSyncEquipment(shipIds: string[] | null, lastSyncTs: string): Promise<number> {
+    if (shipIds && shipIds.length === 0) {
+      await offlineDB.cacheEquipment([]);
+      return 0;
+    }
+
     // Fetch only records updated since last sync
     let query = supabase
       .from('equipment')
@@ -439,6 +573,11 @@ export function useOfflineSync() {
 
   async function checkDeletedEquipment(shipIds: string[] | null) {
     try {
+      if (shipIds && shipIds.length === 0) {
+        await offlineDB.cacheEquipment([]);
+        return;
+      }
+
       // Get all server IDs
       let query = supabase.from('equipment').select('id');
       if (shipIds && shipIds.length > 0) {
@@ -506,7 +645,12 @@ export function useOfflineSync() {
   }
 
   async function syncMaintenancePlans(shipIds: string[] | null) {
-    let query = supabase
+    if (shipIds && shipIds.length === 0) {
+      await offlineDB.cacheMaintenancePlans([]);
+      return;
+    }
+
+    const query = supabase
       .from('maintenance_plans')
       .select(`
         id, equipment_id, title, description, frequency, next_due_date, priority,
@@ -518,7 +662,8 @@ export function useOfflineSync() {
     const { data: maintenancePlans } = await query;
 
     if (maintenancePlans) {
-      let cachedPlans: offlineDB.CachedMaintenancePlan[] = maintenancePlans.map((plan: any) => ({
+      const rows = maintenancePlans as MaintenancePlanRow[];
+      let cachedPlans: offlineDB.CachedMaintenancePlan[] = rows.map((plan) => ({
         id: plan.id,
         equipment_id: plan.equipment_id,
         title: plan.title,
@@ -544,7 +689,10 @@ export function useOfflineSync() {
   async function syncLastInspections(lastSyncTs: string | undefined): Promise<number> {
     // Get equipment IDs from local cache
     const equipmentIds = await offlineDB.getEquipmentIds();
-    if (equipmentIds.length === 0) return 0;
+    if (equipmentIds.length === 0) {
+      await offlineDB.cacheLastInspections([]);
+      return 0;
+    }
 
     const lastInspections: offlineDB.CachedLastInspection[] = [];
     const INSPECTION_BATCH_SIZE = 200;
@@ -570,8 +718,9 @@ export function useOfflineSync() {
       const { data: inspections } = await query;
 
       if (inspections) {
-        const inspectionsByEquipment = new Map<string, any>();
-        for (const insp of inspections) {
+        const inspectionRows = inspections as LastInspectionRow[];
+        const inspectionsByEquipment = new Map<string, LastInspectionRow>();
+        for (const insp of inspectionRows) {
           if (!inspectionsByEquipment.has(insp.equipment_id)) {
             inspectionsByEquipment.set(insp.equipment_id, insp);
           }
@@ -586,7 +735,7 @@ export function useOfflineSync() {
             observations: insp.observations,
             recommendations: insp.recommendations,
             actions_taken: insp.actions_taken,
-            inspector_name: (insp.profiles as any)?.full_name || null,
+            inspector_name: insp.profiles?.full_name || null,
           });
         });
       }
@@ -596,7 +745,7 @@ export function useOfflineSync() {
     
     if (lastSyncTs && lastInspections.length > 0) {
       // Delta: upsert only changed inspections
-      await offlineDB.upsertManyInStore(offlineDB.STORES.LAST_INSPECTIONS as any, lastInspections);
+      await offlineDB.upsertManyInStore(offlineDB.STORES.LAST_INSPECTIONS, lastInspections);
     } else if (!lastSyncTs) {
       // Full sync: replace all
       await offlineDB.cacheLastInspections(lastInspections);
@@ -607,6 +756,10 @@ export function useOfflineSync() {
 
   // Check if cache is stale and notify/refresh (with throttling)
   const checkAndRefreshCache = useCallback(async (force = false) => {
+    const userId = await getCurrentAuthenticatedUserId();
+    if (!userId) return;
+    await ensureCacheOwner(userId);
+
     const now = Date.now();
     if (!force && now - globalLastCacheCheck < MIN_CACHE_CHECK_INTERVAL) {
       return;
@@ -630,14 +783,17 @@ export function useOfflineSync() {
     }
 
     sessionStorage.setItem(SESSION_CACHE_KEY, 'true');
-  }, [preCacheData, isOnline]);
+  }, [preCacheData, isOnline, ensureCacheOwner]);
 
   // Upload pending photos for an inspection. Returns true only if ALL photos uploaded.
   const uploadPendingPhotos = useCallback(async (
     localInspectionId: string,
     serverInspectionId: string
   ): Promise<boolean> => {
-    const photos = await offlineDB.getPhotosByInspection(localInspectionId);
+    const userId = await getCurrentAuthenticatedUserId();
+    if (!userId) return false;
+
+    const photos = await offlineDB.getPhotosByInspection(localInspectionId, userId);
     if (photos.length === 0) return true;
 
     const organizationId = await getCurrentOrganizationId();
@@ -652,7 +808,7 @@ export function useOfflineSync() {
         const filePath = generateInspectionPhotoPath(organizationId, serverInspectionId, photo.fileName);
         const { error: uploadError } = await supabase.storage
           .from('inspection-photos')
-          .upload(filePath, file);
+          .upload(filePath, file, { upsert: true });
 
         if (uploadError) {
           console.error('Photo upload error:', uploadError);
@@ -660,13 +816,22 @@ export function useOfflineSync() {
           continue;
         }
 
-        const { error: insertError } = await supabase
+        const { data: existingPhoto } = await supabase
           .from('inspection_photos')
-          .insert({
-            inspection_id: serverInspectionId,
-            file_name: photo.fileName,
-            file_path: filePath,
-          });
+          .select('id')
+          .eq('inspection_id', serverInspectionId)
+          .eq('file_path', filePath)
+          .maybeSingle();
+
+        const { error: insertError } = existingPhoto
+          ? { error: null }
+          : await supabase
+              .from('inspection_photos')
+              .insert({
+                inspection_id: serverInspectionId,
+                file_name: photo.fileName,
+                file_path: filePath,
+              });
 
         if (insertError) {
           console.error('Photo db insert error:', insertError);
@@ -723,8 +888,13 @@ export function useOfflineSync() {
       if (syncInProgressRef.current) return;
     }
 
-    const pendingActions = await offlineDB.getPendingActions();
-    const inspectionActions = pendingActions.filter(a => a.type === 'create_inspection');
+    const userId = await getCurrentAuthenticatedUserId();
+    if (!userId) return;
+
+    const pendingActions = await offlineDB.getPendingActions(userId);
+    const inspectionActions = pendingActions.filter(
+      a => a.type === 'create_inspection' && (a.retryCount || 0) < MAX_RETRY_COUNT
+    );
     
     if (inspectionActions.length === 0) return;
 
@@ -756,6 +926,10 @@ export function useOfflineSync() {
       
       try {
         const inspection = action.data as offlineDB.PendingInspection;
+        if (action.ownerUserId !== userId || inspection.inspector_id !== userId) {
+          console.warn('Skipping inspection action owned by a different user:', action.id);
+          continue;
+        }
         
         const currentIndex = i + 1;
         const percentage = Math.round((currentIndex / totalItems) * 100);
@@ -776,9 +950,14 @@ export function useOfflineSync() {
 
         if (existingByAction) {
           console.log('Inspection already synced (client_action_id match):', action.id);
-          await offlineDB.removePendingAction(action.id);
-          await offlineDB.removePhotosByInspection(inspection.id);
-          skippedCount++;
+          const photosOk = await uploadPendingPhotos(inspection.id, existingByAction.id);
+          if (photosOk) {
+            await offlineDB.removePendingAction(action.id);
+            await offlineDB.removePhotosByInspection(inspection.id, userId);
+            skippedCount++;
+          } else {
+            throw new Error('Inspection already exists, but pending photos failed to upload');
+          }
           continue;
         }
 
@@ -790,7 +969,7 @@ export function useOfflineSync() {
         if (isDuplicate) {
           console.log('Skipping duplicate inspection for equipment:', inspection.equipment_id);
           await offlineDB.removePendingAction(action.id);
-          await offlineDB.removePhotosByInspection(inspection.id);
+          await offlineDB.removePhotosByInspection(inspection.id, userId);
           skippedCount++;
           continue;
         }
@@ -831,12 +1010,8 @@ export function useOfflineSync() {
 
         if (inspectionError) {
           // Unique violation on client_action_id = race already inserted by another retry
-          if ((inspectionError as any).code === '23505') {
-            console.log('Inspection already inserted by concurrent sync, skipping');
-            await offlineDB.removePendingAction(action.id);
-            await offlineDB.removePhotosByInspection(inspection.id);
-            skippedCount++;
-            continue;
+          if ((inspectionError as SupabaseErrorWithCode).code === '23505') {
+            throw new Error('Inspection was inserted by another retry; will reconcile on next sync');
           }
           throw inspectionError;
         }
@@ -871,10 +1046,11 @@ export function useOfflineSync() {
             .eq('id', inspection.equipment_id);
         }
 
-        await offlineDB.removePendingAction(action.id);
         if (!photosOk) {
           console.warn(`Inspection ${newInspection?.id} synced but some photos failed to upload`);
+          throw new Error('Inspection synced, but pending photos failed to upload');
         }
+        await offlineDB.removePendingAction(action.id);
         syncedCount++;
       } catch (error) {
         console.error('Error syncing inspection:', error);
@@ -883,8 +1059,13 @@ export function useOfflineSync() {
         
         if (retryCount >= MAX_RETRY_COUNT) {
           failedActions.push(action.id);
-          await offlineDB.removePendingAction(action.id);
-          console.log(`Inspection sync permanently failed after ${MAX_RETRY_COUNT} attempts`);
+          await offlineDB.updatePendingAction({
+            ...action,
+            retryCount,
+            failedAt: Date.now(),
+            lastError: error instanceof Error ? error.message : String(error),
+          });
+          console.log(`Inspection sync paused after ${MAX_RETRY_COUNT} attempts; pending action kept locally`);
         } else {
           await offlineDB.updatePendingAction({ ...action, retryCount });
           await waitWithBackoff(retryCount);
@@ -946,8 +1127,13 @@ export function useOfflineSync() {
       if (syncInProgressRef.current) return;
     }
 
-    const pendingActions = await offlineDB.getPendingActions();
-    const maintenanceActions = pendingActions.filter(a => a.type === 'complete_maintenance');
+    const userId = await getCurrentAuthenticatedUserId();
+    if (!userId) return;
+
+    const pendingActions = await offlineDB.getPendingActions(userId);
+    const maintenanceActions = pendingActions.filter(
+      a => a.type === 'complete_maintenance' && (a.retryCount || 0) < MAX_RETRY_COUNT
+    );
     
     if (maintenanceActions.length === 0) return;
 
@@ -971,6 +1157,10 @@ export function useOfflineSync() {
       const action = maintenanceActions[i];
       try {
         const maintenance = action.data as offlineDB.PendingMaintenance;
+        if (action.ownerUserId !== userId || maintenance.completed_by !== userId) {
+          console.warn('Skipping maintenance action owned by a different user:', action.id);
+          continue;
+        }
         
         const currentIndex = i + 1;
         const percentage = Math.round((currentIndex / totalItems) * 100);
@@ -982,14 +1172,12 @@ export function useOfflineSync() {
           type: 'maintenance',
         });
         
-        const { data: user } = await supabase.auth.getUser();
-        
         const { error: logError } = await supabase
           .from('maintenance_logs')
           .insert({
             maintenance_plan_id: maintenance.plan_id,
             equipment_id: maintenance.equipment_id,
-            completed_by: user?.user?.id || maintenance.completed_by,
+            completed_by: userId,
             notes: maintenance.notes,
             status: maintenance.status,
           });
@@ -1014,8 +1202,13 @@ export function useOfflineSync() {
         
         if (retryCount >= MAX_RETRY_COUNT) {
           failedActions.push(action.id);
-          await offlineDB.removePendingAction(action.id);
-          console.log(`Maintenance sync permanently failed after ${MAX_RETRY_COUNT} attempts`);
+          await offlineDB.updatePendingAction({
+            ...action,
+            retryCount,
+            failedAt: Date.now(),
+            lastError: error instanceof Error ? error.message : String(error),
+          });
+          console.log(`Maintenance sync paused after ${MAX_RETRY_COUNT} attempts; pending action kept locally`);
         } else {
           await offlineDB.updatePendingAction({ ...action, retryCount });
           await waitWithBackoff(retryCount);
@@ -1100,12 +1293,16 @@ export function useOfflineSync() {
   // Cache refresh only happens once per session via checkAndRefreshCache (throttled to 5min + session flag)
   useEffect(() => {
     if (isOnline) {
-      syncPendingInspections({ silent: true });
-      syncPendingMaintenance({ silent: true });
-      // Only check cache on first mount if not yet checked this session
-      const sessionChecked = sessionStorage.getItem(SESSION_CACHE_KEY);
-      if (!sessionChecked) {
-        checkAndRefreshCache();
+      if (!globalInitialOnlineSyncTriggered) {
+        globalInitialOnlineSyncTriggered = true;
+        window.setTimeout(() => {
+          syncPendingInspections({ silent: true });
+          syncPendingMaintenance({ silent: true });
+          const sessionChecked = sessionStorage.getItem(SESSION_CACHE_KEY);
+          if (!sessionChecked) {
+            checkAndRefreshCache();
+          }
+        }, 2500);
       }
     }
   }, [isOnline]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -1190,8 +1387,17 @@ export function useOfflineSync() {
     if (!isOnline || isSyncing) return;
 
     const retryInterval = setInterval(async () => {
-      const pendingActions = await offlineDB.getPendingActions();
-      const hasFailedActions = pendingActions.some(a => (a.retryCount || 0) > 0);
+      const now = Date.now();
+      if (now - globalLastPendingRetryCheck < 25_000) return;
+      globalLastPendingRetryCheck = now;
+
+      const userId = await getCurrentAuthenticatedUserId();
+      if (!userId) return;
+      const pendingActions = await offlineDB.getPendingActions(userId);
+      const hasFailedActions = pendingActions.some(a => {
+        const retryCount = a.retryCount || 0;
+        return retryCount > 0 && retryCount < MAX_RETRY_COUNT;
+      });
       
       if (hasFailedActions && isOnline && !syncInProgressRef.current) {
         console.log('Auto-retry sync triggered for failed actions');
@@ -1215,14 +1421,20 @@ export function useOfflineSync() {
   // Add a pending action
   const addPendingAction = useCallback(async (
     type: offlineDB.PendingAction['type'], 
-    data: any
+    data: offlineDB.PendingInspection | offlineDB.PendingMaintenance
   ): Promise<string> => {
+    const userId = await getCurrentAuthenticatedUserId();
+    if (!userId) {
+      throw new Error('Cannot save offline action without an authenticated user');
+    }
+
     const action: offlineDB.PendingAction = {
       id: crypto.randomUUID(),
       type,
       data,
       timestamp: Date.now(),
       retryCount: 0,
+      ownerUserId: userId,
     };
     
     await offlineDB.addPendingAction(action);
@@ -1239,9 +1451,15 @@ export function useOfflineSync() {
   const addPendingInspection = useCallback(async (
     inspection: Omit<offlineDB.PendingInspection, 'id' | 'timestamp'> & { id?: string }
   ): Promise<string> => {
+    const userId = await getCurrentAuthenticatedUserId();
+    if (!userId) {
+      throw new Error('Cannot save offline inspection without an authenticated user');
+    }
+
     const pendingInspection: offlineDB.PendingInspection = {
       ...inspection,
       id: inspection.id || crypto.randomUUID(),
+      inspector_id: userId,
       timestamp: Date.now(),
     };
     
@@ -1251,9 +1469,15 @@ export function useOfflineSync() {
   const addPendingMaintenance = useCallback(async (
     maintenance: Omit<offlineDB.PendingMaintenance, 'id' | 'timestamp'>
   ): Promise<string> => {
+    const userId = await getCurrentAuthenticatedUserId();
+    if (!userId) {
+      throw new Error('Cannot save offline maintenance without an authenticated user');
+    }
+
     const pendingMaintenance: offlineDB.PendingMaintenance = {
       ...maintenance,
       id: crypto.randomUUID(),
+      completed_by: userId,
       timestamp: Date.now(),
     };
     
@@ -1272,6 +1496,11 @@ export function useOfflineSync() {
 
   const getOfflineData = useCallback(async () => {
     try {
+      const userId = await getCurrentAuthenticatedUserId();
+      if (!userId) return null;
+      const cacheOwnerOk = await ensureCacheOwner(userId);
+      if (!cacheOwnerOk) return null;
+
       const [equipment, categories, ships, templates, maintenancePlans, lastInspections, cacheTimestamp] = await Promise.all([
         offlineDB.getEquipment(),
         offlineDB.getCategories(),
@@ -1295,41 +1524,55 @@ export function useOfflineSync() {
       console.error('Error getting offline data:', error);
       return null;
     }
-  }, []);
+  }, [ensureCacheOwner]);
 
   const getLastInspectionOffline = useCallback(async (equipmentId: string): Promise<offlineDB.CachedLastInspection | undefined> => {
     return offlineDB.getLastInspectionByEquipment(equipmentId);
   }, []);
 
   const getPendingInspections = useCallback(async (): Promise<offlineDB.PendingInspection[]> => {
-    const actions = await offlineDB.getPendingActions();
+    const userId = await getCurrentAuthenticatedUserId();
+    if (!userId) return [];
+    const actions = await offlineDB.getPendingActions(userId);
     return actions
       .filter(a => a.type === 'create_inspection')
       .map(a => a.data as offlineDB.PendingInspection);
   }, []);
 
   const getPendingMaintenance = useCallback(async (): Promise<offlineDB.PendingMaintenance[]> => {
-    const actions = await offlineDB.getPendingActions();
+    const userId = await getCurrentAuthenticatedUserId();
+    if (!userId) return [];
+    const actions = await offlineDB.getPendingActions(userId);
     return actions
       .filter(a => a.type === 'complete_maintenance')
       .map(a => a.data as offlineDB.PendingMaintenance);
   }, []);
 
   const isCacheAvailable = useCallback(async (): Promise<boolean> => {
+    const userId = await getCurrentAuthenticatedUserId();
+    if (!userId) return false;
+    const cacheOwnerOk = await ensureCacheOwner(userId);
+    if (!cacheOwnerOk) return false;
     return offlineDB.isCacheValid(CACHE_MAX_AGE);
-  }, []);
+  }, [ensureCacheOwner]);
 
   const addPendingPhoto = useCallback(async (
     file: File,
     inspectionId: string
   ): Promise<offlineDB.PendingPhoto> => {
-    return offlineDB.processAndStorePhoto(file, inspectionId);
+    const userId = await getCurrentAuthenticatedUserId();
+    if (!userId) {
+      throw new Error('Cannot save offline photo without an authenticated user');
+    }
+    return offlineDB.processAndStorePhoto(file, inspectionId, userId);
   }, []);
 
   const getPendingPhotos = useCallback(async (
     inspectionId: string
   ): Promise<offlineDB.PendingPhoto[]> => {
-    return offlineDB.getPhotosByInspection(inspectionId);
+    const userId = await getCurrentAuthenticatedUserId();
+    if (!userId) return [];
+    return offlineDB.getPhotosByInspection(inspectionId, userId);
   }, []);
 
   const removePendingPhoto = useCallback(async (photoId: string) => {

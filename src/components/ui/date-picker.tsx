@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { format, parse, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, Clock3 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface DatePickerProps {
   value?: string; // ISO date string YYYY-MM-DD
@@ -170,3 +177,71 @@ export const DatePickerField = React.forwardRef<HTMLButtonElement, DatePickerFie
 );
 
 DatePickerField.displayName = 'DatePickerField';
+
+interface DateTimePickerProps {
+  value?: string;
+  onChange?: (value: string) => void;
+  disabled?: boolean;
+  className?: string;
+}
+
+export function DateTimePicker({
+  value,
+  onChange,
+  disabled = false,
+  className,
+}: DateTimePickerProps) {
+  const [date = '', time = ''] = (value || '').split('T');
+  const [hour = '00', minute = '00'] = time.split(':');
+  const hours = React.useMemo(
+    () => Array.from({ length: 24 }, (_, index) => String(index).padStart(2, '0')),
+    [],
+  );
+  const minutes = React.useMemo(
+    () => Array.from({ length: 60 }, (_, index) => String(index).padStart(2, '0')),
+    [],
+  );
+
+  const emitValue = (nextDate: string, nextHour: string, nextMinute: string) => {
+    onChange?.(nextDate ? `${nextDate}T${nextHour}:${nextMinute}` : '');
+  };
+
+  return (
+    <div className={cn('grid w-full gap-2 sm:grid-cols-[minmax(0,1fr)_88px_88px]', className)}>
+      <DatePicker
+        value={date}
+        onChange={(nextDate) => emitValue(nextDate, hour, minute)}
+        disabled={disabled}
+      />
+      <Select
+        value={hour}
+        onValueChange={(nextHour) => emitValue(date, nextHour, minute)}
+        disabled={disabled}
+      >
+        <SelectTrigger aria-label="Hora" className="gap-2">
+          <Clock3 className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent className="max-h-64">
+          {hours.map((option) => (
+            <SelectItem key={option} value={option}>{option} h</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Select
+        value={minute}
+        onValueChange={(nextMinute) => emitValue(date, hour, nextMinute)}
+        disabled={disabled}
+      >
+        <SelectTrigger aria-label="Minuto">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent className="max-h-64">
+          {minutes.map((option) => (
+            <SelectItem key={option} value={option}>{option} min</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Sparkles, RefreshCw, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -22,9 +22,45 @@ interface Props {
   filteredPendingCount?: number;
   /** Resolve real DB card IDs at click time. mode: 'pending' returns only unclassified; 'all' returns everything in filter. */
   resolveFilteredIds?: (mode: 'pending' | 'all') => Promise<string[]>;
+  onProcessingChange?: (processing: boolean) => void;
+  onProgressChange?: (progress: ClassificationProgress | null) => void;
 }
 
-const BATCH = 80;
+export interface ClassificationProgress {
+  processed: number;
+  remaining: number;
+  total: number;
+  percent: number;
+  mode: string;
+  phase: 'preparing' | 'processing' | 'refreshing';
+}
+
+const BATCH = 60;
+
+function buildProgress({
+  processed,
+  remaining,
+  total,
+  mode,
+  phase,
+}: {
+  processed: number;
+  remaining: number;
+  total?: number;
+  mode: string;
+  phase: ClassificationProgress['phase'];
+}): ClassificationProgress {
+  const resolvedTotal = Math.max(total ?? processed + remaining, processed + remaining, 0);
+  const percent = resolvedTotal > 0 ? Math.min(100, Math.round((processed / resolvedTotal) * 100)) : 0;
+  return {
+    processed,
+    remaining,
+    total: resolvedTotal,
+    percent,
+    mode,
+    phase,
+  };
+}
 
 export function ClassifyDatasetButton({
   datasetId,
@@ -32,16 +68,44 @@ export function ClassifyDatasetButton({
   filteredCount = 0,
   filteredPendingCount = 0,
   resolveFilteredIds,
+  onProcessingChange,
+  onProgressChange,
 }: Props) {
   const { t } = useTranslation();
   const { toast } = useToast();
   const [busy, setBusy] = useState(false);
-  const [progress, setProgress] = useState<{ processed: number; remaining: number } | null>(null);
+  const [progress, setProgress] = useState<ClassificationProgress | null>(null);
 
-  const runChunked = async (ids: string[], reclassify: boolean) => {
+  useEffect(() => {
+    if (!busy) return;
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [busy]);
+
+  const publishProgress = (nextProgress: ClassificationProgress | null) => {
+    setProgress(nextProgress);
+    onProgressChange?.(nextProgress);
+  };
+
+  const runChunked = async (ids: string[], reclassify: boolean, modeLabel: string) => {
     let totalProcessed = 0;
     const total = ids.length;
-    setProgress({ processed: 0, remaining: total });
+    publishProgress(buildProgress({
+      processed: 0,
+      remaining: total,
+      total,
+      mode: modeLabel,
+      phase: 'processing',
+    }));
+
+    if (total === 0) return 0;
+
     for (let i = 0; i < ids.length; i += BATCH) {
       const chunk = ids.slice(i, i + BATCH);
       const { data, error } = await supabase.functions.invoke('classify-obs-cards', {
@@ -56,13 +120,27 @@ export function ClassifyDatasetButton({
       const res = data as { processed: number; error?: string };
       if (res?.error) throw new Error(res.error);
       totalProcessed += res.processed || 0;
-      setProgress({ processed: totalProcessed, remaining: Math.max(0, total - totalProcessed) });
+      publishProgress(buildProgress({
+        processed: totalProcessed,
+        remaining: Math.max(0, total - totalProcessed),
+        total,
+        mode: modeLabel,
+        phase: 'processing',
+      }));
     }
     return totalProcessed;
   };
 
-  const runAll = async (reclassify: boolean) => {
+  const runAll = async (reclassify: boolean, modeLabel: string) => {
     let totalProcessed = 0;
+    publishProgress(buildProgress({
+      processed: 0,
+      remaining: 0,
+      total: 0,
+      mode: modeLabel,
+      phase: 'preparing',
+    }));
+
     for (let i = 0; i < 2000; i++) {
       const { data, error } = await supabase.functions.invoke('classify-obs-cards', {
         body: { dataset_id: datasetId, batch_size: BATCH, reclassify: reclassify && i === 0 },
@@ -71,7 +149,12 @@ export function ClassifyDatasetButton({
       const res = data as { processed: number; remaining: number; done: boolean; error?: string };
       if (res?.error) throw new Error(res.error);
       totalProcessed += res.processed || 0;
-      setProgress({ processed: totalProcessed, remaining: res.remaining || 0 });
+      publishProgress(buildProgress({
+        processed: totalProcessed,
+        remaining: res.remaining || 0,
+        mode: modeLabel,
+        phase: 'processing',
+      }));
       if (res.done || (res.processed === 0 && res.remaining === 0)) break;
     }
     return totalProcessed;
@@ -79,18 +162,33 @@ export function ClassifyDatasetButton({
 
   const run = async (mode: 'all' | 'all-reclassify' | 'filtered' | 'filtered-reclassify') => {
     setBusy(true);
-    setProgress(null);
+    onProcessingChange?.(true);
+    publishProgress(null);
     try {
       let totalProcessed = 0;
-      if (mode === 'all') totalProcessed = await runAll(false);
-      else if (mode === 'all-reclassify') totalProcessed = await runAll(true);
+      const modeLabel = t(`obsCards.classify.mode.${mode}`, {
+        defaultValue: mode,
+      });
+
+      if (mode === 'all') totalProcessed = await runAll(false, modeLabel);
+      else if (mode === 'all-reclassify') totalProcessed = await runAll(true, modeLabel);
       else if (mode === 'filtered') {
+        publishProgress(buildProgress({ processed: 0, remaining: 0, total: 0, mode: modeLabel, phase: 'preparing' }));
         const ids = (await resolveFilteredIds?.('pending')) || [];
-        totalProcessed = await runChunked(ids, false);
+        totalProcessed = await runChunked(ids, false, modeLabel);
       } else if (mode === 'filtered-reclassify') {
+        publishProgress(buildProgress({ processed: 0, remaining: 0, total: 0, mode: modeLabel, phase: 'preparing' }));
         const ids = (await resolveFilteredIds?.('all')) || [];
-        totalProcessed = await runChunked(ids, true);
+        totalProcessed = await runChunked(ids, true, modeLabel);
       }
+
+      publishProgress(buildProgress({
+        processed: totalProcessed,
+        remaining: 0,
+        total: totalProcessed,
+        mode: modeLabel,
+        phase: 'refreshing',
+      }));
 
       toast({
         title: t('obsCards.classify.success'),
@@ -108,6 +206,10 @@ export function ClassifyDatasetButton({
       toast({ title: t('obsCards.classify.error'), description: desc, variant: 'destructive' });
     } finally {
       setBusy(false);
+      onProcessingChange?.(false);
+      window.setTimeout(() => {
+        publishProgress(null);
+      }, 1200);
     }
   };
 
@@ -116,7 +218,7 @@ export function ClassifyDatasetButton({
       <Button size="sm" variant="outline" disabled>
         <Spinner inline size="xs" iconClassName="mr-2" />
         {progress
-          ? t('obsCards.classify.progress', { processed: progress.processed, remaining: progress.remaining })
+          ? `${progress.percent}%`
           : t('obsCards.classify.starting')}
       </Button>
     );

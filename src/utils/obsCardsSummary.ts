@@ -1,7 +1,7 @@
 import type { ObsCard } from '@/hooks/useObsCards';
 import type { Json } from '@/integrations/supabase/types';
 
-const SUMMARY_VERSION = 3;
+const SUMMARY_VERSION = 4;
 
 export type ObsCardsSummaryRow = Pick<
   ObsCard,
@@ -12,6 +12,11 @@ export type ObsCardsSummaryRow = Pick<
   | 'category'
   | 'ai_category'
   | 'ai_risk_level'
+  | 'ai_status_assessment'
+  | 'ai_status_alignment'
+  | 'ai_requires_followup'
+  | 'ai_action_quality'
+  | 'ai_barrier_failure'
   | 'severity'
   | 'is_open'
   | 'month'
@@ -21,6 +26,10 @@ export type ObsCardsSummaryRow = Pick<
   count: number;
   time_to_close_sum: number;
   time_to_close_count: number;
+  ai_confidence_sum: number;
+  ai_confidence_count: number;
+  ai_criticality_score_sum: number;
+  ai_criticality_score_count: number;
 };
 
 export interface ObsCardsDashboardSummary {
@@ -34,6 +43,11 @@ type SummarySourceCard = Partial<ObsCard> & {
   __summary_count?: number;
   __summary_time_to_close_sum?: number;
   __summary_time_to_close_count?: number;
+  raw_row?: {
+    vessel?: unknown;
+    navio?: unknown;
+    ship?: unknown;
+  } | null;
 };
 
 const COMMON_NON_SHIP_CODES = new Set(['BCO', 'PSO', 'SAFE', 'UNSAFE', 'HSE', 'HSSE', 'SMS', 'EPI', 'PPE', 'NA']);
@@ -64,7 +78,7 @@ export function getObsCardTimeToCloseStats(card: Partial<ObsCard>) {
 export function deriveObsCardShipName(card: Partial<ObsCard>): string | null {
   if (card.ship_name?.trim()) return card.ship_name.trim().toUpperCase();
 
-  const raw = (card as any).raw_row;
+  const raw = (card as SummarySourceCard).raw_row;
   const fromRaw = raw && typeof raw === 'object' ? (raw.vessel ?? raw.navio ?? raw.ship) : null;
   if (typeof fromRaw === 'string' && fromRaw.trim()) return fromRaw.trim().toUpperCase();
 
@@ -73,7 +87,7 @@ export function deriveObsCardShipName(card: Partial<ObsCard>): string | null {
     const text = value.trim();
     const upper = text.toUpperCase();
     if (['ESS', 'CDA'].includes(upper)) return upper;
-    const labelled = text.match(/(?:navio|embarca(?:ç|c)[aã]o|vessel|ship)\s*[:\-]?\s*([A-Z0-9-]{2,12})/i);
+    const labelled = text.match(/(?:navio|embarca(?:ç|c)[aã]o|vessel|ship)\s*[:-]?\s*([A-Z0-9-]{2,12})/i);
     if (labelled?.[1]) return labelled[1].toUpperCase();
     if (/^[A-Z]{2,4}[0-9]{0,3}$/.test(upper) && !COMMON_NON_SHIP_CODES.has(upper)) return upper;
   }
@@ -96,6 +110,11 @@ export function buildObsCardsDashboardSummary(cards: SummarySourceCard[]): ObsCa
       card.category || null,
       card.ai_category || null,
       card.ai_risk_level || null,
+      card.ai_status_assessment || null,
+      card.ai_status_alignment || null,
+      card.ai_requires_followup ?? null,
+      card.ai_action_quality || null,
+      card.ai_barrier_failure || null,
       card.severity || null,
       card.is_open ?? null,
       card.month || null,
@@ -108,8 +127,19 @@ export function buildObsCardsDashboardSummary(cards: SummarySourceCard[]): ObsCa
       existing.count += count;
       existing.time_to_close_sum += closeStats.sum;
       existing.time_to_close_count += closeStats.count;
+      if (typeof card.ai_confidence === 'number') {
+        existing.ai_confidence_sum += card.ai_confidence * count;
+        existing.ai_confidence_count += count;
+      }
+      if (typeof card.ai_criticality_score === 'number') {
+        existing.ai_criticality_score_sum += card.ai_criticality_score * count;
+        existing.ai_criticality_score_count += count;
+      }
       continue;
     }
+
+    const hasConfidence = typeof card.ai_confidence === 'number';
+    const hasCriticality = typeof card.ai_criticality_score === 'number';
 
     groups.set(key, {
       obs_type: card.obs_type || null,
@@ -119,6 +149,11 @@ export function buildObsCardsDashboardSummary(cards: SummarySourceCard[]): ObsCa
       category: card.category || null,
       ai_category: card.ai_category || null,
       ai_risk_level: card.ai_risk_level || null,
+      ai_status_assessment: card.ai_status_assessment || null,
+      ai_status_alignment: card.ai_status_alignment || null,
+      ai_requires_followup: card.ai_requires_followup ?? null,
+      ai_action_quality: card.ai_action_quality || null,
+      ai_barrier_failure: card.ai_barrier_failure || null,
       severity: card.severity || null,
       is_open: card.is_open ?? null,
       month: card.month || null,
@@ -127,6 +162,10 @@ export function buildObsCardsDashboardSummary(cards: SummarySourceCard[]): ObsCa
       count,
       time_to_close_sum: closeStats.sum,
       time_to_close_count: closeStats.count,
+      ai_confidence_sum: hasConfidence ? (card.ai_confidence || 0) * count : 0,
+      ai_confidence_count: hasConfidence ? count : 0,
+      ai_criticality_score_sum: hasCriticality ? (card.ai_criticality_score || 0) * count : 0,
+      ai_criticality_score_count: hasCriticality ? count : 0,
     });
   }
 
@@ -176,6 +215,16 @@ export function summaryToObsCards(
     ai_category: row.ai_category,
     ai_risk_level: row.ai_risk_level,
     ai_reasoning: null,
+    ai_status_assessment: row.ai_status_assessment,
+    ai_status_alignment: row.ai_status_alignment,
+    ai_confidence: row.ai_confidence_count ? row.ai_confidence_sum / row.ai_confidence_count : null,
+    ai_criticality_score: row.ai_criticality_score_count
+      ? row.ai_criticality_score_sum / row.ai_criticality_score_count
+      : null,
+    ai_requires_followup: row.ai_requires_followup,
+    ai_action_quality: row.ai_action_quality,
+    ai_barrier_failure: row.ai_barrier_failure,
+    ai_recommended_action: null,
     severity: row.severity,
     time_to_close_days: null,
     is_open: row.is_open,

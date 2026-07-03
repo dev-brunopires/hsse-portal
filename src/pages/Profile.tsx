@@ -35,6 +35,13 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/hooks/useTheme';
 import {
@@ -52,6 +59,7 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { supabase } from '@/integrations/supabase/client';
 import { SignaturePad } from '@/components/inspections/SignaturePad';
 import { AvatarCropDialog } from '@/components/profile/AvatarCropDialog';
+import { departmentOptions, getDepartmentLabel } from '@/data/departments';
 
 const createProfileSchema = (t: (key: string) => string) => z.object({
   full_name: z.string().min(2, t('profilePage.validation.nameMin')),
@@ -470,8 +478,25 @@ export default function Profile() {
                             {t('profilePage.department')}
                           </FormLabel>
                           <FormControl>
-                            <Input placeholder={t('profilePage.department')} {...field} />
+                            <Select value={field.value || ''} onValueChange={field.onChange}>
+                              <SelectTrigger className="w-full bg-background">
+                                <SelectValue placeholder={t('profilePage.selectDepartment')} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {field.value && !departmentOptions.some((option) => option.value === field.value) && (
+                                  <SelectItem value={field.value}>
+                                    {field.value}
+                                  </SelectItem>
+                                )}
+                                {departmentOptions.map((option) => (
+                                  <SelectItem key={option.value} value={option.value}>
+                                    {getDepartmentLabel(option.value, language)}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </FormControl>
+                          <FormDescription>{t('profilePage.departmentAutoFill')}</FormDescription>
                         </FormItem>
                       )}
                     />

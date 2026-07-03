@@ -11,6 +11,7 @@ export interface Ship {
   code: string | null;
   description: string | null;
   organization_id: string | null;
+  region_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -19,6 +20,7 @@ export interface CreateShipData {
   name: string;
   code?: string;
   description?: string;
+  region_id?: string | null;
 }
 
 export interface UpdateShipData {
@@ -26,6 +28,12 @@ export interface UpdateShipData {
   name?: string;
   code?: string;
   description?: string;
+  region_id?: string | null;
+}
+
+function normalizeOptionalText(value?: string | null) {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
 }
 
 export function useShips() {
@@ -80,9 +88,10 @@ export function useCreateShip() {
       const { data: ship, error } = await supabase
         .from('ships')
         .insert({
-          name: data.name,
-          code: data.code || null,
-          description: data.description || null,
+          name: data.name.trim(),
+          code: normalizeOptionalText(data.code),
+          description: normalizeOptionalText(data.description),
+          region_id: data.region_id || null,
           organization_id: organization.id,
         })
         .select()
@@ -116,9 +125,16 @@ export function useUpdateShip() {
   return useMutation({
     mutationFn: async (data: UpdateShipData) => {
       const { id, ...updateData } = data;
+      const shipUpdate = {
+        ...updateData,
+        ...(updateData.name !== undefined ? { name: updateData.name.trim() } : {}),
+        ...(updateData.code !== undefined ? { code: normalizeOptionalText(updateData.code) } : {}),
+        ...(updateData.description !== undefined ? { description: normalizeOptionalText(updateData.description) } : {}),
+      };
+
       const { data: ship, error } = await supabase
         .from('ships')
-        .update(updateData)
+        .update(shipUpdate)
         .eq('id', id)
         .select()
         .single();

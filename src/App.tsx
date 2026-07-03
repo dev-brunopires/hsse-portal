@@ -39,6 +39,7 @@ const HeatStress = lazyWithRetry(() => import("./pages/HeatStress"));
 const ObsCardsDashboard = lazyWithRetry(() => import("./pages/ObsCardsDashboard"));
 const ObsCardsUpload = lazyWithRetry(() => import("./pages/ObsCardsUpload"));
 const ObsCardsDatasets = lazyWithRetry(() => import("./pages/ObsCardsDatasets"));
+const SafetyObservationForm = lazyWithRetry(() => import("./pages/SafetyObservationForm"));
 const EvvHome = lazyWithRetry(() => import("./features/evv/pages/EvvHome"));
 const EvvFormSelector = lazyWithRetry(() => import("./features/evv/pages/FormSelector"));
 const EvvWizard = lazyWithRetry(() => import("./features/evv/pages/EvvWizard"));
@@ -93,7 +94,7 @@ function App() {
                 <Route
                   path="/"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute moduleKey="equipment" pageKey="dashboard">
                       <AppLayout>
                         <Index />
                       </AppLayout>
@@ -103,7 +104,7 @@ function App() {
                 <Route
                   path="/equipment"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute moduleKey="equipment" pageKey="equipment">
                       <AppLayout>
                         <EquipmentList />
                       </AppLayout>
@@ -113,7 +114,7 @@ function App() {
                 <Route
                   path="/inspections"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute moduleKey="equipment" pageKey="inspections">
                       <AppLayout>
                         <Inspections />
                       </AppLayout>
@@ -123,7 +124,7 @@ function App() {
                 <Route
                   path="/reports"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute moduleKey="reports" pageKey="reports">
                       <AppLayout>
                         <Reports />
                       </AppLayout>
@@ -133,7 +134,7 @@ function App() {
                 <Route
                   path="/alerts"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute moduleKey="alerts" pageKey="alerts">
                       <AppLayout>
                         <Alerts />
                       </AppLayout>
@@ -143,7 +144,7 @@ function App() {
                 <Route
                   path="/pending"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute moduleKey="equipment" pageKey="pending">
                       <AppLayout>
                         <PendingRecommendations />
                       </AppLayout>
@@ -153,7 +154,7 @@ function App() {
                 <Route
                   path="/maintenance"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute moduleKey="equipment" pageKey="maintenance">
                       <AppLayout>
                         <Maintenance />
                       </AppLayout>
@@ -163,7 +164,7 @@ function App() {
                 <Route
                   path="/certificates"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute moduleKey="equipment" pageKey="certificates">
                       <AppLayout>
                         <Certificates />
                       </AppLayout>
@@ -173,7 +174,7 @@ function App() {
                 <Route
                   path="/categories"
                   element={
-                    <ProtectedRoute requiredRole="technician">
+                    <ProtectedRoute moduleKey="equipment" pageKey="categories">
                       <AppLayout>
                         <Categories />
                       </AppLayout>
@@ -183,7 +184,7 @@ function App() {
                 <Route
                   path="/users"
                   element={
-                    <ProtectedRoute requiredRole="admin">
+                    <ProtectedRoute moduleKey="admin" pageKey="users">
                       <AppLayout>
                         <Users />
                       </AppLayout>
@@ -193,7 +194,7 @@ function App() {
                 <Route
                   path="/settings"
                   element={
-                    <ProtectedRoute requiredRole="admin">
+                    <ProtectedRoute moduleKey="settings" pageKey="settings">
                       <AppLayout>
                         <Settings />
                       </AppLayout>
@@ -203,7 +204,7 @@ function App() {
                 <Route
                   path="/audit-log"
                   element={
-                    <ProtectedRoute requiredRole="admin">
+                    <ProtectedRoute moduleKey="audit" pageKey="audit_log">
                       <AppLayout>
                         <AuditLog />
                       </AppLayout>
@@ -213,7 +214,7 @@ function App() {
                 <Route
                   path="/profile"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute moduleKey="settings" pageKey="profile">
                       <AppLayout>
                         <Profile />
                       </AppLayout>
@@ -223,7 +224,7 @@ function App() {
                 <Route
                   path="/offline"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute moduleKey="settings" pageKey="offline">
                       <AppLayout>
                         <OfflineData />
                       </AppLayout>
@@ -233,7 +234,7 @@ function App() {
                 <Route
                   path="/diagnostics"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute moduleKey="settings" pageKey="diagnostics">
                       <AppLayout>
                         <Diagnostics />
                       </AppLayout>
@@ -243,7 +244,7 @@ function App() {
                 <Route
                   path="/health-check"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute moduleKey="health" pageKey="health_check">
                       <AppLayout>
                         <HealthCheck />
                       </AppLayout>
@@ -253,7 +254,7 @@ function App() {
                 <Route
                   path="/supervisor"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute moduleKey="equipment" pageKey="supervisor">
                       <AppLayout>
                         <Supervisor />
                       </AppLayout>
@@ -263,7 +264,7 @@ function App() {
                 <Route
                   path="/heat-stress"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute moduleKey="health" pageKey="heat_stress">
                       <AppLayout>
                         <HeatStress />
                       </AppLayout>
@@ -273,7 +274,7 @@ function App() {
                 <Route
                   path="/obs-cards"
                   element={
-                    <ProtectedRoute requiredRole="admin_master">
+                    <ProtectedRoute moduleKey="obs_cards" pageKey="dashboard">
                       <AppLayout>
                         <ObsCardsDashboard />
                       </AppLayout>
@@ -281,9 +282,19 @@ function App() {
                   }
                 />
                 <Route
+                  path="/obs-cards/safety-observation"
+                  element={
+                    <ProtectedRoute moduleKey="obs_cards" pageKey="safety_observation">
+                      <AppLayout>
+                        <SafetyObservationForm />
+                      </AppLayout>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
                   path="/obs-cards/upload"
                   element={
-                    <ProtectedRoute requiredRole="admin_master">
+                    <ProtectedRoute moduleKey="obs_cards" pageKey="upload">
                       <AppLayout>
                         <ObsCardsUpload />
                       </AppLayout>
@@ -293,7 +304,7 @@ function App() {
                 <Route
                   path="/obs-cards/datasets"
                   element={
-                    <ProtectedRoute requiredRole="admin_master">
+                    <ProtectedRoute moduleKey="obs_cards" pageKey="datasets">
                       <AppLayout>
                         <ObsCardsDatasets />
                       </AppLayout>
@@ -301,12 +312,12 @@ function App() {
                   }
                 />
 
-                <Route path="/evv" element={<ProtectedRoute><AppLayout><EvvHome /></AppLayout></ProtectedRoute>} />
-                <Route path="/evv/forms" element={<ProtectedRoute><AppLayout><EvvFormSelector /></AppLayout></ProtectedRoute>} />
-                <Route path="/evv/forms/:formType" element={<ProtectedRoute><AppLayout><EvvWizard /></AppLayout></ProtectedRoute>} />
-                <Route path="/evv/history" element={<ProtectedRoute><AppLayout><EvvHistory /></AppLayout></ProtectedRoute>} />
-                <Route path="/evv/history/:id" element={<ProtectedRoute><AppLayout><EvvSubmissionDetail /></AppLayout></ProtectedRoute>} />
-                <Route path="/evv/reports" element={<ProtectedRoute requiredRole="admin"><AppLayout><EvvReports /></AppLayout></ProtectedRoute>} />
+                <Route path="/evv" element={<ProtectedRoute moduleKey="evv" pageKey="home"><AppLayout><EvvHome /></AppLayout></ProtectedRoute>} />
+                <Route path="/evv/forms" element={<ProtectedRoute moduleKey="evv" pageKey="forms"><AppLayout><EvvFormSelector /></AppLayout></ProtectedRoute>} />
+                <Route path="/evv/forms/:formType" element={<ProtectedRoute moduleKey="evv" pageKey="forms" action="create"><AppLayout><EvvWizard /></AppLayout></ProtectedRoute>} />
+                <Route path="/evv/history" element={<ProtectedRoute moduleKey="evv" pageKey="history"><AppLayout><EvvHistory /></AppLayout></ProtectedRoute>} />
+                <Route path="/evv/history/:id" element={<ProtectedRoute moduleKey="evv" pageKey="history"><AppLayout><EvvSubmissionDetail /></AppLayout></ProtectedRoute>} />
+                <Route path="/evv/reports" element={<ProtectedRoute moduleKey="evv" pageKey="reports"><AppLayout><EvvReports /></AppLayout></ProtectedRoute>} />
 
                 <Route path="*" element={<NotFound />} />
               </Routes>

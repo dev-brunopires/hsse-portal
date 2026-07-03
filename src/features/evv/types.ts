@@ -3,7 +3,12 @@ import type { EvvFormType, Rating } from './catalog';
 export type EvvStatus = 'draft' | 'completed' | 'not_synced';
 
 export interface EvvScope {
-  environment: 'fpso' | 'project' | 'office' | '';
+  environment: 'fpso' | 'project' | 'office' | 'yard' | '';
+  area: string;
+  location: string;
+  visit_datetime: string;
+  permit_to_work: 'yes' | 'no' | 'na' | '';
+  critical_activity: 'yes' | 'no' | '';
   vessel_ids: string[];                       // multi-select – from user's assigned ships
   department: string;                          // auto-fill from profile.department (editable)
   your_organization: string;                   // auto-fill from current organization name (read-only)

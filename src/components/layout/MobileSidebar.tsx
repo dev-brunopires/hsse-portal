@@ -19,11 +19,13 @@ import {
   ShieldAlert,
   ShieldCheck,
   Activity,
+  ClipboardList,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetHeader } from '@/components/ui/sheet';
 import { useAuth } from '@/contexts/AuthContext';
 import { SystemLogo } from '@/components/ui/SystemLogo';
+import { useAccess } from '@/hooks/useAccess';
 
 interface MobileNavItemProps {
   to: string;
@@ -78,7 +80,9 @@ interface MobileSidebarProps {
 
 export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
   const { t } = useTranslation();
-  const { isAdmin, isAdminMaster, isPlatformOwner } = useAuth();
+  const { isPlatformOwner } = useAuth();
+  const access = useAccess();
+  const can = access.can;
 
   const handleNavClick = () => {
     onOpenChange(false);
@@ -97,50 +101,47 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
         {/* Navigation */}
         <nav className="flex-1 p-3 space-y-4 overflow-y-auto">
           <MobileNavGroup label={t('navigation.groupEquipment')}>
-            <MobileNavItem to="/" icon={<LayoutDashboard size={20} />} label={t('navigation.dashboard')} onClick={handleNavClick} />
-            <MobileNavItem to="/equipment" icon={<Package size={20} />} label={t('navigation.equipment')} onClick={handleNavClick} />
-            <MobileNavItem to="/inspections" icon={<ClipboardCheck size={20} />} label={t('navigation.inspections')} onClick={handleNavClick} />
-            <MobileNavItem to="/maintenance" icon={<Wrench size={20} />} label={t('navigation.maintenance')} onClick={handleNavClick} />
-            <MobileNavItem to="/certificates" icon={<Award size={20} />} label={t('navigation.certificates')} onClick={handleNavClick} />
-            <MobileNavItem to="/pending" icon={<AlertCircle size={20} />} label={t('navigation.pendingRecommendations')} onClick={handleNavClick} />
-            <MobileNavItem to="/reports" icon={<FileText size={20} />} label={t('navigation.reports')} onClick={handleNavClick} />
-            <MobileNavItem to="/alerts" icon={<Bell size={20} />} label={t('navigation.alerts')} onClick={handleNavClick} />
-            <MobileNavItem to="/categories" icon={<FolderOpen size={20} />} label={t('navigation.categories')} onClick={handleNavClick} />
-            <MobileNavItem to="/supervisor" icon={<Users size={20} />} label={t('navigation.supervisor')} onClick={handleNavClick} />
+            {can('equipment', 'dashboard') && <MobileNavItem to="/" icon={<LayoutDashboard size={20} />} label={t('navigation.dashboard')} onClick={handleNavClick} />}
+            {can('equipment', 'equipment') && <MobileNavItem to="/equipment" icon={<Package size={20} />} label={t('navigation.equipment')} onClick={handleNavClick} />}
+            {can('equipment', 'inspections') && <MobileNavItem to="/inspections" icon={<ClipboardCheck size={20} />} label={t('navigation.inspections')} onClick={handleNavClick} />}
+            {can('equipment', 'maintenance') && <MobileNavItem to="/maintenance" icon={<Wrench size={20} />} label={t('navigation.maintenance')} onClick={handleNavClick} />}
+            {can('equipment', 'certificates') && <MobileNavItem to="/certificates" icon={<Award size={20} />} label={t('navigation.certificates')} onClick={handleNavClick} />}
+            {can('equipment', 'pending') && <MobileNavItem to="/pending" icon={<AlertCircle size={20} />} label={t('navigation.pendingRecommendations')} onClick={handleNavClick} />}
+            {can('reports', 'reports') && <MobileNavItem to="/reports" icon={<FileText size={20} />} label={t('navigation.reports')} onClick={handleNavClick} />}
+            {can('alerts', 'alerts') && <MobileNavItem to="/alerts" icon={<Bell size={20} />} label={t('navigation.alerts')} onClick={handleNavClick} />}
+            {can('equipment', 'categories') && <MobileNavItem to="/categories" icon={<FolderOpen size={20} />} label={t('navigation.categories')} onClick={handleNavClick} />}
+            {can('equipment', 'supervisor') && <MobileNavItem to="/supervisor" icon={<Users size={20} />} label={t('navigation.supervisor')} onClick={handleNavClick} />}
           </MobileNavGroup>
 
-          <MobileNavGroup label={t('navigation.groupHealth')}>
-            <MobileNavItem to="/heat-stress" icon={<Thermometer size={20} />} label={t('navigation.heatStress')} onClick={handleNavClick} />
-          </MobileNavGroup>
-
-          {(isAdminMaster || isPlatformOwner) && (
-            <MobileNavGroup label={t('navigation.groupSafety')}>
-              <MobileNavItem to="/obs-cards" icon={<ShieldAlert size={20} />} label={t('navigation.obsCards')} onClick={handleNavClick} />
+          {access.canViewModule('health') && (
+            <MobileNavGroup label={t('navigation.groupHealth')}>
+              {can('health', 'heat_stress') && <MobileNavItem to="/heat-stress" icon={<Thermometer size={20} />} label={t('navigation.heatStress')} onClick={handleNavClick} />}
             </MobileNavGroup>
           )}
 
-          <MobileNavGroup label={t('navigation.groupVV')}>
-            <MobileNavItem to="/evv" icon={<ShieldCheck size={20} />} label={t('navigation.evvHome')} onClick={handleNavClick} />
-            <MobileNavItem to="/evv/forms" icon={<ClipboardCheck size={20} />} label={t('navigation.evvForms')} onClick={handleNavClick} />
-            <MobileNavItem to="/evv/history" icon={<History size={20} />} label={t('navigation.evvHistory')} onClick={handleNavClick} />
-            {(isAdmin || isAdminMaster || isPlatformOwner) && (
-              <MobileNavItem to="/evv/reports" icon={<FileText size={20} />} label={t('navigation.evvReports')} onClick={handleNavClick} />
-            )}
-          </MobileNavGroup>
+          {access.canViewModule('obs_cards') && (
+            <MobileNavGroup label={t('navigation.groupSafety')}>
+              {can('obs_cards', 'dashboard') && <MobileNavItem to="/obs-cards" icon={<ShieldAlert size={20} />} label={t('navigation.obsCardsAi')} onClick={handleNavClick} />}
+              {can('obs_cards', 'safety_observation') && <MobileNavItem to="/obs-cards/safety-observation" icon={<ClipboardList size={20} />} label={t('navigation.safetyObservation')} onClick={handleNavClick} />}
+            </MobileNavGroup>
+          )}
+
+          {access.canViewModule('evv') && (
+            <MobileNavGroup label={t('navigation.groupVV')}>
+              {can('evv', 'home') && <MobileNavItem to="/evv" icon={<ShieldCheck size={20} />} label={t('navigation.evvHome')} onClick={handleNavClick} />}
+              {can('evv', 'forms') && <MobileNavItem to="/evv/forms" icon={<ClipboardCheck size={20} />} label={t('navigation.evvForms')} onClick={handleNavClick} />}
+              {can('evv', 'history') && <MobileNavItem to="/evv/history" icon={<History size={20} />} label={t('navigation.evvHistory')} onClick={handleNavClick} />}
+              {can('evv', 'reports') && <MobileNavItem to="/evv/reports" icon={<FileText size={20} />} label={t('navigation.evvReports')} onClick={handleNavClick} />}
+            </MobileNavGroup>
+          )}
         </nav>
 
         {/* Admin Section */}
-        {(isAdmin || isAdminMaster || isPlatformOwner) && (
+        {(can('admin', 'users') || can('audit', 'audit_log') || can('health', 'health_check') || isPlatformOwner) && (
           <div className="border-t border-sidebar-border p-3 space-y-1 shrink-0 pb-safe">
-            {isAdmin && (
-              <>
-                <MobileNavItem to="/users" icon={<Users size={20} />} label={t('navigation.users')} onClick={handleNavClick} />
-                <MobileNavItem to="/audit-log" icon={<History size={20} />} label={t('navigation.auditLog')} onClick={handleNavClick} />
-              </>
-            )}
-            {(isAdminMaster || isPlatformOwner) && (
-              <MobileNavItem to="/health-check" icon={<Activity size={20} />} label={t('navigation.healthCheck')} onClick={handleNavClick} />
-            )}
+            {can('admin', 'users') && <MobileNavItem to="/users" icon={<Users size={20} />} label={t('navigation.users')} onClick={handleNavClick} />}
+            {can('audit', 'audit_log') && <MobileNavItem to="/audit-log" icon={<History size={20} />} label={t('navigation.auditLog')} onClick={handleNavClick} />}
+            {can('health', 'health_check') && <MobileNavItem to="/health-check" icon={<Activity size={20} />} label={t('navigation.healthCheck')} onClick={handleNavClick} />}
             {isPlatformOwner && (
               <MobileNavItem to="/platform-admin" icon={<Building2 size={20} />} label={t('navigation.platformAdmin')} onClick={handleNavClick} />
             )}

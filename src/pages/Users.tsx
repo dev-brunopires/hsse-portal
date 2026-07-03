@@ -13,8 +13,11 @@ import {
   Plus,
   Ship,
   Anchor,
+  Globe2,
+  Map,
   MoreVertical,
   KeyRound,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -50,8 +53,10 @@ import { DeleteUserDialog } from '@/components/users/DeleteUserDialog';
 import { ResetPasswordDialog } from '@/components/users/ResetPasswordDialog';
 import { CreateUserDialog } from '@/components/users/CreateUserDialog';
 import { UserShipsDialog } from '@/components/users/UserShipsDialog';
+import { UserAccessDialog } from '@/components/users/UserAccessDialog';
 import { ShipFormDialog } from '@/components/ships/ShipFormDialog';
 import { DeleteShipDialog } from '@/components/ships/DeleteShipDialog';
+import { RegionFormDialog } from '@/components/regions/RegionFormDialog';
 import { TableSkeleton, CardSkeleton } from '@/components/ui/table-skeleton';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2 } from 'lucide-react';
@@ -59,6 +64,8 @@ import { format } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
 import i18n from '@/i18n';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useDeleteRegion, useRegions, type Region } from '@/hooks/useRegions';
+import { getCountryName } from '@/data/countries';
 
 const getRoleConfig = (t: (key: string) => string) => ({
   admin_master: { label: t('roles.admin_master'), variant: 'destructive' as const, icon: Crown, order: 0 },
@@ -76,12 +83,15 @@ export default function Users() {
   
   const { data: profiles, isLoading } = useProfiles();
   const { data: ships, isLoading: shipsLoading } = useShips();
+  const { data: regions, isLoading: regionsLoading } = useRegions();
+  const deleteRegion = useDeleteRegion();
   const { data: allUserShips } = useAllUserShips();
   const { user: currentUser, isAdminMaster, isPlatformOwner } = useAuth();
   const canResetPassword = isAdminMaster || isPlatformOwner;
   
   const [searchTerm, setSearchTerm] = useState('');
   const [shipSearchTerm, setShipSearchTerm] = useState('');
+  const [regionSearchTerm, setRegionSearchTerm] = useState('');
   
   // User dialogs
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
@@ -90,12 +100,17 @@ export default function Users() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [shipsDialogOpen, setShipsDialogOpen] = useState(false);
   const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
+  const [accessDialogOpen, setAccessDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<ProfileWithRole | null>(null);
   
   // Ship dialogs
   const [shipFormDialogOpen, setShipFormDialogOpen] = useState(false);
   const [deleteShipDialogOpen, setDeleteShipDialogOpen] = useState(false);
   const [selectedShip, setSelectedShip] = useState<ShipType | null>(null);
+
+  // Region dialogs
+  const [regionFormDialogOpen, setRegionFormDialogOpen] = useState(false);
+  const [selectedRegion, setSelectedRegion] = useState<Region | null>(null);
 
   const filteredUsers = profiles?.filter(user => 
     user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -105,7 +120,13 @@ export default function Users() {
 
   const filteredShips = ships?.filter(ship =>
     ship.name.toLowerCase().includes(shipSearchTerm.toLowerCase()) ||
-    ship.code?.toLowerCase().includes(shipSearchTerm.toLowerCase())
+    ship.code?.toLowerCase().includes(shipSearchTerm.toLowerCase()) ||
+    regions?.find((region) => region.id === ship.region_id)?.name.toLowerCase().includes(shipSearchTerm.toLowerCase())
+  ) || [];
+
+  const filteredRegions = regions?.filter(region =>
+    region.name.toLowerCase().includes(regionSearchTerm.toLowerCase()) ||
+    region.countries.some((code) => getCountryName(code).toLowerCase().includes(regionSearchTerm.toLowerCase()))
   ) || [];
 
   const userCounts = {
@@ -146,6 +167,11 @@ export default function Users() {
     setShipsDialogOpen(true);
   };
 
+  const handleManageAccess = (user: ProfileWithRole) => {
+    setSelectedUser(user);
+    setAccessDialogOpen(true);
+  };
+
   const handleResetPassword = (user: ProfileWithRole) => {
     setSelectedUser(user);
     setResetPasswordDialogOpen(true);
@@ -164,6 +190,29 @@ export default function Users() {
   const handleNewShip = () => {
     setSelectedShip(null);
     setShipFormDialogOpen(true);
+  };
+
+  const handleNewRegion = () => {
+    setSelectedRegion(null);
+    setRegionFormDialogOpen(true);
+  };
+
+  const handleEditRegion = (region: Region) => {
+    setSelectedRegion(region);
+    setRegionFormDialogOpen(true);
+  };
+
+  const handleDeleteRegion = async (region: Region) => {
+    if (!window.confirm(t('regions.deleteConfirm', { name: region.name }))) return;
+    await deleteRegion.mutateAsync(region.id);
+  };
+
+  const getRegionName = (regionId?: string | null) => {
+    return regions?.find((region) => region.id === regionId)?.name || t('regions.noRegion');
+  };
+
+  const getRegionShipsCount = (regionId: string) => {
+    return ships?.filter((ship) => ship.region_id === regionId).length || 0;
   };
 
   const getUserRole = (user: ProfileWithRole) => {
@@ -217,6 +266,11 @@ export default function Users() {
               <Ship className="h-4 w-4" />
               <span className="hidden sm:inline">{t('usersPage.shipsTab')}</span>
               <span className="sm:hidden">{t('usersPage.shipsTab')}</span>
+            </TabsTrigger>
+            <TabsTrigger value="regions" className="gap-2">
+              <Map className="h-4 w-4" />
+              <span className="hidden sm:inline">{t('regions.regions')}</span>
+              <span className="sm:hidden">{t('regions.short')}</span>
             </TabsTrigger>
           </TabsList>
         </div>
@@ -376,6 +430,10 @@ export default function Users() {
                                   <Anchor className="h-4 w-4 mr-2" />
                                   {t('usersPage.manageShips')}
                                 </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleManageAccess(user)}>
+                                  <SlidersHorizontal className="h-4 w-4 mr-2" />
+                                  Gerenciar Acessos
+                                </DropdownMenuItem>
                                 {canResetPassword && !isCurrentUser && (
                                   <DropdownMenuItem onClick={() => handleResetPassword(user)}>
                                     <KeyRound className="h-4 w-4 mr-2" />
@@ -527,11 +585,15 @@ export default function Users() {
                                     <Shield className="h-4 w-4 mr-2" />
                                     {t('usersPage.changeProfile')}
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleManageShips(user)}>
-                                    <Anchor className="h-4 w-4 mr-2" />
-                                    {t('usersPage.manageShips')}
-                                  </DropdownMenuItem>
-                                  {canResetPassword && !isCurrentUser && (
+                                <DropdownMenuItem onClick={() => handleManageShips(user)}>
+                                  <Anchor className="h-4 w-4 mr-2" />
+                                  {t('usersPage.manageShips')}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleManageAccess(user)}>
+                                  <SlidersHorizontal className="h-4 w-4 mr-2" />
+                                  Gerenciar Acessos
+                                </DropdownMenuItem>
+                                {canResetPassword && !isCurrentUser && (
                                     <DropdownMenuItem onClick={() => handleResetPassword(user)}>
                                       <KeyRound className="h-4 w-4 mr-2" />
                                       {t('usersPage.resetPassword', 'Redefinir Senha')}
@@ -658,6 +720,10 @@ export default function Users() {
                         )}
                         
                         <div className="flex flex-wrap items-center gap-2 mt-3">
+                          <Badge variant="outline">
+                            <Globe2 className="h-3 w-3 mr-1" />
+                            {getRegionName(ship.region_id)}
+                          </Badge>
                           <Badge variant="secondary">
                             <UsersIcon className="h-3 w-3 mr-1" />
                             {usersCount} {t('dialogs.user').toLowerCase()}{usersCount !== 1 ? 's' : ''}
@@ -677,6 +743,7 @@ export default function Users() {
                     <TableRow>
                       <TableHead>{t('ships.shipName')}</TableHead>
                       <TableHead>{t('ships.shipCode')}</TableHead>
+                      <TableHead>{t('regions.region')}</TableHead>
                       <TableHead>{t('common.description')}</TableHead>
                       <TableHead>{t('usersPage.usersTab')}</TableHead>
                       <TableHead>{t('usersPage.registration')}</TableHead>
@@ -699,6 +766,12 @@ export default function Users() {
                           </TableCell>
                           <TableCell className="text-muted-foreground">
                             {ship.code || '—'}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              <Globe2 className="h-3 w-3 mr-1" />
+                              {getRegionName(ship.region_id)}
+                            </Badge>
                           </TableCell>
                           <TableCell className="text-muted-foreground max-w-[200px] truncate">
                             {ship.description || '—'}
@@ -745,6 +818,163 @@ export default function Users() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Regions Tab */}
+        <TabsContent value="regions" className="space-y-6">
+          <div className="flex justify-end">
+            <Button className="gap-2" onClick={handleNewRegion}>
+              <Plus className="h-4 w-4" />
+              {t('regions.newRegion')}
+            </Button>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Map className="h-5 w-5" />
+                    {t('regions.registeredRegions')}
+                  </CardTitle>
+                  <CardDescription>{t('regions.pageDescription')}</CardDescription>
+                </div>
+                <div className="relative w-full sm:w-64">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder={t('regions.searchRegions')}
+                    value={regionSearchTerm}
+                    onChange={(e) => setRegionSearchTerm(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {regionsLoading ? (
+                <Spinner size="lg" className="py-8" />
+              ) : filteredRegions.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                  <Map className="h-16 w-16 mb-4" />
+                  <p className="text-lg font-medium">{t('regions.empty')}</p>
+                  <p className="text-sm mb-4">{t('regions.pageDescription')}</p>
+                  <Button onClick={handleNewRegion} className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    {t('regions.newRegion')}
+                  </Button>
+                </div>
+              ) : isMobile ? (
+                <div className="space-y-3">
+                  {filteredRegions.map((region) => (
+                    <div key={region.id} className="border rounded-lg p-4 bg-card">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium truncate">{region.name}</p>
+                          {region.description && (
+                            <p className="text-sm text-muted-foreground line-clamp-2">{region.description}</p>
+                          )}
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>{t('common.actions')}</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleEditRegion(region)}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              {t('regions.editRegion')}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => handleDeleteRegion(region)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              {t('regions.deleteRegion')}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                      <div className="flex flex-wrap gap-1 mt-3">
+                        {region.countries.slice(0, 4).map((code) => (
+                          <Badge key={code} variant="outline">{getCountryName(code)}</Badge>
+                        ))}
+                        {region.countries.length > 4 && (
+                          <Badge variant="outline">+{region.countries.length - 4}</Badge>
+                        )}
+                      </div>
+                      <Badge variant="secondary" className="mt-3">
+                        {getRegionShipsCount(region.id)} {t('regions.shipsLinked')}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t('regions.regionName')}</TableHead>
+                      <TableHead>{t('regions.countries')}</TableHead>
+                      <TableHead>{t('usersPage.shipsTab')}</TableHead>
+                      <TableHead>{t('common.description')}</TableHead>
+                      <TableHead className="w-24 text-right">{t('common.actions')}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredRegions.map((region) => (
+                      <TableRow key={region.id}>
+                        <TableCell className="font-medium">{region.name}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1 max-w-[360px]">
+                            {region.countries.slice(0, 5).map((code) => (
+                              <Badge key={code} variant="outline">{getCountryName(code)}</Badge>
+                            ))}
+                            {region.countries.length > 5 && (
+                              <Badge variant="outline">+{region.countries.length - 5}</Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{getRegionShipsCount(region.id)} {t('regions.shipsLinked')}</Badge>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground max-w-[240px] truncate">
+                          {region.description || '—'}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>{t('common.actions')}</DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleEditRegion(region)}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                {t('regions.editRegion')}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => handleDeleteRegion(region)}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                {t('regions.deleteRegion')}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       {/* User Dialogs */}
@@ -772,6 +1002,11 @@ export default function Users() {
         onOpenChange={setShipsDialogOpen}
         user={selectedUser}
       />
+      <UserAccessDialog
+        open={accessDialogOpen}
+        onOpenChange={setAccessDialogOpen}
+        user={selectedUser}
+      />
       <ResetPasswordDialog
         open={resetPasswordDialogOpen}
         onOpenChange={setResetPasswordDialogOpen}
@@ -788,6 +1023,11 @@ export default function Users() {
         open={deleteShipDialogOpen}
         onOpenChange={setDeleteShipDialogOpen}
         ship={selectedShip}
+      />
+      <RegionFormDialog
+        open={regionFormDialogOpen}
+        onOpenChange={setRegionFormDialogOpen}
+        region={selectedRegion}
       />
     </div>
   );

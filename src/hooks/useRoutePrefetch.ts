@@ -2,85 +2,170 @@ import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useShipFilter } from '@/contexts/ShipFilterContext';
+import { useOrganization } from '@/contexts/OrganizationContext';
+import type { Category } from '@/hooks/useCategories';
+import type { Ship } from '@/hooks/useShips';
+import type { EquipmentWithCategory } from '@/hooks/useEquipmentPaginated';
+
+const EQUIPMENT_PAGE_SIZE = 100;
 
 /**
- * Prefetches data for common routes to enable instant navigation
+ * Prefetches data for common routes to enable instant navigation.
+ * The query keys intentionally match the hooks used by the pages.
  */
 export function useRoutePrefetch() {
   const queryClient = useQueryClient();
   const { selectedShipId, isFilterEnabled, isReady } = useShipFilter();
+  const { organization, isPlatformOwnerWithoutOrg, isLoading: isOrgLoading } = useOrganization();
 
   useEffect(() => {
-    if (!isReady) return;
+    if (!isReady || isOrgLoading) return;
+    if (!organization?.id && !isPlatformOwnerWithoutOrg) return;
 
-    // Prefetch equipment data (most accessed)
-    // Use the same queryKey format as the actual hooks
     const prefetchEquipment = async () => {
-      await queryClient.prefetchQuery({
-        queryKey: ['equipment', selectedShipId],
-        queryFn: async () => {
+      await queryClient.prefetchInfiniteQuery({
+        queryKey: ['equipment-paginated', selectedShipId, '', 'all', undefined, undefined, undefined],
+        queryFn: async ({ pageParam = 0 }) => {
+          const pageIndex = Number(pageParam);
           let queryBuilder = supabase
             .from('equipment')
-            .select('id, name, internal_code, status, category_id, ship_id, certificate_expiry, next_inspection')
+            .select(`
+              *,
+              categories (name, icon),
+              ships (id, name, code)
+            `, { count: 'exact' })
             .order('created_at', { ascending: false })
-            .limit(50);
-          
+            .range(
+              pageIndex * EQUIPMENT_PAGE_SIZE,
+              (pageIndex + 1) * EQUIPMENT_PAGE_SIZE - 1,
+            );
+
           if (isFilterEnabled && selectedShipId) {
             queryBuilder = queryBuilder.eq('ship_id', selectedShipId);
           }
-          
-          const { data } = await queryBuilder;
-          return data || [];
+
+          const { data: equipmentData, error, count } = await queryBuilder;
+
+          if (error) throw error;
+
+          const creatorIds = [
+            ...new Set(equipmentData?.map(equipment => equipment.created_by).filter(Boolean) || []),
+          ];
+          let profilesMap: Record<string, string> = {};
+
+          if (creatorIds.length > 0) {
+            const { data: profiles } = await supabase
+              .from('profiles')
+              .select('user_id, full_name')
+              .in('user_id', creatorIds);
+
+            if (profiles) {
+              profilesMap = profiles.reduce((acc, profile) => {
+                acc[profile.user_id] = profile.full_name;
+                return acc;
+              }, {} as Record<string, string>);
+            }
+          }
+
+          const enrichedData = equipmentData?.map(equipment => ({
+            ...equipment,
+            created_by_profile: equipment.created_by
+              ? { full_name: profilesMap[equipment.created_by] || null }
+              : null,
+          })) || [];
+
+          return {
+            data: enrichedData as EquipmentWithCategory[],
+            nextPage: enrichedData.length === EQUIPMENT_PAGE_SIZE ? pageIndex + 1 : undefined,
+            totalCount: count || 0,
+          };
         },
+        initialPageParam: 0,
+        getNextPageParam: lastPage => lastPage.nextPage,
         staleTime: 1000 * 60 * 5,
       });
     };
 
-    // Prefetch categories (usually small dataset)
     const prefetchCategories = async () => {
       await queryClient.prefetchQuery({
-        queryKey: ['categories'],
+        queryKey: ['categories', organization?.id, isPlatformOwnerWithoutOrg],
         queryFn: async () => {
-          const { data } = await supabase
+          if (isPlatformOwnerWithoutOrg) {
+            const { data, error } = await supabase
+              .from('categories')
+              .select('*')
+              .order('name');
+
+            if (error) throw error;
+            return data as Category[];
+          }
+
+          if (!organization?.id) return [];
+
+          const { data, error } = await supabase
             .from('categories')
-            .select('id, name, icon, inspection_frequency')
+            .select('*')
+            .eq('organization_id', organization.id)
             .order('name');
-          return data || [];
+
+          if (error) throw error;
+          return data as Category[];
         },
-        staleTime: 1000 * 60 * 10, // 10 minutes
+        staleTime: 1000 * 60 * 10,
       });
     };
 
-    // Prefetch ships (usually small dataset)
     const prefetchShips = async () => {
       await queryClient.prefetchQuery({
-        queryKey: ['ships'],
+        queryKey: ['ships', organization?.id, isPlatformOwnerWithoutOrg],
         queryFn: async () => {
-          const { data } = await supabase
+          if (isPlatformOwnerWithoutOrg) {
+            const { data, error } = await supabase
+              .from('ships')
+              .select('*')
+              .order('name');
+
+            if (error) throw error;
+            return data as Ship[];
+          }
+
+          if (!organization?.id) return [];
+
+          const { data, error } = await supabase
             .from('ships')
-            .select('id, name, code')
+            .select('*')
+            .eq('organization_id', organization.id)
             .order('name');
-          return data || [];
+
+          if (error) throw error;
+          return data as Ship[];
         },
-        staleTime: 1000 * 60 * 10, // 10 minutes
+        staleTime: 1000 * 60 * 10,
       });
     };
 
-    // Run prefetches in parallel with delay to not block initial render
     const timeout = setTimeout(() => {
       Promise.all([
-        prefetchEquipment(),
         prefetchCategories(),
         prefetchShips(),
+        prefetchEquipment(),
       ]).catch(console.error);
-    }, 1000); // Wait 1 second after initial render
+    }, 2000);
 
     return () => clearTimeout(timeout);
-  }, [queryClient, selectedShipId, isFilterEnabled, isReady]);
+  }, [
+    queryClient,
+    selectedShipId,
+    isFilterEnabled,
+    isReady,
+    organization?.id,
+    isPlatformOwnerWithoutOrg,
+    isOrgLoading,
+  ]);
 }
 
 /**
- * Prefetches a specific route's data on hover/focus
+ * Prefetches a specific route's data on hover/focus.
  */
 export function usePrefetchOnHover(route: 'equipment' | 'inspections' | 'maintenance' | 'certificates') {
   const queryClient = useQueryClient();
@@ -89,8 +174,44 @@ export function usePrefetchOnHover(route: 'equipment' | 'inspections' | 'mainten
   const prefetch = async () => {
     switch (route) {
       case 'equipment':
-        await queryClient.prefetchQuery({
-          queryKey: ['equipment', selectedShipId],
+        await queryClient.prefetchInfiniteQuery({
+          queryKey: ['equipment-paginated', selectedShipId, '', 'all', undefined, undefined, undefined],
+          queryFn: async ({ pageParam = 0 }) => {
+            const pageIndex = Number(pageParam);
+            let queryBuilder = supabase
+              .from('equipment')
+              .select(`
+                *,
+                categories (name, icon),
+                ships (id, name, code)
+              `, { count: 'exact' })
+              .order('created_at', { ascending: false })
+              .range(
+                pageIndex * EQUIPMENT_PAGE_SIZE,
+                (pageIndex + 1) * EQUIPMENT_PAGE_SIZE - 1,
+              );
+
+            if (isFilterEnabled && selectedShipId) {
+              queryBuilder = queryBuilder.eq('ship_id', selectedShipId);
+            }
+
+            const { data, error, count } = await queryBuilder;
+
+            if (error) throw error;
+
+            const equipment = (data || []).map(item => ({
+              ...item,
+              created_by_profile: null,
+            }));
+
+            return {
+              data: equipment as EquipmentWithCategory[],
+              nextPage: equipment.length === EQUIPMENT_PAGE_SIZE ? pageIndex + 1 : undefined,
+              totalCount: count || 0,
+            };
+          },
+          initialPageParam: 0,
+          getNextPageParam: lastPage => lastPage.nextPage,
           staleTime: 1000 * 60 * 2,
         });
         break;
@@ -108,7 +229,7 @@ export function usePrefetchOnHover(route: 'equipment' | 'inspections' | 'mainten
         break;
       case 'certificates':
         await queryClient.prefetchQuery({
-          queryKey: ['certificates'],
+          queryKey: ['certificates', selectedShipId, {}, undefined],
           staleTime: 1000 * 60 * 2,
         });
         break;

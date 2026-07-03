@@ -23,10 +23,18 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Loader2, Ship, MapPin } from 'lucide-react';
 import { useCreateShip, useUpdateShip, type Ship as ShipType } from '@/hooks/useShips';
 import { ShipAreasManager } from './ShipAreasManager';
 import { useCreateShipArea } from '@/hooks/useShipAreas';
+import { useRegions } from '@/hooks/useRegions';
 
 interface ShipFormDialogProps {
   open: boolean;
@@ -38,6 +46,7 @@ const shipSchema = z.object({
   name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
   code: z.string().optional(),
   description: z.string().optional(),
+  region_id: z.string().optional(),
 });
 
 type ShipFormData = z.infer<typeof shipSchema>;
@@ -47,13 +56,14 @@ export function ShipFormDialog({ open, onOpenChange, ship }: ShipFormDialogProps
   const createShip = useCreateShip();
   const updateShip = useUpdateShip();
   const createArea = useCreateShipArea();
+  const { data: regions = [] } = useRegions();
   const isEditing = !!ship;
 
   const [draftAreas, setDraftAreas] = useState<string[]>([]);
 
   const form = useForm<ShipFormData>({
     resolver: zodResolver(shipSchema),
-    defaultValues: { name: '', code: '', description: '' },
+    defaultValues: { name: '', code: '', description: '', region_id: 'none' },
   });
 
   useEffect(() => {
@@ -62,9 +72,10 @@ export function ShipFormDialog({ open, onOpenChange, ship }: ShipFormDialogProps
         name: ship.name,
         code: ship.code || '',
         description: ship.description || '',
+        region_id: ship.region_id || 'none',
       });
     } else {
-      form.reset({ name: '', code: '', description: '' });
+      form.reset({ name: '', code: '', description: '', region_id: 'none' });
       setDraftAreas([]);
     }
   }, [ship, form, open]);
@@ -77,12 +88,14 @@ export function ShipFormDialog({ open, onOpenChange, ship }: ShipFormDialogProps
           name: data.name,
           code: data.code,
           description: data.description,
+          region_id: data.region_id === 'none' ? null : data.region_id,
         });
       } else {
         const created = await createShip.mutateAsync({
           name: data.name,
           code: data.code,
           description: data.description,
+          region_id: data.region_id === 'none' ? null : data.region_id,
         });
         // Persist draft areas
         if (created?.id && draftAreas.length > 0) {
@@ -159,6 +172,32 @@ export function ShipFormDialog({ open, onOpenChange, ship }: ShipFormDialogProps
                         {...field}
                       />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="region_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('regions.region')}</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || 'none'}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('regions.selectRegion')} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="none">{t('regions.noRegion')}</SelectItem>
+                        {regions.map((region) => (
+                          <SelectItem key={region.id} value={region.id}>
+                            {region.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

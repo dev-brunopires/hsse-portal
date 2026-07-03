@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart3 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -12,7 +12,8 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { PageHeader } from '@/components/layout/PageHeader';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
-import { EVV_CATEGORIES } from '../catalog';
+import { getEvvCategories, type EvvFormType } from '../catalog';
+import type { EvvAnswers, EvvScope } from '../types';
 
 interface Filters {
   environment: string;
@@ -22,6 +23,14 @@ interface Filters {
 }
 
 const EMPTY: Filters = { environment: 'all', vessel_id: 'all', from: '', to: '' };
+
+interface ReportRow {
+  id: string;
+  form_type: EvvFormType;
+  scope: Pick<EvvScope, 'environment' | 'vessel_ids'>;
+  answers: EvvAnswers;
+  submitted_at: string | null;
+}
 
 export default function EvvReports() {
   const { t } = useTranslation();
@@ -45,7 +54,9 @@ export default function EvvReports() {
     queryKey: ['evv-submissions-report', organization?.id, filters],
     enabled: !!organization?.id,
     queryFn: async () => {
+      // The generated database types predate the eV&V migration.
       let q = supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .from('evv_submissions' as any)
         .select('id, form_type, scope, answers, submitted_at')
         .eq('organization_id', organization!.id)
@@ -53,9 +64,9 @@ export default function EvvReports() {
       if (filters.from) q = q.gte('submitted_at', filters.from);
       if (filters.to) q = q.lte('submitted_at', filters.to + 'T23:59:59');
       const { data, error } = await q;
-      if (error) return [] as any[];
-      return (data as any[]).filter((r) => {
-        const s = r.scope || {};
+      if (error) return [] as ReportRow[];
+      return ((data ?? []) as unknown as ReportRow[]).filter((r) => {
+        const s = r.scope;
         if (filters.environment !== 'all' && s.environment !== filters.environment) return false;
         if (filters.vessel_id !== 'all' && !(s.vessel_ids ?? []).includes(filters.vessel_id)) return false;
         return true;
@@ -65,13 +76,13 @@ export default function EvvReports() {
 
   const chartData = useMemo(() => {
     const counts = new Map<string, number>();
-    for (const r of rows as any[]) {
+    for (const r of rows) {
       const answers = r.answers || {};
-      for (const [qid, a] of Object.entries<any>(answers)) {
-        if (a?.rating !== 'not_effective') continue;
+      for (const [qid, answer] of Object.entries(answers)) {
+        if (answer?.rating !== 'not_effective') continue;
         // find question text
         let label = qid;
-        for (const cat of EVV_CATEGORIES) {
+        for (const cat of getEvvCategories(r.form_type as EvvFormType)) {
           const q = cat.questions.find((q) => q.id === qid);
           if (q) { label = `${cat.name} — ${q.text.slice(0, 40)}…`; break; }
         }
@@ -100,6 +111,7 @@ export default function EvvReports() {
                 <SelectItem value="fpso">FPSO</SelectItem>
                 <SelectItem value="project">Project</SelectItem>
                 <SelectItem value="office">Office</SelectItem>
+                <SelectItem value="yard">Yard</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -115,11 +127,17 @@ export default function EvvReports() {
           </div>
           <div className="space-y-2">
             <Label>{t('evv.reports.from')}</Label>
-            <Input type="date" value={filters.from} onChange={(e) => setFilters({ ...filters, from: e.target.value })} />
+            <DatePicker
+              value={filters.from}
+              onChange={(value) => setFilters({ ...filters, from: value })}
+            />
           </div>
           <div className="space-y-2">
             <Label>{t('evv.reports.to')}</Label>
-            <Input type="date" value={filters.to} onChange={(e) => setFilters({ ...filters, to: e.target.value })} />
+            <DatePicker
+              value={filters.to}
+              onChange={(value) => setFilters({ ...filters, to: value })}
+            />
           </div>
         </CardContent>
       </Card>
@@ -130,7 +148,7 @@ export default function EvvReports() {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground mb-4">
-            {t('evv.reports.totalSubmissions', { count: (rows as any[]).length })}
+            {t('evv.reports.totalSubmissions', { count: rows.length })}
           </p>
           <div className="h-[420px]">
             <ResponsiveContainer width="100%" height="100%">

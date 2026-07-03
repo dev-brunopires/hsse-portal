@@ -1,6 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion';
 import { AppSidebar } from './AppSidebar';
 import { MobileSidebar } from './MobileSidebar';
 import { MobileBottomNav } from './MobileBottomNav';
@@ -20,7 +18,6 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const location = useLocation();
   
   // Enable global keyboard shortcuts
   useKeyboardShortcuts();
@@ -63,11 +60,9 @@ export function AppLayout({ children }: AppLayoutProps) {
         />
 
         <main className="flex-1 overflow-auto p-4 lg:p-6 pwa-main-content lg:pb-6">
-          <AnimatePresence mode="wait">
-            <PageTransition key={location.pathname}>
-              {children}
-            </PageTransition>
-          </AnimatePresence>
+          <PageTransition>
+            {children}
+          </PageTransition>
         </main>
       </div>
 

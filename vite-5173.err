@@ -1,0 +1,21 @@
+[33m[vite:css] @import must precede all other statements (besides @charset or empty @layer)
+4  |  
+5  |  /* SafeShip Corporate Design System */
+6  |  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+7  |  
+8  |  @layer base {[39m
+[33m[vite:css] @import must precede all other statements (besides @charset or empty @layer)
+4  |  
+5  |  /* SafeShip Corporate Design System */
+6  |  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+7  |  
+8  |  @layer base {[39m
+[33m[vite:css] @import must precede all other statements (besides @charset or empty @layer)
+4  |  
+5  |  /* SafeShip Corporate Design System */
+6  |  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+   |  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+7  |  
+8  |  @layer base {[39m

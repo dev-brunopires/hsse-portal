@@ -6,19 +6,25 @@ import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { SystemLogo } from '@/components/ui/SystemLogo';
+import { useAccess } from '@/hooks/useAccess';
+import type { AccessAction } from '@/config/accessControl';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requiredRole?: 'admin_master' | 'admin' | 'technician' | 'viewer' | 'supervisor';
+  moduleKey?: string;
+  pageKey?: string;
+  action?: AccessAction;
 }
 
-export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, requiredRole, moduleKey, pageKey, action = 'view' }: ProtectedRouteProps) {
   const { t } = useTranslation();
-  const { user, role, loading, isPlatformOwner, sessionExpired } = useAuth();
+  const { user, role, loading, profileLoading, isPlatformOwner, sessionExpired } = useAuth();
+  const access = useAccess();
   const location = useLocation();
 
   // Wait for auth to load - platform owners may not have a role
-  if (loading) {
+  if (loading || profileLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
@@ -71,6 +77,37 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
   // Platform owners have full access
   if (isPlatformOwner) {
     return <>{children}</>;
+  }
+
+  if (moduleKey && pageKey) {
+    if (access.isLoading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <div className="flex flex-col items-center gap-4">
+            <Spinner size="lg" />
+            <p className="text-muted-foreground">{t('common.loading')}</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (!access.can(moduleKey, pageKey, action)) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-background p-4">
+          <Card className="max-w-md w-full">
+            <CardContent className="pt-8 pb-8 text-center space-y-4">
+              <h2 className="text-xl font-semibold text-foreground">Sem permissao</h2>
+              <p className="text-sm text-muted-foreground">
+                Seu usuario nao tem acesso a esta area. Fale com um administrador para liberar permissao.
+              </p>
+              <Button onClick={() => window.location.href = '/'} className="w-full">
+                Voltar ao inicio
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
   }
 
   // Check role if required

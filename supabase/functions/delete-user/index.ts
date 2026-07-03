@@ -39,41 +39,47 @@ Deno.serve(async (req) => {
       );
     }
 
+    const { userId, organizationId } = await req.json();
+    if (!userId) {
+      return new Response(
+        JSON.stringify({ error: 'User ID is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Create admin client to check role
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Check if requesting user is platform_owner, admin_master, or admin
-    const [roleResult, platformOwnerResult] = await Promise.all([
-      adminClient
-        .from('user_roles')
-        .select('role, organization_id')
-        .eq('user_id', requestingUser.id)
-        .single(),
+    const [platformOwnerResult, requesterRolesResult] = await Promise.all([
       adminClient
         .from('platform_owners')
         .select('id')
         .eq('user_id', requestingUser.id)
         .maybeSingle(),
+      adminClient
+        .from('user_roles')
+        .select('role, organization_id')
+        .eq('user_id', requestingUser.id),
     ]);
 
     const isPlatformOwner = !!platformOwnerResult.data;
-    const requestingUserRole = roleResult.data?.role;
-    const requestingUserOrgId = roleResult.data?.organization_id;
+    if (!isPlatformOwner && !organizationId) {
+      return new Response(
+        JSON.stringify({ error: 'Organization is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const requestingRole = requesterRolesResult.data?.find(
+      (row) => row.organization_id === organizationId
+    );
+    const requestingUserRole = requestingRole?.role;
 
     // Only admin, admin_master, or platform_owner can delete users
     if (!isPlatformOwner && (!requestingUserRole || !['admin', 'admin_master'].includes(requestingUserRole))) {
       return new Response(
         JSON.stringify({ error: 'Only admins can delete users' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Get the user ID to delete from the request body
-    const { userId } = await req.json();
-    if (!userId) {
-      return new Response(
-        JSON.stringify({ error: 'User ID is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -85,17 +91,29 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get the target user's role and organization
-    const { data: targetUserRole, error: targetRoleError } = await adminClient
+    // Get all target roles because a user can belong to more than one organization.
+    const { data: targetUserRoles, error: targetRoleError } = await adminClient
       .from('user_roles')
       .select('role, organization_id')
-      .eq('user_id', userId)
-      .single();
+      .eq('user_id', userId);
 
-    if (targetRoleError) {
+    if (targetRoleError || !targetUserRoles?.length) {
       return new Response(
         JSON.stringify({ error: 'User not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const targetUserRole = isPlatformOwner
+      ? targetUserRoles.find((row) => row.role === 'admin_master')
+        ?? targetUserRoles.find((row) => row.role === 'admin')
+        ?? targetUserRoles[0]
+      : targetUserRoles.find((row) => row.organization_id === organizationId);
+
+    if (!targetUserRole) {
+      return new Response(
+        JSON.stringify({ error: 'You can only delete users from your own organization' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -117,36 +135,26 @@ Deno.serve(async (req) => {
     }
 
     // 3. Non-platform owners can only delete users from their own organization
-    if (!isPlatformOwner && targetUserRole.organization_id !== requestingUserOrgId) {
+    if (!isPlatformOwner && targetUserRole.organization_id !== organizationId) {
       return new Response(
         JSON.stringify({ error: 'You can only delete users from your own organization' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Delete user_ships first (if any)
-    await adminClient
-      .from('user_ships')
-      .delete()
-      .eq('user_id', userId);
-
-    // Delete user_organizations
-    await adminClient
-      .from('user_organizations')
-      .delete()
-      .eq('user_id', userId);
-
-    // Delete user_roles
-    await adminClient
-      .from('user_roles')
-      .delete()
-      .eq('user_id', userId);
-
-    // Delete profile
-    await adminClient
-      .from('profiles')
-      .delete()
-      .eq('user_id', userId);
+    const cleanupResults = await Promise.all([
+      adminClient.from('user_ships').delete().eq('user_id', userId),
+      adminClient.from('user_organizations').delete().eq('user_id', userId),
+      adminClient.from('user_roles').delete().eq('user_id', userId),
+      adminClient.from('profiles').delete().eq('user_id', userId),
+    ]);
+    const cleanupError = cleanupResults.find((result) => result.error)?.error;
+    if (cleanupError) {
+      return new Response(
+        JSON.stringify({ error: cleanupError.message }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Delete the user from auth.users using admin API
     const { error: deleteError } = await adminClient.auth.admin.deleteUser(userId);

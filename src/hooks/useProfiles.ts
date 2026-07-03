@@ -4,9 +4,10 @@ import type { Tables } from '@/integrations/supabase/types';
 import { useOrganization } from '@/contexts/OrganizationContext';
 
 export type Profile = Tables<'profiles'>;
+type AppRole = 'admin' | 'admin_master' | 'technician' | 'supervisor' | 'viewer';
 
 export interface ProfileWithRole extends Profile {
-  user_roles?: { role: 'admin' | 'technician' | 'viewer' }[];
+  user_roles?: { role: AppRole }[];
 }
 
 export function useProfiles() {
@@ -49,10 +50,10 @@ export function useProfiles() {
       
       const { data: roles } = await rolesQuery;
       
-      const rolesMap = new Map<string, { role: 'admin' | 'technician' | 'viewer' }[]>();
+      const rolesMap = new Map<string, { role: AppRole }[]>();
       roles?.forEach(r => {
         const existing = rolesMap.get(r.user_id) || [];
-        existing.push({ role: r.role as 'admin' | 'technician' | 'viewer' });
+        existing.push({ role: r.role as AppRole });
         rolesMap.set(r.user_id, existing);
       });
       

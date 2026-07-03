@@ -106,6 +106,7 @@ export interface PendingPhoto {
   mimeType: string;
   base64Data: string;
   createdAt: number;
+  ownerUserId?: string;
 }
 
 export interface PendingInspection {
@@ -150,14 +151,17 @@ export interface PendingMaintenance {
 export interface PendingAction {
   id: string;
   type: 'create_inspection' | 'update_inspection' | 'create_equipment' | 'complete_maintenance';
-  data: PendingInspection | PendingMaintenance | any;
+  data: PendingInspection | PendingMaintenance;
   timestamp: number;
   retryCount?: number;
+  ownerUserId?: string;
+  lastError?: string;
+  failedAt?: number;
 }
 
 interface StorageMetadata {
   key: string;
-  value: any;
+  value: unknown;
 }
 
 // Paginated result interface
@@ -496,6 +500,18 @@ export const clearStore = async (storeName: string): Promise<void> => {
   });
 };
 
+export const clearCachedData = async (): Promise<void> => {
+  await Promise.all([
+    clearStore(STORES.EQUIPMENT),
+    clearStore(STORES.CATEGORIES),
+    clearStore(STORES.SHIPS),
+    clearStore(STORES.TEMPLATES),
+    clearStore(STORES.MAINTENANCE_PLANS),
+    clearStore(STORES.LAST_INSPECTIONS),
+    clearStore(STORES.METADATA),
+  ]);
+};
+
 export const countInStore = async (storeName: string): Promise<number> => {
   const store = await getStore(storeName);
   return new Promise((resolve, reject) => {
@@ -634,8 +650,10 @@ export const addPendingAction = async (action: PendingAction): Promise<void> => 
   await putInStore(STORES.PENDING_ACTIONS, action);
 };
 
-export const getPendingActions = async (): Promise<PendingAction[]> => {
-  return getAllFromStore<PendingAction>(STORES.PENDING_ACTIONS);
+export const getPendingActions = async (ownerUserId?: string): Promise<PendingAction[]> => {
+  const actions = await getAllFromStore<PendingAction>(STORES.PENDING_ACTIONS);
+  if (!ownerUserId) return actions;
+  return actions.filter(action => action.ownerUserId === ownerUserId);
 };
 
 export const updatePendingAction = async (action: PendingAction): Promise<void> => {
@@ -650,8 +668,10 @@ export const clearPendingActions = async (): Promise<void> => {
   await clearStore(STORES.PENDING_ACTIONS);
 };
 
-export const getPendingActionsCount = async (): Promise<number> => {
-  return countInStore(STORES.PENDING_ACTIONS);
+export const getPendingActionsCount = async (ownerUserId?: string): Promise<number> => {
+  if (!ownerUserId) return countInStore(STORES.PENDING_ACTIONS);
+  const actions = await getPendingActions(ownerUserId);
+  return actions.length;
 };
 
 // ===== Photo operations =====
@@ -659,8 +679,10 @@ export const addPendingPhoto = async (photo: PendingPhoto): Promise<void> => {
   await putInStore(STORES.PHOTOS, photo);
 };
 
-export const getPhotosByInspection = async (inspectionId: string): Promise<PendingPhoto[]> => {
-  return getByIndex<PendingPhoto>(STORES.PHOTOS, 'inspectionId', inspectionId);
+export const getPhotosByInspection = async (inspectionId: string, ownerUserId?: string): Promise<PendingPhoto[]> => {
+  const photos = await getByIndex<PendingPhoto>(STORES.PHOTOS, 'inspectionId', inspectionId);
+  if (!ownerUserId) return photos;
+  return photos.filter(photo => photo.ownerUserId === ownerUserId);
 };
 
 export const getPhoto = async (id: string): Promise<PendingPhoto | undefined> => {
@@ -671,8 +693,8 @@ export const removePhoto = async (id: string): Promise<void> => {
   await deleteFromStore(STORES.PHOTOS, id);
 };
 
-export const removePhotosByInspection = async (inspectionId: string): Promise<void> => {
-  const photos = await getPhotosByInspection(inspectionId);
+export const removePhotosByInspection = async (inspectionId: string, ownerUserId?: string): Promise<void> => {
+  const photos = await getPhotosByInspection(inspectionId, ownerUserId);
   for (const photo of photos) {
     await removePhoto(photo.id);
   }
@@ -687,13 +709,25 @@ export const getPhotosCount = async (): Promise<number> => {
 };
 
 // ===== Metadata operations =====
-export const setMetadata = async (key: string, value: any): Promise<void> => {
+export const setMetadata = async (key: string, value: unknown): Promise<void> => {
   await putInStore<StorageMetadata>(STORES.METADATA, { key, value });
 };
 
-export const getMetadata = async <T = any>(key: string): Promise<T | undefined> => {
+export const getMetadata = async <T = unknown>(key: string): Promise<T | undefined> => {
   const result = await getFromStore<StorageMetadata>(STORES.METADATA, key);
-  return result?.value;
+  return result?.value as T | undefined;
+};
+
+export const removeMetadata = async (key: string): Promise<void> => {
+  await deleteFromStore(STORES.METADATA, key);
+};
+
+export const setCacheOwner = async (userId: string): Promise<void> => {
+  await setMetadata('cache_owner_user_id', userId);
+};
+
+export const getCacheOwner = async (): Promise<string | undefined> => {
+  return getMetadata<string>('cache_owner_user_id');
 };
 
 // Cache timestamp management
@@ -718,6 +752,15 @@ export const isCacheValid = async (maxAgeMs: number = 24 * 60 * 60 * 1000): Prom
   const timestamp = await getCacheTimestamp();
   if (!timestamp) return false;
   return Date.now() - timestamp < maxAgeMs;
+};
+
+export const clearSyncMetadata = async (): Promise<void> => {
+  await Promise.all([
+    removeMetadata('cache_timestamp'),
+    removeMetadata('last_sync_timestamp'),
+    removeMetadata('last_delete_check'),
+    removeMetadata('cache_owner_user_id'),
+  ]);
 };
 
 // ===== Storage statistics =====
@@ -781,6 +824,32 @@ export const getStorageStats = async (): Promise<StorageStats> => {
   };
 };
 
+export const getStorageStatsForUser = async (ownerUserId: string): Promise<StorageStats> => {
+  const stats = await getStorageStats();
+  const [pendingActionsCount, photos] = await Promise.all([
+    getPendingActionsCount(ownerUserId),
+    getAllPendingPhotos(),
+  ]);
+
+  const photosCount = photos.filter(photo => photo.ownerUserId === ownerUserId).length;
+
+  return {
+    ...stats,
+    pendingActionsCount,
+    photosCount,
+    estimatedSizeMB: Math.round((
+      stats.equipmentCount * 1024 +
+      stats.categoriesCount * 512 +
+      stats.shipsCount * 256 +
+      stats.templatesCount * 2048 +
+      stats.maintenancePlansCount * 1024 +
+      stats.lastInspectionsCount * 512 +
+      pendingActionsCount * 10240 +
+      photosCount * 512000
+    ) / (1024 * 1024) * 100) / 100,
+  };
+};
+
 // ===== Photo utilities =====
 
 export const fileToBase64 = (file: File): Promise<string> => {
@@ -831,7 +900,8 @@ export const compressImage = (file: File, maxWidth = 1200, quality = 0.7): Promi
 
 export const processAndStorePhoto = async (
   file: File,
-  inspectionId: string
+  inspectionId: string,
+  ownerUserId?: string
 ): Promise<PendingPhoto> => {
   const compressedBlob = await compressImage(file);
   const compressedFile = new File([compressedBlob], file.name, { type: compressedBlob.type });
@@ -844,6 +914,7 @@ export const processAndStorePhoto = async (
     mimeType: compressedFile.type,
     base64Data,
     createdAt: Date.now(),
+    ownerUserId,
   };
 
   await addPendingPhoto(photo);

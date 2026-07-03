@@ -21,13 +21,14 @@ import {
   Thermometer,
   ShieldAlert,
   ShieldCheck,
+  ClipboardList,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { useOrganization } from '@/contexts/OrganizationContext';
 import { SystemLogo } from '@/components/ui/SystemLogo';
 import { prefetchRouteChunk } from '@/utils/routeChunkPrefetch';
+import { useAccess } from '@/hooks/useAccess';
 
 interface NavItemProps {
   to: string;
@@ -110,13 +111,10 @@ function NavGroup({ label, collapsed, children, defaultOpen = true }: NavGroupPr
 
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
-  const { isAdmin, isAdminMaster, isPlatformOwner } = useAuth();
+  const { isPlatformOwner } = useAuth();
+  const access = useAccess();
   const { t } = useTranslation();
-  const { organization, logoWhiteUrl } = useOrganization();
-
-  // Use organization white logo or system default
-  const hasOrgLogo = organization && logoWhiteUrl;
-  const organizationName = organization?.name || 'SafeShip';
+  const can = access.can;
 
   return (
     <aside
@@ -136,79 +134,52 @@ export function AppSidebar() {
       {/* Navigation */}
       <nav className="flex-1 p-3 space-y-4 overflow-y-auto">
         <NavGroup label={t('navigation.groupEquipment')} collapsed={collapsed}>
-          <div data-tour="dashboard">
-            <NavItem to="/" icon={<LayoutDashboard size={20} />} label={t('navigation.dashboard')} collapsed={collapsed} />
-          </div>
-          <div data-tour="equipment">
-            <NavItem to="/equipment" icon={<Package size={20} />} label={t('navigation.equipment')} collapsed={collapsed} />
-          </div>
-          <div data-tour="inspections">
-            <NavItem to="/inspections" icon={<ClipboardCheck size={20} />} label={t('navigation.inspections')} collapsed={collapsed} />
-          </div>
-          <div data-tour="maintenance">
-            <NavItem to="/maintenance" icon={<Wrench size={20} />} label={t('navigation.maintenance')} collapsed={collapsed} />
-          </div>
-          <div data-tour="certificates">
-            <NavItem to="/certificates" icon={<Award size={20} />} label={t('navigation.certificates')} collapsed={collapsed} />
-          </div>
-          <div data-tour="pending-recommendations">
-            <NavItem to="/pending" icon={<AlertCircle size={20} />} label={t('navigation.pendingRecommendations')} collapsed={collapsed} />
-          </div>
-          <div data-tour="reports">
-            <NavItem to="/reports" icon={<FileText size={20} />} label={t('navigation.reports')} collapsed={collapsed} />
-          </div>
-          <div data-tour="alerts">
-            <NavItem to="/alerts" icon={<Bell size={20} />} label={t('navigation.alerts')} collapsed={collapsed} />
-          </div>
-          <div data-tour="categories">
-            <NavItem to="/categories" icon={<FolderOpen size={20} />} label={t('navigation.categories')} collapsed={collapsed} />
-          </div>
-          <div data-tour="supervisor">
-            <NavItem to="/supervisor" icon={<Users size={20} />} label={t('navigation.supervisor')} collapsed={collapsed} />
-          </div>
+          {can('equipment', 'dashboard') && <div data-tour="dashboard"><NavItem to="/" icon={<LayoutDashboard size={20} />} label={t('navigation.dashboard')} collapsed={collapsed} /></div>}
+          {can('equipment', 'equipment') && <div data-tour="equipment"><NavItem to="/equipment" icon={<Package size={20} />} label={t('navigation.equipment')} collapsed={collapsed} /></div>}
+          {can('equipment', 'inspections') && <div data-tour="inspections"><NavItem to="/inspections" icon={<ClipboardCheck size={20} />} label={t('navigation.inspections')} collapsed={collapsed} /></div>}
+          {can('equipment', 'maintenance') && <div data-tour="maintenance"><NavItem to="/maintenance" icon={<Wrench size={20} />} label={t('navigation.maintenance')} collapsed={collapsed} /></div>}
+          {can('equipment', 'certificates') && <div data-tour="certificates"><NavItem to="/certificates" icon={<Award size={20} />} label={t('navigation.certificates')} collapsed={collapsed} /></div>}
+          {can('equipment', 'pending') && <div data-tour="pending-recommendations"><NavItem to="/pending" icon={<AlertCircle size={20} />} label={t('navigation.pendingRecommendations')} collapsed={collapsed} /></div>}
+          {can('reports', 'reports') && <div data-tour="reports"><NavItem to="/reports" icon={<FileText size={20} />} label={t('navigation.reports')} collapsed={collapsed} /></div>}
+          {can('alerts', 'alerts') && <div data-tour="alerts"><NavItem to="/alerts" icon={<Bell size={20} />} label={t('navigation.alerts')} collapsed={collapsed} /></div>}
+          {can('equipment', 'categories') && <div data-tour="categories"><NavItem to="/categories" icon={<FolderOpen size={20} />} label={t('navigation.categories')} collapsed={collapsed} /></div>}
+          {can('equipment', 'supervisor') && <div data-tour="supervisor"><NavItem to="/supervisor" icon={<Users size={20} />} label={t('navigation.supervisor')} collapsed={collapsed} /></div>}
         </NavGroup>
 
-        <NavGroup label={t('navigation.groupHealth')} collapsed={collapsed}>
-          <div data-tour="heat-stress">
-            <NavItem to="/heat-stress" icon={<Thermometer size={20} />} label={t('navigation.heatStress')} collapsed={collapsed} />
-          </div>
-        </NavGroup>
-
-        {(isAdminMaster || isPlatformOwner) && (
-          <NavGroup label={t('navigation.groupSafety')} collapsed={collapsed}>
-            <div data-tour="obs-cards">
-              <NavItem to="/obs-cards" icon={<ShieldAlert size={20} />} label={t('navigation.obsCards')} collapsed={collapsed} />
-            </div>
+        {access.canViewModule('health') && (
+          <NavGroup label={t('navigation.groupHealth')} collapsed={collapsed}>
+            {can('health', 'heat_stress') && <div data-tour="heat-stress"><NavItem to="/heat-stress" icon={<Thermometer size={20} />} label={t('navigation.heatStress')} collapsed={collapsed} /></div>}
           </NavGroup>
         )}
 
-        <NavGroup label={t('navigation.groupVV')} collapsed={collapsed}>
-          <NavItem to="/evv" icon={<ShieldCheck size={20} />} label={t('navigation.evvHome')} collapsed={collapsed} />
-          <NavItem to="/evv/forms" icon={<ClipboardCheck size={20} />} label={t('navigation.evvForms')} collapsed={collapsed} />
-          <NavItem to="/evv/history" icon={<History size={20} />} label={t('navigation.evvHistory')} collapsed={collapsed} />
-          {(isAdmin || isAdminMaster || isPlatformOwner) && (
-            <NavItem to="/evv/reports" icon={<FileText size={20} />} label={t('navigation.evvReports')} collapsed={collapsed} />
-          )}
-        </NavGroup>
+        {access.canViewModule('obs_cards') && (
+          <NavGroup label={t('navigation.groupSafety')} collapsed={collapsed}>
+            {can('obs_cards', 'dashboard') && <div data-tour="obs-cards"><NavItem to="/obs-cards" icon={<ShieldAlert size={20} />} label={t('navigation.obsCardsAi')} collapsed={collapsed} /></div>}
+            {can('obs_cards', 'safety_observation') && <div data-tour="safety-observation"><NavItem to="/obs-cards/safety-observation" icon={<ClipboardList size={20} />} label={t('navigation.safetyObservation')} collapsed={collapsed} /></div>}
+          </NavGroup>
+        )}
+
+        {access.canViewModule('evv') && (
+          <NavGroup label={t('navigation.groupVV')} collapsed={collapsed}>
+            {can('evv', 'home') && <NavItem to="/evv" icon={<ShieldCheck size={20} />} label={t('navigation.evvHome')} collapsed={collapsed} />}
+            {can('evv', 'forms') && <NavItem to="/evv/forms" icon={<ClipboardCheck size={20} />} label={t('navigation.evvForms')} collapsed={collapsed} />}
+            {can('evv', 'history') && <NavItem to="/evv/history" icon={<History size={20} />} label={t('navigation.evvHistory')} collapsed={collapsed} />}
+            {can('evv', 'reports') && <NavItem to="/evv/reports" icon={<FileText size={20} />} label={t('navigation.evvReports')} collapsed={collapsed} />}
+          </NavGroup>
+        )}
       </nav>
 
 
       {/* Bottom Section - Admin only items */}
-      {isAdmin && (
+      {(can('admin', 'users') || can('audit', 'audit_log')) && (
         <div className="border-t border-sidebar-border p-3 space-y-1">
-          <div data-tour="users">
-            <NavItem to="/users" icon={<Users size={20} />} label={t('navigation.users')} collapsed={collapsed} />
-          </div>
-          <div data-tour="audit-log">
-            <NavItem to="/audit-log" icon={<History size={20} />} label={t('navigation.auditLog')} collapsed={collapsed} />
-          </div>
+          {can('admin', 'users') && <div data-tour="users"><NavItem to="/users" icon={<Users size={20} />} label={t('navigation.users')} collapsed={collapsed} /></div>}
+          {can('audit', 'audit_log') && <div data-tour="audit-log"><NavItem to="/audit-log" icon={<History size={20} />} label={t('navigation.auditLog')} collapsed={collapsed} /></div>}
         </div>
       )}
-      {(isAdminMaster || isPlatformOwner) && (
-        <div className={!isAdmin ? "border-t border-sidebar-border p-3 space-y-1" : "px-3 pb-3 space-y-1"}>
-          <div data-tour="health-check">
-            <NavItem to="/health-check" icon={<Activity size={20} />} label={t('navigation.healthCheck')} collapsed={collapsed} />
-          </div>
+      {(can('health', 'health_check') || isPlatformOwner) && (
+        <div className={!(can('admin', 'users') || can('audit', 'audit_log')) ? "border-t border-sidebar-border p-3 space-y-1" : "px-3 pb-3 space-y-1"}>
+          {can('health', 'health_check') && <div data-tour="health-check"><NavItem to="/health-check" icon={<Activity size={20} />} label={t('navigation.healthCheck')} collapsed={collapsed} /></div>}
           {isPlatformOwner && (
             <NavItem to="/platform-admin" icon={<Building2 size={20} />} label={t('navigation.platformAdmin')} collapsed={collapsed} />
           )}

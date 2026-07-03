@@ -1,0 +1,48 @@
+
+> vite_react_shadcn_ts@0.0.0 dev
+> vite
+
+
+  [32m[1mVITE[22m v5.4.19[39m  [2mready in [0m[1m5270[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m8080[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://26.43.192.37:[1m8080[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://10.5.0.2:[1m8080[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://10.125.174.189:[1m8080[22m/[39m
+[2m13:59:52[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/ui/date-picker.tsx, /src/index.css[22m
+[2m13:59:52[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/ui/date-picker.tsx, /src/index.css[22m
+[2m13:59:55[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/features/evv/pages/EvvWizard.tsx, /src/index.css[22m
+[2m14:07:19[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/Profile.tsx, /src/index.css[22m
+[2m14:07:21[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/features/evv/pages/EvvWizard.tsx, /src/index.css[22m
+[2m14:07:22[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/contexts/AuthContext.tsx, /src/index.css[22m
+[2m14:07:24[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/i18n/locales/pt-BR.json[22m
+[2m14:07:25[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/i18n/locales/en.json[22m
+[2m14:08:43[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/features/evv/pages/EvvWizard.tsx, /src/index.css[22m
+[2m14:08:45[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/i18n/locales/pt-BR.json[22m
+[2m14:08:46[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/i18n/locales/en.json[22m
+[2m14:15:08[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/features/evv/pages/EvvWizard.tsx, /src/index.css[22m
+[2m14:15:09[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/i18n/locales/pt-BR.json[22m
+[2m14:15:11[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/i18n/locales/en.json[22m
+[2m14:23:35[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/auth/ProtectedRoute.tsx, /src/components/layout/MobileSidebar.tsx, /src/components/layout/AppSidebar.tsx, /src/components/users/UserAccessDialog.tsx, /src/pages/SafetyObservationForm.tsx[22m
+[2m14:23:36[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/auth/ProtectedRoute.tsx, /src/index.css[22m
+[2m14:23:38[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/features/evv/pages/EvvWizard.tsx, /src/index.css[22m
+[2m14:23:48[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/contexts/AuthContext.tsx, /src/index.css[22m
+[2m14:24:50[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/features/evv/pages/EvvWizard.tsx, /src/index.css[22m
+[2m14:41:54[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/features/evv/pages/EvvWizard.tsx, /src/index.css[22m
+[2m14:41:56[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/i18n/locales/pt-BR.json[22m
+[2m14:41:57[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/i18n/locales/en.json[22m
+[2m16:07:58[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/features/evv/pages/EvvWizard.tsx, /src/index.css[22m
+[2m16:08:49[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/features/evv/pages/EvvWizard.tsx, /src/index.css[22m
+[2m16:50:48[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/features/evv/pages/EvvHistory.tsx, /src/index.css[22m
+[2m16:50:50[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/auth/ProtectedRoute.tsx, /src/components/layout/MobileSidebar.tsx, /src/components/layout/AppSidebar.tsx, /src/components/users/UserAccessDialog.tsx, /src/pages/SafetyObservationForm.tsx[22m
+[2m16:51:36[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/i18n/locales/pt-BR.json[22m
+[2m16:51:37[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/i18n/locales/en.json[22m
+[2m16:52:10[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/features/evv/pages/EvvHistory.tsx, /src/index.css[22m
+[2m16:52:12[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/i18n/locales/pt-BR.json[22m
+[2m16:52:13[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/i18n/locales/en.json[22m
+[2m16:53:25[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/features/evv/pages/EvvHistory.tsx, /src/index.css[22m
+[2m16:56:09[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/features/evv/pages/EvvWizard.tsx, /src/index.css[22m
+[2m16:56:11[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/i18n/locales/pt-BR.json[22m
+[2m16:56:29[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/features/evv/pages/EvvWizard.tsx, /src/index.css[22m
+[2m16:56:30[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/i18n/locales/en.json[22m
+[2m17:00:25[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/users/DeleteUserDialog.tsx, /src/components/users/UserEditDialog.tsx, /src/components/users/UserRoleDialog.tsx[22m

@@ -41,6 +41,14 @@ export interface ObsCard {
   ai_category: string | null;
   ai_risk_level: string | null;
   ai_reasoning: string | null;
+  ai_status_assessment: string | null;
+  ai_status_alignment: string | null;
+  ai_confidence: number | null;
+  ai_criticality_score: number | null;
+  ai_requires_followup: boolean | null;
+  ai_action_quality: string | null;
+  ai_barrier_failure: string | null;
+  ai_recommended_action: string | null;
   severity: string | null;
   time_to_close_days: number | null;
   is_open: boolean | null;

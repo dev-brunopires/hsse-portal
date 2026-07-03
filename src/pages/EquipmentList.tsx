@@ -5,7 +5,7 @@ import { VirtualizedEquipmentTable } from '@/components/equipment/VirtualizedEqu
 import { useCategories } from '@/hooks/useCategories';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Package } from 'lucide-react';
+import { Calendar, Info, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getCategoryIcon } from '@/utils/categoryIcons';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -31,9 +31,18 @@ export default function EquipmentList() {
     );
   }
 
-  const selectedCategory = activeTab !== 'all' 
-    ? categories.find(c => c.id === activeTab)
+  const selectedCategory = activeTab !== 'all'
+    ? categories.find(c => String(c.id) === String(activeTab))
     : undefined;
+  const selectedFrequency = selectedCategory?.inspection_frequency || (activeTab !== 'all' ? 'monthly' : undefined);
+  const selectedCategoryText = selectedCategory?.description || selectedCategory?.name || t('equipment.selectedCategory', 'Categoria selecionada');
+  const frequencyLabels: Record<string, string> = {
+    monthly: t('equipmentTable.frequencyMonthly'),
+    quarterly: t('equipmentTable.frequencyQuarterly'),
+    semiannual: t('equipmentTable.frequencySemiannual'),
+    annual: t('equipmentTable.frequencyAnnual'),
+    custom: t('equipmentTable.frequencyCustom'),
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -63,12 +72,12 @@ export default function EquipmentList() {
             {/* Category Tabs */}
             {categories.map((category) => {
               const IconComponent = getCategoryIcon(category.icon);
-              const isActive = activeTab === category.id;
+              const isActive = String(activeTab) === String(category.id);
               
               return (
                 <button
                   key={category.id}
-                  onClick={() => setActiveTab(category.id)}
+                  onClick={() => setActiveTab(String(category.id))}
                   className={cn(
                     "inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md text-sm font-medium transition-all",
                     isActive
@@ -86,11 +95,25 @@ export default function EquipmentList() {
         </ScrollArea>
 
         <TabsContent value={activeTab} className="mt-0">
+          {activeTab !== 'all' && (
+            <div className="mb-6 px-4 py-3 bg-primary/5 border border-border rounded-lg flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex items-center gap-3 flex-1">
+                <Info className="h-4 w-4 text-primary" />
+                <span className="text-sm text-foreground">{selectedCategoryText}</span>
+              </div>
+              {selectedFrequency && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">{t('equipmentTable.inspectionFrequency')}:</span>
+                  <span className="font-medium text-foreground">
+                    {frequencyLabels[selectedFrequency] || selectedFrequency}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
           <VirtualizedEquipmentTable 
             categoryId={activeTab !== 'all' ? activeTab : undefined}
-            categoryName={selectedCategory?.name}
-            categoryDescription={selectedCategory?.description || undefined}
-            inspectionFrequency={selectedCategory?.inspection_frequency}
           />
         </TabsContent>
       </Tabs>
