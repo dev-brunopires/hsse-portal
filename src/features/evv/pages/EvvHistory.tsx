@@ -48,6 +48,18 @@ const REVIEW_VARIANT: Record<string, 'default' | 'secondary' | 'destructive'> = 
   pending: 'secondary',
 };
 
+const ENVIRONMENT_LABEL: Record<string, string> = {
+  fpso: 'FPSO',
+  project: 'Projeto',
+  office: 'Escritório',
+  yard: 'Estaleiro',
+};
+
+function displayScopeValue(value: string | null | undefined, labels?: Record<string, string>) {
+  if (!value) return '-';
+  return labels?.[value] ?? value;
+}
+
 interface ServerRow {
   id: string;
   client_id: string;
@@ -271,11 +283,11 @@ export default function EvvHistory() {
             <div className="grid gap-4 py-2 sm:grid-cols-2">
               <PreviewField label={t('evv.history.formType')} value={t(`evv.forms.${previewSubmission.form_type === 'leaders_engagement' ? 'leaders' : previewSubmission.form_type === 'workers_engagement' ? 'workers' : previewSubmission.form_type}.title`)} />
               <PreviewField label={t('evv.history.date')} value={formatDateTime(previewSubmission.updated_at)} />
-              <PreviewField label={t('evv.scope.environment')} value={previewSubmission.scope.environment || '-'} />
-              <PreviewField label={t('evv.scope.area')} value={previewSubmission.scope.area || '-'} />
-              <PreviewField label={t('evv.scope.location')} value={previewSubmission.scope.location || '-'} />
-              <PreviewField label={t('evv.scope.department')} value={previewSubmission.scope.department || '-'} />
-              <PreviewField label={t('evv.scope.task')} value={previewSubmission.scope.task_description || '-'} className="sm:col-span-2" />
+              <PreviewField label={t('evv.scope.environment')} value={displayScopeValue(previewSubmission.scope.environment, ENVIRONMENT_LABEL)} />
+              <PreviewField label={t('evv.scope.area')} value={displayScopeValue(previewSubmission.scope.area)} />
+              <PreviewField label={t('evv.scope.location')} value={displayScopeValue(previewSubmission.scope.location)} />
+              <PreviewField label={t('evv.scope.department')} value={displayScopeValue(previewSubmission.scope.department)} />
+              <PreviewField label={t('evv.scope.task')} value={displayScopeValue(previewSubmission.scope.task_description)} className="sm:col-span-2" />
               <PreviewField
                 label={t('evv.history.answeredItems')}
                 value={String(Object.values(previewSubmission.answers).filter((answer) => answer.rating).length)}

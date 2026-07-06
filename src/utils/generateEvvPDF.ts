@@ -14,6 +14,16 @@ import type { EvvAnswers, EvvScope } from '@/features/evv/types';
 
 const getDateLocale = () => (i18n.language === 'en' ? enUS : ptBR);
 
+type PdfWithAutoTable = jsPDF & {
+  lastAutoTable?: {
+    finalY: number;
+  };
+};
+
+function lastAutoTableY(doc: jsPDF, fallback: number) {
+  return (doc as PdfWithAutoTable).lastAutoTable?.finalY ?? fallback;
+}
+
 export interface EvvPDFData {
   submission: {
     id?: string;
@@ -42,18 +52,12 @@ export interface EvvPDFData {
   branding?: OrganizationBranding;
 }
 
-const FORM_TITLE: Record<EvvFormType, string> = {
-  safeguard: 'V&V Safeguard',
-  leaders_engagement: 'V&V Leaders Engagement',
-  workers_engagement: 'V&V Workers Engagement',
-  tlo: 'Targeted Learning Observation (TLO)',
-  aar: 'After Action Review (AAR)',
-};
-
-const RATING_LABEL: Record<Rating, string> = {
-  effective: 'Effective',
-  not_effective: 'Not Effective',
-  not_assessed: 'Not Assessed',
+const FORM_TITLE_KEY: Record<EvvFormType, string> = {
+  safeguard: 'evv.forms.safeguard.title',
+  leaders_engagement: 'evv.forms.leaders.title',
+  workers_engagement: 'evv.forms.workers.title',
+  tlo: 'evv.forms.tlo.title',
+  aar: 'evv.forms.aar.title',
 };
 
 const RATING_COLOR: Record<Rating, [number, number, number]> = {
@@ -61,6 +65,36 @@ const RATING_COLOR: Record<Rating, [number, number, number]> = {
   not_effective: DANGER_RED,
   not_assessed: MEDIUM_GRAY,
 };
+
+const ENVIRONMENT_LABEL: Record<string, string> = {
+  fpso: 'FPSO',
+  project: 'Projeto',
+  office: 'Escritório',
+  yard: 'Estaleiro',
+};
+
+const YES_NO_LABEL: Record<string, string> = {
+  yes: 'Sim',
+  no: 'Não',
+  na: 'N/A',
+};
+
+const ORGANIZATION_LABEL: Record<string, string> = {
+  sbm: 'SBM',
+  contractor: 'Contratada',
+  client: 'Cliente',
+};
+
+const ROLE_LABEL: Record<string, string> = {
+  vendor: 'Fornecedor',
+  technician: 'Técnico',
+  supervisor: 'Supervisor',
+};
+
+function scopeLabel(value: string | null | undefined, labels: Record<string, string>) {
+  if (!value) return '-';
+  return labels[value] ?? value;
+}
 
 function fmtDate(iso?: string | null): string {
   if (!iso) return '-';
@@ -85,7 +119,7 @@ export async function generateEvvPDF(data: EvvPDFData, options?: { preview?: boo
   // === HEADER ===
   yPos = await addPDFHeader(
     doc,
-    FORM_TITLE[data.submission.form_type] ?? 'eV&V Submission',
+    String(t(FORM_TITLE_KEY[data.submission.form_type] ?? 'evv.title')),
     undefined,
     [
       `ID: ${data.submission.id ?? data.submission.client_id.slice(0, 8)}`,
@@ -103,7 +137,7 @@ export async function generateEvvPDF(data: EvvPDFData, options?: { preview?: boo
     body: [
       [
         { content: `${t('evv.scope.environment')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } },
-        data.submission.scope.environment || '-',
+        scopeLabel(data.submission.scope.environment, ENVIRONMENT_LABEL),
         { content: `${t('evv.scope.area')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } },
         data.submission.scope.area || '-',
       ],
@@ -115,13 +149,13 @@ export async function generateEvvPDF(data: EvvPDFData, options?: { preview?: boo
       ],
       [
         { content: `${t('evv.scope.visitDate')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } },
-        data.submission.scope.visit_datetime || '-',
+        fmtDate(data.submission.scope.visit_datetime),
         { content: `${t('evv.scope.permitToWork')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } },
-        data.submission.scope.permit_to_work || '-',
+        scopeLabel(data.submission.scope.permit_to_work, YES_NO_LABEL),
       ],
       [
         { content: `${t('evv.scope.criticalActivity')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } },
-        data.submission.scope.critical_activity || '-',
+        scopeLabel(data.submission.scope.critical_activity, YES_NO_LABEL),
         '',
         '',
       ],
@@ -133,9 +167,9 @@ export async function generateEvvPDF(data: EvvPDFData, options?: { preview?: boo
       ],
       [
         { content: `${t('evv.scope.observedOrg')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } },
-        data.submission.scope.observed_organization || '-',
+        scopeLabel(data.submission.scope.observed_organization, ORGANIZATION_LABEL),
         { content: `${t('evv.scope.observedRole')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } },
-        data.submission.scope.observed_role || '-',
+        scopeLabel(data.submission.scope.observed_role, ROLE_LABEL),
       ],
       [
         { content: `${t('evv.scope.task')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } },
@@ -147,7 +181,7 @@ export async function generateEvvPDF(data: EvvPDFData, options?: { preview?: boo
     columnStyles: { 0: { cellWidth: 32 }, 1: { cellWidth: 58 }, 2: { cellWidth: 32 }, 3: { cellWidth: 58 } },
     margin: { left: margin },
   });
-  yPos = (doc as any).lastAutoTable.finalY + 8;
+  yPos = lastAutoTableY(doc, yPos) + 8;
 
   // === AUTHOR ===
   yPos = addSectionHeader(doc, yPos, t('evv.pdf.authorSection'), SBM_BLUE, pageWidth - margin * 2);
@@ -173,10 +207,10 @@ export async function generateEvvPDF(data: EvvPDFData, options?: { preview?: boo
     columnStyles: { 0: { cellWidth: 28 }, 1: { cellWidth: 62 }, 2: { cellWidth: 28 }, 3: { cellWidth: 62 } },
     margin: { left: margin },
   });
-  yPos = (doc as any).lastAutoTable.finalY + 8;
+  yPos = lastAutoTableY(doc, yPos) + 8;
 
   // === ANSWERS / OBSERVATIONS ===
-  const rows: any[] = [];
+  const rows: Array<Array<unknown>> = [];
   getEvvCategories(data.submission.form_type).forEach((cat) => {
     cat.questions.forEach((q) => {
       const a = data.submission.answers[q.id];
@@ -186,7 +220,7 @@ export async function generateEvvPDF(data: EvvPDFData, options?: { preview?: boo
         cat.name.replace(' (LSR)', ''),
         q.text,
         {
-          content: RATING_LABEL[a.rating],
+          content: String(t(`evv.rating.${a.rating}`)),
           styles: { textColor: color, fontStyle: 'bold' as const, halign: 'center' as const },
         },
         a.deficiencies && a.deficiencies.length ? a.deficiencies.map((d) => `• ${d}`).join('\n') : '-',
@@ -223,7 +257,7 @@ export async function generateEvvPDF(data: EvvPDFData, options?: { preview?: boo
       alternateRowStyles: { fillColor: [250, 251, 252] },
       margin: { left: margin },
     });
-    yPos = (doc as any).lastAutoTable.finalY + 8;
+    yPos = lastAutoTableY(doc, yPos) + 8;
   }
 
   // === COMMENTS ===
@@ -272,7 +306,7 @@ export async function generateEvvPDF(data: EvvPDFData, options?: { preview?: boo
       columnStyles: { 0: { cellWidth: 28 }, 1: { cellWidth: 62 }, 2: { cellWidth: 28 }, 3: { cellWidth: 62 } },
       margin: { left: margin },
     });
-    yPos = (doc as any).lastAutoTable.finalY + 8;
+    yPos = lastAutoTableY(doc, yPos) + 8;
   }
 
   // === SIGNATURE ===

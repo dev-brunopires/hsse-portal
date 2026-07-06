@@ -109,9 +109,9 @@ export default function EvvReports() {
               <SelectContent>
                 <SelectItem value="all">{t('common.all')}</SelectItem>
                 <SelectItem value="fpso">FPSO</SelectItem>
-                <SelectItem value="project">Project</SelectItem>
-                <SelectItem value="office">Office</SelectItem>
-                <SelectItem value="yard">Yard</SelectItem>
+                <SelectItem value="project">Projeto</SelectItem>
+                <SelectItem value="office">Escritório</SelectItem>
+                <SelectItem value="yard">Estaleiro</SelectItem>
               </SelectContent>
             </Select>
           </div>

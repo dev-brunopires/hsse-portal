@@ -33,192 +33,192 @@ export const EVV_FORMS: { id: EvvFormType; titleKey: string; descKey: string }[]
 ];
 
 const CONTROL_DEFICIENCIES = [
-  'Procedure, method statement, or permit does not match the work being performed',
-  'Critical control is missing, incomplete, or not verified at the worksite',
-  'Team cannot explain the hazard, control, or stop-work condition',
-  'Required equipment, barrier, tool, or PPE is not available or fit for use',
-  'Supervision, handover, or contractor interface is weak',
-  'Other gap observed at the worksite',
+  'Procedimento, método de trabalho ou permissão não corresponde ao trabalho executado',
+  'Controle crítico ausente, incompleto ou não verificado no local',
+  'Equipe não consegue explicar o perigo, o controle ou a condição para parar o trabalho',
+  'Equipamento, barreira, ferramenta ou EPI requerido não está disponível ou adequado',
+  'Supervisão, passagem de serviço ou interface com contratada está frágil',
+  'Outro desvio observado no local de trabalho',
 ];
 
 const ENGAGEMENT_DEFICIENCIES = [
-  'Engagement was not performed at the worksite',
-  'Discussion stayed generic and did not test understanding',
-  'Leader did not verify critical controls in the field',
-  'Team concerns or weak signals were not explored',
-  'Actions were not assigned clearly',
-  'Other leadership engagement gap',
+  'Engajamento não foi realizado no local de trabalho',
+  'Discussão ficou genérica e não testou o entendimento',
+  'Liderança não verificou os controles críticos em campo',
+  'Preocupações da equipe ou sinais fracos não foram explorados',
+  'Ações não foram atribuídas de forma clara',
+  'Outro desvio de engajamento da liderança',
 ];
 
 const WORKER_DEFICIENCIES = [
-  'Worker could not explain the task scope or main hazard',
-  'Critical control or safeguard was not understood',
-  'Stop-work authority was unclear or not reinforced',
-  'Toolbox talk or JSA was not understood by the team',
-  'Contractor/vendor expectations were not aligned with SBM requirements',
-  'Other worker engagement gap',
+  'Trabalhador não conseguiu explicar o escopo da tarefa ou o principal perigo',
+  'Controle crítico ou salvaguarda não foi compreendido',
+  'Autoridade para parar o trabalho não estava clara ou não foi reforçada',
+  'DDS, toolbox talk ou JSA não foi compreendido pela equipe',
+  'Expectativas para contratada/fornecedor não estavam alinhadas aos requisitos SBM',
+  'Outro desvio de engajamento dos trabalhadores',
 ];
 
 const LEARNING_DEFICIENCIES = [
-  'Expected behavior or control was not observed',
-  'Local condition is driving deviation from the expected practice',
-  'Procedure does not reflect field reality',
-  'Learning is not being captured or shared',
-  'Action is needed before the topic can be considered effective',
-  'Other learning gap',
+  'Comportamento ou controle esperado não foi observado',
+  'Condição local está levando a desvio da prática esperada',
+  'Procedimento não reflete a realidade de campo',
+  'Aprendizado não está sendo capturado ou compartilhado',
+  'Ação é necessária antes de considerar o tema efetivo',
+  'Outro desvio de aprendizado',
 ];
 
 const AAR_DEFICIENCIES = [
-  'Outcome differed from the plan or expectation',
-  'HSSE controls were only partially effective',
-  'Roles, communication, or handover were unclear',
-  'Tools, resources, permits, or access were inadequate',
-  'Contractor/client interface created friction or risk',
-  'Lesson learned requires follow-up action',
+  'Resultado foi diferente do plano ou da expectativa',
+  'Controles de HSSE foram apenas parcialmente efetivos',
+  'Papéis, comunicação ou passagem de serviço não estavam claros',
+  'Ferramentas, recursos, permissões ou acessos estavam inadequados',
+  'Interface com contratada/cliente gerou atrito ou risco',
+  'Lição aprendida requer ação de acompanhamento',
 ];
 
 const SAFEGUARD_CATEGORIES: EvvCategory[] = [
   {
     id: 'breaking_containment',
-    name: 'Breaking Containment',
+    name: 'Quebra de Contenção',
     isLSR: true,
     questions: [
       {
         id: 'bc_1',
-        text: 'Work pack, permit, isolation plan, and contingency controls match the containment break scope',
+        text: 'Pacote de trabalho, permissão, plano de isolamento e controles de contingência correspondem ao escopo da quebra de contenção',
         deficiencies: CONTROL_DEFICIENCIES,
       },
       {
         id: 'bc_2',
-        text: 'Line contents, pressure, drains, vents, spill containment, and environmental controls were verified before opening',
+        text: 'Conteúdo da linha, pressão, drenos, respiros, contenção de derrames e controles ambientais foram verificados antes da abertura',
         deficiencies: CONTROL_DEFICIENCIES,
       },
     ],
   },
   {
     id: 'bypassing_safety_controls',
-    name: 'Bypassing Safety Controls (LSR)',
+    name: 'Bypass de Controles de Segurança (LSR)',
     isLSR: true,
     questions: [
       {
         id: 'bsc_1',
-        text: 'Authorization is obtained before disabling or overriding safety controls',
+        text: 'Autorização foi obtida antes de desabilitar ou sobrescrever controles de segurança',
         deficiencies: [
-          'No formal authorization for bypass or override',
-          'Compensatory measures are not defined or not in place',
-          'Bypass is not tracked in the management system',
-          'Restoration of controls is not verified after work',
+          'Sem autorização formal para bypass ou override',
+          'Medidas compensatórias não definidas ou não implementadas',
+          'Bypass não está registrado no sistema de gestão',
+          'Restauração dos controles não foi verificada após o trabalho',
         ],
       },
     ],
   },
   {
     id: 'confined_space',
-    name: 'Confined Space (LSR)',
+    name: 'Espaço Confinado (LSR)',
     isLSR: true,
     questions: [
       {
         id: 'cs_1',
-        text: 'Energy sources are isolated and verified before entry',
+        text: 'Fontes de energia foram isoladas e verificadas antes da entrada',
         deficiencies: [
-          'Energy isolation not verified before entry',
-          'Lock-out / tag-out not applied as required',
-          'Stored energy not dissipated',
-          'Isolation plan not signed off by authorized person',
+          'Isolamento de energia não verificado antes da entrada',
+          'Bloqueio e etiquetagem não aplicados conforme requerido',
+          'Energia armazenada não dissipada',
+          'Plano de isolamento não aprovado por pessoa autorizada',
         ],
       },
       {
         id: 'cs_2',
-        text: 'Atmosphere has been tested and continuous monitoring is in place where required',
+        text: 'Atmosfera foi testada e o monitoramento contínuo está implementado quando requerido',
         deficiencies: [
-          'Pre-entry gas test not performed',
-          'Continuous monitoring not in place during work',
-          'Gas detector not calibrated or out of service',
-          'Action levels and evacuation criteria not communicated',
+          'Teste de gás pré-entrada não realizado',
+          'Monitoramento contínuo não implementado durante o trabalho',
+          'Detector de gás sem calibração ou fora de serviço',
+          'Níveis de ação e critérios de evacuação não comunicados',
         ],
       },
       {
         id: 'cs_3',
-        text: 'Rescue plan, standby person, communications, and breathing apparatus are ready when required',
+        text: 'Plano de resgate, vigia, comunicação e equipamento respiratório estão prontos quando requeridos',
         deficiencies: CONTROL_DEFICIENCIES,
       },
     ],
   },
   {
     id: 'driving',
-    name: 'Driving (LSR)',
+    name: 'Condução de Veículos (LSR)',
     isLSR: true,
     questions: [
       {
         id: 'drv_1',
-        text: 'Journey, vehicle, driver fitness, seat belt use, and local driving controls are verified',
+        text: 'Trajeto, veículo, aptidão do motorista, uso de cinto e controles locais de direção foram verificados',
         deficiencies: CONTROL_DEFICIENCIES,
       },
     ],
   },
   {
     id: 'energy_deisolation',
-    name: 'Energy de-isolation and re-energizing',
+    name: 'Desisolamento e Reenergização',
     isLSR: true,
     questions: [
       {
         id: 'edr_1',
-        text: 'Area is clear, stakeholders are notified, and authorization is in place before re-energizing',
+        text: 'Área está liberada, partes interessadas foram notificadas e autorização está vigente antes da reenergização',
         deficiencies: CONTROL_DEFICIENCIES,
       },
     ],
   },
   {
     id: 'energy_isolation',
-    name: 'Energy Isolation (LSR)',
+    name: 'Isolamento de Energia (LSR)',
     isLSR: true,
     questions: [
       {
         id: 'ei_1',
-        text: 'All energy sources are identified, isolated, locked/tagged, and tested for zero energy',
+        text: 'Todas as fontes de energia foram identificadas, isoladas, bloqueadas/etiquetadas e testadas para energia zero',
         deficiencies: CONTROL_DEFICIENCIES,
       },
     ],
   },
   {
     id: 'hot_work',
-    name: 'Hot Work (LSR)',
+    name: 'Trabalho a Quente (LSR)',
     isLSR: true,
     questions: [
       {
         id: 'hw_1',
-        text: 'A valid Hot Work permit is in place at the work location',
+        text: 'Uma Permissão de Trabalho a Quente válida está disponível no local',
         deficiencies: [
-          'No valid Hot Work permit at the location',
-          'Permit scope does not cover the actual task',
-          'Permit conditions not communicated to workers',
+          'Sem Permissão de Trabalho a Quente válida no local',
+          'Escopo da permissão não cobre a tarefa real',
+          'Condições da permissão não foram comunicadas aos trabalhadores',
         ],
       },
       {
         id: 'hw_2',
-        text: 'Flammables are removed or isolated, gas testing is valid, fire watch is assigned, and firefighting equipment is ready',
+        text: 'Inflamáveis foram removidos ou isolados, teste de gás está válido, vigia de fogo foi designado e equipamentos de combate a incêndio estão prontos',
         deficiencies: [
-          'Flammable and combustible materials have not been identified, isolated, or removed',
-          'A trained Fire Watch is not designated or not at the work location',
-          'Firefighting equipment is not inspected, functional, or available',
-          'Hot Work authorization has not been completed per requirements',
+          'Materiais inflamáveis e combustíveis não foram identificados, isolados ou removidos',
+          'Vigia de fogo treinado não foi designado ou não está no local',
+          'Equipamento de combate a incêndio não está inspecionado, funcional ou disponível',
+          'Autorização de Trabalho a Quente não foi concluída conforme os requisitos',
         ],
       },
     ],
   },
   ...[
-    'Working at Height',
-    'Line of Fire',
-    'Lifting Operations',
-    'Management of Change',
-    'Permit to Work',
-    'Personal Protective Equipment',
-    'Housekeeping / Access and Egress',
-    'Mechanical Lifting Below the Hook',
-    'Pressure Testing',
-    'Excavation',
-    'Diving Operations',
-    'Marine Operations',
+    'Trabalho em Altura',
+    'Linha de Fogo',
+    'Operações de Içamento',
+    'Gestão de Mudanças',
+    'Permissão de Trabalho',
+    'Equipamento de Proteção Individual',
+    'Organização, Limpeza / Acesso e Saída',
+    'Içamento Mecânico Abaixo do Gancho',
+    'Teste de Pressão',
+    'Escavação',
+    'Operações de Mergulho',
+    'Operações Marítimas',
   ].map<EvvCategory>((name, i) => ({
     id: `sg_${i + 8}`,
     name: `${name} (LSR)`,
@@ -226,7 +226,7 @@ const SAFEGUARD_CATEGORIES: EvvCategory[] = [
     questions: [
       {
         id: `sg_${i + 8}_q1`,
-        text: `Critical controls for ${name} are in place, understood, and effective`,
+        text: `Controles críticos para ${name} estão implementados, compreendidos e efetivos`,
         deficiencies: CONTROL_DEFICIENCIES,
       },
     ],
@@ -236,48 +236,48 @@ const SAFEGUARD_CATEGORIES: EvvCategory[] = [
 const LEADERS_CATEGORIES: EvvCategory[] = [
   {
     id: 'leadership_presence',
-    name: 'Leadership presence',
+    name: 'Presença da liderança',
     questions: [
       {
         id: 'le_presence_1',
-        text: 'Leader was present at the worksite and engaged with the team before or during the task',
+        text: 'Líder esteve presente no local de trabalho e engajou a equipe antes ou durante a tarefa',
         deficiencies: ENGAGEMENT_DEFICIENCIES,
       },
       {
         id: 'le_presence_2',
-        text: 'Leader discussed HSSE expectations, recent campaigns, or relevant learnings with the team',
+        text: 'Líder discutiu expectativas de HSSE, campanhas recentes ou aprendizados relevantes com a equipe',
         deficiencies: ENGAGEMENT_DEFICIENCIES,
       },
     ],
   },
   {
     id: 'control_verification',
-    name: 'Control verification',
+    name: 'Verificação de controles',
     questions: [
       {
         id: 'le_control_1',
-        text: 'Leader verified hazards, PTW/JSA quality, and critical controls in the field',
+        text: 'Líder verificou perigos, qualidade da PTW/JSA e controles críticos em campo',
         deficiencies: ENGAGEMENT_DEFICIENCIES,
       },
       {
         id: 'le_control_2',
-        text: 'Leader checked contractor/client/vendor interface risks where applicable',
+        text: 'Líder verificou riscos de interface com contratada, cliente ou fornecedor quando aplicável',
         deficiencies: ENGAGEMENT_DEFICIENCIES,
       },
     ],
   },
   {
     id: 'coaching_and_intervention',
-    name: 'Coaching and intervention',
+    name: 'Orientação e intervenção',
     questions: [
       {
         id: 'le_coach_1',
-        text: 'Leader asked open questions and listened for weak signals, concerns, or production pressure',
+        text: 'Líder fez perguntas abertas e escutou sinais fracos, preocupações ou pressão de produção',
         deficiencies: ENGAGEMENT_DEFICIENCIES,
       },
       {
         id: 'le_coach_2',
-        text: 'Leader recognized safe behavior or challenged unsafe behavior with clear follow-up',
+        text: 'Líder reconheceu comportamento seguro ou questionou comportamento inseguro com acompanhamento claro',
         deficiencies: ENGAGEMENT_DEFICIENCIES,
       },
     ],
@@ -287,51 +287,51 @@ const LEADERS_CATEGORIES: EvvCategory[] = [
 const WORKERS_CATEGORIES: EvvCategory[] = [
   {
     id: 'task_understanding',
-    name: 'Task understanding',
+    name: 'Entendimento da tarefa',
     questions: [
       {
         id: 'we_task_1',
-        text: 'Workers can explain the task scope and what could go wrong',
-        guidance: 'Suggested prompt: What is the highest risk in this task?',
+        text: 'Trabalhadores conseguem explicar o escopo da tarefa e o que pode dar errado',
+        guidance: 'Pergunta sugerida: qual é o maior risco desta tarefa?',
         deficiencies: WORKER_DEFICIENCIES,
       },
       {
         id: 'we_task_2',
-        text: 'Workers understand the JSA/toolbox talk and actively participated in it',
+        text: 'Trabalhadores entendem a JSA/toolbox talk e participaram ativamente dela',
         deficiencies: WORKER_DEFICIENCIES,
       },
     ],
   },
   {
     id: 'control_understanding',
-    name: 'Control understanding',
+    name: 'Entendimento dos controles',
     questions: [
       {
         id: 'we_control_1',
-        text: 'Workers can name the critical control or safeguard protecting them from the main hazard',
-        guidance: 'Suggested prompt: What control protects you from that risk?',
+        text: 'Trabalhadores conseguem citar o controle crítico ou salvaguarda que os protege do principal perigo',
+        guidance: 'Pergunta sugerida: qual controle protege você desse risco?',
         deficiencies: WORKER_DEFICIENCIES,
       },
       {
         id: 'we_control_2',
-        text: 'Workers are following the agreed method and using the required equipment/PPE',
+        text: 'Trabalhadores seguem o método acordado e usam os equipamentos/EPIs requeridos',
         deficiencies: WORKER_DEFICIENCIES,
       },
     ],
   },
   {
     id: 'speak_up',
-    name: 'Speak up and stop work',
+    name: 'Falar abertamente e parar o trabalho',
     questions: [
       {
         id: 'we_stop_1',
-        text: 'Workers understand stop-work authority and when they should stop the job',
-        guidance: 'Suggested prompt: When would you stop the job?',
+        text: 'Trabalhadores entendem a autoridade para parar o trabalho e quando devem interromper a atividade',
+        guidance: 'Pergunta sugerida: quando você pararia o trabalho?',
         deficiencies: WORKER_DEFICIENCIES,
       },
       {
         id: 'we_stop_2',
-        text: 'Workers feel comfortable raising concerns with SBM, contractor, or client leadership',
+        text: 'Trabalhadores se sentem confortáveis para levantar preocupações com a liderança da SBM, contratada ou cliente',
         deficiencies: WORKER_DEFICIENCIES,
       },
     ],
@@ -341,48 +341,48 @@ const WORKERS_CATEGORIES: EvvCategory[] = [
 const TLO_CATEGORIES: EvvCategory[] = [
   {
     id: 'learning_focus',
-    name: 'Learning focus',
+    name: 'Foco do aprendizado',
     questions: [
       {
         id: 'tlo_focus_1',
-        text: 'Observation topic, campaign, trend, recent event, or audit finding is clear',
+        text: 'Tema da observação, campanha, tendência, evento recente ou achado de auditoria está claro',
         deficiencies: LEARNING_DEFICIENCIES,
       },
       {
         id: 'tlo_focus_2',
-        text: 'Expected behavior or control for the topic was visible at the worksite',
+        text: 'Comportamento ou controle esperado para o tema estava visível no local de trabalho',
         deficiencies: LEARNING_DEFICIENCIES,
       },
     ],
   },
   {
     id: 'field_reality',
-    name: 'Field reality',
+    name: 'Realidade de campo',
     questions: [
       {
         id: 'tlo_field_1',
-        text: 'Local conditions such as SIMOPS, access, weather, staffing, tools, or schedule pressure support safe execution',
+        text: 'Condições locais como SIMOPS, acesso, clima, equipe, ferramentas ou pressão de prazo apoiam a execução segura',
         deficiencies: LEARNING_DEFICIENCIES,
       },
       {
         id: 'tlo_field_2',
-        text: 'There is no significant gap between procedure and how the work is actually performed',
+        text: 'Não há desvio significativo entre o procedimento e como o trabalho é realmente executado',
         deficiencies: LEARNING_DEFICIENCIES,
       },
     ],
   },
   {
     id: 'learning_transfer',
-    name: 'Learning transfer',
+    name: 'Transferência de aprendizado',
     questions: [
       {
         id: 'tlo_transfer_1',
-        text: 'Learning can be shared with other sites, FPSOs, projects, or departments',
+        text: 'Aprendizado pode ser compartilhado com outras unidades, FPSOs, projetos ou setores',
         deficiencies: LEARNING_DEFICIENCIES,
       },
       {
         id: 'tlo_transfer_2',
-        text: 'Recommended action is clear: share learning, coach team, update procedure, or escalate risk',
+        text: 'Ação recomendada está clara: compartilhar aprendizado, orientar equipe, atualizar procedimento ou escalar risco',
         deficiencies: LEARNING_DEFICIENCIES,
       },
     ],
@@ -392,48 +392,48 @@ const TLO_CATEGORIES: EvvCategory[] = [
 const AAR_CATEGORIES: EvvCategory[] = [
   {
     id: 'plan_vs_actual',
-    name: 'Plan versus actual',
+    name: 'Planejado versus realizado',
     questions: [
       {
         id: 'aar_plan_1',
-        text: 'What was expected to happen was clear to everyone involved',
+        text: 'O que era esperado estava claro para todos os envolvidos',
         deficiencies: AAR_DEFICIENCIES,
       },
       {
         id: 'aar_plan_2',
-        text: 'Actual execution matched the plan without significant unplanned deviation',
+        text: 'A execução real correspondeu ao plano sem desvios não planejados significativos',
         deficiencies: AAR_DEFICIENCIES,
       },
     ],
   },
   {
     id: 'control_effectiveness',
-    name: 'Control effectiveness',
+    name: 'Efetividade dos controles',
     questions: [
       {
         id: 'aar_control_1',
-        text: 'HSSE controls were effective during the activity, event, drill, shutdown, or SIMOPS',
+        text: 'Controles de HSSE foram efetivos durante a atividade, evento, simulado, parada ou SIMOPS',
         deficiencies: AAR_DEFICIENCIES,
       },
       {
         id: 'aar_control_2',
-        text: 'Roles, communication, handovers, tools, access, and resources supported safe delivery',
+        text: 'Papéis, comunicação, passagens de serviço, ferramentas, acessos e recursos apoiaram a execução segura',
         deficiencies: AAR_DEFICIENCIES,
       },
     ],
   },
   {
     id: 'actions_and_lessons',
-    name: 'Actions and lessons',
+    name: 'Ações e lições aprendidas',
     questions: [
       {
         id: 'aar_lesson_1',
-        text: 'What went well and what did not go as planned were captured with enough detail',
+        text: 'O que funcionou bem e o que não saiu conforme planejado foram registrados com detalhe suficiente',
         deficiencies: AAR_DEFICIENCIES,
       },
       {
         id: 'aar_lesson_2',
-        text: 'Follow-up action owner, due date, and learning transfer need are clear where required',
+        text: 'Responsável, prazo e necessidade de transferência de aprendizado estão claros quando requeridos',
         deficiencies: AAR_DEFICIENCIES,
       },
     ],

@@ -280,9 +280,9 @@ export default function EvvWizard() {
                 <SelectTrigger><SelectValue placeholder={t('evv.scope.select')} /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="fpso">FPSO</SelectItem>
-                  <SelectItem value="project">Project</SelectItem>
-                  <SelectItem value="office">Office</SelectItem>
-                  <SelectItem value="yard">Yard</SelectItem>
+                  <SelectItem value="project">Projeto</SelectItem>
+                  <SelectItem value="office">Escritório</SelectItem>
+                  <SelectItem value="yard">Estaleiro</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -376,8 +376,8 @@ export default function EvvWizard() {
                     <SelectTrigger><SelectValue placeholder={t('evv.scope.select')} /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="sbm">SBM</SelectItem>
-                      <SelectItem value="contractor">Contractor</SelectItem>
-                      <SelectItem value="client">Client</SelectItem>
+                      <SelectItem value="contractor">Contratada</SelectItem>
+                      <SelectItem value="client">Cliente</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -386,8 +386,8 @@ export default function EvvWizard() {
                   <Select value={scope.observed_role || ''} onValueChange={(v) => setScope({ ...scope, observed_role: v as EvvScope['observed_role'] })}>
                     <SelectTrigger><SelectValue placeholder={t('evv.scope.select')} /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="vendor">Vendor</SelectItem>
-                      <SelectItem value="technician">Technician</SelectItem>
+                      <SelectItem value="vendor">Fornecedor</SelectItem>
+                      <SelectItem value="technician">Técnico</SelectItem>
                       <SelectItem value="supervisor">Supervisor</SelectItem>
                     </SelectContent>
                   </Select>

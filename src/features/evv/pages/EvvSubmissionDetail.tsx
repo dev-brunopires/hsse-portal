@@ -65,6 +65,36 @@ const REVIEW_VARIANT: Record<string, 'default' | 'secondary' | 'destructive'> = 
   pending: 'secondary',
 };
 
+const ENVIRONMENT_LABEL: Record<string, string> = {
+  fpso: 'FPSO',
+  project: 'Projeto',
+  office: 'Escritório',
+  yard: 'Estaleiro',
+};
+
+const YES_NO_LABEL: Record<string, string> = {
+  yes: 'Sim',
+  no: 'Não',
+  na: 'N/A',
+};
+
+const ORGANIZATION_LABEL: Record<string, string> = {
+  sbm: 'SBM',
+  contractor: 'Contratada',
+  client: 'Cliente',
+};
+
+const ROLE_LABEL: Record<string, string> = {
+  vendor: 'Fornecedor',
+  technician: 'Técnico',
+  supervisor: 'Supervisor',
+};
+
+function getScopeLabel(value: string | null | undefined, labels: Record<string, string>) {
+  if (!value) return undefined;
+  return labels[value] ?? value;
+}
+
 export default function EvvSubmissionDetail() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
@@ -284,19 +314,19 @@ export default function EvvSubmissionDetail() {
       <Card>
         <CardHeader><CardTitle>{t('evv.pdf.scopeSection')}</CardTitle></CardHeader>
         <CardContent className="grid gap-3 md:grid-cols-2 text-sm">
-          <Field label={t('evv.scope.environment')} value={submission.scope.environment} />
+          <Field label={t('evv.scope.environment')} value={getScopeLabel(submission.scope.environment, ENVIRONMENT_LABEL)} />
           <Field label={t('evv.scope.area')} value={submission.scope.area} />
           <Field label={t('evv.scope.vessel')} value={ship?.name} />
           <Field label={t('evv.scope.location')} value={submission.scope.location} />
-          <Field label={t('evv.scope.visitDate')} value={submission.scope.visit_datetime} />
-          <Field label={t('evv.scope.permitToWork')} value={submission.scope.permit_to_work} />
-          <Field label={t('evv.scope.criticalActivity')} value={submission.scope.critical_activity} />
+          <Field label={t('evv.scope.visitDate')} value={formatDateTime(submission.scope.visit_datetime)} />
+          <Field label={t('evv.scope.permitToWork')} value={getScopeLabel(submission.scope.permit_to_work, YES_NO_LABEL)} />
+          <Field label={t('evv.scope.criticalActivity')} value={getScopeLabel(submission.scope.critical_activity, YES_NO_LABEL)} />
           <Field label={t('evv.scope.yourOrg')} value={submission.scope.your_organization} />
           <Field label={t('evv.scope.department')} value={submission.scope.department} />
           {submission.form_type === 'leaders_engagement' && (
             <>
-              <Field label={t('evv.scope.observedOrg')} value={submission.scope.observed_organization} />
-              <Field label={t('evv.scope.observedRole')} value={submission.scope.observed_role} />
+              <Field label={t('evv.scope.observedOrg')} value={getScopeLabel(submission.scope.observed_organization, ORGANIZATION_LABEL)} />
+              <Field label={t('evv.scope.observedRole')} value={getScopeLabel(submission.scope.observed_role, ROLE_LABEL)} />
             </>
           )}
           <Field label={t('evv.scope.task')} value={submission.scope.task_description} full />
