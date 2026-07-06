@@ -4,6 +4,8 @@ import {
   AlertTriangle,
   CheckCircle2,
   ClipboardList,
+  ChevronLeft,
+  ChevronRight,
   Loader2,
   MapPin,
   Save,
@@ -229,6 +231,14 @@ const riskClasses: Record<SafetyRiskLevel, string> = {
   critical: 'bg-red-100 text-red-800 border-red-200 hover:bg-red-100',
 };
 
+const WIZARD_STEPS = [
+  { key: 'template', title: 'Modelo', description: 'Tipo de cartao' },
+  { key: 'location', title: 'Local', description: 'Identificacao' },
+  { key: 'checklist', title: 'Observacao', description: 'Itens do cartao' },
+  { key: 'risk', title: 'Risco e acao', description: 'Tratativa' },
+  { key: 'review', title: 'Revisao', description: 'Conferencia final' },
+] as const;
+
 function localDateTimeValue() {
   const date = new Date();
   date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
@@ -356,12 +366,49 @@ export default function SafetyObservationForm() {
     ...initialForm,
     observerName: profile?.full_name || '',
   }));
+  const [step, setStep] = useState(0);
+  const [submitted, setSubmitted] = useState(false);
 
   const shipId = selectedShipId || ships[0]?.id || '';
   const selectedShip = ships.find((ship) => ship.id === shipId);
   const canCreate = access.can('obs_cards', 'safety_observation', 'create');
   const riskLevel = useMemo(() => calculateRiskLevel(form.severity, form.likelihood), [form.severity, form.likelihood]);
   const enforcedFollowup = form.requiresFollowup || form.stopWork || form.fatalityPotential || ['high', 'critical'].includes(riskLevel);
+  const isLastStep = step === WIZARD_STEPS.length - 1;
+
+  const resetForm = () => {
+    setForm({ ...initialForm, observerName: profile?.full_name || '', observedAt: localDateTimeValue() });
+    setStep(0);
+  };
+
+  const validateCurrentStep = () => {
+    if (step === 1) {
+      if (!shipId) {
+        toast({ title: 'Navio obrigatorio', description: 'Selecione um navio no topo do sistema.', variant: 'destructive' });
+        return false;
+      }
+      if (!form.area.trim()) {
+        toast({ title: 'Localizacao obrigatoria', description: 'Selecione ou cadastre a area onde aconteceu.', variant: 'destructive' });
+        return false;
+      }
+    }
+    if (step === 3 && !form.description.trim()) {
+      toast({ title: 'Descricao obrigatoria', description: 'Descreva objetivamente o que foi observado.', variant: 'destructive' });
+      return false;
+    }
+    return true;
+  };
+
+  const goNext = () => {
+    if (!validateCurrentStep()) return;
+    setStep((current) => Math.min(current + 1, WIZARD_STEPS.length - 1));
+    window.requestAnimationFrame(() => document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' }));
+  };
+
+  const goBack = () => {
+    setStep((current) => Math.max(current - 1, 0));
+    window.requestAnimationFrame(() => document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' }));
+  };
 
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -457,8 +504,37 @@ export default function SafetyObservationForm() {
     });
 
     toast({ title: 'Observacao registrada', description: 'O cartao foi salvo com todos os campos do modelo selecionado.' });
-    setForm({ ...initialForm, observerName: profile?.full_name || '', observedAt: localDateTimeValue() });
+    resetForm();
+    setSubmitted(true);
   };
+
+  if (submitted) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center animate-fade-in">
+        <Card className="w-full max-w-xl text-center">
+          <CardContent className="space-y-6 py-10">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+              <CheckCircle2 className="h-8 w-8" />
+            </div>
+            <div className="space-y-2">
+              <h1 className="text-2xl font-semibold">Obrigado pela sua observacao</h1>
+              <p className="text-sm text-muted-foreground">
+                Seu cartao foi registrado com sucesso. Esse registro ajuda a fortalecer a cultura de seguranca e a tratar riscos antes que eles evoluam.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+              <Button type="button" onClick={() => setSubmitted(false)}>
+                Registrar nova observacao
+              </Button>
+              <Button type="button" variant="outline" onClick={() => navigate('/obs-cards')}>
+                Voltar ao Cartao com IA
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-full space-y-6 pb-2 animate-fade-in">
@@ -490,34 +566,39 @@ export default function SafetyObservationForm() {
         </Button>
       </div>
 
-      <form onSubmit={submit} className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Modelo do cartao</CardTitle>
-            <CardDescription>Selecione o formulario fisico correspondente.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-2">
-            <TemplateButton
-              active={form.cardTemplate === 'bco'}
-              title="Comportamento / Condicao"
-              description="Cartao azul: comportamento, condicao e equipamento."
-              onClick={() => update('cardTemplate', 'bco')}
-            />
-            <TemplateButton
-              active={form.cardTemplate === 'psf'}
-              title="Seguranca de Processo"
-              description="Cartao laranja: W&S, causas, salvaguardas e PSF."
-              onClick={() => update('cardTemplate', 'psf')}
-            />
-          </CardContent>
-        </Card>
+      <WizardProgress step={step} />
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Identificacao e local</CardTitle>
-            <CardDescription>Navio da conta, area cadastrada do navio e campos do cabecalho do cartao.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-2">
+      <form onSubmit={submit} className="space-y-6">
+        {step === 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Modelo do cartao</CardTitle>
+              <CardDescription>Selecione o formulario fisico correspondente.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-3 sm:grid-cols-2">
+              <TemplateButton
+                active={form.cardTemplate === 'bco'}
+                title="Comportamento / Condicao"
+                description="Cartao azul: comportamento, condicao e equipamento."
+                onClick={() => update('cardTemplate', 'bco')}
+              />
+              <TemplateButton
+                active={form.cardTemplate === 'psf'}
+                title="Seguranca de Processo"
+                description="Cartao laranja: W&S, causas, salvaguardas e PSF."
+                onClick={() => update('cardTemplate', 'psf')}
+              />
+            </CardContent>
+          </Card>
+        )}
+
+        {step === 1 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Identificacao e local</CardTitle>
+              <CardDescription>Navio da conta, area cadastrada do navio e campos do cabecalho do cartao.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2">
             <ReadOnlyField icon={ShipIcon} label="Navio da conta" value={selectedShip?.name || 'Selecione um navio no topo'} />
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
@@ -543,21 +624,25 @@ export default function SafetyObservationForm() {
                 <CheckOption label="Visita do gerente ao local" checked={form.managerSiteVisit} onChange={(value) => update('managerSiteVisit', value)} />
               </>
             )}
-          </CardContent>
-        </Card>
-
-        {form.cardTemplate === 'bco' ? (
-          <BcoSection form={form} updateChecklist={updateChecklist} />
-        ) : (
-          <PsfSection form={form} updateChecklist={updateChecklist} toggleFlag={toggleFlag} update={update} />
+            </CardContent>
+          </Card>
         )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Descricao, acao e risco</CardTitle>
-            <CardDescription>Campos narrativos e controle de acompanhamento / ordem de servico.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        {step === 2 && (
+          form.cardTemplate === 'bco' ? (
+            <BcoSection form={form} updateChecklist={updateChecklist} />
+          ) : (
+            <PsfSection form={form} updateChecklist={updateChecklist} toggleFlag={toggleFlag} update={update} />
+          )
+        )}
+
+        {step === 3 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Descricao, acao e risco</CardTitle>
+              <CardDescription>Campos narrativos e controle de acompanhamento / ordem de servico.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
             <div className="grid gap-4 lg:grid-cols-3">
               <TextAreaField label="Descreva sua observacao" value={form.description} onChange={(value) => update('description', value)} placeholder="Descreva objetivamente o que foi observado." />
               <TextAreaField label="Percepcao de risco" value={form.riskPerception} onChange={(value) => update('riskPerception', value)} placeholder="Qual era o risco percebido?" />
@@ -601,17 +686,40 @@ export default function SafetyObservationForm() {
               <CheckOption label="Cartao indicado" checked={form.nominatedGoodCard} onChange={(value) => update('nominatedGoodCard', value)} />
             </div>
             <TextAreaField label="Aprendizado" value={form.learning} onChange={(value) => update('learning', value)} placeholder="Aprendizado compartilhavel." rows={3} />
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
+
+        {step === 4 && (
+          <ReviewStep
+            form={form}
+            selectedShipName={selectedShip?.name || '-'}
+            riskLevel={riskLevel}
+            enforcedFollowup={enforcedFollowup}
+          />
+        )}
 
         <div className="sticky bottom-0 z-20 -mx-4 flex flex-col-reverse gap-3 border-t bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:flex-row sm:items-center sm:justify-end lg:-mx-6 lg:px-6">
-          <Button type="button" variant="outline" onClick={() => setForm({ ...initialForm, observerName: profile?.full_name || '', observedAt: localDateTimeValue() })}>
+          <Button type="button" variant="outline" onClick={resetForm}>
             Limpar
           </Button>
-          <Button type="submit" disabled={createObservation.isPending || !canCreate || !shipId}>
-            {createObservation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-            Salvar observacao
-          </Button>
+          {step > 0 && (
+            <Button type="button" variant="outline" onClick={goBack} disabled={createObservation.isPending}>
+              <ChevronLeft className="mr-2 h-4 w-4" />
+              Voltar
+            </Button>
+          )}
+          {isLastStep ? (
+            <Button type="submit" disabled={createObservation.isPending || !canCreate || !shipId}>
+              {createObservation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+              Salvar observacao
+            </Button>
+          ) : (
+            <Button type="button" onClick={goNext} disabled={createObservation.isPending}>
+              Proximo
+              <ChevronRight className="ml-2 h-4 w-4" />
+            </Button>
+          )}
         </div>
       </form>
     </div>
@@ -681,6 +789,118 @@ function PsfSection({
 
 function selectedLabels(values: TemplateFlags, options: ReadonlyArray<Option>) {
   return options.filter(([key]) => values[key]).map(([, label]) => label);
+}
+
+function WizardProgress({ step }: { step: number }) {
+  return (
+    <Card>
+      <CardContent className="py-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+          {WIZARD_STEPS.map((item, index) => {
+            const active = index === step;
+            const complete = index < step;
+            return (
+              <div key={item.key} className="flex min-w-0 flex-1 items-center gap-3">
+                <div
+                  className={cn(
+                    'flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-sm font-semibold',
+                    active && 'border-primary bg-primary text-primary-foreground',
+                    complete && 'border-emerald-500 bg-emerald-500 text-white',
+                    !active && !complete && 'border-border bg-muted text-muted-foreground',
+                  )}
+                >
+                  {complete ? <CheckCircle2 className="h-4 w-4" /> : index + 1}
+                </div>
+                <div className="min-w-0">
+                  <p className={cn('truncate text-sm font-medium', active ? 'text-foreground' : 'text-muted-foreground')}>
+                    {item.title}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">{item.description}</p>
+                </div>
+                {index < WIZARD_STEPS.length - 1 && (
+                  <div className="hidden h-px flex-1 bg-border lg:block" />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ReviewStep({
+  form,
+  selectedShipName,
+  riskLevel,
+  enforcedFollowup,
+}: {
+  form: FormState;
+  selectedShipName: string;
+  riskLevel: SafetyRiskLevel;
+  enforcedFollowup: boolean;
+}) {
+  const departmentsText = selectedLabels(form.departmentFlags, departments).join(', ') || '-';
+  const locationsText = selectedLabels(form.locationOptions, locationOptions).join(', ') || '-';
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">Revisao antes do envio</CardTitle>
+        <CardDescription>Confira os principais dados. Use Voltar para ajustar qualquer etapa.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <SummaryItem label="Modelo" value={form.cardTemplate === 'bco' ? 'Comportamento / Condicao' : 'Seguranca de Processo'} />
+          <SummaryItem label="Navio" value={selectedShipName} />
+          <SummaryItem label="Localizacao" value={form.area || '-'} />
+          <SummaryItem label="Data" value={form.observedAt ? new Date(form.observedAt).toLocaleString('pt-BR') : '-'} />
+          <SummaryItem label="Departamento" value={departmentsText} />
+          <SummaryItem label="Onde aconteceu" value={locationsText} />
+          <SummaryItem label="Tipo" value={optionLabel(form.observationType, observationTypes)} />
+          <SummaryItem label="Categoria" value={form.cardTemplate === 'psf' ? 'Seguranca de processo' : optionLabel(form.riskCategory, riskCategories)} />
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-3">
+          <SummaryText label="Observacao" value={form.description} />
+          <SummaryText label="Percepcao de risco" value={form.riskPerception} />
+          <SummaryText label="Acao / discussao / intervencao" value={form.immediateAction} />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/30 p-3">
+          <Badge className={cn('border', riskClasses[riskLevel])}>Risco {riskLabels[riskLevel]}</Badge>
+          <Badge variant="outline">Severidade: {optionLabel(form.severity, severityOptions)}</Badge>
+          <Badge variant="outline">Probabilidade: {optionLabel(form.likelihood, likelihoodOptions)}</Badge>
+          {enforcedFollowup && <Badge variant="outline" className="border-orange-200 text-orange-700">Acompanhamento requerido</Badge>}
+          {form.stopWork && <Badge variant="outline">Stop Work exercido</Badge>}
+          {form.workOrderRequired && <Badge variant="outline">Ordem de servico requerida</Badge>}
+          {form.requiresInvestigation && <Badge variant="outline">Investigacao requerida</Badge>}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function optionLabel<T extends string>(value: T, options: ReadonlyArray<readonly [T, string]>) {
+  return options.find(([optionValue]) => optionValue === value)?.[1] ?? value;
+}
+
+function SummaryItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border bg-background p-3">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="mt-1 line-clamp-2 text-sm font-medium">{value || '-'}</p>
+    </div>
+  );
+}
+
+function SummaryText({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border bg-background p-3">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="mt-2 min-h-16 whitespace-pre-wrap text-sm">{value || '-'}</p>
+    </div>
+  );
 }
 
 function TemplateButton({ active, title, description, onClick }: { active: boolean; title: string; description: string; onClick: () => void }) {
