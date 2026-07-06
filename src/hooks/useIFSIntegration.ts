@@ -174,7 +174,7 @@ export function useIFSIntegration() {
   }, [getConfig, toast, t, organization]);
 
   const exportToIFSFormat = useCallback((equipment: any[]): object => {
-    // Transform SafeShip equipment data to IFS format
+    // Transform HSSE Connect equipment data to IFS format
     return equipment.map(eq => ({
       OBJECT_ID: eq.internal_code,
       OBJECT_DESC: eq.name,
@@ -193,7 +193,7 @@ export function useIFSIntegration() {
   }, [getConfig]);
 
   const importFromIFSFormat = useCallback((ifsData: any[]): object[] => {
-    // Transform IFS data to SafeShip equipment format
+    // Transform IFS data to HSSE Connect equipment format
     return ifsData.map(item => ({
       internal_code: item.OBJECT_ID,
       name: item.OBJECT_DESC,

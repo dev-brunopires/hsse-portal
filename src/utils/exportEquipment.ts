@@ -290,7 +290,7 @@ export async function exportToPDF(
   }
 
   // Add standardized footer with organization name
-  const companyName = branding?.name || 'SafeShip';
+  const companyName = branding?.name || 'HSSE Connect';
   addPDFFooter(
     doc,
     t('exportEquipment.footerCompany', { companyName }),

@@ -105,7 +105,7 @@ export async function exportMaintenanceToPDF(
     },
   });
 
-  const companyName = branding?.name || 'SafeShip';
+  const companyName = branding?.name || 'HSSE Connect';
   addPDFFooter(doc, t('exportMaintenance.footerTitle', { companyName }), t('exportMaintenance.footerSubtitle'));
   
   if (options?.preview) {

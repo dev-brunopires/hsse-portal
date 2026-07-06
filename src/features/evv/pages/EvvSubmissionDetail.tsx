@@ -74,7 +74,6 @@ export default function EvvSubmissionDetail() {
   const branding = useOrganizationBranding();
   const { data: ships = [] } = useShips();
   const qc = useQueryClient();
-  const canReview = isAdmin || role === 'supervisor';
 
   const [signOpen, setSignOpen] = useState(false);
   const [reviewNotes, setReviewNotes] = useState('');
@@ -84,7 +83,7 @@ export default function EvvSubmissionDetail() {
     enabled: !!id,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('evv_submissions' as any)
+        .from('evv_submissions')
         .select('*')
         .eq('id', id!)
         .maybeSingle();
@@ -92,6 +91,7 @@ export default function EvvSubmissionDetail() {
       return data as unknown as EvvRow | null;
     },
   });
+  const canReview = (isAdmin || role === 'supervisor') && submission?.user_id !== user?.id;
 
   const { data: author } = useQuery({
     queryKey: ['evv-author', submission?.user_id],
@@ -124,7 +124,7 @@ export default function EvvSubmissionDetail() {
     enabled: !!id,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('evv_attachments' as any)
+        .from('evv_attachments')
         .select('*')
         .eq('submission_id', id!)
         .order('created_at', { ascending: false });
@@ -143,18 +143,20 @@ export default function EvvSubmissionDetail() {
   }, [submission, ships]);
   const categories = useMemo(
     () => submission ? getEvvCategories(submission.form_type) : [],
-    [submission?.form_type],
+    [submission],
   );
 
   async function saveReview(status: 'approved' | 'rejected') {
     if (!submission || !user) return;
+    if (status === 'rejected' && reviewNotes.trim().length < 5) {
+      toast.error(t('evv.detail.rejectionNotesRequired'));
+      return;
+    }
     const { error } = await supabase
-      .from('evv_submissions' as any)
+      .from('evv_submissions')
       .update({
         review_status: status,
         review_notes: reviewNotes,
-        reviewed_by: user.id,
-        reviewed_at: new Date().toISOString(),
       })
       .eq('id', submission.id);
     if (error) { toast.error(error.message); return; }
@@ -166,7 +168,7 @@ export default function EvvSubmissionDetail() {
   async function saveSignature(sig: string) {
     if (!submission) return;
     const { error } = await supabase
-      .from('evv_submissions' as any)
+      .from('evv_submissions')
       .update({ signature_data: sig, signed_at: new Date().toISOString() })
       .eq('id', submission.id);
     if (error) { toast.error(error.message); return; }
@@ -178,10 +180,17 @@ export default function EvvSubmissionDetail() {
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !submission || !user || !organization?.id) return;
-    const path = `${organization.id}/${submission.id}/${Date.now()}_${file.name}`;
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    if (!allowedTypes.includes(file.type) || file.size > 10 * 1024 * 1024) {
+      toast.error(t('evv.detail.invalidAttachment'));
+      e.target.value = '';
+      return;
+    }
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const path = `${submission.id}/${crypto.randomUUID()}_${safeName}`;
     const { error: upErr } = await supabase.storage.from('evv-attachments').upload(path, file);
     if (upErr) { toast.error(upErr.message); return; }
-    const { error: insErr } = await supabase.from('evv_attachments' as any).insert({
+    const { error: insErr } = await supabase.from('evv_attachments').insert({
       submission_id: submission.id,
       file_path: path,
       file_name: file.name,
@@ -203,7 +212,7 @@ export default function EvvSubmissionDetail() {
 
   async function deleteAttachment(att: AttachmentRow) {
     await supabase.storage.from('evv-attachments').remove([att.file_path]);
-    await supabase.from('evv_attachments' as any).delete().eq('id', att.id);
+    await supabase.from('evv_attachments').delete().eq('id', att.id);
     refetchAttach();
   }
 
@@ -224,8 +233,8 @@ export default function EvvSubmissionDetail() {
         ship: ship ? { name: ship.name, code: ship.code } : null,
         branding,
       }, { preview: true });
-    } catch (e: any) {
-      toast.error(e?.message || 'PDF error');
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'PDF error');
     }
   }
 
@@ -247,7 +256,7 @@ export default function EvvSubmissionDetail() {
             <Button variant="outline" onClick={exportPDF}>
               <FileText /> {t('evv.detail.exportPdf')}
             </Button>
-            {!submission.signature_data && submission.user_id === user?.id && (
+            {!submission.signature_data && submission.user_id === user?.id && submission.review_status !== 'approved' && (
               <Button variant="outline" onClick={() => setSignOpen(true)}>
                 <PenTool /> {t('evv.detail.sign')}
               </Button>
@@ -361,12 +370,14 @@ export default function EvvSubmissionDetail() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
+          {submission.user_id === user?.id && submission.review_status !== 'approved' && (
           <label className="inline-flex">
-            <input type="file" className="hidden" onChange={handleUpload} />
+            <input type="file" accept=".jpg,.jpeg,.png,.webp,.pdf" className="hidden" onChange={handleUpload} />
             <span className="inline-flex items-center gap-2 cursor-pointer rounded-md border bg-background px-3 py-1.5 text-sm hover:bg-accent">
               <Upload className="h-4 w-4" /> {t('evv.detail.uploadFile')}
             </span>
           </label>
+          )}
           {attachments.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t('evv.detail.noAttachments')}</p>
           ) : (
@@ -377,7 +388,7 @@ export default function EvvSubmissionDetail() {
                   <Button size="icon" variant="ghost" onClick={() => downloadAttachment(att)} aria-label="Download">
                     <Download className="h-4 w-4" />
                   </Button>
-                  {(att.uploaded_by === user?.id || canReview) && (
+                  {submission.review_status !== 'approved' && (att.uploaded_by === user?.id || canReview) && (
                     <Button size="icon" variant="ghost" onClick={() => deleteAttachment(att)} aria-label="Delete">
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
@@ -390,7 +401,7 @@ export default function EvvSubmissionDetail() {
       </Card>
 
       {/* Review */}
-      {canReview && (
+      {canReview && submission.review_status !== 'approved' && (
         <Card>
           <CardHeader><CardTitle>{t('evv.detail.reviewTitle')}</CardTitle></CardHeader>
           <CardContent className="space-y-3">

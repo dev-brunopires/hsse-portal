@@ -88,8 +88,7 @@ export default function EvvHistory() {
     enabled: !!organization?.id && !!user?.id,
     queryFn: async () => {
       const { data, error } = await supabase
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .from('evv_submissions' as any)
+        .from('evv_submissions')
         .select('id, client_id, form_type, status, review_status, submitted_at, updated_at')
         .eq('organization_id', organization!.id)
         .order('updated_at', { ascending: false })
@@ -131,8 +130,7 @@ export default function EvvHistory() {
     try {
       if (pendingDelete.server_id) {
         const { error } = await supabase
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .from('evv_submissions' as any)
+          .from('evv_submissions')
           .delete()
           .eq('id', pendingDelete.server_id);
         if (error) throw error;
@@ -224,7 +222,7 @@ export default function EvvHistory() {
                             />
                           </>
                         )}
-                        {(!r.server_id || canDeleteServer) && (
+                        {(!r.server_id || (canDeleteServer && r.review_status !== 'approved')) && (
                           <HistoryAction
                             label={t('evv.history.delete')}
                             icon={Trash2}

@@ -508,8 +508,32 @@ export const clearCachedData = async (): Promise<void> => {
     clearStore(STORES.TEMPLATES),
     clearStore(STORES.MAINTENANCE_PLANS),
     clearStore(STORES.LAST_INSPECTIONS),
+    clearStore(STORES.PENDING_ACTIONS),
+    clearStore(STORES.PHOTOS),
     clearStore(STORES.METADATA),
   ]);
+
+  [
+    'evv:submissions',
+    'safeship-ifs-config',
+    'client_telemetry_buffer_v1',
+  ].forEach((key) => localStorage.removeItem(key));
+
+  await new Promise<void>((resolve) => {
+    const request = indexedDB.deleteDatabase('hsse_connect_evv');
+    request.onsuccess = () => resolve();
+    request.onerror = () => resolve();
+    request.onblocked = () => resolve();
+  });
+
+  if ('caches' in window) {
+    const cacheNames = await caches.keys();
+    await Promise.all(
+      cacheNames
+        .filter((name) => name === 'supabase-storage-cache')
+        .map((name) => caches.delete(name)),
+    );
+  }
 };
 
 export const countInStore = async (storeName: string): Promise<number> => {

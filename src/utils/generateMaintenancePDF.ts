@@ -367,7 +367,7 @@ export async function generateMaintenancePDF(data: MaintenanceDetailData, option
   }
 
   // Add footer with organization name
-  const companyName = data.branding?.name || 'SafeShip';
+  const companyName = data.branding?.name || 'HSSE Connect';
   addPDFFooter(doc, `${companyName} - ${t('generateMaintenancePDF.footerSubtitle')}`, formatMaintenanceId(data.id));
 
   // Save or Preview

@@ -35,12 +35,61 @@ serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const ifsApiKey = Deno.env.get('IFS_API_KEY');
+
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user }, error: userError } = await userClient.auth.getUser();
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const { action, config, organizationId } = await req.json();
+
+    const [{ data: platformOwner }, { data: adminMasterRoles }, { data: memberships }] = await Promise.all([
+      supabase.from('platform_owners').select('id').eq('user_id', user.id).maybeSingle(),
+      supabase.from('user_roles').select('organization_id').eq('user_id', user.id).eq('role', 'admin_master'),
+      supabase.from('user_organizations').select('organization_id').eq('user_id', user.id),
+    ]);
+    const hasAdminMasterRole = !!adminMasterRoles?.length;
+    const belongsToOrganization = !!organizationId && memberships?.some(
+      (membership) => membership.organization_id === organizationId,
+    );
+    const canManageOrganization = !!platformOwner
+      || (hasAdminMasterRole && (action === 'test-connection' || belongsToOrganization));
+    if (!canManageOrganization) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const { data: withinRateLimit } = await supabase.rpc('consume_edge_rate_limit', {
+      _subject_id: user.id,
+      _action: 'ifs-integration',
+      _limit: 10,
+      _window_seconds: 60,
+    });
+    if (!withinRateLimit) {
+      return new Response(JSON.stringify({ error: 'Rate limit exceeded' }), {
+        status: 429,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': '60' },
+      });
+    }
     
     // Validate organization_id for data operations
     if (!organizationId && (action === 'import-equipment' || action === 'export-equipment')) {

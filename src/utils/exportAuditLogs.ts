@@ -102,7 +102,7 @@ export async function exportAuditLogsPDF(
   });
 
   // Add footer
-  const companyName = branding?.name || 'SafeShip';
+  const companyName = branding?.name || 'HSSE Connect';
   addPDFFooter(doc, `${companyName} © ${new Date().getFullYear()}`, t('title'));
 
   const pdfFileName = `${t('fileName')}-${format(new Date(), 'yyyy-MM-dd')}.pdf`;

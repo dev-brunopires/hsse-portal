@@ -292,7 +292,7 @@ export default function PendingRecommendations() {
     });
 
     // Add standardized footer
-    addPDFFooter(doc, branding?.name || 'SafeShip', t('pendingRecommendations.pdfReport.title'));
+    addPDFFooter(doc, branding?.name || 'HSSE Connect', t('pendingRecommendations.pdfReport.title'));
 
     doc.save(`${t('pendingRecommendations.pdfReport.fileName')}_${format(new Date(), 'yyyyMMdd_HHmm')}.pdf`);
   };
@@ -504,8 +504,8 @@ export default function PendingRecommendations() {
                   {/* Pendencies Badges */}
                   <div className="flex flex-wrap gap-1 mb-3">
                     {item.isAutoRejected && (
-                      <Badge className="text-xs bg-red-500 text-white font-bold">
-                        {t('common.rejected').toUpperCase()}
+                      <Badge className="h-5 bg-red-500 px-2 text-xs font-medium text-white">
+                        {t('common.rejected')}
                       </Badge>
                     )}
                     {item.isAutoRejected && item.autoRejectedReasonKeys.map((reasonKey, idx) => (
@@ -663,8 +663,8 @@ export default function PendingRecommendations() {
                       <TableCell>
                         <div className="flex flex-wrap gap-1">
                           {item.isAutoRejected && (
-                            <Badge className="text-xs bg-red-500 text-white font-bold">
-                              {t('common.rejected').toUpperCase()}
+                            <Badge className="h-5 bg-red-500 px-2 text-xs font-medium text-white">
+                              {t('common.rejected')}
                             </Badge>
                           )}
                           {item.isAutoRejected && item.autoRejectedReasonKeys.map((reasonKey, idx) => (

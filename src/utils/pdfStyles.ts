@@ -161,7 +161,7 @@ function addTextLogoRight(doc: jsPDF, pageWidth: number, headerHeight: number, o
   doc.setFont('helvetica', 'bold');
   
   // Use organization name or default
-  const name = organizationName || 'SafeShip';
+  const name = organizationName || 'HSSE Connect';
   // Truncate if too long
   const displayName = name.length > 18 ? name.substring(0, 18) + '...' : name;
   doc.text(displayName, pageWidth - 14, headerHeight / 2 + 3, { align: 'right' });
@@ -176,7 +176,7 @@ function addTextLogo(doc: jsPDF, organizationName?: string) {
   doc.setFont('helvetica', 'bold');
   
   // Use organization name or default
-  const name = organizationName || 'SafeShip';
+  const name = organizationName || 'HSSE Connect';
   // Truncate if too long
   const displayName = name.length > 15 ? name.substring(0, 15) + '...' : name;
   doc.text(displayName, 14, 20);

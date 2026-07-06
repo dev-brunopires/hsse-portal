@@ -271,7 +271,7 @@ export async function exportDashboardPDF(stats: DashboardStats, filters: ExportF
   }
   
   // Add standardized footer with organization name
-  const companyName = filters.branding?.name || 'SafeShip';
+  const companyName = filters.branding?.name || 'HSSE Connect';
   addPDFFooter(
     doc,
     t('exportDashboardPDF.footerCompany', { companyName }),

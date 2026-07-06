@@ -238,7 +238,7 @@ export async function exportInspectionsToPDF(
   });
 
   // Add standardized footer with organization name
-  const companyName = branding?.name || 'SafeShip';
+  const companyName = branding?.name || 'HSSE Connect';
   addPDFFooter(
     doc,
     t('exportInspections.footerCompany', { companyName }),
@@ -266,7 +266,7 @@ export async function exportSingleInspectionPDF(
   const statusLabels = getStatusLabels();
   const t = i18n.t;
   const dateLocale = getDateLocale();
-  const companyName = branding?.name || 'SafeShip';
+  const companyName = branding?.name || 'HSSE Connect';
   
   // Preload logo with branding
   await preloadLogo(branding);

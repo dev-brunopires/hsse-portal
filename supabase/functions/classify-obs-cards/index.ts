@@ -271,7 +271,27 @@ Deno.serve(async (req) => {
     }
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
     const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user }, error: userError } = await userClient.auth.getUser();
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
 
     const body = await req.json().catch(() => ({}));
@@ -284,6 +304,45 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "dataset_id is required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const [{ data: dataset }, { data: platformOwner }, { data: adminMasterRoles }, { data: memberships }] = await Promise.all([
+      supabase.from("obs_card_datasets").select("organization_id").eq("id", datasetId).maybeSingle(),
+      supabase.from("platform_owners").select("id").eq("user_id", user.id).maybeSingle(),
+      supabase.from("user_roles").select("organization_id").eq("user_id", user.id).eq("role", "admin_master"),
+      supabase.from("user_organizations").select("organization_id").eq("user_id", user.id),
+    ]);
+
+    if (!dataset) {
+      return new Response(JSON.stringify({ error: "Dataset not found" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const hasAdminMasterRole = !!adminMasterRoles?.length;
+    const belongsToDatasetOrganization = memberships?.some(
+      (membership) => membership.organization_id === dataset.organization_id,
+    );
+    const isDatasetAdmin = hasAdminMasterRole && belongsToDatasetOrganization;
+    if (!platformOwner && !isDatasetAdmin) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { data: withinRateLimit } = await supabase.rpc("consume_edge_rate_limit", {
+      _subject_id: user.id,
+      _action: "classify-obs-cards",
+      _limit: 120,
+      _window_seconds: 60,
+    });
+    if (!withinRateLimit) {
+      return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "60" },
       });
     }
 

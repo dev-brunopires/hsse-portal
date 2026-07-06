@@ -45,7 +45,7 @@ export function OnboardingProvider() {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Rocket className="h-6 w-6 text-primary" />
-            {t('onboarding.welcomeTitle', 'Welcome to SafeShip!')}
+            {t('onboarding.welcomeTitle', 'Welcome to HSSE Connect!')}
           </DialogTitle>
           <DialogDescription className="text-base pt-2">
             {t('onboarding.welcomeDescription', 'Maritime Safety Equipment Inspection Management System.')}

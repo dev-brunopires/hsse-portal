@@ -63,7 +63,7 @@ export function PrintCategoryQRDialog({ open, onOpenChange, category }: PrintCat
   const [labelSize, setLabelSize] = useState<LabelSizeKey>('medium');
   const qrRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
-  const organizationName = organization?.name || 'SafeShip';
+  const organizationName = organization?.name || 'HSSE Connect';
 
   // Load equipment for category
   useEffect(() => {

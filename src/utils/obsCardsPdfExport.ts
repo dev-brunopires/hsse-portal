@@ -402,7 +402,7 @@ async function buildReport(
     });
   }
 
-  const companyName = filters.branding?.name || 'SafeShip';
+  const companyName = filters.branding?.name || 'HSSE Connect';
   addPDFFooter(
     doc,
     t('exportDashboardPDF.footerCompany', { companyName }),

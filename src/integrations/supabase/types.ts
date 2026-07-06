@@ -345,6 +345,30 @@ export type Database = {
           },
         ]
       }
+      evv_attachments: {
+        Row: { created_at: string; file_name: string; file_path: string; file_size: number; file_type: string; id: string; submission_id: string; uploaded_by: string }
+        Insert: { created_at?: string; file_name: string; file_path: string; file_size: number; file_type: string; id?: string; submission_id: string; uploaded_by?: string }
+        Update: { created_at?: string; file_name?: string; file_path?: string; file_size?: number; file_type?: string; id?: string; submission_id?: string; uploaded_by?: string }
+        Relationships: [{
+          foreignKeyName: "evv_attachments_submission_id_fkey"
+          columns: ["submission_id"]
+          isOneToOne: false
+          referencedRelation: "evv_submissions"
+          referencedColumns: ["id"]
+        }]
+      }
+      evv_submissions: {
+        Row: { answers: Json; client_id: string; comments: string | null; created_at: string; form_type: string; id: string; organization_id: string; review_notes: string | null; review_status: string | null; reviewed_at: string | null; reviewed_by: string | null; scope: Json; signature_data: string | null; signed_at: string | null; status: string; submitted_at: string; updated_at: string; user_id: string }
+        Insert: { answers?: Json; client_id: string; comments?: string | null; created_at?: string; form_type: string; id?: string; organization_id: string; review_notes?: string | null; review_status?: string | null; reviewed_at?: string | null; reviewed_by?: string | null; scope?: Json; signature_data?: string | null; signed_at?: string | null; status?: string; submitted_at?: string; updated_at?: string; user_id: string }
+        Update: { answers?: Json; client_id?: string; comments?: string | null; created_at?: string; form_type?: string; id?: string; organization_id?: string; review_notes?: string | null; review_status?: string | null; reviewed_at?: string | null; reviewed_by?: string | null; scope?: Json; signature_data?: string | null; signed_at?: string | null; status?: string; submitted_at?: string; updated_at?: string; user_id?: string }
+        Relationships: [{
+          foreignKeyName: "evv_submissions_organization_id_fkey"
+          columns: ["organization_id"]
+          isOneToOne: false
+          referencedRelation: "organizations"
+          referencedColumns: ["id"]
+        }]
+      }
       equipment: {
         Row: {
           acquisition_date: string | null

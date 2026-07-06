@@ -10,7 +10,7 @@ export interface OrganizationBranding {
 
 // Default branding when no organization is set
 const DEFAULT_BRANDING: OrganizationBranding = {
-  name: 'SafeShip',
+  name: 'HSSE Connect',
   logoUrl: null,
   logoWhiteUrl: null,
   primaryColor: [22, 85, 154], // Default blue

@@ -22,9 +22,50 @@ serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    
+
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user }, error: userError } = await userClient.auth.getUser();
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const [{ data: platformOwner }, { data: adminMaster }] = await Promise.all([
+      supabase.from("platform_owners").select("id").eq("user_id", user.id).maybeSingle(),
+      supabase.from("user_roles").select("id").eq("user_id", user.id).eq("role", "admin_master").limit(1).maybeSingle(),
+    ]);
+    if (!platformOwner && !adminMaster) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const { data: withinRateLimit } = await supabase.rpc("consume_edge_rate_limit", {
+      _subject_id: user.id,
+      _action: "check-inspection-deadlines",
+      _limit: 5,
+      _window_seconds: 60,
+    });
+    if (!withinRateLimit) {
+      return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "60" },
+      });
+    }
 
     // Get equipment with inspections due in the next 7 days
     const today = new Date();

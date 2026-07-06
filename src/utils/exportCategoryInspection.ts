@@ -321,7 +321,7 @@ export async function exportCategoryInspectionPDF(data: CategoryInspectionPDFDat
   doc.text(t('exportCategoryInspection.digitalSignature'), signatureBoxX + signatureBoxWidth / 2, yPosition + 5, { align: 'center' });
 
   // Footer
-  const companyName = data.branding?.name || 'SafeShip';
+  const companyName = data.branding?.name || 'HSSE Connect';
   addPDFFooter(
     doc, 
     `${companyName} © ${new Date().getFullYear()}`,

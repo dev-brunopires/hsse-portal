@@ -54,7 +54,7 @@ export default function Auth() {
   
   // Use organization logo or system default logo
   const hasOrgLogo = organization && logoUrl;
-  const organizationName = organization?.name || 'SafeShip';
+  const organizationName = organization?.name || 'HSSE Connect';
 
   const loginSchema = z.object({
     email: z.string().email(t('errors.invalidEmail')).min(1, t('validation.required')),

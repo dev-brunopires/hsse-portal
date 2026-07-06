@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { History, Search, Filter, ChevronDown, ChevronUp, Package, ClipboardCheck, User, Calendar, ArrowRight, Ship, Settings, UserCircle, Download, FileSpreadsheet, FileText, Eye, Undo2, ShieldCheck } from 'lucide-react';
+import { History, Search, Filter, ChevronDown, ChevronUp, Package, ClipboardCheck, User, Calendar, ArrowRight, Ship, Settings, UserCircle, Download, FileSpreadsheet, FileText, Eye, Undo2, ShieldCheck, AlertCircle, RefreshCw } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { format } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
@@ -37,6 +37,8 @@ const getTableLabels = (t: (key: string) => string) => ({
   categories: { label: t('auditLogPage.tableCategory'), icon: Settings },
   ships: { label: t('auditLogPage.tableShip'), icon: Ship },
   profiles: { label: t('auditLogPage.tableProfile'), icon: UserCircle },
+  obs_cards: { label: t('auditLogPage.tableObservationCard'), icon: ClipboardCheck },
+  obs_card_datasets: { label: t('auditLogPage.tableObservationDataset'), icon: FileSpreadsheet },
 });
 
 const getFieldLabels = (t: (key: string) => string): Record<string, string> => ({
@@ -105,7 +107,7 @@ function AuditLogItem({ log, canRevert, onRevert, isReverting }: { log: AuditLog
     // Skip if values are the same or it's updated_at
     if (field === 'updated_at' || oldValue === newValue) return null;
 
-    const formatValue = (val: any) => {
+    const formatValue = (val: unknown) => {
       if (val === null || val === undefined) return '—';
       if (typeof val === 'boolean') return val ? t('common.yes') : t('common.no');
       if (typeof val === 'object') return JSON.stringify(val);
@@ -277,14 +279,14 @@ export default function AuditLogPage() {
   const actionLabels = getActionLabels(t);
   const tableLabels = getTableLabels(t);
   
-  const { data: logs = [], isLoading } = useAuditLogs({ limit: 200 });
+  const { data: logs = [], isLoading, isError, error, refetch, isFetching } = useAuditLogs({ limit: 200 });
   const { data: ships = [] } = useShips();
   const { isAdminMaster } = useAuth();
   const queryClient = useQueryClient();
 
   const revertMutation = useMutation({
     mutationFn: async (logId: string) => {
-      const { data, error } = await supabase.rpc('revert_audit_log' as any, { _log_id: logId });
+      const { data, error } = await supabase.rpc('revert_audit_log', { _log_id: logId });
       if (error) throw error;
       return data;
     },
@@ -301,8 +303,10 @@ export default function AuditLogPage() {
       queryClient.invalidateQueries({ queryKey: ['ship-areas'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
     },
-    onError: (err: any) => {
-      toast.error(t('auditLogPage.revertError'), { description: err?.message });
+    onError: (error: unknown) => {
+      toast.error(t('auditLogPage.revertError'), {
+        description: error instanceof Error ? error.message : undefined,
+      });
     },
   });
 
@@ -411,6 +415,33 @@ export default function AuditLogPage() {
     );
   }
 
+  if (isError) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <PageHeader
+          icon={History}
+          title={t('auditLogPage.changeHistory')}
+          subtitle={t('auditLogPage.fullAudit')}
+        />
+        <Card>
+          <CardContent className="flex min-h-[280px] flex-col items-center justify-center gap-4 text-center">
+            <AlertCircle className="h-10 w-10 text-destructive" />
+            <div>
+              <p className="font-semibold">{t('auditLogPage.loadError')}</p>
+              <p className="mt-1 max-w-lg text-sm text-muted-foreground">
+                {error instanceof Error ? error.message : t('auditLogPage.loadErrorDescription')}
+              </p>
+            </div>
+            <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
+              <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+              {t('auditLogPage.tryAgain')}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -514,6 +545,8 @@ export default function AuditLogPage() {
                 <SelectItem value="categories">{t('auditLogPage.categories')}</SelectItem>
                 <SelectItem value="ships">{t('auditLogPage.ships')}</SelectItem>
                 <SelectItem value="profiles">{t('auditLogPage.profiles')}</SelectItem>
+                <SelectItem value="obs_cards">{t('auditLogPage.observationCards')}</SelectItem>
+                <SelectItem value="obs_card_datasets">{t('auditLogPage.observationDatasets')}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={actionFilter} onValueChange={setActionFilter}>

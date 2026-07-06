@@ -71,6 +71,8 @@ Deno.serve(async (req) => {
     }
 
     const requestingRole = requesterRolesResult.data?.find(
+      (row) => row.role === 'admin_master'
+    ) ?? requesterRolesResult.data?.find(
       (row) => row.organization_id === organizationId
     );
     const requestingUserRole = requestingRole?.role;
@@ -78,7 +80,7 @@ Deno.serve(async (req) => {
     // Only admin, admin_master, or platform_owner can delete users
     if (!isPlatformOwner && (!requestingUserRole || !['admin', 'admin_master'].includes(requestingUserRole))) {
       return new Response(
-        JSON.stringify({ error: 'Only admins can delete users' }),
+        JSON.stringify({ error: 'Only admins or admin masters can delete users' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -97,9 +99,30 @@ Deno.serve(async (req) => {
       .select('role, organization_id')
       .eq('user_id', userId);
 
-    if (targetRoleError || !targetUserRoles?.length) {
+    if (targetRoleError) {
       return new Response(
-        JSON.stringify({ error: 'User not found' }),
+        JSON.stringify({ error: targetRoleError.message }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // A retry can arrive after the related application rows were already removed.
+    // If Auth no longer has the user either, the requested final state was reached.
+    if (!targetUserRoles?.length) {
+      const { data: authUser, error: authUserError } = await adminClient.auth.admin.getUserById(userId);
+      const userAlreadyDeleted = !authUser?.user
+        && !!authUserError
+        && authUserError.message.toLowerCase().includes('user not found');
+
+      if (userAlreadyDeleted) {
+        return new Response(
+          JSON.stringify({ success: true, alreadyDeleted: true, message: 'User already deleted' }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ error: authUserError?.message ?? 'User has no organization role' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -159,7 +182,7 @@ Deno.serve(async (req) => {
     // Delete the user from auth.users using admin API
     const { error: deleteError } = await adminClient.auth.admin.deleteUser(userId);
 
-    if (deleteError) {
+    if (deleteError && !deleteError.message.toLowerCase().includes('user not found')) {
       console.error('Error deleting user from auth:', deleteError);
       return new Response(
         JSON.stringify({ error: deleteError.message }),

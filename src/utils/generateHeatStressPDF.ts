@@ -207,7 +207,7 @@ export async function generateHeatStressPDF(data: HeatStressPDFData): Promise<js
   // Footer
   addPDFFooter(
     doc,
-    data.branding?.name || 'Portal de HSSE',
+    data.branding?.name || 'HSSE Connect',
     t('footerTitle', { ship: data.shipName }),
   );
 

@@ -29,6 +29,7 @@ import { getDepartmentLabel } from '@/data/departments';
 import { AreaCombobox } from '@/components/ships/AreaCombobox';
 import { useShipFilter } from '@/contexts/ShipFilterContext';
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 import { useRegions } from '@/hooks/useRegions';
 
 function newClientId(): string {
@@ -214,15 +215,16 @@ export default function EvvWizard() {
     const isOnline = navigator.onLine && !!user && !!organization?.id;
 
     if (isOnline) {
-      const { error } = await supabase.from('evv_submissions' as any).upsert({
+      const { error } = await supabase.from('evv_submissions').upsert({
         client_id: clientId,
         organization_id: organization!.id,
         user_id: user!.id,
         form_type: formId,
         status: 'completed',
-        scope,
-        answers,
+        scope: scope as unknown as Json,
+        answers: answers as unknown as Json,
         comments,
+        review_status: 'pending',
         submitted_at,
       }, { onConflict: 'client_id' });
       if (error) {
@@ -274,7 +276,7 @@ export default function EvvWizard() {
             {/* Environment */}
             <div className="space-y-2">
               <RequiredLabel>{t('evv.scope.environment')}</RequiredLabel>
-              <Select value={scope.environment} onValueChange={(v) => setScope({ ...scope, environment: v as any })}>
+              <Select value={scope.environment} onValueChange={(v) => setScope({ ...scope, environment: v as EvvScope['environment'] })}>
                 <SelectTrigger><SelectValue placeholder={t('evv.scope.select')} /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="fpso">FPSO</SelectItem>
@@ -343,7 +345,7 @@ export default function EvvWizard() {
 
             <div className="space-y-2">
               <RequiredLabel>{t('evv.scope.permitToWork')}</RequiredLabel>
-              <Select value={scope.permit_to_work} onValueChange={(v) => setScope({ ...scope, permit_to_work: v as any })}>
+              <Select value={scope.permit_to_work} onValueChange={(v) => setScope({ ...scope, permit_to_work: v as EvvScope['permit_to_work'] })}>
                 <SelectTrigger><SelectValue placeholder={t('evv.scope.select')} /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="yes">{t('common.yes')}</SelectItem>
@@ -355,7 +357,7 @@ export default function EvvWizard() {
 
             <div className="space-y-2">
               <RequiredLabel>{t('evv.scope.criticalActivity')}</RequiredLabel>
-              <Select value={scope.critical_activity} onValueChange={(v) => setScope({ ...scope, critical_activity: v as any })}>
+              <Select value={scope.critical_activity} onValueChange={(v) => setScope({ ...scope, critical_activity: v as EvvScope['critical_activity'] })}>
                 <SelectTrigger><SelectValue placeholder={t('evv.scope.select')} /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="yes">{t('common.yes')}</SelectItem>
@@ -370,7 +372,7 @@ export default function EvvWizard() {
               <>
                 <div className="space-y-2">
                   <RequiredLabel>{t('evv.scope.observedOrg')}</RequiredLabel>
-                  <Select value={scope.observed_organization || ''} onValueChange={(v) => setScope({ ...scope, observed_organization: v as any })}>
+                  <Select value={scope.observed_organization || ''} onValueChange={(v) => setScope({ ...scope, observed_organization: v as EvvScope['observed_organization'] })}>
                     <SelectTrigger><SelectValue placeholder={t('evv.scope.select')} /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="sbm">SBM</SelectItem>
@@ -381,7 +383,7 @@ export default function EvvWizard() {
                 </div>
                 <div className="space-y-2">
                   <RequiredLabel>{t('evv.scope.observedRole')}</RequiredLabel>
-                  <Select value={scope.observed_role || ''} onValueChange={(v) => setScope({ ...scope, observed_role: v as any })}>
+                  <Select value={scope.observed_role || ''} onValueChange={(v) => setScope({ ...scope, observed_role: v as EvvScope['observed_role'] })}>
                     <SelectTrigger><SelectValue placeholder={t('evv.scope.select')} /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="vendor">Vendor</SelectItem>

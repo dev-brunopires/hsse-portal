@@ -72,7 +72,7 @@ export function QRCodeDialog({ open, onOpenChange, equipment }: QRCodeDialogProp
     }
   }, [logoWhiteUrl]);
 
-  const organizationName = organization?.name || 'SafeShip';
+  const organizationName = organization?.name || 'HSSE Connect';
 
   if (!equipment) return null;
 

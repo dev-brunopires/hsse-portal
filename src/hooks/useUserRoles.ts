@@ -128,8 +128,20 @@ export function useDeleteUser() {
 
       return data;
     },
+    onMutate: async (userId: string) => {
+      await queryClient.cancelQueries({ queryKey: ['profiles'] });
+      const previousProfiles = queryClient.getQueriesData<Array<{ user_id: string }>>({
+        queryKey: ['profiles'],
+      });
+
+      queryClient.setQueriesData<Array<{ user_id: string }>>(
+        { queryKey: ['profiles'] },
+        (profiles) => profiles?.filter((profile) => profile.user_id !== userId),
+      );
+
+      return { previousProfiles };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['profiles'] });
       queryClient.invalidateQueries({ queryKey: ['user_roles'] });
       queryClient.invalidateQueries({ queryKey: ['user_ships'] });
       toast({
@@ -137,12 +149,18 @@ export function useDeleteUser() {
         description: t('userRoles.userRemovedDesc'),
       });
     },
-    onError: (error: Error) => {
+    onError: (error: Error, _userId, context) => {
+      context?.previousProfiles.forEach(([queryKey, profiles]) => {
+        queryClient.setQueryData(queryKey, profiles);
+      });
       toast({
         title: t('userRoles.errorRemoving'),
         description: error.message,
         variant: 'destructive',
       });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['profiles'] });
     },
   });
 }

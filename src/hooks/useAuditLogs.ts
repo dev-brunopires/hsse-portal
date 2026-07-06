@@ -6,8 +6,8 @@ export interface AuditLog {
   table_name: string;
   record_id: string;
   action: 'INSERT' | 'UPDATE' | 'DELETE';
-  old_data: Record<string, any> | null;
-  new_data: Record<string, any> | null;
+  old_data: Record<string, unknown> | null;
+  new_data: Record<string, unknown> | null;
   changed_fields: string[] | null;
   user_id: string | null;
   user_name: string | null;
@@ -28,12 +28,13 @@ export function useAuditLogs(options: UseAuditLogsOptions = {}) {
 
   return useQuery({
     queryKey: ['audit-logs', tableName, recordId, limit],
-    queryFn: async (): Promise<AuditLog[]> => {
+    queryFn: async ({ signal }): Promise<AuditLog[]> => {
       let query = supabase
         .from('audit_logs')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(limit);
+        .limit(limit)
+        .abortSignal(signal);
 
       if (tableName) {
         query = query.eq('table_name', tableName);
@@ -48,6 +49,8 @@ export function useAuditLogs(options: UseAuditLogsOptions = {}) {
       if (error) throw error;
       return (data || []) as AuditLog[];
     },
+    staleTime: 60_000,
+    retry: 1,
   });
 }
 

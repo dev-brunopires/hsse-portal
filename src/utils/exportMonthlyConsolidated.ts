@@ -202,7 +202,7 @@ export async function exportMonthlyConsolidatedPDF(
   // Footer
   addPDFFooter(
     doc,
-    `${data.branding?.name || 'SafeShip'} © ${new Date().getFullYear()}`,
+    `${data.branding?.name || 'HSSE Connect'} © ${new Date().getFullYear()}`,
     `${t('reports.monthlyConsolidatedTitle')} - ${data.category.name} - ${data.monthLabel}`
   );
 

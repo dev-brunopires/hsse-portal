@@ -216,7 +216,7 @@ export async function exportComplianceReportPDF(
   });
 
   // Footer
-  const companyName = branding?.name || 'SafeShip';
+  const companyName = branding?.name || 'HSSE Connect';
   addPDFFooter(doc, companyName, t('title'));
 
   const pdfFileName = `${t('fileName')}-${format(new Date(), 'yyyy-MM-dd')}.pdf`;

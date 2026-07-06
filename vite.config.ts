@@ -23,8 +23,8 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "pwa-192x192.png", "pwa-512x512.png"],
       manifest: {
-        name: "SafeShip Inspeções",
-        short_name: "SafeShip",
+        name: "HSSE Connect",
+        short_name: "HSSE Connect",
         description: "Sistema de Gerenciamento de Inspeções de Equipamentos de Segurança",
         theme_color: "#1e40af",
         background_color: "#0f172a",
@@ -111,7 +111,8 @@ export default defineConfig(({ mode }) => ({
           },
           // Cache images with CacheFirst for performance
           {
-            urlPattern: /\.(png|jpg|jpeg|svg|gif|webp|ico)$/i,
+            urlPattern: ({ request, url }) =>
+              request.destination === "image" && url.origin === self.location.origin,
             handler: "CacheFirst",
             options: {
               cacheName: "images-cache",
@@ -133,22 +134,6 @@ export default defineConfig(({ mode }) => ({
               expiration: {
                 maxEntries: 20,
                 maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-            },
-          },
-          // Lovable Cloud Storage assets only. API/auth/function requests must bypass Workbox
-          // to avoid stale update prompts and `no-response` errors on mobile network changes.
-          {
-            urlPattern: /^https:\/\/.*\.supabase\.co\/storage\/.*/i,
-            handler: "StaleWhileRevalidate",
-            options: {
-              cacheName: "supabase-storage-cache",
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
               },
               cacheableResponse: {
                 statuses: [0, 200],

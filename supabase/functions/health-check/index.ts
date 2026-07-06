@@ -21,12 +21,31 @@ serve(async (req) => {
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   
   const results: HealthCheckResult[] = [];
   const startTime = performance.now();
 
   try {
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user }, error: userError } = await userClient.auth.getUser();
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Parse request body
     const body = await req.json().catch(() => ({}));
     
@@ -40,6 +59,28 @@ serve(async (req) => {
 
     // Create service role client for admin operations
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
+    const [{ data: platformOwner }, { data: adminMaster }] = await Promise.all([
+      adminClient.from("platform_owners").select("id").eq("user_id", user.id).maybeSingle(),
+      adminClient.from("user_roles").select("id").eq("user_id", user.id).eq("role", "admin_master").limit(1).maybeSingle(),
+    ]);
+    if (!platformOwner && !adminMaster) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const { data: withinRateLimit } = await adminClient.rpc("consume_edge_rate_limit", {
+      _subject_id: user.id,
+      _action: "health-check",
+      _limit: 20,
+      _window_seconds: 60,
+    });
+    if (!withinRateLimit) {
+      return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "60" },
+      });
+    }
 
     // Check 1: Database connection with service role
     const dbStart = performance.now();
