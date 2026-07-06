@@ -16,7 +16,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from '@/components/ui/select';
 
 interface DatePickerProps {
@@ -207,41 +206,45 @@ export function DateTimePicker({
   };
 
   return (
-    <div className={cn('grid w-full gap-2 sm:grid-cols-[minmax(0,1fr)_88px_88px]', className)}>
+    <div className={cn('flex w-full flex-col gap-2 sm:flex-row sm:items-center', className)}>
       <DatePicker
         value={date}
         onChange={(nextDate) => emitValue(nextDate, hour, minute)}
         disabled={disabled}
+        className="min-w-0 flex-1"
       />
-      <Select
-        value={hour}
-        onValueChange={(nextHour) => emitValue(date, nextHour, minute)}
-        disabled={disabled}
-      >
-        <SelectTrigger aria-label="Hora" className="gap-2">
-          <Clock3 className="h-4 w-4 shrink-0 text-muted-foreground" />
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent className="max-h-64">
-          {hours.map((option) => (
-            <SelectItem key={option} value={option}>{option} h</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <Select
-        value={minute}
-        onValueChange={(nextMinute) => emitValue(date, hour, nextMinute)}
-        disabled={disabled}
-      >
-        <SelectTrigger aria-label="Minuto">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent className="max-h-64">
-          {minutes.map((option) => (
-            <SelectItem key={option} value={option}>{option} min</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
+        <Select
+          value={hour}
+          onValueChange={(nextHour) => emitValue(date, nextHour, minute)}
+          disabled={disabled}
+        >
+          <SelectTrigger aria-label="Hora" className="h-10 min-w-0 gap-2 px-3 sm:w-[74px]">
+            <Clock3 className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <span className="min-w-0 flex-1 text-left tabular-nums">{hour}</span>
+          </SelectTrigger>
+          <SelectContent className="max-h-64">
+            {hours.map((option) => (
+              <SelectItem key={option} value={option}>{option} h</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
+          value={minute}
+          onValueChange={(nextMinute) => emitValue(date, hour, nextMinute)}
+          disabled={disabled}
+        >
+          <SelectTrigger aria-label="Minuto" className="h-10 min-w-0 px-3 sm:w-[82px]">
+            <span className="min-w-0 flex-1 text-left tabular-nums">{minute}</span>
+            <span className="ml-1 hidden text-xs text-muted-foreground sm:inline">min</span>
+          </SelectTrigger>
+          <SelectContent className="max-h-64">
+            {minutes.map((option) => (
+              <SelectItem key={option} value={option}>{option} min</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
     </div>
   );
 }

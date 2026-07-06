@@ -461,7 +461,7 @@ export default function SafetyObservationForm() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="min-h-full space-y-6 pb-2 animate-fade-in">
       <PageHeader
         icon={ClipboardList}
         title="Formulario de Observacao de Seguranca"
@@ -604,7 +604,7 @@ export default function SafetyObservationForm() {
           </CardContent>
         </Card>
 
-        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
+        <div className="sticky bottom-0 z-20 -mx-4 flex flex-col-reverse gap-3 border-t bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:flex-row sm:items-center sm:justify-end lg:-mx-6 lg:px-6">
           <Button type="button" variant="outline" onClick={() => setForm({ ...initialForm, observerName: profile?.full_name || '', observedAt: localDateTimeValue() })}>
             Limpar
           </Button>

@@ -82,7 +82,7 @@ export function ProtectedRoute({ children, requiredRole, moduleKey, pageKey, act
   if (moduleKey && pageKey) {
     if (access.isLoading) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="min-h-[50vh] flex items-center justify-center bg-background">
           <div className="flex flex-col items-center gap-4">
             <Spinner size="lg" />
             <p className="text-muted-foreground">{t('common.loading')}</p>
@@ -93,7 +93,7 @@ export function ProtectedRoute({ children, requiredRole, moduleKey, pageKey, act
 
     if (!access.can(moduleKey, pageKey, action)) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="min-h-[50vh] flex items-center justify-center bg-background p-4">
           <Card className="max-w-md w-full">
             <CardContent className="pt-8 pb-8 text-center space-y-4">
               <h2 className="text-xl font-semibold text-foreground">Sem permissao</h2>

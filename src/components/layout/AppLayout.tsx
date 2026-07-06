@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { AppSidebar } from './AppSidebar';
 import { MobileSidebar } from './MobileSidebar';
 import { MobileBottomNav } from './MobileBottomNav';
@@ -6,6 +6,7 @@ import { Header } from './Header';
 import { OfflineIndicator } from './OfflineIndicator';
 import { PWAInstallPrompt } from './PWAInstallPrompt';
 import { PageTransition } from '@/components/ui/PageTransition';
+import { PageLoadingFallback } from '@/components/ui/PageLoadingFallback';
 import { PWAUpdatePrompt } from './PWAUpdatePrompt';
 import { SyncProgressIndicator } from './SyncProgressIndicator';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
@@ -43,7 +44,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   }, []);
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
+    <div className="flex h-dvh bg-background overflow-hidden">
       {/* Desktop Sidebar */}
       <div className="hidden lg:block">
         <AppSidebar />
@@ -52,17 +53,19 @@ export function AppLayout({ children }: AppLayoutProps) {
       {/* Mobile Sidebar */}
       <MobileSidebar open={mobileMenuOpen} onOpenChange={setMobileMenuOpen} />
 
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex min-w-0 flex-col overflow-hidden">
         {/* Unified Header for both mobile and desktop */}
         <Header 
           showMenuButton={true} 
           onMenuClick={() => setMobileMenuOpen(true)} 
         />
 
-        <main className="flex-1 overflow-auto p-4 lg:p-6 pwa-main-content lg:pb-6">
-          <PageTransition>
-            {children}
-          </PageTransition>
+        <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain p-4 lg:p-6 pwa-main-content lg:pb-6 [scrollbar-gutter:stable]">
+          <Suspense fallback={<PageLoadingFallback delay={120} />}>
+            <PageTransition>
+              {children}
+            </PageTransition>
+          </Suspense>
         </main>
       </div>
 

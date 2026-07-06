@@ -1,7 +1,7 @@
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ShipFilterProvider } from "@/contexts/ShipFilterContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
@@ -59,6 +59,16 @@ const queryClient = new QueryClient({
   },
 });
 
+function ProtectedAppLayout() {
+  return (
+    <ProtectedRoute>
+      <AppLayout>
+        <Outlet />
+      </AppLayout>
+    </ProtectedRoute>
+  );
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -91,233 +101,36 @@ function App() {
                 } />
                 
                 {/* Protected Routes */}
-                <Route
-                  path="/"
-                  element={
-                    <ProtectedRoute moduleKey="equipment" pageKey="dashboard">
-                      <AppLayout>
-                        <Index />
-                      </AppLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/equipment"
-                  element={
-                    <ProtectedRoute moduleKey="equipment" pageKey="equipment">
-                      <AppLayout>
-                        <EquipmentList />
-                      </AppLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/inspections"
-                  element={
-                    <ProtectedRoute moduleKey="equipment" pageKey="inspections">
-                      <AppLayout>
-                        <Inspections />
-                      </AppLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/reports"
-                  element={
-                    <ProtectedRoute moduleKey="reports" pageKey="reports">
-                      <AppLayout>
-                        <Reports />
-                      </AppLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/alerts"
-                  element={
-                    <ProtectedRoute moduleKey="alerts" pageKey="alerts">
-                      <AppLayout>
-                        <Alerts />
-                      </AppLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/pending"
-                  element={
-                    <ProtectedRoute moduleKey="equipment" pageKey="pending">
-                      <AppLayout>
-                        <PendingRecommendations />
-                      </AppLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/maintenance"
-                  element={
-                    <ProtectedRoute moduleKey="equipment" pageKey="maintenance">
-                      <AppLayout>
-                        <Maintenance />
-                      </AppLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/certificates"
-                  element={
-                    <ProtectedRoute moduleKey="equipment" pageKey="certificates">
-                      <AppLayout>
-                        <Certificates />
-                      </AppLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/categories"
-                  element={
-                    <ProtectedRoute moduleKey="equipment" pageKey="categories">
-                      <AppLayout>
-                        <Categories />
-                      </AppLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/users"
-                  element={
-                    <ProtectedRoute moduleKey="admin" pageKey="users">
-                      <AppLayout>
-                        <Users />
-                      </AppLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/settings"
-                  element={
-                    <ProtectedRoute moduleKey="settings" pageKey="settings">
-                      <AppLayout>
-                        <Settings />
-                      </AppLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/audit-log"
-                  element={
-                    <ProtectedRoute moduleKey="audit" pageKey="audit_log">
-                      <AppLayout>
-                        <AuditLog />
-                      </AppLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/profile"
-                  element={
-                    <ProtectedRoute moduleKey="settings" pageKey="profile">
-                      <AppLayout>
-                        <Profile />
-                      </AppLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/offline"
-                  element={
-                    <ProtectedRoute moduleKey="settings" pageKey="offline">
-                      <AppLayout>
-                        <OfflineData />
-                      </AppLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/diagnostics"
-                  element={
-                    <ProtectedRoute moduleKey="settings" pageKey="diagnostics">
-                      <AppLayout>
-                        <Diagnostics />
-                      </AppLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/health-check"
-                  element={
-                    <ProtectedRoute moduleKey="health" pageKey="health_check">
-                      <AppLayout>
-                        <HealthCheck />
-                      </AppLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/supervisor"
-                  element={
-                    <ProtectedRoute moduleKey="equipment" pageKey="supervisor">
-                      <AppLayout>
-                        <Supervisor />
-                      </AppLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/heat-stress"
-                  element={
-                    <ProtectedRoute moduleKey="health" pageKey="heat_stress">
-                      <AppLayout>
-                        <HeatStress />
-                      </AppLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/obs-cards"
-                  element={
-                    <ProtectedRoute moduleKey="obs_cards" pageKey="dashboard">
-                      <AppLayout>
-                        <ObsCardsDashboard />
-                      </AppLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/obs-cards/safety-observation"
-                  element={
-                    <ProtectedRoute moduleKey="obs_cards" pageKey="safety_observation">
-                      <AppLayout>
-                        <SafetyObservationForm />
-                      </AppLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/obs-cards/upload"
-                  element={
-                    <ProtectedRoute moduleKey="obs_cards" pageKey="upload">
-                      <AppLayout>
-                        <ObsCardsUpload />
-                      </AppLayout>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/obs-cards/datasets"
-                  element={
-                    <ProtectedRoute moduleKey="obs_cards" pageKey="datasets">
-                      <AppLayout>
-                        <ObsCardsDatasets />
-                      </AppLayout>
-                    </ProtectedRoute>
-                  }
-                />
-
-                <Route path="/evv" element={<ProtectedRoute moduleKey="evv" pageKey="home"><AppLayout><EvvHome /></AppLayout></ProtectedRoute>} />
-                <Route path="/evv/forms" element={<ProtectedRoute moduleKey="evv" pageKey="forms"><AppLayout><EvvFormSelector /></AppLayout></ProtectedRoute>} />
-                <Route path="/evv/forms/:formType" element={<ProtectedRoute moduleKey="evv" pageKey="forms" action="create"><AppLayout><EvvWizard /></AppLayout></ProtectedRoute>} />
-                <Route path="/evv/history" element={<ProtectedRoute moduleKey="evv" pageKey="history"><AppLayout><EvvHistory /></AppLayout></ProtectedRoute>} />
-                <Route path="/evv/history/:id" element={<ProtectedRoute moduleKey="evv" pageKey="history"><AppLayout><EvvSubmissionDetail /></AppLayout></ProtectedRoute>} />
-                <Route path="/evv/reports" element={<ProtectedRoute moduleKey="evv" pageKey="reports"><AppLayout><EvvReports /></AppLayout></ProtectedRoute>} />
+                <Route element={<ProtectedAppLayout />}>
+                  <Route path="/" element={<ProtectedRoute moduleKey="equipment" pageKey="dashboard"><Index /></ProtectedRoute>} />
+                  <Route path="/equipment" element={<ProtectedRoute moduleKey="equipment" pageKey="equipment"><EquipmentList /></ProtectedRoute>} />
+                  <Route path="/inspections" element={<ProtectedRoute moduleKey="equipment" pageKey="inspections"><Inspections /></ProtectedRoute>} />
+                  <Route path="/reports" element={<ProtectedRoute moduleKey="reports" pageKey="reports"><Reports /></ProtectedRoute>} />
+                  <Route path="/alerts" element={<ProtectedRoute moduleKey="alerts" pageKey="alerts"><Alerts /></ProtectedRoute>} />
+                  <Route path="/pending" element={<ProtectedRoute moduleKey="equipment" pageKey="pending"><PendingRecommendations /></ProtectedRoute>} />
+                  <Route path="/maintenance" element={<ProtectedRoute moduleKey="equipment" pageKey="maintenance"><Maintenance /></ProtectedRoute>} />
+                  <Route path="/certificates" element={<ProtectedRoute moduleKey="equipment" pageKey="certificates"><Certificates /></ProtectedRoute>} />
+                  <Route path="/categories" element={<ProtectedRoute moduleKey="equipment" pageKey="categories"><Categories /></ProtectedRoute>} />
+                  <Route path="/users" element={<ProtectedRoute moduleKey="admin" pageKey="users"><Users /></ProtectedRoute>} />
+                  <Route path="/settings" element={<ProtectedRoute moduleKey="settings" pageKey="settings"><Settings /></ProtectedRoute>} />
+                  <Route path="/audit-log" element={<ProtectedRoute moduleKey="audit" pageKey="audit_log"><AuditLog /></ProtectedRoute>} />
+                  <Route path="/profile" element={<ProtectedRoute moduleKey="settings" pageKey="profile"><Profile /></ProtectedRoute>} />
+                  <Route path="/offline" element={<ProtectedRoute moduleKey="settings" pageKey="offline"><OfflineData /></ProtectedRoute>} />
+                  <Route path="/diagnostics" element={<ProtectedRoute moduleKey="settings" pageKey="diagnostics"><Diagnostics /></ProtectedRoute>} />
+                  <Route path="/health-check" element={<ProtectedRoute moduleKey="health" pageKey="health_check"><HealthCheck /></ProtectedRoute>} />
+                  <Route path="/supervisor" element={<ProtectedRoute moduleKey="equipment" pageKey="supervisor"><Supervisor /></ProtectedRoute>} />
+                  <Route path="/heat-stress" element={<ProtectedRoute moduleKey="health" pageKey="heat_stress"><HeatStress /></ProtectedRoute>} />
+                  <Route path="/obs-cards" element={<ProtectedRoute moduleKey="obs_cards" pageKey="dashboard"><ObsCardsDashboard /></ProtectedRoute>} />
+                  <Route path="/obs-cards/safety-observation" element={<ProtectedRoute moduleKey="obs_cards" pageKey="safety_observation"><SafetyObservationForm /></ProtectedRoute>} />
+                  <Route path="/obs-cards/upload" element={<ProtectedRoute moduleKey="obs_cards" pageKey="upload"><ObsCardsUpload /></ProtectedRoute>} />
+                  <Route path="/obs-cards/datasets" element={<ProtectedRoute moduleKey="obs_cards" pageKey="datasets"><ObsCardsDatasets /></ProtectedRoute>} />
+                  <Route path="/evv" element={<ProtectedRoute moduleKey="evv" pageKey="home"><EvvHome /></ProtectedRoute>} />
+                  <Route path="/evv/forms" element={<ProtectedRoute moduleKey="evv" pageKey="forms"><EvvFormSelector /></ProtectedRoute>} />
+                  <Route path="/evv/forms/:formType" element={<ProtectedRoute moduleKey="evv" pageKey="forms" action="create"><EvvWizard /></ProtectedRoute>} />
+                  <Route path="/evv/history" element={<ProtectedRoute moduleKey="evv" pageKey="history"><EvvHistory /></ProtectedRoute>} />
+                  <Route path="/evv/history/:id" element={<ProtectedRoute moduleKey="evv" pageKey="history"><EvvSubmissionDetail /></ProtectedRoute>} />
+                  <Route path="/evv/reports" element={<ProtectedRoute moduleKey="evv" pageKey="reports"><EvvReports /></ProtectedRoute>} />
+                </Route>
 
                 <Route path="*" element={<NotFound />} />
               </Routes>
