@@ -185,7 +185,8 @@
     "groupSafety": "Safety / HSE",
     "obsCards": "OBS Cards",
     "obsCardsAi": "Observation Card with AI",
-    "safetyObservation": "Safety Observation"
+    "safetyObservation": "Safety Observation",
+    "safetyObservationReports": "Observation Reports"
   },
   "mobileHome": {
     "greeting": "Welcome",

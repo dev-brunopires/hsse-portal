@@ -156,6 +156,7 @@ export function AppSidebar() {
           <NavGroup label={t('navigation.groupSafety')} collapsed={collapsed}>
             {can('obs_cards', 'dashboard') && <div data-tour="obs-cards"><NavItem to="/obs-cards" icon={<ShieldAlert size={20} />} label={t('navigation.obsCardsAi')} collapsed={collapsed} /></div>}
             {can('obs_cards', 'safety_observation') && <div data-tour="safety-observation"><NavItem to="/obs-cards/safety-observation" icon={<ClipboardList size={20} />} label={t('navigation.safetyObservation')} collapsed={collapsed} /></div>}
+            {can('obs_cards', 'reports') && <div data-tour="safety-observation-reports"><NavItem to="/obs-cards/reports" icon={<FileText size={20} />} label={t('navigation.safetyObservationReports')} collapsed={collapsed} /></div>}
           </NavGroup>
         )}
 

@@ -40,6 +40,7 @@ const ObsCardsDashboard = lazyWithRetry(() => import("./pages/ObsCardsDashboard"
 const ObsCardsUpload = lazyWithRetry(() => import("./pages/ObsCardsUpload"));
 const ObsCardsDatasets = lazyWithRetry(() => import("./pages/ObsCardsDatasets"));
 const SafetyObservationForm = lazyWithRetry(() => import("./pages/SafetyObservationForm"));
+const SafetyObservationReports = lazyWithRetry(() => import("./pages/SafetyObservationReports"));
 const EvvHome = lazyWithRetry(() => import("./features/evv/pages/EvvHome"));
 const EvvFormSelector = lazyWithRetry(() => import("./features/evv/pages/FormSelector"));
 const EvvWizard = lazyWithRetry(() => import("./features/evv/pages/EvvWizard"));
@@ -122,6 +123,7 @@ function App() {
                   <Route path="/heat-stress" element={<ProtectedRoute moduleKey="health" pageKey="heat_stress"><HeatStress /></ProtectedRoute>} />
                   <Route path="/obs-cards" element={<ProtectedRoute moduleKey="obs_cards" pageKey="dashboard"><ObsCardsDashboard /></ProtectedRoute>} />
                   <Route path="/obs-cards/safety-observation" element={<ProtectedRoute moduleKey="obs_cards" pageKey="safety_observation"><SafetyObservationForm /></ProtectedRoute>} />
+                  <Route path="/obs-cards/reports" element={<ProtectedRoute moduleKey="obs_cards" pageKey="reports"><SafetyObservationReports /></ProtectedRoute>} />
                   <Route path="/obs-cards/upload" element={<ProtectedRoute moduleKey="obs_cards" pageKey="upload"><ObsCardsUpload /></ProtectedRoute>} />
                   <Route path="/obs-cards/datasets" element={<ProtectedRoute moduleKey="obs_cards" pageKey="datasets"><ObsCardsDatasets /></ProtectedRoute>} />
                   <Route path="/evv" element={<ProtectedRoute moduleKey="evv" pageKey="home"><EvvHome /></ProtectedRoute>} />

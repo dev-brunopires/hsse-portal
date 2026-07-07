@@ -191,7 +191,8 @@ export function DateTimePicker({
   className,
 }: DateTimePickerProps) {
   const [date = '', time = ''] = (value || '').split('T');
-  const [hour = '00', minute = '00'] = time.split(':');
+  const hasTimeValue = Boolean(time);
+  const [hour = '', minute = ''] = time.split(':');
   const hours = React.useMemo(
     () => Array.from({ length: 24 }, (_, index) => String(index).padStart(2, '0')),
     [],
@@ -202,14 +203,14 @@ export function DateTimePicker({
   );
 
   const emitValue = (nextDate: string, nextHour: string, nextMinute: string) => {
-    onChange?.(nextDate ? `${nextDate}T${nextHour}:${nextMinute}` : '');
+    onChange?.(nextDate ? `${nextDate}T${nextHour || '00'}:${nextMinute || '00'}` : '');
   };
 
   return (
     <div className={cn('flex w-full flex-col gap-2 sm:flex-row sm:items-center', className)}>
       <DatePicker
         value={date}
-        onChange={(nextDate) => emitValue(nextDate, hour, minute)}
+        onChange={(nextDate) => emitValue(nextDate, hour || '00', minute || '00')}
         disabled={disabled}
         className="min-w-0 flex-1"
       />
@@ -219,13 +220,13 @@ export function DateTimePicker({
           onValueChange={(nextHour) => emitValue(date, nextHour, minute)}
           disabled={disabled}
         >
-          <SelectTrigger aria-label="Hora" className="h-10 min-w-0 gap-2 px-3 sm:w-[74px]">
-            <Clock3 className="h-4 w-4 shrink-0 text-muted-foreground" />
-            <span className="min-w-0 flex-1 text-left tabular-nums">{hour}</span>
+          <SelectTrigger aria-label="Hora" className="h-10 min-w-0 px-3 text-center tabular-nums sm:w-[76px] [&>svg]:ml-2">
+            {!hasTimeValue && <Clock3 className="mr-1 h-4 w-4 shrink-0 text-muted-foreground" />}
+            <span className="min-w-0 flex-1 text-center tabular-nums">{hour || '--'}</span>
           </SelectTrigger>
           <SelectContent className="max-h-64">
             {hours.map((option) => (
-              <SelectItem key={option} value={option}>{option} h</SelectItem>
+              <SelectItem key={option} value={option} className="justify-center pl-8 pr-8 tabular-nums">{option}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -234,13 +235,13 @@ export function DateTimePicker({
           onValueChange={(nextMinute) => emitValue(date, hour, nextMinute)}
           disabled={disabled}
         >
-          <SelectTrigger aria-label="Minuto" className="h-10 min-w-0 px-3 sm:w-[82px]">
-            <span className="min-w-0 flex-1 text-left tabular-nums">{minute}</span>
-            <span className="ml-1 hidden text-xs text-muted-foreground sm:inline">min</span>
+          <SelectTrigger aria-label="Minuto" className="h-10 min-w-0 px-3 text-center tabular-nums sm:w-[76px] [&>svg]:ml-2">
+            {!hasTimeValue && <Clock3 className="mr-1 h-4 w-4 shrink-0 text-muted-foreground" />}
+            <span className="min-w-0 flex-1 text-center tabular-nums">{minute || '--'}</span>
           </SelectTrigger>
           <SelectContent className="max-h-64">
             {minutes.map((option) => (
-              <SelectItem key={option} value={option}>{option} min</SelectItem>
+              <SelectItem key={option} value={option} className="justify-center pl-8 pr-8 tabular-nums">{option}</SelectItem>
             ))}
           </SelectContent>
         </Select>

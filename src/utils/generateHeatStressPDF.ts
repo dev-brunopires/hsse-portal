@@ -34,6 +34,37 @@ export interface HeatStressPDFData {
   measuredAt: string;
   notes?: string | null;
   branding?: OrganizationBranding;
+  details?: {
+    evaluation_at?: string;
+    expiration_date?: string;
+    ptw_number?: string;
+    main_activity?: string;
+    evaluator_name?: string;
+    additional_info?: string;
+    confined_or_artificial?: 'yes' | 'no';
+    heat_index?: {
+      temperature_c?: number | null;
+      relative_humidity?: number | null;
+      value?: number | null;
+      potential_risk?: string | null;
+    };
+    monitor?: {
+      manufacturer?: string;
+      model?: string;
+      serial_number?: string;
+      calibration_date?: string;
+    };
+    clothing?: {
+      type: string;
+      increment: number;
+    };
+    corrected_ibutg?: number;
+    action_level?: number;
+    exposure_limit?: number;
+    ceiling_value?: number | null;
+    conclusion?: string;
+    control_measures?: string;
+  } | null;
 }
 
 const STATUS_COLOR: Record<HeatStressPDFData['nhoStatus'], [number, number, number]> = {
@@ -48,17 +79,24 @@ const STATUS_KEY: Record<HeatStressPDFData['nhoStatus'], string> = {
   above_limit: 'statusAboveLimit',
 };
 
+type JsPdfWithAutoTable = jsPDF & {
+  lastAutoTable?: {
+    finalY: number;
+  };
+};
 
 export async function generateHeatStressPDF(data: HeatStressPDFData): Promise<jsPDF> {
-  const t = (k: string, opts?: any) => i18n.t(`heatStress.pdf.${k}`, opts) as string;
+  const t = (k: string, opts?: Record<string, unknown>) => i18n.t(`heatStress.pdf.${k}`, opts) as string;
   const dateLocale = (i18n.language || '').toLowerCase().startsWith('pt') ? ptBR : enUS;
   const dateFmt = dateLocale === ptBR ? 'dd/MM/yyyy HH:mm' : 'yyyy-MM-dd HH:mm';
 
   const envLabel = data.environmentType === 'with_solar' ? t('envWithSolar') : t('envNoSolar');
 
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const autoTableDoc = doc as JsPdfWithAutoTable;
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 14;
+  const lastTableY = () => autoTableDoc.lastAutoTable?.finalY ?? y;
 
   await preloadLogo(data.branding);
 
@@ -99,7 +137,33 @@ export async function generateHeatStressPDF(data: HeatStressPDFData): Promise<js
     ],
     margin: { left: margin, right: margin },
   });
-  y = (doc as any).lastAutoTable.finalY + 6;
+  y = lastTableY() + 6;
+
+  if (data.details) {
+    y = addSectionHeader(doc, y, 'Dados complementares da avaliação');
+    y += 2;
+    autoTable(doc, {
+      startY: y,
+      theme: 'grid',
+      styles: { fontSize: 8.5, cellPadding: 2.2, textColor: DARK_GRAY, lineColor: BORDER_GRAY },
+      columnStyles: {
+        0: { fontStyle: 'bold', cellWidth: 52, fillColor: LIGHT_GRAY },
+        1: { cellWidth: 'auto' },
+      },
+      body: [
+        ['Atividade principal', data.details.main_activity || '—'],
+        ['PtW nº', data.details.ptw_number || '—'],
+        ['Avaliador responsável', data.details.evaluator_name || data.inspectorName || '—'],
+        ['Vencimento da avaliação', data.details.expiration_date ? format(new Date(`${data.details.expiration_date}T00:00:00`), 'dd/MM/yyyy', { locale: dateLocale }) : '—'],
+        ['Espaço confinado/fontes artificiais', data.details.confined_or_artificial === 'yes' ? 'Sim' : data.details.confined_or_artificial === 'no' ? 'Não' : '—'],
+        ['Índice de calor', data.details.heat_index?.value != null ? `${data.details.heat_index.value} °C (${data.details.heat_index.potential_risk || '-'})` : '—'],
+        ['Monitor', [data.details.monitor?.manufacturer, data.details.monitor?.model, data.details.monitor?.serial_number].filter(Boolean).join(' / ') || '—'],
+        ['Calibração', data.details.monitor?.calibration_date ? format(new Date(`${data.details.monitor.calibration_date}T00:00:00`), 'dd/MM/yyyy', { locale: dateLocale }) : '—'],
+      ],
+      margin: { left: margin, right: margin },
+    });
+    y = lastTableY() + 6;
+  }
 
   // ===== LEITURAS =====
   y = addSectionHeader(doc, y, t('sectionReadings', { count: data.readings.length }));
@@ -136,7 +200,7 @@ export async function generateHeatStressPDF(data: HeatStressPDFData): Promise<js
     },
     margin: { left: margin, right: margin },
   });
-  y = (doc as any).lastAutoTable.finalY + 6;
+  y = lastTableY() + 6;
 
   // ===== RESULTADO IBUTG =====
   y = addSectionHeader(doc, y, t('sectionResult'));
@@ -180,6 +244,29 @@ export async function generateHeatStressPDF(data: HeatStressPDFData): Promise<js
 
   y += boxH + 8;
 
+  if (data.details?.corrected_ibutg != null) {
+    autoTable(doc, {
+      startY: y,
+      theme: 'grid',
+      styles: { fontSize: 8.5, cellPadding: 2.2, textColor: DARK_GRAY, lineColor: BORDER_GRAY },
+      columnStyles: {
+        0: { fontStyle: 'bold', cellWidth: 52, fillColor: LIGHT_GRAY },
+        1: { cellWidth: 'auto' },
+      },
+      body: [
+        ['Vestimenta', data.details.clothing?.type || '—'],
+        ['Incremento ao IBUTG', data.details.clothing ? `+${data.details.clothing.increment} °C` : '—'],
+        ['IBUTG corrigido', `${data.details.corrected_ibutg.toFixed(2)} °C`],
+        ['Nível de ação', data.details.action_level != null ? `${data.details.action_level.toFixed(1)} °C` : '—'],
+        ['Limite de exposição', data.details.exposure_limit != null ? `${data.details.exposure_limit.toFixed(1)} °C` : '—'],
+        ['Valor teto', data.details.ceiling_value != null ? `${data.details.ceiling_value.toFixed(1)} °C` : '—'],
+        ['Conclusão', data.details.conclusion || '—'],
+      ],
+      margin: { left: margin, right: margin },
+    });
+    y = lastTableY() + 6;
+  }
+
   // ===== OBSERVAÇÕES =====
   if (data.notes) {
     y = addSectionHeader(doc, y, t('sectionNotes'));
@@ -190,6 +277,17 @@ export async function generateHeatStressPDF(data: HeatStressPDFData): Promise<js
     const lines = doc.splitTextToSize(data.notes, pageWidth - margin * 2);
     doc.text(lines, margin, y);
     y += lines.length * 4.5 + 4;
+  }
+
+  if (data.details?.control_measures) {
+    y = addSectionHeader(doc, y, 'Medidas de Controle');
+    y += 4;
+    doc.setTextColor(...DARK_GRAY);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    const controlLines = doc.splitTextToSize(data.details.control_measures, pageWidth - margin * 2);
+    doc.text(controlLines, margin, y);
+    y += controlLines.length * 4.5 + 4;
   }
 
   // ===== NOTA METODOLÓGICA =====

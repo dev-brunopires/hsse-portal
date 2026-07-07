@@ -92,17 +92,19 @@ export function useAccess() {
       return Boolean(explicit[actionToFlag(action)]);
     }
 
-    if (!hasExplicitPermissions && !role && moduleKey === 'obs_cards' && pageKey === 'safety_observation') {
+    if (!hasExplicitPermissions && !role && moduleKey === 'obs_cards' && ['safety_observation', 'reports'].includes(pageKey)) {
       return action === 'view' || action === 'create';
     }
 
-    if (hasExplicitPermissions && moduleKey === 'obs_cards' && pageKey === 'safety_observation') {
+    if (hasExplicitPermissions && moduleKey === 'obs_cards' && ['safety_observation', 'reports'].includes(pageKey)) {
       const obsCardsPermissions = permissions.filter(row => row.module_key === 'obs_cards');
       const canUseObsCardsModule = obsCardsPermissions.some(row => row.can_view);
       if (!canUseObsCardsModule) return false;
 
-      if (action === 'view' || action === 'create') return true;
+      if (action === 'view') return true;
+      if (pageKey === 'safety_observation' && action === 'create') return true;
       if (action === 'edit') return obsCardsPermissions.some(row => row.can_edit || row.can_admin);
+      if (action === 'delete') return obsCardsPermissions.some(row => row.can_delete || row.can_admin);
       if (action === 'export') return obsCardsPermissions.some(row => row.can_export || row.can_admin);
       return false;
     }

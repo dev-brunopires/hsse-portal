@@ -123,6 +123,7 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
             <MobileNavGroup label={t('navigation.groupSafety')}>
               {can('obs_cards', 'dashboard') && <MobileNavItem to="/obs-cards" icon={<ShieldAlert size={20} />} label={t('navigation.obsCardsAi')} onClick={handleNavClick} />}
               {can('obs_cards', 'safety_observation') && <MobileNavItem to="/obs-cards/safety-observation" icon={<ClipboardList size={20} />} label={t('navigation.safetyObservation')} onClick={handleNavClick} />}
+              {can('obs_cards', 'reports') && <MobileNavItem to="/obs-cards/reports" icon={<FileText size={20} />} label={t('navigation.safetyObservationReports')} onClick={handleNavClick} />}
             </MobileNavGroup>
           )}
 

@@ -1,10 +1,26 @@
-import { useState, useMemo, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useMemo, useState, type ReactNode } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  Thermometer, Flame, Sun, Activity, Save, Loader2, Plus, Trash2,
-  ChevronLeft, ChevronRight, FileDown, Ship as ShipIcon, MapPin, Cloud,
-  CheckCircle2, AlertTriangle, AlertOctagon, FileText,
+  Activity,
+  AlertOctagon,
+  AlertTriangle,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardList,
+  Cloud,
+  FileDown,
+  FileText,
+  Flame,
+  Loader2,
+  MapPin,
+  Plus,
+  Save,
+  Ship as ShipIcon,
+  Sun,
+  Thermometer,
+  Trash2,
+  type LucideIcon,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useShips } from '@/hooks/useShips';
@@ -14,34 +30,91 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { useOrganizationBranding } from '@/hooks/useOrganizationBranding';
 import { useToast } from '@/hooks/use-toast';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
+import { DatePicker, DateTimePicker } from '@/components/ui/date-picker';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table';
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { AreaCombobox } from '@/components/ships/AreaCombobox';
 import { formatDateTime } from '@/utils/dateFormat';
 import { downloadHeatStressPDF, type HeatStressPDFData } from '@/utils/generateHeatStressPDF';
 import { cn } from '@/lib/utils';
-import { AreaCombobox } from '@/components/ships/AreaCombobox';
-
 
 type EnvType = 'no_solar' | 'with_solar';
 type NhoStatus = 'normal' | 'action' | 'above_limit';
+type YesNo = 'yes' | 'no';
 
-interface Reading { tbn: string; tg: string; tbs: string; }
+interface Reading {
+  tbn: string;
+  tg: string;
+  tbs: string;
+}
+
+interface MetabolicStage {
+  description: string;
+  activity: string;
+  duration: string;
+  rate: string;
+}
+
+interface HeatStressDetails {
+  evaluation_at?: string;
+  expiration_date?: string;
+  ptw_number?: string;
+  main_activity?: string;
+  evaluator_name?: string;
+  additional_info?: string;
+  confined_or_artificial?: YesNo;
+  heat_index?: {
+    temperature_c?: number | null;
+    relative_humidity?: number | null;
+    value?: number | null;
+    potential_risk?: string | null;
+  };
+  monitor?: {
+    manufacturer?: string;
+    model?: string;
+    serial_number?: string;
+    calibration_date?: string;
+  };
+  variation_check?: {
+    tbn: boolean;
+    tg: boolean;
+    tbs: boolean | null;
+  };
+  metabolic_stages?: Array<{
+    description: string;
+    activity: string;
+    duration: number;
+    rate: number;
+  }>;
+  clothing?: {
+    type: string;
+    increment: number;
+  };
+  corrected_ibutg?: number;
+  action_level?: number;
+  exposure_limit?: number;
+  ceiling_value?: number | null;
+  conclusion?: string;
+  control_measures?: string;
+}
 
 interface Measurement {
   id: string;
@@ -58,141 +131,315 @@ interface Measurement {
   measured_at: string;
   created_by: string | null;
   readings?: Array<{ tbn: number; tg: number; tbs: number | null }> | null;
+  details?: HeatStressDetails | null;
 }
 
+interface SupabaseQueryResult<T> {
+  data: T | null;
+  error: { message: string } | null;
+}
 
-const METABOLIC_PRESETS: { key: string; value: number }[] = [
-  { key: 'rest', value: 115 },
-  { key: 'light', value: 180 },
-  { key: 'moderate', value: 300 },
-  { key: 'heavy', value: 415 },
-  { key: 'veryHeavy', value: 520 },
-];
+interface SupabaseTableQuery<T> extends PromiseLike<SupabaseQueryResult<T>> {
+  select(columns?: string): SupabaseTableQuery<T>;
+  eq(column: string, value: string): SupabaseTableQuery<T>;
+  order(column: string, options?: { ascending?: boolean }): SupabaseTableQuery<T>;
+  limit(count: number): SupabaseTableQuery<T>;
+  insert(value: unknown): SupabaseTableQuery<T>;
+  delete(): SupabaseTableQuery<T>;
+  single(): SupabaseTableQuery<T>;
+}
 
-// NHO 06 — limites de tolerância simplificados (regime contínuo)
-function classifyNho(ibutg: number, metabolic: number): NhoStatus {
-  let lt: number; let na: number;
-  if (metabolic <= 180) { lt = 30.0; na = 28.0; }
-  else if (metabolic <= 300) { lt = 26.7; na = 25.0; }
-  else if (metabolic <= 415) { lt = 25.0; na = 23.0; }
-  else { lt = 23.0; na = 21.5; }
-  if (ibutg >= lt) return 'above_limit';
-  if (ibutg >= na) return 'action';
+type HeatStressTableClient = {
+  from(table: 'heat_stress_measurements'): SupabaseTableQuery<Measurement[] | Measurement>;
+};
+
+const heatStressTable = supabase as unknown as HeatStressTableClient;
+
+const WIZARD_STEPS = [
+  { key: 'identification', title: 'Identificação', description: 'Cabeçalho da avaliação' },
+  { key: 'environment', title: 'Ambiente', description: 'Índice de calor e monitor' },
+  { key: 'readings', title: 'Leituras', description: 'IBUTG e variação' },
+  { key: 'metabolism', title: 'Metabolismo', description: 'Ciclo de 60 minutos' },
+  { key: 'review', title: 'Revisão', description: 'Conclusão e medidas' },
+] as const;
+
+const METABOLIC_ACTIVITIES = [
+  ['Sentado em repouso', 115],
+  ['Em pé, agachado ou ajoelhado em repouso', 126],
+  ['Sentado trabalhando com as mãos', 171],
+  ['Abertura de válvulas de fácil acesso', 180],
+  ['Inspeção visual de equipamentos', 215],
+  ['Almoxarifado', 216],
+  ['Manutenção elétrica e instrumentação', 243],
+  ['Em pé, agachado ou ajoelhado trabalhando com um braço', 261],
+  ['Em pé, agachado ou ajoelhado trabalhando com dois braços', 279],
+  ['Descendo escada com ou sem carga', 279],
+  ['Manutenção mecânica', 279],
+  ['Operação de carga', 279],
+  ['Operação e manutenção na sala de máquinas', 279],
+  ['Sentado trabalhando com os braços', 288],
+  ['Em pé, agachado ou ajoelhado trabalhando com mãos e/ou braços', 315],
+  ['Andando no plano sem carga ou com carga até 10 kg', 315],
+  ['Trabalhando com carrinho de mão', 315],
+  ['Subindo escada sem ou com carga', 333],
+  ['Montagem de andaimes', 333],
+  ['Limpeza de tanque', 349],
+  ['Trabalho vigoroso com o corpo', 349],
+  ['Andando no plano com carga até 30 kg', 450],
+  ['Trabalho em local de difícil acesso', 468],
+  ['Manobra de válvulas', 468],
+  ['Trabalho vigoroso pesado com o corpo', 630],
+  ['Subindo escada com carga até 20 kg por mais de 2 horas', 738],
+] as const;
+
+const CLOTHING_OPTIONS = [
+  ['Uniforme de trabalho (calça e camisa de manga comprida)', 0],
+  ['Macacão de tecido', 0],
+  ['Vestimenta ou macacão forrado (tecido duplo)', 3],
+  ['Macacão de polipropileno SMS', 0.5],
+  ['Macacão de poliolefina (Tyvek)', 2],
+  ['Macacão de uso limitado impermeável ao vapor', 11],
+  ['Avental longo de manga comprida impermeável ao vapor', 4],
+  ['Macacão impermeável ao vapor', 10],
+  ['Macacão impermeável ao vapor sobreposto à roupa de trabalho', 12],
+] as const;
+
+function localDateTimeValue() {
+  const date = new Date();
+  date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+  return date.toISOString().slice(0, 16);
+}
+
+function localDateValue(daysFromNow = 0) {
+  const date = new Date();
+  date.setDate(date.getDate() + daysFromNow);
+  date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+  return date.toISOString().slice(0, 10);
+}
+
+function numberOrNull(value: string) {
+  if (value.trim() === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function checkVariation(values: Array<number | null>, required: boolean) {
+  const valid = values.filter((value): value is number => value != null && Number.isFinite(value));
+  if (!required && valid.length === 0) return null;
+  if (valid.length < 2) return true;
+  return Math.max(...valid) - Math.min(...valid) <= 0.4;
+}
+
+function calcHeatIndex(tempC: number | null, humidity: number | null) {
+  if (tempC == null || humidity == null) return null;
+  const tempF = tempC * 9 / 5 + 32;
+  const rh = humidity;
+  const hiF = -42.379 + 2.04901523 * tempF + 10.14333127 * rh - 0.22475541 * tempF * rh
+    - 0.00683783 * tempF * tempF - 0.05481717 * rh * rh
+    + 0.00122874 * tempF * tempF * rh + 0.00085282 * tempF * rh * rh
+    - 0.00000199 * tempF * tempF * rh * rh;
+  return Number(((hiF - 32) * 5 / 9).toFixed(1));
+}
+
+function heatRiskLabel(heatIndex: number | null) {
+  if (heatIndex == null) return null;
+  if (heatIndex < 32) return 'Risco I';
+  if (heatIndex < 41) return 'Risco II';
+  return 'Risco III';
+}
+
+function interpolate(points: Array<[number, number]>, metabolic: number) {
+  const sorted = [...points].sort((a, b) => a[0] - b[0]);
+  if (metabolic <= sorted[0][0]) return sorted[0][1];
+  if (metabolic >= sorted[sorted.length - 1][0]) return sorted[sorted.length - 1][1];
+  for (let index = 1; index < sorted.length; index += 1) {
+    const [x2, y2] = sorted[index];
+    const [x1, y1] = sorted[index - 1];
+    if (metabolic <= x2) {
+      const ratio = (metabolic - x1) / (x2 - x1);
+      return Number((y1 + (y2 - y1) * ratio).toFixed(1));
+    }
+  }
+  return sorted[sorted.length - 1][1];
+}
+
+function actionLevelFor(metabolic: number) {
+  return interpolate([[100, 31.7], [180, 28.1], [226, 26.7], [313, 24.7], [414, 23.0], [503, 21.8], [738, 19.0]], metabolic);
+}
+
+function exposureLimitFor(metabolic: number) {
+  return interpolate([[100, 33.7], [180, 30.8], [300, 26.7], [415, 25.0], [520, 23.0], [738, 20.0]], metabolic);
+}
+
+function ceilingFor(metabolic: number) {
+  if (metabolic < 240) return null;
+  return interpolate([[240, 31.0], [300, 30.0], [415, 28.0], [520, 26.5], [738, 24.0]], metabolic);
+}
+
+function classifyNho(correctedIbutg: number, metabolic: number): NhoStatus {
+  const action = actionLevelFor(metabolic);
+  const limit = exposureLimitFor(metabolic);
+  if (correctedIbutg >= limit) return 'above_limit';
+  if (correctedIbutg >= action) return 'action';
   return 'normal';
 }
 
-function useStatusBadge() {
-  const { t } = useTranslation();
-  return (status: NhoStatus, size: 'sm' | 'md' = 'sm') => {
-    const cls = size === 'md' ? 'text-sm py-1 px-3' : '';
-    if (status === 'above_limit') return (
-      <Badge className={cn('bg-red-100 text-red-800 hover:bg-red-100 border-red-200 dark:bg-red-950 dark:text-red-200 dark:border-red-900', cls)}>
-        {t('heatStress.status.aboveLimit')}
-      </Badge>
-    );
-    if (status === 'action') return (
-      <Badge className={cn('bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200 dark:bg-amber-950 dark:text-amber-200 dark:border-amber-900', cls)}>
-        {t('heatStress.status.action')}
-      </Badge>
-    );
-    return <Badge variant="secondary" className={cn('font-normal', cls)}>{t('heatStress.status.normal')}</Badge>;
-  };
+function conclusionFor(correctedIbutg: number, metabolic: number) {
+  const action = actionLevelFor(metabolic);
+  const limit = exposureLimitFor(metabolic);
+  if (correctedIbutg < action) return 'Risco I - Abaixo do Nível de Ação';
+  if (correctedIbutg < limit) return 'Risco II - Entre o Nível de Ação e o Limite de Exposição';
+  return 'Risco III - Acima do Limite de Exposição';
 }
 
+function controlMeasuresFor(status: NhoStatus) {
+  if (status === 'above_limit') {
+    return 'Interromper ou replanejar a atividade, reduzir exposição, reforçar pausas, hidratação, ventilação/exaustão e avaliação da liderança de HSSE.';
+  }
+  if (status === 'action') {
+    return 'Aplicar controles preventivos, hidratação programada, pausas, monitoramento dos trabalhadores e reavaliação se as condições mudarem.';
+  }
+  return 'Manter controles existentes, hidratação, observação de sintomas e reavaliar em caso de mudança de condição ambiental ou atividade.';
+}
+
+function statusLabel(status: NhoStatus) {
+  if (status === 'above_limit') return 'Acima do Limite';
+  if (status === 'action') return 'Nível de Ação';
+  return 'Normal';
+}
+
+function statusBadge(status: NhoStatus, size: 'sm' | 'md' = 'sm') {
+  const cls = size === 'md' ? 'text-sm py-1 px-3' : '';
+  if (status === 'above_limit') {
+    return <Badge className={cn('bg-red-100 text-red-800 hover:bg-red-100 border-red-200', cls)}>{statusLabel(status)}</Badge>;
+  }
+  if (status === 'action') {
+    return <Badge className={cn('bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200', cls)}>{statusLabel(status)}</Badge>;
+  }
+  return <Badge variant="secondary" className={cn('font-normal', cls)}>{statusLabel(status)}</Badge>;
+}
 
 export default function HeatStress() {
-  const { t } = useTranslation();
-  const { user, profile, isAdmin, isAdminMaster, isSupervisor } = useAuth() as any;
+  const { user, profile, isAdmin, isAdminMaster, isSupervisor } = useAuth() as ReturnType<typeof useAuth> & { isSupervisor?: boolean };
   const canDelete = isAdmin || isAdminMaster || isSupervisor;
   const { organization } = useOrganization();
   const branding = useOrganizationBranding();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { data: ships = [], isLoading: shipsLoading } = useShips();
-  const statusBadge = useStatusBadge();
-
-  const STEPS = [
-    { id: 1, title: t('heatStress.steps.info'), icon: ShipIcon },
-    { id: 2, title: t('heatStress.steps.measurements'), icon: Thermometer },
-    { id: 3, title: t('heatStress.steps.summary'), icon: FileText },
-  ];
-
-
-  // wizard state - ship comes from global header filter
   const { selectedShipId } = useShipFilter();
-  const [step, setStep] = useState(1);
+  const { data: ships = [], isLoading: shipsLoading } = useShips();
+
+  const [step, setStep] = useState(0);
   const [sector, setSector] = useState('');
+  const [evaluationAt, setEvaluationAt] = useState(localDateTimeValue());
+  const [expirationDate, setExpirationDate] = useState(localDateValue(7));
+  const [ptwNumber, setPtwNumber] = useState('');
+  const [mainActivity, setMainActivity] = useState('');
+  const [evaluatorName, setEvaluatorName] = useState(profile?.full_name || '');
+  const [additionalInfo, setAdditionalInfo] = useState('');
+  const [confinedOrArtificial, setConfinedOrArtificial] = useState<YesNo>('yes');
   const [envType, setEnvType] = useState<EnvType>('no_solar');
-  const [metabolicPreset, setMetabolicPreset] = useState<string>('180');
-  const [metabolicCustom, setMetabolicCustom] = useState('');
-  const [notes, setNotes] = useState('');
+  const [ambientTemp, setAmbientTemp] = useState('');
+  const [relativeHumidity, setRelativeHumidity] = useState('');
+  const [monitorManufacturer, setMonitorManufacturer] = useState('');
+  const [monitorModel, setMonitorModel] = useState('');
+  const [monitorSerial, setMonitorSerial] = useState('');
+  const [calibrationDate, setCalibrationDate] = useState('');
   const [readings, setReadings] = useState<Reading[]>([{ tbn: '', tg: '', tbs: '' }]);
+  const [metabolicStages, setMetabolicStages] = useState<MetabolicStage[]>([
+    { description: '', activity: 'Em pé, agachado ou ajoelhado trabalhando com dois braços', duration: '60', rate: '279' },
+  ]);
+  const [clothingType, setClothingType] = useState<string>(CLOTHING_OPTIONS[1][0]);
+  const [clothingIncrement, setClothingIncrement] = useState(String(CLOTHING_OPTIONS[1][1]));
+  const [notes, setNotes] = useState('');
 
-  // Use globally selected ship; fallback to first ship if header is on "All"
   const shipId = selectedShipId || ships[0]?.id || '';
+  const selectedShip = ships.find((ship) => ship.id === shipId);
+  const heatIndex = calcHeatIndex(numberOrNull(ambientTemp), numberOrNull(relativeHumidity));
+  const heatRisk = heatRiskLabel(heatIndex);
 
-  const metabolic = metabolicCustom ? Number(metabolicCustom) : Number(metabolicPreset);
-  const selectedShip = ships.find(s => s.id === shipId);
-
-  // valid readings = pelo menos tbn e tg numéricos (+ tbs se with_solar)
   const validReadings = useMemo(() => readings
-    .map(r => ({
-      tbn: Number(r.tbn),
-      tg: Number(r.tg),
-      tbs: r.tbs !== '' ? Number(r.tbs) : null,
+    .map((reading) => ({
+      tbn: numberOrNull(reading.tbn),
+      tg: numberOrNull(reading.tg),
+      tbs: numberOrNull(reading.tbs),
     }))
-    .filter(r => !isNaN(r.tbn) && r.tbn > 0 && !isNaN(r.tg) && r.tg > 0
-      && (envType !== 'with_solar' || (r.tbs !== null && !isNaN(r.tbs) && r.tbs > 0))),
-  [readings, envType]);
+    .filter((reading) => reading.tbn != null && reading.tg != null && (envType !== 'with_solar' || reading.tbs != null))
+    .map((reading) => ({
+      tbn: reading.tbn as number,
+      tg: reading.tg as number,
+      tbs: reading.tbs,
+    })), [envType, readings]);
+
+  const variationCheck = useMemo(() => ({
+    tbn: checkVariation(validReadings.map((reading) => reading.tbn), true) ?? true,
+    tg: checkVariation(validReadings.map((reading) => reading.tg), true) ?? true,
+    tbs: checkVariation(validReadings.map((reading) => reading.tbs), envType === 'with_solar'),
+  }), [envType, validReadings]);
 
   const averages = useMemo(() => {
     if (validReadings.length === 0) return null;
-    const n = validReadings.length;
-    const avgTbn = validReadings.reduce((s, r) => s + r.tbn, 0) / n;
-    const avgTg = validReadings.reduce((s, r) => s + r.tg, 0) / n;
+    const count = validReadings.length;
+    const avgTbn = validReadings.reduce((sum, reading) => sum + reading.tbn, 0) / count;
+    const avgTg = validReadings.reduce((sum, reading) => sum + reading.tg, 0) / count;
     const avgTbs = envType === 'with_solar'
-      ? validReadings.reduce((s, r) => s + (r.tbs || 0), 0) / n
+      ? validReadings.reduce((sum, reading) => sum + (reading.tbs ?? 0), 0) / count
       : null;
     return { avgTbn, avgTg, avgTbs };
-  }, [validReadings, envType]);
+  }, [envType, validReadings]);
 
   const ibutg = useMemo(() => {
     if (!averages) return null;
     if (envType === 'with_solar') {
-      return Number((0.7 * averages.avgTbn + 0.2 * averages.avgTg + 0.1 * (averages.avgTbs || 0)).toFixed(2));
+      return Number((0.7 * averages.avgTbn + 0.2 * averages.avgTg + 0.1 * (averages.avgTbs ?? 0)).toFixed(2));
     }
     return Number((0.7 * averages.avgTbn + 0.3 * averages.avgTg).toFixed(2));
   }, [averages, envType]);
 
-  const finalStatus = ibutg !== null && metabolic > 0 ? classifyNho(ibutg, metabolic) : null;
+  const normalizedStages = useMemo(() => metabolicStages
+    .map((stage) => ({
+      description: stage.description.trim(),
+      activity: stage.activity,
+      duration: numberOrNull(stage.duration) ?? 0,
+      rate: numberOrNull(stage.rate) ?? 0,
+    }))
+    .filter((stage) => stage.duration > 0 && stage.rate > 0), [metabolicStages]);
 
-  const canGoStep2 = !!shipId && !!sector.trim() && metabolic > 0;
-  const canGoStep3 = validReadings.length > 0 && ibutg !== null;
+  const totalDuration = normalizedStages.reduce((sum, stage) => sum + stage.duration, 0);
+  const metabolic = totalDuration > 0
+    ? normalizedStages.reduce((sum, stage) => sum + stage.duration * stage.rate, 0) / totalDuration
+    : 0;
+  const increment = Number(clothingIncrement) || 0;
+  const correctedIbutg = ibutg == null ? null : Number((ibutg + increment).toFixed(2));
+  const actionLevel = metabolic > 0 ? actionLevelFor(metabolic) : null;
+  const exposureLimit = metabolic > 0 ? exposureLimitFor(metabolic) : null;
+  const ceilingValue = metabolic > 0 ? ceilingFor(metabolic) : null;
+  const finalStatus = correctedIbutg != null && metabolic > 0 ? classifyNho(correctedIbutg, metabolic) : null;
+  const conclusion = correctedIbutg != null && metabolic > 0 ? conclusionFor(correctedIbutg, metabolic) : null;
+  const controlMeasures = finalStatus ? controlMeasuresFor(finalStatus) : '';
 
-  // ===== Histórico =====
+  const canGoStep1 = !!shipId && !!sector.trim() && !!evaluationAt && !!mainActivity.trim() && !!evaluatorName.trim();
+  const canGoStep2 = !!envType && !!confinedOrArtificial;
+  const canGoStep3 = validReadings.length > 0 && ibutg != null && variationCheck.tbn && variationCheck.tg && (variationCheck.tbs !== false);
+  const canGoStep4 = normalizedStages.length > 0 && totalDuration === 60 && metabolic > 0;
+
   const { data: measurements = [], isLoading: measurementsLoading } = useQuery({
     queryKey: ['heat-stress-measurements', shipId],
     queryFn: async () => {
       if (!shipId) return [] as Measurement[];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await heatStressTable
         .from('heat_stress_measurements')
         .select('*')
         .eq('ship_id', shipId)
         .order('measured_at', { ascending: false })
         .limit(200);
       if (error) throw error;
-      return (data || []) as Measurement[];
+      return Array.isArray(data) ? data : [];
     },
     enabled: !!shipId,
   });
 
-  // Fetch profiles for the "created_by" of measurements (responsável da medição)
-  const creatorIds = useMemo(() => {
-    const ids = new Set<string>();
-    measurements.forEach(m => { if (m.created_by) ids.add(m.created_by); });
-    return Array.from(ids);
-  }, [measurements]);
-
+  const creatorIds = useMemo(() => Array.from(new Set(measurements.map((m) => m.created_by).filter(Boolean))) as string[], [measurements]);
   const { data: creatorsMap = {} } = useQuery({
     queryKey: ['heat-stress-creators', creatorIds.sort().join(',')],
     queryFn: async () => {
@@ -203,20 +450,69 @@ export default function HeatStress() {
         .in('user_id', creatorIds);
       if (error) throw error;
       const map: Record<string, string> = {};
-      (data || []).forEach((p: any) => { map[p.user_id] = p.full_name || ''; });
+      ((data || []) as Array<{ user_id: string; full_name: string | null }>).forEach((profileRow) => {
+        map[profileRow.user_id] = profileRow.full_name || '';
+      });
       return map;
     },
     enabled: creatorIds.length > 0,
   });
 
-  const getInspectorName = (m: Measurement): string | undefined => {
-    if (!m.created_by) return undefined;
-    return creatorsMap[m.created_by] || undefined;
-  };
+  const details = (): HeatStressDetails => ({
+    evaluation_at: evaluationAt,
+    expiration_date: expirationDate || undefined,
+    ptw_number: ptwNumber.trim() || undefined,
+    main_activity: mainActivity.trim(),
+    evaluator_name: evaluatorName.trim(),
+    additional_info: additionalInfo.trim() || undefined,
+    confined_or_artificial: confinedOrArtificial,
+    heat_index: {
+      temperature_c: numberOrNull(ambientTemp),
+      relative_humidity: numberOrNull(relativeHumidity),
+      value: heatIndex,
+      potential_risk: heatRisk,
+    },
+    monitor: {
+      manufacturer: monitorManufacturer.trim(),
+      model: monitorModel.trim(),
+      serial_number: monitorSerial.trim(),
+      calibration_date: calibrationDate,
+    },
+    variation_check: variationCheck,
+    metabolic_stages: normalizedStages,
+    clothing: {
+      type: clothingType,
+      increment,
+    },
+    corrected_ibutg: correctedIbutg ?? undefined,
+    action_level: actionLevel ?? undefined,
+    exposure_limit: exposureLimit ?? undefined,
+    ceiling_value: ceilingValue,
+    conclusion: conclusion ?? undefined,
+    control_measures: controlMeasures,
+  });
+
+  const pdfData = (measurement?: Measurement): HeatStressPDFData => ({
+    shipName: selectedShip?.name || '—',
+    sector: measurement?.sector ?? sector.trim(),
+    environmentType: measurement?.environment_type ?? envType,
+    metabolicRate: Number(measurement?.metabolic_rate ?? metabolic),
+    readings: measurement?.readings?.length ? measurement.readings : validReadings,
+    avgTbn: Number(measurement?.tbn ?? averages?.avgTbn ?? 0),
+    avgTg: Number(measurement?.tg ?? averages?.avgTg ?? 0),
+    avgTbs: measurement?.tbs ?? averages?.avgTbs ?? null,
+    ibutg: Number(measurement?.ibutg ?? ibutg ?? 0),
+    nhoStatus: measurement?.nho_status ?? finalStatus ?? 'normal',
+    inspectorName: measurement?.created_by ? creatorsMap[measurement.created_by] : evaluatorName || profile?.full_name || undefined,
+    measuredAt: measurement?.measured_at ?? evaluationAt,
+    notes: measurement?.notes ?? (notes.trim() || null),
+    branding,
+    details: measurement?.details ?? details(),
+  });
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      if (!ibutg || !averages || !finalStatus) throw new Error(t('heatStress.toast.incompleteData'));
+      if (!averages || ibutg == null || correctedIbutg == null || !finalStatus) throw new Error('Dados incompletos');
       const payload = {
         ship_id: shipId,
         organization_id: organization?.id || null,
@@ -225,18 +521,20 @@ export default function HeatStress() {
         tbn: Number(averages.avgTbn.toFixed(2)),
         tg: Number(averages.avgTg.toFixed(2)),
         tbs: envType === 'with_solar' && averages.avgTbs != null ? Number(averages.avgTbs.toFixed(2)) : null,
-        metabolic_rate: metabolic,
+        metabolic_rate: Number(metabolic.toFixed(2)),
         ibutg,
         nho_status: finalStatus,
         notes: notes.trim() || null,
-        readings: validReadings.map(r => ({
-          tbn: Number(r.tbn.toFixed(2)),
-          tg: Number(r.tg.toFixed(2)),
-          tbs: r.tbs != null ? Number(r.tbs.toFixed(2)) : null,
+        readings: validReadings.map((reading) => ({
+          tbn: Number(reading.tbn.toFixed(2)),
+          tg: Number(reading.tg.toFixed(2)),
+          tbs: reading.tbs != null ? Number(reading.tbs.toFixed(2)) : null,
         })),
+        details: details(),
+        measured_at: new Date(evaluationAt).toISOString(),
         created_by: user?.id || null,
       };
-      const { data, error } = await (supabase as any)
+      const { data, error } = await heatStressTable
         .from('heat_stress_measurements')
         .insert(payload)
         .select()
@@ -245,526 +543,383 @@ export default function HeatStress() {
       return data as Measurement;
     },
     onSuccess: async (saved) => {
-      toast({ title: t('heatStress.toast.savedTitle'), description: t('heatStress.toast.savedDescription') });
+      toast({ title: 'Medição registrada', description: 'Heat Stress salvo com todos os campos da avaliação.' });
       queryClient.invalidateQueries({ queryKey: ['heat-stress-measurements', shipId] });
-
-      // Gera e baixa o PDF automaticamente
-      await downloadHeatStressPDF({
-        shipName: selectedShip?.name || '—',
-        sector: sector.trim(),
-        environmentType: envType,
-        metabolicRate: metabolic,
-        readings: validReadings,
-        avgTbn: averages!.avgTbn,
-        avgTg: averages!.avgTg,
-        avgTbs: averages!.avgTbs,
-        ibutg: ibutg!,
-        nhoStatus: finalStatus!,
-        inspectorName: profile?.full_name || undefined,
-        measuredAt: saved.measured_at,
-        notes: notes.trim() || null,
-        branding,
-      });
-
-      // Reset wizard
-      setStep(1);
+      await downloadHeatStressPDF(pdfData(saved));
+      setStep(0);
       setSector('');
+      setPtwNumber('');
+      setMainActivity('');
+      setAdditionalInfo('');
       setNotes('');
       setReadings([{ tbn: '', tg: '', tbs: '' }]);
+      setMetabolicStages([{ description: '', activity: 'Em pé, agachado ou ajoelhado trabalhando com dois braços', duration: '60', rate: '279' }]);
     },
-    onError: (err: Error) => {
-      toast({ title: t('heatStress.toast.errorTitle'), description: err.message, variant: 'destructive' });
+    onError: (error: Error) => {
+      toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
     },
   });
 
-  const downloadHistoryPDF = async (m: Measurement) => {
-    const ship = ships.find(s => s.id === m.ship_id);
-    const storedReadings = Array.isArray(m.readings) && m.readings.length > 0
-      ? m.readings.map(r => ({
-          tbn: Number(r.tbn),
-          tg: Number(r.tg),
-          tbs: r.tbs != null ? Number(r.tbs) : null,
-        }))
-      : [{ tbn: Number(m.tbn), tg: Number(m.tg), tbs: m.tbs != null ? Number(m.tbs) : null }];
-
-    await downloadHeatStressPDF({
-      shipName: ship?.name || '—',
-      sector: m.sector,
-      environmentType: m.environment_type,
-      metabolicRate: Number(m.metabolic_rate),
-      readings: storedReadings,
-      avgTbn: Number(m.tbn),
-      avgTg: Number(m.tg),
-      avgTbs: m.tbs != null ? Number(m.tbs) : null,
-      ibutg: Number(m.ibutg),
-      nhoStatus: m.nho_status,
-      inspectorName: getInspectorName(m),
-      measuredAt: m.measured_at,
-      notes: m.notes,
-      branding,
-    });
-  };
-
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any)
+      const { error } = await heatStressTable
         .from('heat_stress_measurements')
         .delete()
         .eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: t('heatStress.toast.deletedTitle'), description: t('heatStress.toast.deletedDescription') });
+      toast({ title: 'Medição excluída', description: 'A medição foi removida com sucesso.' });
       queryClient.invalidateQueries({ queryKey: ['heat-stress-measurements', shipId] });
     },
-    onError: (err: Error) => {
-      toast({ title: t('heatStress.toast.deleteErrorTitle'), description: err.message, variant: 'destructive' });
+    onError: (error: Error) => {
+      toast({ title: 'Erro ao excluir', description: error.message, variant: 'destructive' });
     },
   });
 
+  const nextDisabled = (step === 0 && !canGoStep1) || (step === 1 && !canGoStep2) || (step === 2 && !canGoStep3) || (step === 3 && !canGoStep4);
+  const addReading = () => setReadings((current) => current.length >= 6 ? current : [...current, { tbn: '', tg: '', tbs: '' }]);
+  const updateReading = (index: number, field: keyof Reading, value: string) => setReadings((current) => current.map((reading, rowIndex) => rowIndex === index ? { ...reading, [field]: value } : reading));
+  const removeReading = (index: number) => setReadings((current) => current.length === 1 ? current : current.filter((_, rowIndex) => rowIndex !== index));
 
-  const updateReading = (i: number, field: keyof Reading, value: string) => {
-    setReadings(prev => prev.map((r, idx) => idx === i ? { ...r, [field]: value } : r));
-  };
-  const addReading = () => {
-    if (readings.length >= 5) return;
-    setReadings(prev => [...prev, { tbn: '', tg: '', tbs: '' }]);
-  };
-  const removeReading = (i: number) => {
-    setReadings(prev => prev.length === 1 ? prev : prev.filter((_, idx) => idx !== i));
-  };
+  const addStage = () => setMetabolicStages((current) => current.length >= 7 ? current : [...current, { description: '', activity: 'Sentado em repouso', duration: '', rate: '115' }]);
+  const updateStage = (index: number, patch: Partial<MetabolicStage>) => setMetabolicStages((current) => current.map((stage, rowIndex) => rowIndex === index ? { ...stage, ...patch } : stage));
+  const removeStage = (index: number) => setMetabolicStages((current) => current.length === 1 ? current : current.filter((_, rowIndex) => rowIndex !== index));
 
   return (
     <div className="space-y-6 animate-fade-in">
       <PageHeader
         icon={Thermometer}
-        title={t('heatStress.title')}
-        subtitle={t('heatStress.subtitle')}
+        title="Heat Stress"
+        subtitle="Avaliação de exposição ocupacional ao calor conforme estrutura da planilha operacional."
       />
 
+      <WizardProgress step={step} />
 
-      {/* WIZARD */}
       <Card>
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex-1 flex items-center gap-3 overflow-x-auto">
-              {STEPS.map((s, idx) => {
-                const Icon = s.icon;
-                const active = step === s.id;
-                const completed = step > s.id;
-                return (
-                  <div key={s.id} className="flex items-center gap-3 min-w-0">
-                    <div className={cn(
-                      'flex items-center gap-2 rounded-full px-3 py-1.5 text-sm whitespace-nowrap transition-colors',
-                      active && 'bg-primary text-primary-foreground',
-                      completed && 'bg-primary/10 text-primary',
-                      !active && !completed && 'bg-muted text-muted-foreground',
-                    )}>
-                      <Icon className="h-3.5 w-3.5" />
-                      <span className="font-medium">{s.id}. {s.title}</span>
-                    </div>
-                    {idx < STEPS.length - 1 && (
-                      <Separator className={cn('w-8 shrink-0', completed ? 'bg-primary/40' : '')} />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </CardHeader>
-
-        <CardContent className="space-y-6">
-          {/* ============ STEP 1: INFORMAÇÕES ============ */}
-          {step === 1 && (
-            <div className="space-y-5">
-              <div>
-                <CardTitle className="text-base">{t('heatStress.info.title')}</CardTitle>
-                <CardDescription>
-                  {t('heatStress.info.description')}
-                </CardDescription>
+        <CardContent className="space-y-6 pt-6">
+          {step === 0 && (
+            <section className="space-y-5">
+              <SectionTitle title="Identificação da avaliação" description="Cabeçalho equivalente à frente da planilha." />
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <ReadOnlyField icon={ShipIcon} label="Unidade" value={shipsLoading ? 'Carregando...' : selectedShip?.name || 'Nenhum navio disponível'} />
+                <Field label="Local da atividade">
+                  <AreaCombobox shipId={shipId} value={sector} onChange={setSector} placeholder="Selecione ou cadastre a área" disabled={!shipId} />
+                </Field>
+                <Field label="PtW nº">
+                  <Input value={ptwNumber} onChange={(event) => setPtwNumber(event.target.value)} placeholder="N/A" />
+                </Field>
+                <Field label="Data e horário da avaliação">
+                  <DateTimePicker value={evaluationAt} onChange={setEvaluationAt} />
+                </Field>
+                <Field label="Vencimento da avaliação">
+                  <DatePicker value={expirationDate} onChange={setExpirationDate} />
+                </Field>
+                <Field label="Avaliador responsável">
+                  <Input value={evaluatorName} onChange={(event) => setEvaluatorName(event.target.value)} placeholder="Nome do avaliador" />
+                </Field>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <ShipIcon className="h-3.5 w-3.5 text-muted-foreground" /> {t('heatStress.info.ship')}
-                  </Label>
-                  <div className="flex h-10 items-center rounded-md border border-input bg-muted/40 px-3 text-sm">
-                    {selectedShip?.name || t('heatStress.info.shipPlaceholder')}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <MapPin className="h-3.5 w-3.5 text-muted-foreground" /> {t('heatStress.info.sector')}
-                  </Label>
-                  <AreaCombobox
-                    shipId={shipId}
-                    value={sector}
-                    onChange={setSector}
-                    placeholder={t('heatStress.info.sectorPlaceholder')}
-                    disabled={!shipId}
-                  />
-                </div>
-
-
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Cloud className="h-3.5 w-3.5 text-muted-foreground" /> {t('heatStress.info.envType')}
-                  </Label>
-                  <Select value={envType} onValueChange={(v) => setEnvType(v as EnvType)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="no_solar">{t('heatStress.info.envNoSolar')}</SelectItem>
-                      <SelectItem value="with_solar">{t('heatStress.info.envWithSolar')}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Activity className="h-3.5 w-3.5 text-muted-foreground" /> {t('heatStress.info.metabolic')}
-                  </Label>
-                  <Select
-                    value={metabolicCustom ? 'custom' : metabolicPreset}
-                    onValueChange={(v) => {
-                      if (v === 'custom') setMetabolicCustom(String(metabolic || ''));
-                      else { setMetabolicCustom(''); setMetabolicPreset(v); }
-                    }}
-                  >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {METABOLIC_PRESETS.map(p => (
-                        <SelectItem key={p.value} value={String(p.value)}>{t(`heatStress.metabolicPresets.${p.key}`)}</SelectItem>
-                      ))}
-                      <SelectItem value="custom">{t('heatStress.info.metabolicCustom')}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {metabolicCustom !== '' && (
-                    <Input
-                      type="number" min={0} value={metabolicCustom}
-                      onChange={(e) => setMetabolicCustom(e.target.value)}
-                      placeholder={t('heatStress.info.metabolicCustomPlaceholder')}
-                    />
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>{t('heatStress.info.notes')}</Label>
-                <Textarea
-                  value={notes} onChange={(e) => setNotes(e.target.value)}
-                  placeholder={t('heatStress.info.notesPlaceholder')}
-                  rows={3}
-                />
-              </div>
-
-            </div>
+              <Field label="Atividade principal">
+                <Input value={mainActivity} onChange={(event) => setMainActivity(event.target.value)} placeholder="Ex.: limpeza manual e mecânica / inspeção" />
+              </Field>
+              <Field label="Informações adicionais">
+                <Textarea value={additionalInfo} onChange={(event) => setAdditionalInfo(event.target.value)} rows={3} placeholder="Detalhe objetivo da medição, etapa, turno ou condição operacional." />
+              </Field>
+            </section>
           )}
 
-          {/* ============ STEP 2: MEDIÇÕES ============ */}
+          {step === 1 && (
+            <section className="space-y-5">
+              <SectionTitle title="Ambiente e equipamento" description="Índice de calor, enquadramento inicial e dados do monitor de stress térmico." />
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="Trabalho em espaço confinado, Pump Room, Engine Room ou exposto a fontes artificiais?">
+                  <Select value={confinedOrArtificial} onValueChange={(value) => setConfinedOrArtificial(value as YesNo)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="yes">Sim</SelectItem>
+                      <SelectItem value="no">Não</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field label="Local de trabalho com carga solar?">
+                  <Select value={envType} onValueChange={(value) => setEnvType(value as EnvType)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="no_solar">Não</SelectItem>
+                      <SelectItem value="with_solar">Sim</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field label="Temperatura ambiente (°C)">
+                  <Input type="number" step="0.1" value={ambientTemp} onChange={(event) => setAmbientTemp(event.target.value)} />
+                </Field>
+                <Field label="Umidade relativa (%)">
+                  <Input type="number" step="0.1" value={relativeHumidity} onChange={(event) => setRelativeHumidity(event.target.value)} />
+                </Field>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <MetricCard label="Índice de Calor" value={heatIndex != null ? `${heatIndex.toFixed(1)} °C` : '-'} icon={Sun} />
+                <MetricCard label="Risco potencial" value={heatRisk || '-'} icon={AlertTriangle} />
+              </div>
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <Field label="Fabricante">
+                  <Input value={monitorManufacturer} onChange={(event) => setMonitorManufacturer(event.target.value)} placeholder="Ex.: TSQUEST" />
+                </Field>
+                <Field label="Modelo">
+                  <Input value={monitorModel} onChange={(event) => setMonitorModel(event.target.value)} placeholder="Ex.: Quest Temp" />
+                </Field>
+                <Field label="Número de série">
+                  <Input value={monitorSerial} onChange={(event) => setMonitorSerial(event.target.value)} />
+                </Field>
+                <Field label="Data de calibração">
+                  <DatePicker value={calibrationDate} onChange={setCalibrationDate} />
+                </Field>
+              </div>
+            </section>
+          )}
+
           {step === 2 && (
-            <div className="space-y-5">
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                <div>
-                  <CardTitle className="text-base">{t('heatStress.measurements.title')}</CardTitle>
-                  <CardDescription>
-                    {t('heatStress.measurements.description')}
-                  </CardDescription>
-                </div>
-                <Button
-                  variant="outline" size="sm" onClick={addReading}
-                  disabled={readings.length >= 5}
-                >
-                  <Plus className="h-4 w-4 mr-1" /> {t('heatStress.measurements.addReading')} ({readings.length}/5)
+            <section className="space-y-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <SectionTitle title="Leituras IBUTG" description="Registre até 6 leituras como na planilha e valide a variação ± 0,4 °C." />
+                <Button variant="outline" size="sm" onClick={addReading} disabled={readings.length >= 6}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Leitura ({readings.length}/6)
                 </Button>
               </div>
-
               <div className="space-y-3">
-                {readings.map((r, i) => (
-                  <div key={i} className="grid grid-cols-12 gap-2 items-end p-3 rounded-lg border bg-muted/20">
-                    <div className="col-span-12 sm:col-span-1 flex sm:flex-col items-center sm:items-start gap-2">
-                      <span className="text-xs uppercase tracking-wide text-muted-foreground">{t('heatStress.measurements.reading')}</span>
-                      <span className="text-lg font-semibold tabular-nums">{i + 1}</span>
+                {readings.map((reading, index) => (
+                  <div key={index} className="grid grid-cols-12 items-end gap-2 rounded-md border bg-muted/20 p-3">
+                    <div className="col-span-12 sm:col-span-1">
+                      <span className="text-xs text-muted-foreground">Leitura</span>
+                      <p className="text-lg font-semibold">{index + 1}</p>
                     </div>
-                    <div className="col-span-12 sm:col-span-3 space-y-1.5">
-                      <Label className="flex items-center gap-1.5 text-xs">
-                        <Thermometer className="h-3 w-3 text-muted-foreground" /> {t('heatStress.history.colTbn')} (°C)
-                      </Label>
-                      <Input type="number" step="0.1" value={r.tbn}
-                        onChange={(e) => updateReading(i, 'tbn', e.target.value)} placeholder="0.0" />
-                    </div>
-                    <div className="col-span-12 sm:col-span-3 space-y-1.5">
-                      <Label className="flex items-center gap-1.5 text-xs">
-                        <Flame className="h-3 w-3 text-muted-foreground" /> {t('heatStress.history.colTg')} (°C)
-                      </Label>
-                      <Input type="number" step="0.1" value={r.tg}
-                        onChange={(e) => updateReading(i, 'tg', e.target.value)} placeholder="0.0" />
-                    </div>
-                    <div className="col-span-10 sm:col-span-3 space-y-1.5">
-                      <Label className="flex items-center gap-1.5 text-xs">
-                        <Sun className="h-3 w-3 text-muted-foreground" /> {t('heatStress.history.colTbs')} (°C)
-                      </Label>
-                      <Input
-                        type="number" step="0.1" value={r.tbs}
-                        onChange={(e) => updateReading(i, 'tbs', e.target.value)}
-                        disabled={envType !== 'with_solar'}
-                        placeholder={envType === 'with_solar' ? '0.0' : '—'}
-                      />
-                    </div>
-                    <div className="col-span-2 sm:col-span-2 flex justify-end">
-                      <Button
-                        variant="ghost" size="icon"
-                        onClick={() => removeReading(i)} disabled={readings.length === 1}
-                        aria-label={t('heatStress.measurements.remove')}
-                      >
+                    <TempInput className="col-span-12 sm:col-span-3" label="tg (°C)" icon={Flame} value={reading.tg} onChange={(value) => updateReading(index, 'tg', value)} />
+                    <TempInput className="col-span-12 sm:col-span-3" label="tbs (°C)" icon={Sun} value={reading.tbs} onChange={(value) => updateReading(index, 'tbs', value)} disabled={envType !== 'with_solar'} />
+                    <TempInput className="col-span-10 sm:col-span-3" label="tbn (°C)" icon={Thermometer} value={reading.tbn} onChange={(value) => updateReading(index, 'tbn', value)} />
+                    <div className="col-span-2 flex justify-end">
+                      <Button variant="ghost" size="icon" onClick={() => removeReading(index)} disabled={readings.length === 1}>
                         <Trash2 className="h-4 w-4 text-muted-foreground" />
                       </Button>
                     </div>
                   </div>
                 ))}
               </div>
-
-              {averages && (
-                <div className="rounded-lg border bg-muted/30 p-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <Stat label={t('heatStress.measurements.avgTbn')} value={`${averages.avgTbn.toFixed(2)} °C`} />
-                  <Stat label={t('heatStress.measurements.avgTg')} value={`${averages.avgTg.toFixed(2)} °C`} />
-                  <Stat
-                    label={t('heatStress.measurements.avgTbs')}
-                    value={averages.avgTbs != null ? `${averages.avgTbs.toFixed(2)} °C` : '—'}
-                  />
-                  <Stat
-                    label={t('heatStress.measurements.ibutg')}
-                    value={ibutg !== null ? `${ibutg.toFixed(2)} °C` : '—'}
-                    emphasis
-                  />
-                </div>
-              )}
-
-            </div>
+              <div className="grid gap-3 md:grid-cols-4">
+                <MetricCard label="Média tbn" value={averages ? `${averages.avgTbn.toFixed(2)} °C` : '-'} icon={Thermometer} />
+                <MetricCard label="Média tg" value={averages ? `${averages.avgTg.toFixed(2)} °C` : '-'} icon={Flame} />
+                <MetricCard label="Média tbs" value={averages?.avgTbs != null ? `${averages.avgTbs.toFixed(2)} °C` : '-'} icon={Sun} />
+                <MetricCard label="IBUTG" value={ibutg != null ? `${ibutg.toFixed(2)} °C` : '-'} icon={Activity} highlight />
+              </div>
+              <div className="grid gap-3 md:grid-cols-3">
+                <VariationBadge label="Variação tbn ±0,4 °C" ok={variationCheck.tbn} />
+                <VariationBadge label="Variação tg ±0,4 °C" ok={variationCheck.tg} />
+                <VariationBadge label="Variação tbs ±0,4 °C" ok={variationCheck.tbs} />
+              </div>
+            </section>
           )}
 
-          {/* ============ STEP 3: RESUMO ============ */}
-          {step === 3 && ibutg !== null && averages && finalStatus && (
-            <div className="space-y-5">
-              <div>
-                <CardTitle className="text-base">{t('heatStress.summary.title')}</CardTitle>
-                <CardDescription>
-                  {t('heatStress.summary.description')}
-                </CardDescription>
+          {step === 3 && (
+            <section className="space-y-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <SectionTitle title="Taxa de metabolismo" description="Monte o ciclo de maior esforço com 60 minutos totais." />
+                <Button variant="outline" size="sm" onClick={addStage} disabled={metabolicStages.length >= 7}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Etapa
+                </Button>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <InfoCard label={t('heatStress.summary.shipLabel')} value={selectedShip?.name || '—'} icon={ShipIcon} />
-                <InfoCard label={t('heatStress.summary.sectorLabel')} value={sector} icon={MapPin} />
-                <InfoCard label={t('heatStress.summary.envLabel')} value={envType === 'with_solar' ? t('heatStress.info.envWithSolarShort') : t('heatStress.info.envNoSolarShort')} icon={Cloud} />
-                <InfoCard label={t('heatStress.summary.metabolicLabel')} value={`${metabolic.toFixed(0)} W`} icon={Activity} />
-              </div>
-
-              {/* IBUTG destaque */}
-              <div className="rounded-xl border bg-gradient-to-br from-muted/40 to-muted/10 p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                  <p className="text-xs uppercase tracking-wider text-muted-foreground">{t('heatStress.summary.ibutgCalculated')}</p>
-                  <p className="text-4xl font-bold tabular-nums mt-1">{ibutg.toFixed(2)} <span className="text-2xl text-muted-foreground">°C</span></p>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {t('heatStress.summary.averageOf', { count: validReadings.length })} —{' '}
-                    {envType === 'with_solar'
-                      ? t('heatStress.summary.formulaWithSolar')
-                      : t('heatStress.summary.formulaNoSolar')}
-                  </p>
-                </div>
-                <div className="flex flex-col items-start sm:items-end gap-2">
-                  <span className="text-xs uppercase tracking-wider text-muted-foreground">{t('heatStress.summary.nhoStatus')}</span>
-                  <div className="flex items-center gap-2">
-                    {finalStatus === 'normal' && <CheckCircle2 className="h-5 w-5 text-emerald-600" />}
-                    {finalStatus === 'action' && <AlertTriangle className="h-5 w-5 text-amber-600" />}
-                    {finalStatus === 'above_limit' && <AlertOctagon className="h-5 w-5 text-red-600" />}
-                    {statusBadge(finalStatus, 'md')}
+              <div className="space-y-3">
+                {metabolicStages.map((stage, index) => (
+                  <div key={index} className="grid gap-3 rounded-md border bg-muted/20 p-3 lg:grid-cols-[1.4fr_2fr_120px_120px_44px] lg:items-end">
+                    <Field label="Etapa do serviço">
+                      <Input value={stage.description} onChange={(event) => updateStage(index, { description: event.target.value })} placeholder="Ex.: limpeza manual" />
+                    </Field>
+                    <Field label="Atividade / taxa">
+                      <Select
+                        value={stage.activity}
+                        onValueChange={(value) => {
+                          const selected = METABOLIC_ACTIVITIES.find(([label]) => label === value);
+                          updateStage(index, { activity: value, rate: String(selected?.[1] ?? stage.rate) });
+                        }}
+                      >
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent className="max-h-80">
+                          {METABOLIC_ACTIVITIES.map(([label, rate]) => (
+                            <SelectItem key={label} value={label}>{label} ({rate} W)</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                    <Field label="Duração (min)">
+                      <Input type="number" min={0} max={60} value={stage.duration} onChange={(event) => updateStage(index, { duration: event.target.value })} />
+                    </Field>
+                    <Field label="Taxa (W)">
+                      <Input type="number" min={0} value={stage.rate} onChange={(event) => updateStage(index, { rate: event.target.value })} />
+                    </Field>
+                    <Button variant="ghost" size="icon" onClick={() => removeStage(index)} disabled={metabolicStages.length === 1}>
+                      <Trash2 className="h-4 w-4 text-muted-foreground" />
+                    </Button>
                   </div>
-                </div>
+                ))}
               </div>
-
-              {/* Tabela de leituras */}
-              <div className="rounded-md border overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-16">#</TableHead>
-                      <TableHead className="text-right">{t('heatStress.history.colTbn')} (°C)</TableHead>
-                      <TableHead className="text-right">{t('heatStress.history.colTg')} (°C)</TableHead>
-                      {envType === 'with_solar' && <TableHead className="text-right">{t('heatStress.history.colTbs')} (°C)</TableHead>}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {validReadings.map((r, i) => (
-                      <TableRow key={i}>
-                        <TableCell className="font-medium">{i + 1}</TableCell>
-                        <TableCell className="text-right tabular-nums">{r.tbn.toFixed(1)}</TableCell>
-                        <TableCell className="text-right tabular-nums">{r.tg.toFixed(1)}</TableCell>
-                        {envType === 'with_solar' && (
-                          <TableCell className="text-right tabular-nums">{r.tbs != null ? r.tbs.toFixed(1) : '—'}</TableCell>
-                        )}
-                      </TableRow>
-                    ))}
-                    <TableRow className="bg-muted/40 font-semibold">
-                      <TableCell>{t('heatStress.summary.avgRow')}</TableCell>
-                      <TableCell className="text-right tabular-nums">{averages.avgTbn.toFixed(2)}</TableCell>
-                      <TableCell className="text-right tabular-nums">{averages.avgTg.toFixed(2)}</TableCell>
-                      {envType === 'with_solar' && (
-                        <TableCell className="text-right tabular-nums">{averages.avgTbs?.toFixed(2) ?? '—'}</TableCell>
-                      )}
-                    </TableRow>
-                  </TableBody>
-                </Table>
+              <div className="grid gap-3 md:grid-cols-3">
+                <MetricCard label="Duração total" value={`${totalDuration.toFixed(0)} min`} icon={ClipboardList} highlight={totalDuration !== 60} />
+                <MetricCard label="Taxa ponderada" value={metabolic > 0 ? `${metabolic.toFixed(0)} W` : '-'} icon={Activity} />
+                <MetricCard label="Validação" value={totalDuration === 60 ? 'Atende 60 min' : 'Ajustar duração'} icon={totalDuration === 60 ? CheckCircle2 : AlertTriangle} />
               </div>
-
-              {notes && (
-                <div className="rounded-lg border p-3 bg-muted/20">
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">{t('heatStress.summary.notesLabel')}</p>
-                  <p className="text-sm whitespace-pre-wrap">{notes}</p>
-                </div>
-              )}
-
-            </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="Tipo de vestimenta">
+                  <Select
+                    value={clothingType}
+                    onValueChange={(value) => {
+                      const selected = CLOTHING_OPTIONS.find(([label]) => label === value);
+                      setClothingType(value);
+                      setClothingIncrement(String(selected?.[1] ?? 0));
+                    }}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {CLOTHING_OPTIONS.map(([label, inc]) => (
+                        <SelectItem key={label} value={label}>{label} (+{inc} °C)</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field label="Incremento ao IBUTG (°C)">
+                  <Input type="number" step="0.1" value={clothingIncrement} onChange={(event) => setClothingIncrement(event.target.value)} />
+                </Field>
+              </div>
+            </section>
           )}
 
-          {/* ============ FOOTER NAV ============ */}
+          {step === 4 && (
+            <section className="space-y-5">
+              <SectionTitle title="Revisão e conclusão" description="Confira IBUTG corrigido, limites e medidas de controle antes de salvar." />
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <MetricCard label="IBUTG" value={ibutg != null ? `${ibutg.toFixed(2)} °C` : '-'} icon={Thermometer} />
+                <MetricCard label="Incremento vestimenta" value={`+${increment.toFixed(1)} °C`} icon={Sun} />
+                <MetricCard label="IBUTG corrigido" value={correctedIbutg != null ? `${correctedIbutg.toFixed(2)} °C` : '-'} icon={Activity} highlight />
+                <div className="rounded-md border bg-background p-3">
+                  <p className="text-xs text-muted-foreground">Status</p>
+                  <div className="mt-2">{finalStatus ? statusBadge(finalStatus, 'md') : '-'}</div>
+                </div>
+              </div>
+              <div className="grid gap-3 md:grid-cols-3">
+                <MetricCard label="Nível de ação" value={actionLevel != null ? `${actionLevel.toFixed(1)} °C` : '-'} icon={AlertTriangle} />
+                <MetricCard label="Limite de exposição" value={exposureLimit != null ? `${exposureLimit.toFixed(1)} °C` : '-'} icon={AlertOctagon} />
+                <MetricCard label="Valor teto" value={ceilingValue != null ? `${ceilingValue.toFixed(1)} °C` : '-'} icon={FileText} />
+              </div>
+              <div className="rounded-md border bg-muted/20 p-4">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Conclusão</p>
+                <p className="mt-1 text-lg font-semibold">{conclusion || '-'}</p>
+              </div>
+              <Field label="Medidas de controle">
+                <Textarea value={controlMeasures} readOnly rows={3} />
+              </Field>
+              <Field label="Observações finais">
+                <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={3} placeholder="Comentários adicionais para o relatório." />
+              </Field>
+            </section>
+          )}
+
           <Separator />
           <div className="flex items-center justify-between gap-3">
-            <Button
-              variant="outline"
-              onClick={() => setStep(s => Math.max(1, s - 1))}
-              disabled={step === 1 || saveMutation.isPending}
-            >
-              <ChevronLeft className="h-4 w-4 mr-1" /> {t('heatStress.nav.back')}
+            <Button variant="outline" onClick={() => setStep((current) => Math.max(0, current - 1))} disabled={step === 0 || saveMutation.isPending}>
+              <ChevronLeft className="mr-2 h-4 w-4" />
+              Voltar
             </Button>
-            <div className="flex items-center gap-2">
-              {step < 3 && (
-                <Button
-                  onClick={() => setStep(s => s + 1)}
-                  disabled={(step === 1 && !canGoStep2) || (step === 2 && !canGoStep3)}
-                >
-                  {t('heatStress.nav.continue')} <ChevronRight className="h-4 w-4 ml-1" />
-                </Button>
-              )}
-              {step === 3 && (
-                <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
-                  {saveMutation.isPending
-                    ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    : <Save className="h-4 w-4 mr-2" />}
-                  {t('heatStress.nav.saveAndDownload')}
-                </Button>
-              )}
-            </div>
+            {step < WIZARD_STEPS.length - 1 ? (
+              <Button onClick={() => setStep((current) => Math.min(WIZARD_STEPS.length - 1, current + 1))} disabled={nextDisabled}>
+                Continuar
+                <ChevronRight className="ml-2 h-4 w-4" />
+              </Button>
+            ) : (
+              <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || correctedIbutg == null || !finalStatus}>
+                {saveMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                Salvar e baixar PDF
+              </Button>
+            )}
           </div>
-
         </CardContent>
       </Card>
 
-      {/* ============ HISTÓRICO ============ */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">{t('heatStress.history.title')}</CardTitle>
-          <CardDescription>
-            {t('heatStress.history.subtitle', { ship: selectedShip?.name || t('heatStress.history.selectShip') })}
-          </CardDescription>
+          <CardTitle className="text-lg">Histórico de Medições</CardTitle>
+          <CardDescription>{selectedShip?.name ? `${selectedShip.name} - últimas 200 medições` : 'Selecione um navio'}</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border overflow-x-auto">
+          <div className="overflow-x-auto rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t('heatStress.history.colDateTime')}</TableHead>
-                  <TableHead>{t('heatStress.history.colSector')}</TableHead>
-                  <TableHead className="text-right">{t('heatStress.history.colTbn')}</TableHead>
-                  <TableHead className="text-right">{t('heatStress.history.colTg')}</TableHead>
-                  <TableHead className="text-right">{t('heatStress.history.colTbs')}</TableHead>
-                  <TableHead className="text-right">{t('heatStress.history.colIbutg')}</TableHead>
-                  <TableHead className="text-right">{t('heatStress.history.colRate')}</TableHead>
-                  <TableHead>{t('heatStress.history.colStatus')}</TableHead>
-                  <TableHead>{t('heatStress.history.colResponsible')}</TableHead>
-                  <TableHead className="text-right">{t('heatStress.history.colPdf')}</TableHead>
+                  <TableHead>Data/Hora</TableHead>
+                  <TableHead>Setor</TableHead>
+                  <TableHead className="text-right">Tbn</TableHead>
+                  <TableHead className="text-right">Tg</TableHead>
+                  <TableHead className="text-right">Tbs</TableHead>
+                  <TableHead className="text-right">IBUTG</TableHead>
+                  <TableHead className="text-right">Corrigido</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Responsável</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {measurementsLoading ? (
                   <TableRow>
-                    <TableCell colSpan={canDelete ? 11 : 10} className="text-center py-10 text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin inline mr-2" /> {t('heatStress.history.loading')}
+                    <TableCell colSpan={10} className="py-10 text-center text-muted-foreground">
+                      <Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
+                      Carregando...
                     </TableCell>
                   </TableRow>
                 ) : measurements.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={canDelete ? 11 : 10} className="text-center py-10 text-muted-foreground">
-                      {t('heatStress.history.empty')}
+                    <TableCell colSpan={10} className="py-10 text-center text-muted-foreground">Nenhuma medição registrada para este navio.</TableCell>
+                  </TableRow>
+                ) : measurements.map((measurement) => (
+                  <TableRow key={measurement.id}>
+                    <TableCell className="whitespace-nowrap">{formatDateTime(measurement.measured_at)}</TableCell>
+                    <TableCell className="font-medium">{measurement.sector}</TableCell>
+                    <TableCell className="text-right tabular-nums">{Number(measurement.tbn).toFixed(1)}</TableCell>
+                    <TableCell className="text-right tabular-nums">{Number(measurement.tg).toFixed(1)}</TableCell>
+                    <TableCell className="text-right tabular-nums">{measurement.tbs != null ? Number(measurement.tbs).toFixed(1) : '-'}</TableCell>
+                    <TableCell className="text-right font-semibold tabular-nums">{Number(measurement.ibutg).toFixed(2)}</TableCell>
+                    <TableCell className="text-right font-semibold tabular-nums">{measurement.details?.corrected_ibutg != null ? Number(measurement.details.corrected_ibutg).toFixed(2) : '-'}</TableCell>
+                    <TableCell>{statusBadge(measurement.nho_status)}</TableCell>
+                    <TableCell className="whitespace-nowrap text-sm">{measurement.created_by ? creatorsMap[measurement.created_by] || '-' : '-'}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => { void downloadHeatStressPDF(pdfData(measurement)); }} aria-label="Baixar PDF">
+                          <FileDown className="h-4 w-4" />
+                        </Button>
+                        {canDelete && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 hover:text-destructive" disabled={deleteMutation.isPending}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Excluir medição?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Esta ação não pode ser desfeita. A medição de {measurement.sector} em {formatDateTime(measurement.measured_at)} será removida.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => deleteMutation.mutate(measurement.id)}>
+                                  Excluir
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
-                ) : (
-                  measurements.map((m) => {
-                    const inspectorName = getInspectorName(m);
-                    return (
-                    <TableRow key={m.id}>
-                      <TableCell className="whitespace-nowrap">{formatDateTime(m.measured_at)}</TableCell>
-                      <TableCell className="font-medium">{m.sector}</TableCell>
-                      <TableCell className="text-right tabular-nums">{Number(m.tbn).toFixed(1)}</TableCell>
-                      <TableCell className="text-right tabular-nums">{Number(m.tg).toFixed(1)}</TableCell>
-                      <TableCell className="text-right tabular-nums">{m.tbs != null ? Number(m.tbs).toFixed(1) : '—'}</TableCell>
-                      <TableCell className="text-right tabular-nums font-semibold">{Number(m.ibutg).toFixed(2)}</TableCell>
-                      <TableCell className="text-right tabular-nums">{Number(m.metabolic_rate).toFixed(0)}</TableCell>
-                      <TableCell>{statusBadge(m.nho_status)}</TableCell>
-                      <TableCell className="whitespace-nowrap text-sm">
-                        {inspectorName || <span className="text-muted-foreground">{t('heatStress.history.unknownInspector')}</span>}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button
-                            variant="ghost" size="icon"
-                            onClick={() => downloadHistoryPDF(m)}
-                            aria-label={t('heatStress.history.downloadPdf')}
-                          >
-                            <FileDown className="h-4 w-4" />
-                          </Button>
-                          {canDelete && (
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  variant="ghost" size="icon"
-                                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                  aria-label={t('heatStress.history.delete')}
-                                  disabled={deleteMutation.isPending}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>{t('heatStress.history.deleteConfirmTitle')}</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    {t('heatStress.history.deleteConfirmDescription', {
-                                      sector: m.sector,
-                                      date: formatDateTime(m.measured_at),
-                                    })}
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>{t('heatStress.history.deleteCancel')}</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                    onClick={() => deleteMutation.mutate(m.id)}
-                                  >
-                                    {t('heatStress.history.deleteConfirm')}
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                    );
-                  })
-                )}
-
+                ))}
               </TableBody>
             </Table>
           </div>
@@ -774,27 +929,105 @@ export default function HeatStress() {
   );
 }
 
-function Stat({ label, value, emphasis }: { label: string; value: string; emphasis?: boolean }) {
+function WizardProgress({ step }: { step: number }) {
+  return (
+    <Card>
+      <CardContent className="py-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+          {WIZARD_STEPS.map((item, index) => {
+            const active = index === step;
+            const complete = index < step;
+            return (
+              <div key={item.key} className="flex min-w-0 flex-1 items-center gap-3">
+                <div
+                  className={cn(
+                    'flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-sm font-semibold',
+                    active && 'border-primary bg-primary text-primary-foreground',
+                    complete && 'border-emerald-500 bg-emerald-500 text-white',
+                    !active && !complete && 'border-border bg-muted text-muted-foreground',
+                  )}
+                >
+                  {complete ? <CheckCircle2 className="h-4 w-4" /> : index + 1}
+                </div>
+                <div className="min-w-0">
+                  <p className={cn('truncate text-sm font-medium', active ? 'text-foreground' : 'text-muted-foreground')}>{item.title}</p>
+                  <p className="truncate text-xs text-muted-foreground">{item.description}</p>
+                </div>
+                {index < WIZARD_STEPS.length - 1 && <div className="hidden h-px flex-1 bg-border lg:block" />}
+              </div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SectionTitle({ title, description }: { title: string; description: string }) {
   return (
     <div>
-      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className={cn('tabular-nums', emphasis ? 'text-2xl font-bold' : 'text-lg font-semibold')}>
-        {value}
-      </p>
+      <CardTitle className="text-lg">{title}</CardTitle>
+      <CardDescription>{description}</CardDescription>
     </div>
   );
 }
 
-function InfoCard({ label, value, icon: Icon }: { label: string; value: string; icon: typeof ShipIcon }) {
+function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="rounded-lg border p-3 flex items-center gap-3 bg-card">
-      <div className="p-2 rounded-md bg-muted">
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      {children}
+    </div>
+  );
+}
+
+function ReadOnlyField({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
+  return (
+    <div className="space-y-2">
+      <Label className="flex items-center gap-2">
+        <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+        {label}
+      </Label>
+      <div className="flex h-10 items-center rounded-md border border-input bg-muted/40 px-3 text-sm">{value}</div>
+    </div>
+  );
+}
+
+function TempInput({ label, icon: Icon, value, onChange, disabled, className }: { label: string; icon: LucideIcon; value: string; onChange: (value: string) => void; disabled?: boolean; className?: string }) {
+  return (
+    <div className={cn('space-y-1.5', className)}>
+      <Label className="flex items-center gap-1.5 text-xs">
+        <Icon className="h-3 w-3 text-muted-foreground" />
+        {label}
+      </Label>
+      <Input type="number" step="0.1" value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} placeholder={disabled ? '-' : '0.0'} />
+    </div>
+  );
+}
+
+function MetricCard({ label, value, icon: Icon, highlight = false }: { label: string; value: string; icon: LucideIcon; highlight?: boolean }) {
+  return (
+    <div className={cn('rounded-md border bg-background p-3', highlight && 'border-primary/30 bg-primary/5')}>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs text-muted-foreground">{label}</p>
         <Icon className="h-4 w-4 text-muted-foreground" />
       </div>
-      <div className="min-w-0">
-        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</p>
-        <p className="text-sm font-medium truncate">{value}</p>
-      </div>
+      <p className="mt-2 text-xl font-semibold tabular-nums">{value}</p>
+    </div>
+  );
+}
+
+function VariationBadge({ label, ok }: { label: string; ok: boolean | null }) {
+  const neutral = ok == null;
+  return (
+    <div className={cn(
+      'flex items-center justify-between rounded-md border p-3 text-sm',
+      neutral && 'bg-muted/20 text-muted-foreground',
+      ok === true && 'border-emerald-200 bg-emerald-50 text-emerald-700',
+      ok === false && 'border-red-200 bg-red-50 text-red-700',
+    )}>
+      <span>{label}</span>
+      <span className="font-medium">{neutral ? 'N/A' : ok ? 'Atende' : 'Não atende'}</span>
     </div>
   );
 }

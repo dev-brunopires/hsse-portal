@@ -23,6 +23,7 @@ const routeChunkLoaders: Record<string, () => Promise<unknown>> = {
   '/supervisor': () => import('@/pages/Supervisor'),
   '/obs-cards': () => import('@/pages/ObsCardsDashboard'),
   '/obs-cards/safety-observation': () => import('@/pages/SafetyObservationForm'),
+  '/obs-cards/reports': () => import('@/pages/SafetyObservationReports'),
   '/obs-cards/upload': () => import('@/pages/ObsCardsUpload'),
   '/obs-cards/datasets': () => import('@/pages/ObsCardsDatasets'),
   '/platform-admin': () => import('@/pages/PlatformAdmin'),

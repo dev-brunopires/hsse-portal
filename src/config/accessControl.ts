@@ -97,6 +97,7 @@ export const ACCESS_MODULES: AccessModuleDefinition[] = [
     pages: [
       { key: 'dashboard', name: 'Observation Card com IA', route: '/obs-cards', actions: ['view', 'export'] },
       { key: 'safety_observation', name: 'Formulario de Observacao de Seguranca', route: '/obs-cards/safety-observation', actions: ['view', 'create', 'edit', 'export'] },
+      { key: 'reports', name: 'Relatorios de Observacao de Seguranca', route: '/obs-cards/reports', actions: ['view', 'edit', 'delete', 'export'] },
       { key: 'upload', name: 'Upload', route: '/obs-cards/upload', actions: ['view', 'create', 'admin'] },
       { key: 'datasets', name: 'Datasets', route: '/obs-cards/datasets', actions: ['view', 'edit', 'delete', 'admin'] },
     ],
@@ -153,6 +154,7 @@ const VIEWER_PAGES = new Set([
   'reports.reports',
   'alerts.alerts',
   'obs_cards.safety_observation',
+  'obs_cards.reports',
   'evv.home',
   'evv.forms',
   'evv.history',
@@ -174,6 +176,7 @@ const SUPERVISOR_WRITE_PAGES = new Set([
   'equipment.maintenance',
   'equipment.pending',
   'equipment.supervisor',
+  'obs_cards.reports',
   'evv.history',
 ]);
 
