@@ -88,6 +88,7 @@ export const ACCESS_MODULES: AccessModuleDefinition[] = [
       { key: 'home', name: 'Inicio', route: '/evv', actions: ['view'] },
       { key: 'forms', name: 'Formularios', route: '/evv/forms', actions: ['view', 'create'] },
       { key: 'history', name: 'Historico', route: '/evv/history', actions: ['view', 'edit', 'delete', 'export'] },
+      { key: 'review', name: 'Revisao', route: '/evv/review', actions: ['view', 'approve', 'export'] },
       { key: 'reports', name: 'Relatorios', route: '/evv/reports', actions: ['view', 'export', 'admin'] },
     ],
   },
@@ -178,6 +179,7 @@ const SUPERVISOR_WRITE_PAGES = new Set([
   'equipment.supervisor',
   'obs_cards.reports',
   'evv.history',
+  'evv.review',
 ]);
 
 export function getDefaultRolePermission(

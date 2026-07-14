@@ -26,6 +26,7 @@ import { cn } from '@/lib/utils';
 import { getEvvCategories, type EvvFormType } from '../catalog';
 import type { EvvAnswers, EvvScope } from '../types';
 import { generateEvvPDF } from '@/utils/generateEvvPDF';
+import { evvCategoryName, evvDeficiencyText, evvQuestionGuidance, evvQuestionText } from '../text';
 
 interface EvvRow {
   id: string;
@@ -93,6 +94,31 @@ const ROLE_LABEL: Record<string, string> = {
 function getScopeLabel(value: string | null | undefined, labels: Record<string, string>) {
   if (!value) return undefined;
   return labels[value] ?? value;
+}
+
+function translatedScopeLabel(
+  value: string | null | undefined,
+  labels: Record<string, string>,
+  t: (key: string) => string,
+) {
+  if (!value) return undefined;
+  if (labels === ENVIRONMENT_LABEL) {
+    if (value === 'fpso') return 'FPSO';
+    return t(`evv.environment.${value}`);
+  }
+  if (labels === YES_NO_LABEL) {
+    if (value === 'na') return 'N/A';
+    return t(value === 'yes' ? 'common.yes' : 'common.no');
+  }
+  if (labels === ORGANIZATION_LABEL) {
+    if (value === 'sbm') return 'SBM';
+    return t(`evv.scope.${value}`);
+  }
+  if (labels === ROLE_LABEL) {
+    if (value === 'supervisor') return 'Supervisor';
+    return t(`evv.scope.${value}`);
+  }
+  return getScopeLabel(value, labels);
 }
 
 export default function EvvSubmissionDetail() {
@@ -314,19 +340,28 @@ export default function EvvSubmissionDetail() {
       <Card>
         <CardHeader><CardTitle>{t('evv.pdf.scopeSection')}</CardTitle></CardHeader>
         <CardContent className="grid gap-3 md:grid-cols-2 text-sm">
-          <Field label={t('evv.scope.environment')} value={getScopeLabel(submission.scope.environment, ENVIRONMENT_LABEL)} />
+          <Field label={t('evv.scope.environment')} value={translatedScopeLabel(submission.scope.environment, ENVIRONMENT_LABEL, t)} />
           <Field label={t('evv.scope.area')} value={submission.scope.area} />
           <Field label={t('evv.scope.vessel')} value={ship?.name} />
           <Field label={t('evv.scope.location')} value={submission.scope.location} />
           <Field label={t('evv.scope.visitDate')} value={formatDateTime(submission.scope.visit_datetime)} />
-          <Field label={t('evv.scope.permitToWork')} value={getScopeLabel(submission.scope.permit_to_work, YES_NO_LABEL)} />
-          <Field label={t('evv.scope.criticalActivity')} value={getScopeLabel(submission.scope.critical_activity, YES_NO_LABEL)} />
+          <Field label={t('evv.scope.permitToWork')} value={translatedScopeLabel(submission.scope.permit_to_work, YES_NO_LABEL, t)} />
+          {submission.scope.permit_to_work === 'yes' && (
+            <Field label={t('evv.scope.permitToWorkNumber')} value={submission.scope.permit_to_work_number} />
+          )}
+          <Field label={t('evv.scope.criticalActivity')} value={translatedScopeLabel(submission.scope.critical_activity, YES_NO_LABEL, t)} />
+          {submission.scope.critical_activity === 'yes' && (
+            <Field
+              label={t('evv.scope.criticalActivities')}
+              value={submission.scope.critical_activities?.length ? submission.scope.critical_activities.join(', ') : t('evv.scope.criticalActivitiesPendingShort')}
+            />
+          )}
           <Field label={t('evv.scope.yourOrg')} value={submission.scope.your_organization} />
           <Field label={t('evv.scope.department')} value={submission.scope.department} />
           {submission.form_type === 'leaders_engagement' && (
             <>
-              <Field label={t('evv.scope.observedOrg')} value={getScopeLabel(submission.scope.observed_organization, ORGANIZATION_LABEL)} />
-              <Field label={t('evv.scope.observedRole')} value={getScopeLabel(submission.scope.observed_role, ROLE_LABEL)} />
+              <Field label={t('evv.scope.observedOrg')} value={translatedScopeLabel(submission.scope.observed_organization, ORGANIZATION_LABEL, t)} />
+              <Field label={t('evv.scope.observedRole')} value={translatedScopeLabel(submission.scope.observed_role, ROLE_LABEL, t)} />
             </>
           )}
           <Field label={t('evv.scope.task')} value={submission.scope.task_description} full />
@@ -344,15 +379,15 @@ export default function EvvSubmissionDetail() {
             if (rows.length === 0) return null;
             return (
               <div key={cat.id} className="border rounded-md p-3">
-                <p className="text-sm font-semibold mb-2">{cat.name}</p>
+                <p className="text-sm font-semibold mb-2">{evvCategoryName(cat, t)}</p>
                 <div className="space-y-2">
                   {rows.map(({ q, a }) => (
                     <div key={q.id} className="text-sm">
                       <div className="flex items-start justify-between gap-2">
                         <span className="flex-1">
-                          {q.text}
-                          {q.guidance && (
-                            <span className="block text-xs text-muted-foreground mt-0.5">{q.guidance}</span>
+                          {evvQuestionText(q, t)}
+                          {evvQuestionGuidance(q, t) && (
+                            <span className="block text-xs text-muted-foreground mt-0.5">{evvQuestionGuidance(q, t)}</span>
                           )}
                         </span>
                         <Badge
@@ -367,7 +402,7 @@ export default function EvvSubmissionDetail() {
                       </div>
                       {a!.deficiencies?.length > 0 && (
                         <ul className="mt-1 ml-4 text-xs text-muted-foreground list-disc">
-                          {a!.deficiencies.map((d) => <li key={d}>{d}</li>)}
+                          {a!.deficiencies.map((d) => <li key={d}>{evvDeficiencyText(q, d, t)}</li>)}
                         </ul>
                       )}
                     </div>

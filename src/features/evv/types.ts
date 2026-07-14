@@ -8,7 +8,9 @@ export interface EvvScope {
   location: string;
   visit_datetime: string;
   permit_to_work: 'yes' | 'no' | 'na' | '';
+  permit_to_work_number?: string;
   critical_activity: 'yes' | 'no' | '';
+  critical_activities?: string[];
   vessel_ids: string[];                       // multi-select – from user's assigned ships
   department: string;                          // auto-fill from profile.department (editable)
   your_organization: string;                   // auto-fill from current organization name (read-only)
@@ -34,6 +36,8 @@ export interface EvvSubmission {
   scope: EvvScope;
   answers: EvvAnswers;
   comments: string;
+  signature_data?: string | null;
+  signed_at?: string | null;
   submitted_at?: string;
   updated_at: string;
 }

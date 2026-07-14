@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Activity,
@@ -156,11 +157,11 @@ type HeatStressTableClient = {
 const heatStressTable = supabase as unknown as HeatStressTableClient;
 
 const WIZARD_STEPS = [
-  { key: 'identification', title: 'Identificação', description: 'Cabeçalho da avaliação' },
-  { key: 'environment', title: 'Ambiente', description: 'Índice de calor e monitor' },
-  { key: 'readings', title: 'Leituras', description: 'IBUTG e variação' },
-  { key: 'metabolism', title: 'Metabolismo', description: 'Ciclo de 60 minutos' },
-  { key: 'review', title: 'Revisão', description: 'Conclusão e medidas' },
+  { key: 'identification', titleKey: 'wizard.identification', descriptionKey: 'wizard.identificationDesc' },
+  { key: 'environment', titleKey: 'wizard.environment', descriptionKey: 'wizard.environmentDesc' },
+  { key: 'readings', titleKey: 'wizard.readings', descriptionKey: 'wizard.readingsDesc' },
+  { key: 'metabolism', titleKey: 'wizard.metabolism', descriptionKey: 'wizard.metabolismDesc' },
+  { key: 'review', titleKey: 'wizard.review', descriptionKey: 'wizard.reviewDesc' },
 ] as const;
 
 const METABOLIC_ACTIVITIES = [
@@ -320,6 +321,7 @@ function statusBadge(status: NhoStatus, size: 'sm' | 'md' = 'sm') {
 }
 
 export default function HeatStress() {
+  const { t } = useTranslation();
   const { user, profile, isAdmin, isAdminMaster, isSupervisor } = useAuth() as ReturnType<typeof useAuth> & { isSupervisor?: boolean };
   const canDelete = isAdmin || isAdminMaster || isSupervisor;
   const { organization } = useOrganization();
@@ -590,8 +592,8 @@ export default function HeatStress() {
     <div className="space-y-6 animate-fade-in">
       <PageHeader
         icon={Thermometer}
-        title="Heat Stress"
-        subtitle="Avaliação de exposição ocupacional ao calor conforme estrutura da planilha operacional."
+        title={t('heatStress.title')}
+        subtitle={t('heatStress.operationalSubtitle')}
       />
 
       <WizardProgress step={step} />
@@ -600,78 +602,78 @@ export default function HeatStress() {
         <CardContent className="space-y-6 pt-6">
           {step === 0 && (
             <section className="space-y-5">
-              <SectionTitle title="Identificação da avaliação" description="Cabeçalho equivalente à frente da planilha." />
+              <SectionTitle title={t('heatStress.wizard.identificationTitle')} description={t('heatStress.wizard.identificationSubtitle')} />
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                <ReadOnlyField icon={ShipIcon} label="Unidade" value={shipsLoading ? 'Carregando...' : selectedShip?.name || 'Nenhum navio disponível'} />
-                <Field label="Local da atividade">
-                  <AreaCombobox shipId={shipId} value={sector} onChange={setSector} placeholder="Selecione ou cadastre a área" disabled={!shipId} />
+                <ReadOnlyField icon={ShipIcon} label={t('heatStress.form.unit')} value={shipsLoading ? t('common.loading') : selectedShip?.name || t('heatStress.form.noShip')} />
+                <Field label={t('heatStress.form.activityLocation')}>
+                  <AreaCombobox shipId={shipId} value={sector} onChange={setSector} placeholder={t('heatStress.form.areaPlaceholder')} disabled={!shipId} />
                 </Field>
-                <Field label="PtW nº">
+                <Field label={t('heatStress.form.ptwNumber')}>
                   <Input value={ptwNumber} onChange={(event) => setPtwNumber(event.target.value)} placeholder="N/A" />
                 </Field>
-                <Field label="Data e horário da avaliação">
+                <Field label={t('heatStress.form.evaluationDateTime')}>
                   <DateTimePicker value={evaluationAt} onChange={setEvaluationAt} />
                 </Field>
-                <Field label="Vencimento da avaliação">
+                <Field label={t('heatStress.form.expirationDate')}>
                   <DatePicker value={expirationDate} onChange={setExpirationDate} />
                 </Field>
-                <Field label="Avaliador responsável">
-                  <Input value={evaluatorName} onChange={(event) => setEvaluatorName(event.target.value)} placeholder="Nome do avaliador" />
+                <Field label={t('heatStress.form.evaluator')}>
+                  <Input value={evaluatorName} onChange={(event) => setEvaluatorName(event.target.value)} placeholder={t('heatStress.form.evaluatorPlaceholder')} />
                 </Field>
               </div>
-              <Field label="Atividade principal">
-                <Input value={mainActivity} onChange={(event) => setMainActivity(event.target.value)} placeholder="Ex.: limpeza manual e mecânica / inspeção" />
+              <Field label={t('heatStress.form.mainActivity')}>
+                <Input value={mainActivity} onChange={(event) => setMainActivity(event.target.value)} placeholder={t('heatStress.form.mainActivityPlaceholder')} />
               </Field>
-              <Field label="Informações adicionais">
-                <Textarea value={additionalInfo} onChange={(event) => setAdditionalInfo(event.target.value)} rows={3} placeholder="Detalhe objetivo da medição, etapa, turno ou condição operacional." />
+              <Field label={t('heatStress.form.additionalInfo')}>
+                <Textarea value={additionalInfo} onChange={(event) => setAdditionalInfo(event.target.value)} rows={3} placeholder={t('heatStress.form.additionalInfoPlaceholder')} />
               </Field>
             </section>
           )}
 
           {step === 1 && (
             <section className="space-y-5">
-              <SectionTitle title="Ambiente e equipamento" description="Índice de calor, enquadramento inicial e dados do monitor de stress térmico." />
+              <SectionTitle title={t('heatStress.form.environmentEquipment')} description={t('heatStress.form.environmentEquipmentDesc')} />
               <div className="grid gap-4 md:grid-cols-2">
-                <Field label="Trabalho em espaço confinado, Pump Room, Engine Room ou exposto a fontes artificiais?">
+                <Field label={t('heatStress.form.confinedQuestion')}>
                   <Select value={confinedOrArtificial} onValueChange={(value) => setConfinedOrArtificial(value as YesNo)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="yes">Sim</SelectItem>
-                      <SelectItem value="no">Não</SelectItem>
+                      <SelectItem value="yes">{t('common.yes')}</SelectItem>
+                      <SelectItem value="no">{t('common.no')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </Field>
-                <Field label="Local de trabalho com carga solar?">
+                <Field label={t('heatStress.form.solarQuestion')}>
                   <Select value={envType} onValueChange={(value) => setEnvType(value as EnvType)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="no_solar">Não</SelectItem>
-                      <SelectItem value="with_solar">Sim</SelectItem>
+                      <SelectItem value="no_solar">{t('common.no')}</SelectItem>
+                      <SelectItem value="with_solar">{t('common.yes')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </Field>
-                <Field label="Temperatura ambiente (°C)">
+                <Field label={t('heatStress.form.ambientTemp')}>
                   <Input type="number" step="0.1" value={ambientTemp} onChange={(event) => setAmbientTemp(event.target.value)} />
                 </Field>
-                <Field label="Umidade relativa (%)">
+                <Field label={t('heatStress.form.relativeHumidity')}>
                   <Input type="number" step="0.1" value={relativeHumidity} onChange={(event) => setRelativeHumidity(event.target.value)} />
                 </Field>
               </div>
               <div className="grid gap-3 md:grid-cols-2">
-                <MetricCard label="Índice de Calor" value={heatIndex != null ? `${heatIndex.toFixed(1)} °C` : '-'} icon={Sun} />
-                <MetricCard label="Risco potencial" value={heatRisk || '-'} icon={AlertTriangle} />
+                <MetricCard label={t('heatStress.form.heatIndex')} value={heatIndex != null ? `${heatIndex.toFixed(1)} °C` : '-'} icon={Sun} />
+                <MetricCard label={t('heatStress.form.potentialRisk')} value={heatRisk ? t(`heatStress.risk.${heatRisk}`) : '-'} icon={AlertTriangle} />
               </div>
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                <Field label="Fabricante">
+                <Field label={t('heatStress.form.manufacturer')}>
                   <Input value={monitorManufacturer} onChange={(event) => setMonitorManufacturer(event.target.value)} placeholder="Ex.: TSQUEST" />
                 </Field>
-                <Field label="Modelo">
+                <Field label={t('heatStress.form.model')}>
                   <Input value={monitorModel} onChange={(event) => setMonitorModel(event.target.value)} placeholder="Ex.: Quest Temp" />
                 </Field>
-                <Field label="Número de série">
+                <Field label={t('heatStress.form.serialNumber')}>
                   <Input value={monitorSerial} onChange={(event) => setMonitorSerial(event.target.value)} />
                 </Field>
-                <Field label="Data de calibração">
+                <Field label={t('heatStress.form.calibrationDate')}>
                   <DatePicker value={calibrationDate} onChange={setCalibrationDate} />
                 </Field>
               </div>
@@ -681,17 +683,17 @@ export default function HeatStress() {
           {step === 2 && (
             <section className="space-y-5">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <SectionTitle title="Leituras IBUTG" description="Registre até 6 leituras como na planilha e valide a variação ± 0,4 °C." />
+                <SectionTitle title={t('heatStress.form.readingsTitle')} description={t('heatStress.form.readingsDesc')} />
                 <Button variant="outline" size="sm" onClick={addReading} disabled={readings.length >= 6}>
                   <Plus className="mr-2 h-4 w-4" />
-                  Leitura ({readings.length}/6)
+                  {t('heatStress.form.reading')} ({readings.length}/6)
                 </Button>
               </div>
               <div className="space-y-3">
                 {readings.map((reading, index) => (
                   <div key={index} className="grid grid-cols-12 items-end gap-2 rounded-md border bg-muted/20 p-3">
                     <div className="col-span-12 sm:col-span-1">
-                      <span className="text-xs text-muted-foreground">Leitura</span>
+                      <span className="text-xs text-muted-foreground">{t('heatStress.form.reading')}</span>
                       <p className="text-lg font-semibold">{index + 1}</p>
                     </div>
                     <TempInput className="col-span-12 sm:col-span-3" label="tg (°C)" icon={Flame} value={reading.tg} onChange={(value) => updateReading(index, 'tg', value)} />
@@ -706,15 +708,15 @@ export default function HeatStress() {
                 ))}
               </div>
               <div className="grid gap-3 md:grid-cols-4">
-                <MetricCard label="Média tbn" value={averages ? `${averages.avgTbn.toFixed(2)} °C` : '-'} icon={Thermometer} />
-                <MetricCard label="Média tg" value={averages ? `${averages.avgTg.toFixed(2)} °C` : '-'} icon={Flame} />
-                <MetricCard label="Média tbs" value={averages?.avgTbs != null ? `${averages.avgTbs.toFixed(2)} °C` : '-'} icon={Sun} />
+                <MetricCard label={t('heatStress.measurements.avgTbn')} value={averages ? `${averages.avgTbn.toFixed(2)} °C` : '-'} icon={Thermometer} />
+                <MetricCard label={t('heatStress.measurements.avgTg')} value={averages ? `${averages.avgTg.toFixed(2)} °C` : '-'} icon={Flame} />
+                <MetricCard label={t('heatStress.measurements.avgTbs')} value={averages?.avgTbs != null ? `${averages.avgTbs.toFixed(2)} °C` : '-'} icon={Sun} />
                 <MetricCard label="IBUTG" value={ibutg != null ? `${ibutg.toFixed(2)} °C` : '-'} icon={Activity} highlight />
               </div>
               <div className="grid gap-3 md:grid-cols-3">
-                <VariationBadge label="Variação tbn ±0,4 °C" ok={variationCheck.tbn} />
-                <VariationBadge label="Variação tg ±0,4 °C" ok={variationCheck.tg} />
-                <VariationBadge label="Variação tbs ±0,4 °C" ok={variationCheck.tbs} />
+                <VariationBadge label={t('heatStress.form.variationTbn')} ok={variationCheck.tbn} />
+                <VariationBadge label={t('heatStress.form.variationTg')} ok={variationCheck.tg} />
+                <VariationBadge label={t('heatStress.form.variationTbs')} ok={variationCheck.tbs} />
               </div>
             </section>
           )}
@@ -722,19 +724,19 @@ export default function HeatStress() {
           {step === 3 && (
             <section className="space-y-5">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <SectionTitle title="Taxa de metabolismo" description="Monte o ciclo de maior esforço com 60 minutos totais." />
+                <SectionTitle title={t('heatStress.form.metabolismTitle')} description={t('heatStress.form.metabolismDesc')} />
                 <Button variant="outline" size="sm" onClick={addStage} disabled={metabolicStages.length >= 7}>
                   <Plus className="mr-2 h-4 w-4" />
-                  Etapa
+                  {t('heatStress.form.stage')}
                 </Button>
               </div>
               <div className="space-y-3">
                 {metabolicStages.map((stage, index) => (
                   <div key={index} className="grid gap-3 rounded-md border bg-muted/20 p-3 lg:grid-cols-[1.4fr_2fr_120px_120px_44px] lg:items-end">
-                    <Field label="Etapa do serviço">
-                      <Input value={stage.description} onChange={(event) => updateStage(index, { description: event.target.value })} placeholder="Ex.: limpeza manual" />
+                    <Field label={t('heatStress.form.serviceStage')}>
+                      <Input value={stage.description} onChange={(event) => updateStage(index, { description: event.target.value })} placeholder={t('heatStress.form.serviceStagePlaceholder')} />
                     </Field>
-                    <Field label="Atividade / taxa">
+                    <Field label={t('heatStress.form.activityRate')}>
                       <Select
                         value={stage.activity}
                         onValueChange={(value) => {
@@ -750,10 +752,10 @@ export default function HeatStress() {
                         </SelectContent>
                       </Select>
                     </Field>
-                    <Field label="Duração (min)">
+                    <Field label={t('heatStress.form.durationMin')}>
                       <Input type="number" min={0} max={60} value={stage.duration} onChange={(event) => updateStage(index, { duration: event.target.value })} />
                     </Field>
-                    <Field label="Taxa (W)">
+                    <Field label={t('heatStress.form.rateW')}>
                       <Input type="number" min={0} value={stage.rate} onChange={(event) => updateStage(index, { rate: event.target.value })} />
                     </Field>
                     <Button variant="ghost" size="icon" onClick={() => removeStage(index)} disabled={metabolicStages.length === 1}>
@@ -763,12 +765,12 @@ export default function HeatStress() {
                 ))}
               </div>
               <div className="grid gap-3 md:grid-cols-3">
-                <MetricCard label="Duração total" value={`${totalDuration.toFixed(0)} min`} icon={ClipboardList} highlight={totalDuration !== 60} />
-                <MetricCard label="Taxa ponderada" value={metabolic > 0 ? `${metabolic.toFixed(0)} W` : '-'} icon={Activity} />
-                <MetricCard label="Validação" value={totalDuration === 60 ? 'Atende 60 min' : 'Ajustar duração'} icon={totalDuration === 60 ? CheckCircle2 : AlertTriangle} />
+                <MetricCard label={t('heatStress.form.totalDuration')} value={`${totalDuration.toFixed(0)} min`} icon={ClipboardList} highlight={totalDuration !== 60} />
+                <MetricCard label={t('heatStress.form.weightedRate')} value={metabolic > 0 ? `${metabolic.toFixed(0)} W` : '-'} icon={Activity} />
+                <MetricCard label={t('heatStress.form.validation')} value={totalDuration === 60 ? t('heatStress.form.valid60') : t('heatStress.form.adjustDuration')} icon={totalDuration === 60 ? CheckCircle2 : AlertTriangle} />
               </div>
               <div className="grid gap-4 md:grid-cols-2">
-                <Field label="Tipo de vestimenta">
+                <Field label={t('heatStress.form.clothingType')}>
                   <Select
                     value={clothingType}
                     onValueChange={(value) => {
@@ -785,7 +787,7 @@ export default function HeatStress() {
                     </SelectContent>
                   </Select>
                 </Field>
-                <Field label="Incremento ao IBUTG (°C)">
+                <Field label={t('heatStress.form.ibutgIncrement')}>
                   <Input type="number" step="0.1" value={clothingIncrement} onChange={(event) => setClothingIncrement(event.target.value)} />
                 </Field>
               </div>
@@ -794,30 +796,30 @@ export default function HeatStress() {
 
           {step === 4 && (
             <section className="space-y-5">
-              <SectionTitle title="Revisão e conclusão" description="Confira IBUTG corrigido, limites e medidas de controle antes de salvar." />
+              <SectionTitle title={t('heatStress.form.reviewTitle')} description={t('heatStress.form.reviewDesc')} />
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                 <MetricCard label="IBUTG" value={ibutg != null ? `${ibutg.toFixed(2)} °C` : '-'} icon={Thermometer} />
-                <MetricCard label="Incremento vestimenta" value={`+${increment.toFixed(1)} °C`} icon={Sun} />
-                <MetricCard label="IBUTG corrigido" value={correctedIbutg != null ? `${correctedIbutg.toFixed(2)} °C` : '-'} icon={Activity} highlight />
+                <MetricCard label={t('heatStress.form.clothingIncrement')} value={`+${increment.toFixed(1)} °C`} icon={Sun} />
+                <MetricCard label={t('heatStress.form.correctedIbutg')} value={correctedIbutg != null ? `${correctedIbutg.toFixed(2)} °C` : '-'} icon={Activity} highlight />
                 <div className="rounded-md border bg-background p-3">
-                  <p className="text-xs text-muted-foreground">Status</p>
+                  <p className="text-xs text-muted-foreground">{t('common.status')}</p>
                   <div className="mt-2">{finalStatus ? statusBadge(finalStatus, 'md') : '-'}</div>
                 </div>
               </div>
               <div className="grid gap-3 md:grid-cols-3">
-                <MetricCard label="Nível de ação" value={actionLevel != null ? `${actionLevel.toFixed(1)} °C` : '-'} icon={AlertTriangle} />
-                <MetricCard label="Limite de exposição" value={exposureLimit != null ? `${exposureLimit.toFixed(1)} °C` : '-'} icon={AlertOctagon} />
-                <MetricCard label="Valor teto" value={ceilingValue != null ? `${ceilingValue.toFixed(1)} °C` : '-'} icon={FileText} />
+                <MetricCard label={t('heatStress.form.actionLevel')} value={actionLevel != null ? `${actionLevel.toFixed(1)} °C` : '-'} icon={AlertTriangle} />
+                <MetricCard label={t('heatStress.form.exposureLimit')} value={exposureLimit != null ? `${exposureLimit.toFixed(1)} °C` : '-'} icon={AlertOctagon} />
+                <MetricCard label={t('heatStress.form.ceilingValue')} value={ceilingValue != null ? `${ceilingValue.toFixed(1)} °C` : '-'} icon={FileText} />
               </div>
               <div className="rounded-md border bg-muted/20 p-4">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Conclusão</p>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('heatStress.form.conclusion')}</p>
                 <p className="mt-1 text-lg font-semibold">{conclusion || '-'}</p>
               </div>
-              <Field label="Medidas de controle">
+              <Field label={t('heatStress.form.controlMeasures')}>
                 <Textarea value={controlMeasures} readOnly rows={3} />
               </Field>
-              <Field label="Observações finais">
-                <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={3} placeholder="Comentários adicionais para o relatório." />
+              <Field label={t('heatStress.form.finalNotes')}>
+                <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={3} placeholder={t('heatStress.form.finalNotesPlaceholder')} />
               </Field>
             </section>
           )}
@@ -826,17 +828,17 @@ export default function HeatStress() {
           <div className="flex items-center justify-between gap-3">
             <Button variant="outline" onClick={() => setStep((current) => Math.max(0, current - 1))} disabled={step === 0 || saveMutation.isPending}>
               <ChevronLeft className="mr-2 h-4 w-4" />
-              Voltar
+              {t('heatStress.nav.back')}
             </Button>
             {step < WIZARD_STEPS.length - 1 ? (
               <Button onClick={() => setStep((current) => Math.min(WIZARD_STEPS.length - 1, current + 1))} disabled={nextDisabled}>
-                Continuar
+                {t('heatStress.nav.continue')}
                 <ChevronRight className="ml-2 h-4 w-4" />
               </Button>
             ) : (
               <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || correctedIbutg == null || !finalStatus}>
                 {saveMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                Salvar e baixar PDF
+                {t('heatStress.nav.saveAndDownload')}
               </Button>
             )}
           </div>
@@ -845,24 +847,24 @@ export default function HeatStress() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Histórico de Medições</CardTitle>
-          <CardDescription>{selectedShip?.name ? `${selectedShip.name} - últimas 200 medições` : 'Selecione um navio'}</CardDescription>
+          <CardTitle className="text-lg">{t('heatStress.history.title')}</CardTitle>
+          <CardDescription>{selectedShip?.name ? t('heatStress.history.subtitle', { ship: selectedShip.name }) : t('heatStress.history.selectShip')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Data/Hora</TableHead>
-                  <TableHead>Setor</TableHead>
+                  <TableHead>{t('heatStress.history.colDateTime')}</TableHead>
+                  <TableHead>{t('heatStress.history.colSector')}</TableHead>
                   <TableHead className="text-right">Tbn</TableHead>
                   <TableHead className="text-right">Tg</TableHead>
                   <TableHead className="text-right">Tbs</TableHead>
                   <TableHead className="text-right">IBUTG</TableHead>
-                  <TableHead className="text-right">Corrigido</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Responsável</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                  <TableHead className="text-right">{t('heatStress.history.colCorrected')}</TableHead>
+                  <TableHead>{t('heatStress.history.colStatus')}</TableHead>
+                  <TableHead>{t('heatStress.history.colResponsible')}</TableHead>
+                  <TableHead className="text-right">{t('common.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -870,12 +872,12 @@ export default function HeatStress() {
                   <TableRow>
                     <TableCell colSpan={10} className="py-10 text-center text-muted-foreground">
                       <Loader2 className="mr-2 inline h-4 w-4 animate-spin" />
-                      Carregando...
+                      {t('common.loading')}
                     </TableCell>
                   </TableRow>
                 ) : measurements.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="py-10 text-center text-muted-foreground">Nenhuma medição registrada para este navio.</TableCell>
+                    <TableCell colSpan={10} className="py-10 text-center text-muted-foreground">{t('heatStress.history.empty')}</TableCell>
                   </TableRow>
                 ) : measurements.map((measurement) => (
                   <TableRow key={measurement.id}>
@@ -890,7 +892,7 @@ export default function HeatStress() {
                     <TableCell className="whitespace-nowrap text-sm">{measurement.created_by ? creatorsMap[measurement.created_by] || '-' : '-'}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => { void downloadHeatStressPDF(pdfData(measurement)); }} aria-label="Baixar PDF">
+                        <Button variant="ghost" size="icon" onClick={() => { void downloadHeatStressPDF(pdfData(measurement)); }} aria-label={t('heatStress.history.downloadPdf')}>
                           <FileDown className="h-4 w-4" />
                         </Button>
                         {canDelete && (
@@ -902,15 +904,15 @@ export default function HeatStress() {
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Excluir medição?</AlertDialogTitle>
+                                <AlertDialogTitle>{t('heatStress.history.deleteConfirmTitle')}</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Esta ação não pode ser desfeita. A medição de {measurement.sector} em {formatDateTime(measurement.measured_at)} será removida.
+                                  {t('heatStress.history.deleteConfirmDescription', { sector: measurement.sector, date: formatDateTime(measurement.measured_at) })}
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                                 <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => deleteMutation.mutate(measurement.id)}>
-                                  Excluir
+                                  {t('common.delete')}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
@@ -930,6 +932,7 @@ export default function HeatStress() {
 }
 
 function WizardProgress({ step }: { step: number }) {
+  const { t } = useTranslation();
   return (
     <Card>
       <CardContent className="py-4">
@@ -950,8 +953,8 @@ function WizardProgress({ step }: { step: number }) {
                   {complete ? <CheckCircle2 className="h-4 w-4" /> : index + 1}
                 </div>
                 <div className="min-w-0">
-                  <p className={cn('truncate text-sm font-medium', active ? 'text-foreground' : 'text-muted-foreground')}>{item.title}</p>
-                  <p className="truncate text-xs text-muted-foreground">{item.description}</p>
+                  <p className={cn('truncate text-sm font-medium', active ? 'text-foreground' : 'text-muted-foreground')}>{t(`heatStress.${item.titleKey}`)}</p>
+                  <p className="truncate text-xs text-muted-foreground">{t(`heatStress.${item.descriptionKey}`)}</p>
                 </div>
                 {index < WIZARD_STEPS.length - 1 && <div className="hidden h-px flex-1 bg-border lg:block" />}
               </div>

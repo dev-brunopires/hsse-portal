@@ -132,6 +132,7 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
               {can('evv', 'home') && <MobileNavItem to="/evv" icon={<ShieldCheck size={20} />} label={t('navigation.evvHome')} onClick={handleNavClick} />}
               {can('evv', 'forms') && <MobileNavItem to="/evv/forms" icon={<ClipboardCheck size={20} />} label={t('navigation.evvForms')} onClick={handleNavClick} />}
               {can('evv', 'history') && <MobileNavItem to="/evv/history" icon={<History size={20} />} label={t('navigation.evvHistory')} onClick={handleNavClick} />}
+              {can('evv', 'review', 'approve') && <MobileNavItem to="/evv/review" icon={<ShieldCheck size={20} />} label={t('navigation.evvReview')} onClick={handleNavClick} />}
               {can('evv', 'reports') && <MobileNavItem to="/evv/reports" icon={<FileText size={20} />} label={t('navigation.evvReports')} onClick={handleNavClick} />}
             </MobileNavGroup>
           )}

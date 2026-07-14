@@ -26,6 +26,11 @@ const routeChunkLoaders: Record<string, () => Promise<unknown>> = {
   '/obs-cards/reports': () => import('@/pages/SafetyObservationReports'),
   '/obs-cards/upload': () => import('@/pages/ObsCardsUpload'),
   '/obs-cards/datasets': () => import('@/pages/ObsCardsDatasets'),
+  '/evv': () => import('@/features/evv/pages/EvvHome'),
+  '/evv/forms': () => import('@/features/evv/pages/FormSelector'),
+  '/evv/history': () => import('@/features/evv/pages/EvvHistory'),
+  '/evv/review': () => import('@/features/evv/pages/EvvReview'),
+  '/evv/reports': () => import('@/features/evv/pages/EvvReports'),
   '/platform-admin': () => import('@/pages/PlatformAdmin'),
 };
 

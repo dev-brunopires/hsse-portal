@@ -212,21 +212,21 @@ export function DateTimePicker({
         value={date}
         onChange={(nextDate) => emitValue(nextDate, hour || '00', minute || '00')}
         disabled={disabled}
-        className="min-w-0 flex-1"
+        className="min-w-0 sm:w-[150px] sm:flex-none md:w-[160px]"
       />
-      <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:min-w-[240px] sm:shrink-0">
         <Select
           value={hour}
           onValueChange={(nextHour) => emitValue(date, nextHour, minute)}
           disabled={disabled}
         >
-          <SelectTrigger aria-label="Hora" className="h-10 min-w-0 px-3 text-center tabular-nums sm:w-[76px] [&>svg]:ml-2">
-            {!hasTimeValue && <Clock3 className="mr-1 h-4 w-4 shrink-0 text-muted-foreground" />}
-            <span className="min-w-0 flex-1 text-center tabular-nums">{hour || '--'}</span>
+          <SelectTrigger aria-label="Hora" className="h-10 min-w-[112px] px-3 text-center text-base font-semibold tabular-nums text-foreground sm:w-[116px] md:text-sm [&>svg]:ml-1">
+            {!hour && <Clock3 className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />}
+            <span className="min-w-[52px] flex-1 whitespace-nowrap text-center tabular-nums">{hour || '--'}</span>
           </SelectTrigger>
           <SelectContent className="max-h-64">
             {hours.map((option) => (
-              <SelectItem key={option} value={option} className="justify-center pl-8 pr-8 tabular-nums">{option}</SelectItem>
+              <SelectItem key={option} value={option} className="justify-center pl-8 pr-8 text-base tabular-nums">{option}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -235,13 +235,13 @@ export function DateTimePicker({
           onValueChange={(nextMinute) => emitValue(date, hour, nextMinute)}
           disabled={disabled}
         >
-          <SelectTrigger aria-label="Minuto" className="h-10 min-w-0 px-3 text-center tabular-nums sm:w-[76px] [&>svg]:ml-2">
-            {!hasTimeValue && <Clock3 className="mr-1 h-4 w-4 shrink-0 text-muted-foreground" />}
-            <span className="min-w-0 flex-1 text-center tabular-nums">{minute || '--'}</span>
+          <SelectTrigger aria-label="Minuto" className="h-10 min-w-[112px] px-3 text-center text-base font-semibold tabular-nums text-foreground sm:w-[116px] md:text-sm [&>svg]:ml-1">
+            {!minute && <Clock3 className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />}
+            <span className="min-w-[52px] flex-1 whitespace-nowrap text-center tabular-nums">{minute || '--'}</span>
           </SelectTrigger>
           <SelectContent className="max-h-64">
             {minutes.map((option) => (
-              <SelectItem key={option} value={option} className="justify-center pl-8 pr-8 tabular-nums">{option}</SelectItem>
+              <SelectItem key={option} value={option} className="justify-center pl-8 pr-8 text-base tabular-nums">{option}</SelectItem>
             ))}
           </SelectContent>
         </Select>

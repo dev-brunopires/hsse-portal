@@ -11,6 +11,7 @@ import i18n from '@/i18n';
 import type { OrganizationBranding } from '@/hooks/useOrganizationBranding';
 import { getEvvCategories, type EvvFormType, type Rating } from '@/features/evv/catalog';
 import type { EvvAnswers, EvvScope } from '@/features/evv/types';
+import { evvCategoryName, evvDeficiencyText, evvQuestionText } from '@/features/evv/text';
 
 const getDateLocale = () => (i18n.language === 'en' ? enUS : ptBR);
 
@@ -96,6 +97,27 @@ function scopeLabel(value: string | null | undefined, labels: Record<string, str
   return labels[value] ?? value;
 }
 
+function translatedScopeLabel(value: string | null | undefined, labels: Record<string, string>) {
+  if (!value) return '-';
+  if (labels === ENVIRONMENT_LABEL) {
+    if (value === 'fpso') return 'FPSO';
+    return String(i18n.t(`evv.environment.${value}`));
+  }
+  if (labels === YES_NO_LABEL) {
+    if (value === 'na') return 'N/A';
+    return String(i18n.t(value === 'yes' ? 'common.yes' : 'common.no'));
+  }
+  if (labels === ORGANIZATION_LABEL) {
+    if (value === 'sbm') return 'SBM';
+    return String(i18n.t(`evv.scope.${value}`));
+  }
+  if (labels === ROLE_LABEL) {
+    if (value === 'supervisor') return 'Supervisor';
+    return String(i18n.t(`evv.scope.${value}`));
+  }
+  return scopeLabel(value, labels);
+}
+
 function fmtDate(iso?: string | null): string {
   if (!iso) return '-';
   try {
@@ -137,7 +159,7 @@ export async function generateEvvPDF(data: EvvPDFData, options?: { preview?: boo
     body: [
       [
         { content: `${t('evv.scope.environment')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } },
-        scopeLabel(data.submission.scope.environment, ENVIRONMENT_LABEL),
+        translatedScopeLabel(data.submission.scope.environment, ENVIRONMENT_LABEL),
         { content: `${t('evv.scope.area')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } },
         data.submission.scope.area || '-',
       ],
@@ -151,13 +173,22 @@ export async function generateEvvPDF(data: EvvPDFData, options?: { preview?: boo
         { content: `${t('evv.scope.visitDate')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } },
         fmtDate(data.submission.scope.visit_datetime),
         { content: `${t('evv.scope.permitToWork')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } },
-        scopeLabel(data.submission.scope.permit_to_work, YES_NO_LABEL),
+        translatedScopeLabel(data.submission.scope.permit_to_work, YES_NO_LABEL),
       ],
       [
         { content: `${t('evv.scope.criticalActivity')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } },
-        scopeLabel(data.submission.scope.critical_activity, YES_NO_LABEL),
-        '',
-        '',
+        translatedScopeLabel(data.submission.scope.critical_activity, YES_NO_LABEL),
+        { content: `${t('evv.scope.permitToWorkNumber')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } },
+        data.submission.scope.permit_to_work === 'yes' ? data.submission.scope.permit_to_work_number || '-' : '-',
+      ],
+      [
+        { content: `${t('evv.scope.criticalActivities')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } },
+        {
+          content: data.submission.scope.critical_activities?.length
+            ? data.submission.scope.critical_activities.join(', ')
+            : String(t('evv.scope.criticalActivitiesPendingShort')),
+          colSpan: 3,
+        },
       ],
       [
         { content: `${t('evv.scope.yourOrg')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } },
@@ -167,9 +198,9 @@ export async function generateEvvPDF(data: EvvPDFData, options?: { preview?: boo
       ],
       [
         { content: `${t('evv.scope.observedOrg')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } },
-        scopeLabel(data.submission.scope.observed_organization, ORGANIZATION_LABEL),
+        translatedScopeLabel(data.submission.scope.observed_organization, ORGANIZATION_LABEL),
         { content: `${t('evv.scope.observedRole')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } },
-        scopeLabel(data.submission.scope.observed_role, ROLE_LABEL),
+        translatedScopeLabel(data.submission.scope.observed_role, ROLE_LABEL),
       ],
       [
         { content: `${t('evv.scope.task')}:`, styles: { fontStyle: 'bold', textColor: MEDIUM_GRAY } },
@@ -217,13 +248,13 @@ export async function generateEvvPDF(data: EvvPDFData, options?: { preview?: boo
       if (!a || !a.rating) return; // skip unanswered
       const color = RATING_COLOR[a.rating];
       rows.push([
-        cat.name.replace(' (LSR)', ''),
-        q.text,
+        evvCategoryName(cat, t).replace(' (LSR)', ''),
+        evvQuestionText(q, t),
         {
           content: String(t(`evv.rating.${a.rating}`)),
           styles: { textColor: color, fontStyle: 'bold' as const, halign: 'center' as const },
         },
-        a.deficiencies && a.deficiencies.length ? a.deficiencies.map((d) => `• ${d}`).join('\n') : '-',
+        a.deficiencies && a.deficiencies.length ? a.deficiencies.map((d) => `- ${evvDeficiencyText(q, d, t)}`).join('\n') : '-',
       ]);
     });
   });

@@ -167,6 +167,7 @@
     "evvHome": "Início eV&V",
     "evvForms": "Formulários",
     "evvHistory": "Histórico",
+    "evvReview": "Revisão",
     "evvReports": "Relatórios"
   },
   "evv": {
@@ -175,12 +176,19 @@
     "nav": {
       "forms": "Formulários",
       "history": "Histórico",
-      "reports": "Relatórios"
+      "reports": "Relatórios",
+      "review": "Revisão"
+    },
+    "environment": {
+      "project": "Projeto",
+      "office": "Escritório",
+      "yard": "Estaleiro"
     },
     "home": {
       "formsDesc": "Iniciar um novo formulário de V&V",
       "historyDesc": "Ver submissões anteriores e rascunhos",
-      "reportsDesc": "Painel consolidado de desvios"
+      "reportsDesc": "Painel consolidado de desvios",
+      "reviewDesc": "Revisar submissões concluídas de V&V"
     },
     "sync": {
       "title": "Sincronização",
@@ -247,7 +255,12 @@
       "locationPlaceholder": "Selecione ou cadastre uma area do navio",
       "visitDate": "Data e hora da visita",
       "permitToWork": "Houve Permissão de Trabalho envolvida?",
+      "permitToWorkNumber": "Número da Permissão de Trabalho",
+      "permitToWorkNumberPlaceholder": "Informe o número da PTW",
       "criticalActivity": "Atividade crítica?",
+      "criticalActivities": "Atividades críticas vinculadas",
+      "criticalActivitiesPending": "As opções de atividades críticas serão configuradas depois que a lista final for informada.",
+      "criticalActivitiesPendingShort": "Aguardando lista de atividades críticas",
       "vessel": "Unidade / Navio",
       "noVesselsAssigned": "Nenhuma unidade/navio atribuído ao seu usuário. Solicite a um administrador.",
       "department": "Setor",
@@ -256,7 +269,11 @@
       "task": "Descrição da tarefa",
       "taskPlaceholder": "Descreva a tarefa observada…",
       "observedOrg": "Organização observada",
-      "observedRole": "Função observada"
+      "observedRole": "Função observada",
+      "contractor": "Contratada",
+      "client": "Cliente",
+      "vendor": "Fornecedor",
+      "technician": "Técnico"
     },
     "rating": {
       "effective": "Efetivo",
@@ -298,12 +315,23 @@
       "from": "De",
       "to": "Até",
       "topDeviations": "Desvios 'Não efetivo' mais frequentes",
-      "totalSubmissions": "Total de submissões: {{count}}"
+      "totalSubmissions": "Total de submissões: {{count}}",
+      "totalRecords": "Total de registros",
+      "reviewStatus": "Status da revisão",
+      "byForm": "Por formulário",
+      "ratingDistribution": "Distribuição das avaliações"
     },
     "review": {
-      "pending": "Pendente",
+      "pending": "Pendente de Revisão",
       "approved": "Aprovado",
-      "rejected": "Rejeitado"
+      "rejected": "Rejeitado",
+      "noAccess": "Você não tem permissão para revisar submissões de V&V."
+    },
+    "reviewPage": {
+      "title": "Revisão V&V",
+      "subtitle": "Fila de revisão de submissões V&V concluídas para supervisores",
+      "queue": "Fila pendente de revisão",
+      "empty": "Nenhuma submissão V&V pendente de revisão"
     },
     "detail": {
       "subtitle": "Detalhes da submissão",
@@ -3812,6 +3840,85 @@
   "heatStress": {
     "title": "Heat Stress",
     "subtitle": "Avaliação de exposição ao calor — NHO 06 / FUNDACENTRO",
+    "operationalSubtitle": "Avaliação de exposição ocupacional ao calor conforme estrutura da planilha operacional.",
+    "wizard": {
+      "identification": "Identificação",
+      "identificationDesc": "Cabeçalho da avaliação",
+      "environment": "Ambiente",
+      "environmentDesc": "Índice de calor e monitor",
+      "readings": "Leituras",
+      "readingsDesc": "IBUTG e variação",
+      "metabolism": "Metabolismo",
+      "metabolismDesc": "Ciclo de 60 minutos",
+      "review": "Revisão",
+      "reviewDesc": "Conclusão e medidas",
+      "identificationTitle": "Identificação da avaliação",
+      "identificationSubtitle": "Cabeçalho equivalente à frente da planilha."
+    },
+    "form": {
+      "unit": "Unidade",
+      "noShip": "Nenhum navio disponível",
+      "activityLocation": "Local da atividade",
+      "areaPlaceholder": "Selecione ou cadastre a área",
+      "ptwNumber": "PtW nº",
+      "evaluationDateTime": "Data e horário da avaliação",
+      "expirationDate": "Vencimento da avaliação",
+      "evaluator": "Avaliador responsável",
+      "evaluatorPlaceholder": "Nome do avaliador",
+      "mainActivity": "Atividade principal",
+      "mainActivityPlaceholder": "Ex.: limpeza manual e mecânica / inspeção",
+      "additionalInfo": "Informações adicionais",
+      "additionalInfoPlaceholder": "Detalhe objetivo da medição, etapa, turno ou condição operacional.",
+      "environmentEquipment": "Ambiente e equipamento",
+      "environmentEquipmentDesc": "Índice de calor, enquadramento inicial e dados do monitor de stress térmico.",
+      "confinedQuestion": "Trabalho em espaço confinado, Pump Room, Engine Room ou exposto a fontes artificiais?",
+      "solarQuestion": "Local de trabalho com carga solar?",
+      "ambientTemp": "Temperatura ambiente (°C)",
+      "relativeHumidity": "Umidade relativa (%)",
+      "heatIndex": "Índice de Calor",
+      "potentialRisk": "Risco potencial",
+      "manufacturer": "Fabricante",
+      "model": "Modelo",
+      "serialNumber": "Número de série",
+      "calibrationDate": "Data de calibração",
+      "readingsTitle": "Leituras IBUTG",
+      "readingsDesc": "Registre até 6 leituras como na planilha e valide a variação ± 0,4 °C.",
+      "reading": "Leitura",
+      "variationTbn": "Variação tbn ±0,4 °C",
+      "variationTg": "Variação tg ±0,4 °C",
+      "variationTbs": "Variação tbs ±0,4 °C",
+      "metabolismTitle": "Taxa de metabolismo",
+      "metabolismDesc": "Monte o ciclo de maior esforço com 60 minutos totais.",
+      "stage": "Etapa",
+      "serviceStage": "Etapa do serviço",
+      "serviceStagePlaceholder": "Ex.: limpeza manual",
+      "activityRate": "Atividade / taxa",
+      "durationMin": "Duração (min)",
+      "rateW": "Taxa (W)",
+      "totalDuration": "Duração total",
+      "weightedRate": "Taxa ponderada",
+      "validation": "Validação",
+      "valid60": "Atende 60 min",
+      "adjustDuration": "Ajustar duração",
+      "clothingType": "Tipo de vestimenta",
+      "ibutgIncrement": "Incremento ao IBUTG (°C)",
+      "reviewTitle": "Revisão e conclusão",
+      "reviewDesc": "Confira IBUTG corrigido, limites e medidas de controle antes de salvar.",
+      "clothingIncrement": "Incremento vestimenta",
+      "correctedIbutg": "IBUTG corrigido",
+      "actionLevel": "Nível de ação",
+      "exposureLimit": "Limite de exposição",
+      "ceilingValue": "Valor teto",
+      "conclusion": "Conclusão",
+      "controlMeasures": "Medidas de controle",
+      "finalNotes": "Observações finais",
+      "finalNotesPlaceholder": "Comentários adicionais para o relatório."
+    },
+    "risk": {
+      "Risco I": "Risco I",
+      "Risco II": "Risco II",
+      "Risco III": "Risco III"
+    },
     "steps": {
       "info": "Informações",
       "measurements": "Medições",
@@ -3892,6 +3999,7 @@
       "colTg": "Tg",
       "colTbs": "Tbs",
       "colIbutg": "IBUTG",
+      "colCorrected": "Corrigido",
       "colRate": "Taxa (W)",
       "colStatus": "Status NHO 06",
       "colResponsible": "Responsável",

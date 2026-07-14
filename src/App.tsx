@@ -45,6 +45,7 @@ const EvvHome = lazyWithRetry(() => import("./features/evv/pages/EvvHome"));
 const EvvFormSelector = lazyWithRetry(() => import("./features/evv/pages/FormSelector"));
 const EvvWizard = lazyWithRetry(() => import("./features/evv/pages/EvvWizard"));
 const EvvHistory = lazyWithRetry(() => import("./features/evv/pages/EvvHistory"));
+const EvvReview = lazyWithRetry(() => import("./features/evv/pages/EvvReview"));
 const EvvReports = lazyWithRetry(() => import("./features/evv/pages/EvvReports"));
 const EvvSubmissionDetail = lazyWithRetry(() => import("./features/evv/pages/EvvSubmissionDetail"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
@@ -131,6 +132,7 @@ function App() {
                   <Route path="/evv/forms/:formType" element={<ProtectedRoute moduleKey="evv" pageKey="forms" action="create"><EvvWizard /></ProtectedRoute>} />
                   <Route path="/evv/history" element={<ProtectedRoute moduleKey="evv" pageKey="history"><EvvHistory /></ProtectedRoute>} />
                   <Route path="/evv/history/:id" element={<ProtectedRoute moduleKey="evv" pageKey="history"><EvvSubmissionDetail /></ProtectedRoute>} />
+                  <Route path="/evv/review" element={<ProtectedRoute moduleKey="evv" pageKey="review" action="approve"><EvvReview /></ProtectedRoute>} />
                   <Route path="/evv/reports" element={<ProtectedRoute moduleKey="evv" pageKey="reports"><EvvReports /></ProtectedRoute>} />
                 </Route>
 

@@ -101,6 +101,8 @@ export async function syncAllUnsynced(
             answers: sub.answers as unknown as Json,
             comments: sub.comments,
             review_status: 'pending',
+            signature_data: sub.signature_data ?? null,
+            signed_at: sub.signed_at ?? null,
             submitted_at: sub.submitted_at ?? new Date().toISOString(),
           },
           { onConflict: 'client_id' },

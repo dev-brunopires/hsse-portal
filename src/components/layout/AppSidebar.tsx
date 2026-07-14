@@ -165,6 +165,7 @@ export function AppSidebar() {
             {can('evv', 'home') && <NavItem to="/evv" icon={<ShieldCheck size={20} />} label={t('navigation.evvHome')} collapsed={collapsed} />}
             {can('evv', 'forms') && <NavItem to="/evv/forms" icon={<ClipboardCheck size={20} />} label={t('navigation.evvForms')} collapsed={collapsed} />}
             {can('evv', 'history') && <NavItem to="/evv/history" icon={<History size={20} />} label={t('navigation.evvHistory')} collapsed={collapsed} />}
+            {can('evv', 'review', 'approve') && <NavItem to="/evv/review" icon={<ShieldCheck size={20} />} label={t('navigation.evvReview')} collapsed={collapsed} />}
             {can('evv', 'reports') && <NavItem to="/evv/reports" icon={<FileText size={20} />} label={t('navigation.evvReports')} collapsed={collapsed} />}
           </NavGroup>
         )}

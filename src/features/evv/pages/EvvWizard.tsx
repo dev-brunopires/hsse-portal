@@ -31,6 +31,8 @@ import { useShipFilter } from '@/contexts/ShipFilterContext';
 import { supabase } from '@/integrations/supabase/client';
 import type { Json } from '@/integrations/supabase/types';
 import { useRegions } from '@/hooks/useRegions';
+import { useUserSignature } from '@/hooks/useUserSignature';
+import { evvCategoryName, evvDeficiencyText, evvQuestionGuidance, evvQuestionText } from '../text';
 
 function newClientId(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
@@ -39,10 +41,12 @@ function newClientId(): string {
 
 const EMPTY_SCOPE: EvvScope = {
   environment: '', area: '', location: '', visit_datetime: '',
-  permit_to_work: '', critical_activity: '', vessel_ids: [],
+  permit_to_work: '', permit_to_work_number: '', critical_activity: '', critical_activities: [], vessel_ids: [],
   department: '', your_organization: '', your_role: '',
   task_description: '', observed_organization: '', observed_role: '',
 };
+
+const CRITICAL_ACTIVITY_OPTIONS: Array<{ value: string; labelKey: string }> = [];
 
 
 const FORM_TITLE_KEY: Record<EvvFormType, string> = {
@@ -78,6 +82,7 @@ export default function EvvWizard() {
   const { data: userShips = [], isLoading: userShipsLoading } = useUserShips(user?.id);
   const { data: orgShips = [], isLoading: orgShipsLoading } = useShips();
   const { data: regions = [], isLoading: regionsLoading } = useRegions();
+  const { data: signatureSettings } = useUserSignature();
   const { selectedShipId, isReady: shipFilterReady } = useShipFilter();
   const shipsLoading = userShipsLoading || orgShipsLoading || regionsLoading || !shipFilterReady;
 
@@ -179,6 +184,7 @@ export default function EvvWizard() {
     if (scope.vessel_ids.length === 0) missing.push(t('evv.scope.vessel'));
     if (!scope.location) missing.push(t('evv.scope.location'));
     if (!scope.permit_to_work) missing.push(t('evv.scope.permitToWork'));
+    if (scope.permit_to_work === 'yes' && !scope.permit_to_work_number?.trim()) missing.push(t('evv.scope.permitToWorkNumber'));
     if (!scope.critical_activity) missing.push(t('evv.scope.criticalActivity'));
     if (isLeaders && !scope.observed_organization) missing.push(t('evv.scope.observedOrg'));
     if (isLeaders && !scope.observed_role) missing.push(t('evv.scope.observedRole'));
@@ -213,6 +219,10 @@ export default function EvvWizard() {
 
     const submitted_at = new Date().toISOString();
     const isOnline = navigator.onLine && !!user && !!organization?.id;
+    const autoSignature = signatureSettings?.auto_sign_inspections && signatureSettings.default_signature
+      ? signatureSettings.default_signature
+      : null;
+    const signedAt = autoSignature ? submitted_at : null;
 
     if (isOnline) {
       const { error } = await supabase.from('evv_submissions').upsert({
@@ -225,25 +235,27 @@ export default function EvvWizard() {
         answers: answers as unknown as Json,
         comments,
         review_status: 'pending',
+        signature_data: autoSignature,
+        signed_at: signedAt,
         submitted_at,
       }, { onConflict: 'client_id' });
       if (error) {
         await saveSubmissionLocal({
           client_id: clientId, form_type: formId, status: 'not_synced',
-          scope, answers, comments, submitted_at, updated_at: submitted_at,
+          scope, answers, comments, signature_data: autoSignature, signed_at: signedAt, submitted_at, updated_at: submitted_at,
         });
         toast.warning(t('evv.wizard.savedOffline'));
       } else {
         await saveSubmissionLocal({
           client_id: clientId, form_type: formId, status: 'completed',
-          scope, answers, comments, submitted_at, updated_at: submitted_at,
+          scope, answers, comments, signature_data: autoSignature, signed_at: signedAt, submitted_at, updated_at: submitted_at,
         });
         toast.success(t('evv.wizard.submitted'));
       }
     } else {
       await saveSubmissionLocal({
         client_id: clientId, form_type: formId, status: 'not_synced',
-        scope, answers, comments, submitted_at, updated_at: submitted_at,
+        scope, answers, comments, signature_data: autoSignature, signed_at: signedAt, submitted_at, updated_at: submitted_at,
       });
       toast.warning(t('evv.wizard.savedOffline'));
     }
@@ -280,9 +292,9 @@ export default function EvvWizard() {
                 <SelectTrigger><SelectValue placeholder={t('evv.scope.select')} /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="fpso">FPSO</SelectItem>
-                  <SelectItem value="project">Projeto</SelectItem>
-                  <SelectItem value="office">Escritório</SelectItem>
-                  <SelectItem value="yard">Estaleiro</SelectItem>
+                  <SelectItem value="project">{t('evv.environment.project')}</SelectItem>
+                  <SelectItem value="office">{t('evv.environment.office')}</SelectItem>
+                  <SelectItem value="yard">{t('evv.environment.yard')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -345,7 +357,14 @@ export default function EvvWizard() {
 
             <div className="space-y-2">
               <RequiredLabel>{t('evv.scope.permitToWork')}</RequiredLabel>
-              <Select value={scope.permit_to_work} onValueChange={(v) => setScope({ ...scope, permit_to_work: v as EvvScope['permit_to_work'] })}>
+              <Select
+                value={scope.permit_to_work}
+                onValueChange={(v) => setScope({
+                  ...scope,
+                  permit_to_work: v as EvvScope['permit_to_work'],
+                  permit_to_work_number: v === 'yes' ? scope.permit_to_work_number : '',
+                })}
+              >
                 <SelectTrigger><SelectValue placeholder={t('evv.scope.select')} /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="yes">{t('common.yes')}</SelectItem>
@@ -357,7 +376,14 @@ export default function EvvWizard() {
 
             <div className="space-y-2">
               <RequiredLabel>{t('evv.scope.criticalActivity')}</RequiredLabel>
-              <Select value={scope.critical_activity} onValueChange={(v) => setScope({ ...scope, critical_activity: v as EvvScope['critical_activity'] })}>
+              <Select
+                value={scope.critical_activity}
+                onValueChange={(v) => setScope({
+                  ...scope,
+                  critical_activity: v as EvvScope['critical_activity'],
+                  critical_activities: v === 'yes' ? scope.critical_activities : [],
+                })}
+              >
                 <SelectTrigger><SelectValue placeholder={t('evv.scope.select')} /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="yes">{t('common.yes')}</SelectItem>
@@ -366,7 +392,47 @@ export default function EvvWizard() {
               </Select>
             </div>
 
+            {scope.permit_to_work === 'yes' && (
+              <div className="space-y-2">
+                <RequiredLabel>{t('evv.scope.permitToWorkNumber')}</RequiredLabel>
+                <Input
+                  value={scope.permit_to_work_number ?? ''}
+                  onChange={(event) => setScope({ ...scope, permit_to_work_number: event.target.value })}
+                  placeholder={t('evv.scope.permitToWorkNumberPlaceholder')}
+                />
+              </div>
+            )}
 
+            {scope.critical_activity === 'yes' && (
+              <div className="space-y-2 md:col-span-2">
+                <Label>{t('evv.scope.criticalActivities')}</Label>
+                {CRITICAL_ACTIVITY_OPTIONS.length === 0 ? (
+                  <div className="rounded-md border border-dashed bg-muted/30 p-3 text-sm text-muted-foreground">
+                    {t('evv.scope.criticalActivitiesPending')}
+                  </div>
+                ) : (
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {CRITICAL_ACTIVITY_OPTIONS.map((activity) => (
+                      <label key={activity.value} className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
+                        <Checkbox
+                          checked={(scope.critical_activities ?? []).includes(activity.value)}
+                          onCheckedChange={(checked) => {
+                            const current = scope.critical_activities ?? [];
+                            setScope({
+                              ...scope,
+                              critical_activities: checked
+                                ? [...current, activity.value]
+                                : current.filter((item) => item !== activity.value),
+                            });
+                          }}
+                        />
+                        <span>{t(activity.labelKey)}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {isLeaders && (
               <>
@@ -421,15 +487,16 @@ export default function EvvWizard() {
             <Accordion type="multiple" className="w-full">
               {categories.map((cat) => (
                 <AccordionItem key={cat.id} value={cat.id}>
-                  <AccordionTrigger className="text-left">{cat.name}</AccordionTrigger>
+                  <AccordionTrigger className="text-left">{evvCategoryName(cat, t)}</AccordionTrigger>
                   <AccordionContent className="space-y-4">
                     {cat.questions.map((q) => {
                       const a = answers[q.id];
+                      const guidance = evvQuestionGuidance(q, t);
                       return (
                         <div key={q.id} className="rounded-md border p-3 space-y-2">
-                          <p className="text-sm font-medium">{q.text}</p>
-                          {q.guidance && (
-                            <p className="text-xs text-muted-foreground">{q.guidance}</p>
+                          <p className="text-sm font-medium">{evvQuestionText(q, t)}</p>
+                          {guidance && (
+                            <p className="text-xs text-muted-foreground">{guidance}</p>
                           )}
                           <div className="flex flex-wrap gap-2">
                             {(['effective', 'not_effective', 'not_assessed'] as Rating[]).map((r) => (
@@ -460,7 +527,7 @@ export default function EvvWizard() {
                                     checked={a.deficiencies.includes(d)}
                                     onCheckedChange={() => toggleDeficiency(q.id, d)}
                                   />
-                                  <span>{d}</span>
+                                  <span>{evvDeficiencyText(q, d, t)}</span>
                                 </label>
                               ))}
                             </div>

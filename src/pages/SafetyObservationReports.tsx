@@ -37,6 +37,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { formatDateTime } from '@/utils/dateFormat';
 import { downloadSafetyObservationPDF } from '@/utils/safetyObservationPdf';
+import { translateOptions, useSafetyObservationText } from '@/utils/safetyObservationText';
 import { cn } from '@/lib/utils';
 
 const statusLabel: Record<SafetyObservation['status'], string> = {
@@ -73,6 +74,7 @@ interface EditState {
 }
 
 export default function SafetyObservationReports() {
+  const tr = useSafetyObservationText();
   const { data: observations = [], isLoading } = useSafetyObservations();
   const updateObservation = useUpdateSafetyObservation();
   const deleteObservation = useDeleteSafetyObservation();
@@ -139,13 +141,13 @@ export default function SafetyObservationReports() {
         due_date: editState.due_date || null,
         learning: editState.learning.trim() || null,
       });
-      toast({ title: 'Observação atualizada', description: 'A tratativa foi salva com sucesso.' });
+      toast({ title: tr('Observação atualizada'), description: tr('A tratativa foi salva com sucesso.') });
       setEditing(null);
       setEditState(null);
     } catch (error) {
       toast({
-        title: 'Erro ao salvar',
-        description: error instanceof Error ? error.message : 'Não foi possível atualizar a observação.',
+        title: tr('Erro ao salvar'),
+        description: error instanceof Error ? error.message : tr('Não foi possível atualizar a observação.'),
         variant: 'destructive',
       });
     }
@@ -155,12 +157,12 @@ export default function SafetyObservationReports() {
     if (!deleting) return;
     try {
       await deleteObservation.mutateAsync(deleting.id);
-      toast({ title: 'Observação excluída', description: 'O registro foi removido da lista.' });
+      toast({ title: tr('Observação excluída'), description: tr('O registro foi removido da lista.') });
       setDeleting(null);
     } catch (error) {
       toast({
-        title: 'Erro ao excluir',
-        description: error instanceof Error ? error.message : 'Não foi possível excluir a observação.',
+        title: tr('Erro ao excluir'),
+        description: error instanceof Error ? error.message : tr('Não foi possível excluir a observação.'),
         variant: 'destructive',
       });
     }
@@ -170,20 +172,20 @@ export default function SafetyObservationReports() {
     <div className="space-y-6">
       <PageHeader
         icon={FileText}
-        title="Relatórios de Observação de Segurança"
-        description="Registros enviados pelo formulário de observação, com tratativa e exportação."
+        title={tr('Relatórios de Observação de Segurança')}
+        description={tr('Registros enviados pelo formulário de observação, com tratativa e exportação.')}
       />
 
       <div className="grid gap-3 md:grid-cols-4">
-        <Metric title="Total de registros" value={counters.total} />
-        <Metric title="Abertas" value={counters.open} tone="blue" />
-        <Metric title="Críticas / fatalidade" value={counters.critical} tone="red" />
-        <Metric title="Com acompanhamento" value={counters.followup} tone="amber" />
+        <Metric title={tr('Total de registros')} value={counters.total} />
+        <Metric title={tr('Abertas')} value={counters.open} tone="blue" />
+        <Metric title={tr('Críticas / fatalidade')} value={counters.critical} tone="red" />
+        <Metric title={tr('Com acompanhamento')} value={counters.followup} tone="amber" />
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Filtros</CardTitle>
+          <CardTitle>{tr('Filtros')}</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3 lg:grid-cols-[1fr_180px_180px_200px]">
           <div className="relative">
@@ -191,55 +193,55 @@ export default function SafetyObservationReports() {
             <Input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Buscar por navio, local, observador, descrição ou ação..."
+              placeholder={tr('Buscar por navio, local, observador, descrição ou ação...')}
               className="pl-9"
             />
           </div>
-          <FilterSelect label="Status" value={status} onChange={setStatus} options={[
+          <FilterSelect label={tr('Status')} value={status} onChange={setStatus} options={translateOptions([
             ['all', 'Todos'],
             ['open', 'Aberta'],
             ['in_progress', 'Em andamento'],
             ['closed', 'Concluída'],
-          ]} />
-          <FilterSelect label="Risco" value={risk} onChange={setRisk} options={[
+          ], tr)} />
+          <FilterSelect label={tr('Risco')} value={risk} onChange={setRisk} options={translateOptions([
             ['all', 'Todos'],
             ['low', 'Baixo'],
             ['medium', 'Médio'],
             ['high', 'Alto'],
             ['critical', 'Crítico'],
-          ]} />
-          <FilterSelect label="Modelo" value={template} onChange={setTemplate} options={[
+          ], tr)} />
+          <FilterSelect label={tr('Modelo')} value={template} onChange={setTemplate} options={translateOptions([
             ['all', 'Todos'],
             ['bco', 'Comportamento / Condição'],
             ['psf', 'Segurança de Processo'],
-          ]} />
+          ], tr)} />
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Registros</CardTitle>
+          <CardTitle>{tr('Registros')}</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="flex min-h-48 items-center justify-center text-muted-foreground">
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Carregando observações...
+              {tr('Carregando observações...')}
             </div>
           ) : filtered.length === 0 ? (
             <div className="flex min-h-48 items-center justify-center text-sm text-muted-foreground">
-              Nenhuma observação encontrada.
+              {tr('Nenhuma observação encontrada.')}
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Navio / local</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead>Risco</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                  <TableHead>{tr('Data')}</TableHead>
+                  <TableHead>{tr('Navio / local')}</TableHead>
+                  <TableHead>{tr('Descrição')}</TableHead>
+                  <TableHead>{tr('Risco')}</TableHead>
+                  <TableHead>{tr('Status')}</TableHead>
+                  <TableHead className="text-right">{tr('Ações')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -256,20 +258,20 @@ export default function SafetyObservationReports() {
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className={cn('border', riskClass[item.risk_level])}>
-                        {riskLabel[item.risk_level]}
+                        {tr(riskLabel[item.risk_level])}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <Badge variant={item.status === 'closed' ? 'default' : 'secondary'}>
-                        {statusLabel[item.status]}
+                        {tr(statusLabel[item.status])}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        <IconAction label="Visualizar" icon={Eye} onClick={() => setViewing(item)} />
-                        <IconAction label="Editar tratativa" icon={Pencil} onClick={() => openEdit(item)} />
-                        <IconAction label="Baixar PDF" icon={Download} onClick={() => downloadSafetyObservationPDF(item)} />
-                        <IconAction label="Excluir" icon={Trash2} onClick={() => setDeleting(item)} destructive />
+                        <IconAction label={tr('Visualizar')} icon={Eye} onClick={() => setViewing(item)} />
+                        <IconAction label={tr('Editar tratativa')} icon={Pencil} onClick={() => openEdit(item)} />
+                        <IconAction label={tr('Baixar PDF')} icon={Download} onClick={() => downloadSafetyObservationPDF(item)} />
+                        <IconAction label={tr('Excluir')} icon={Trash2} onClick={() => setDeleting(item)} destructive />
                       </div>
                     </TableCell>
                   </TableRow>
@@ -285,46 +287,46 @@ export default function SafetyObservationReports() {
       <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Editar tratativa</DialogTitle>
-            <DialogDescription>Atualize o status, responsável, prazo e ações de acompanhamento.</DialogDescription>
+            <DialogTitle>{tr('Editar tratativa')}</DialogTitle>
+            <DialogDescription>{tr('Atualize o status, responsável, prazo e ações de acompanhamento.')}</DialogDescription>
           </DialogHeader>
           {editState && (
             <div className="grid gap-4 py-2 md:grid-cols-2">
-              <EditSelect label="Status" value={editState.status} onChange={(value) => setEditState({ ...editState, status: value as SafetyObservation['status'] })} options={[
+              <EditSelect label={tr('Status')} value={editState.status} onChange={(value) => setEditState({ ...editState, status: value as SafetyObservation['status'] })} options={translateOptions([
                 ['open', 'Aberta'],
                 ['in_progress', 'Em andamento'],
                 ['closed', 'Concluída'],
-              ]} />
-              <EditSelect label="Risco residual" value={editState.residual_risk_level ?? 'none'} onChange={(value) => setEditState({ ...editState, residual_risk_level: value === 'none' ? null : value as SafetyRiskLevel })} options={[
+              ], tr)} />
+              <EditSelect label={tr('Risco residual')} value={editState.residual_risk_level ?? 'none'} onChange={(value) => setEditState({ ...editState, residual_risk_level: value === 'none' ? null : value as SafetyRiskLevel })} options={translateOptions([
                 ['none', 'Não informado'],
                 ['low', 'Baixo'],
                 ['medium', 'Médio'],
                 ['high', 'Alto'],
                 ['critical', 'Crítico'],
-              ]} />
+              ], tr)} />
               <div className="space-y-2">
-                <Label>Responsável</Label>
+                <Label>{tr('Responsável')}</Label>
                 <Input value={editState.responsible_name} onChange={(event) => setEditState({ ...editState, responsible_name: event.target.value })} />
               </div>
               <div className="space-y-2">
-                <Label>Prazo</Label>
+                <Label>{tr('Prazo')}</Label>
                 <Input type="date" value={editState.due_date} onChange={(event) => setEditState({ ...editState, due_date: event.target.value })} />
               </div>
               <div className="space-y-2 md:col-span-2">
-                <Label>Ação recomendada</Label>
+                <Label>{tr('Ação recomendada')}</Label>
                 <Textarea rows={3} value={editState.recommended_action} onChange={(event) => setEditState({ ...editState, recommended_action: event.target.value })} />
               </div>
               <div className="space-y-2 md:col-span-2">
-                <Label>Aprendizado</Label>
+                <Label>{tr('Aprendizado')}</Label>
                 <Textarea rows={3} value={editState.learning} onChange={(event) => setEditState({ ...editState, learning: event.target.value })} />
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditing(null)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setEditing(null)}>{tr('Cancelar')}</Button>
             <Button onClick={saveEdit} disabled={updateObservation.isPending}>
               {updateObservation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Salvar
+              {tr('Salvar')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -333,14 +335,14 @@ export default function SafetyObservationReports() {
       <Dialog open={!!deleting} onOpenChange={(open) => !open && setDeleting(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Excluir observação?</DialogTitle>
-            <DialogDescription>Essa ação remove o registro da base. Use apenas para duplicidades ou lançamentos incorretos.</DialogDescription>
+            <DialogTitle>{tr('Excluir observação?')}</DialogTitle>
+            <DialogDescription>{tr('Essa ação remove o registro da base. Use apenas para duplicidades ou lançamentos incorretos.')}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleting(null)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setDeleting(null)}>{tr('Cancelar')}</Button>
             <Button variant="destructive" onClick={confirmDelete} disabled={deleteObservation.isPending}>
               {deleteObservation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Excluir
+              {tr('Excluir')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -364,7 +366,7 @@ function Metric({ title, value, tone = 'default' }: { title: string; value: numb
   );
 }
 
-function FilterSelect({ label, value, options, onChange }: { label: string; value: string; options: Array<[string, string]>; onChange: (value: string) => void }) {
+function FilterSelect({ label, value, options, onChange }: { label: string; value: string; options: ReadonlyArray<readonly [string, string]>; onChange: (value: string) => void }) {
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger aria-label={label}>
@@ -379,7 +381,7 @@ function FilterSelect({ label, value, options, onChange }: { label: string; valu
   );
 }
 
-function EditSelect({ label, value, options, onChange }: { label: string; value: string; options: Array<[string, string]>; onChange: (value: string) => void }) {
+function EditSelect({ label, value, options, onChange }: { label: string; value: string; options: ReadonlyArray<readonly [string, string]>; onChange: (value: string) => void }) {
   return (
     <div className="space-y-2">
       <Label>{label}</Label>
@@ -409,25 +411,26 @@ function IconAction({ label, icon: Icon, onClick, destructive = false }: { label
 }
 
 function ObservationDialog({ observation, onOpenChange }: { observation: SafetyObservationWithShip | null; onOpenChange: (open: boolean) => void }) {
+  const tr = useSafetyObservationText();
   return (
     <Dialog open={!!observation} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Detalhes da observação</DialogTitle>
-          <DialogDescription>Registro completo enviado pelo formulário de observação de segurança.</DialogDescription>
+          <DialogTitle>{tr('Detalhes da observação')}</DialogTitle>
+          <DialogDescription>{tr('Registro completo enviado pelo formulário de observação de segurança.')}</DialogDescription>
         </DialogHeader>
         {observation && (
           <div className="grid gap-4 py-2 md:grid-cols-2">
-            <Detail label="Navio" value={observation.ships?.name || '-'} />
-            <Detail label="Localização" value={observation.area} />
-            <Detail label="Data e hora" value={formatDateTime(observation.observed_at)} />
-            <Detail label="Modelo" value={observation.card_template === 'psf' ? 'Segurança de Processo' : 'Comportamento / Condição'} />
-            <Detail label="Observador" value={observation.observer_name || '-'} />
-            <Detail label="Departamento" value={observation.observer_department || '-'} />
-            <Detail label="Descrição" value={observation.description} full />
-            <Detail label="Percepção de risco" value={observation.risk_perception} full />
-            <Detail label="Ação imediata" value={observation.immediate_action} full />
-            <Detail label="Ação recomendada" value={observation.recommended_action || '-'} full />
+            <Detail label={tr('Navio')} value={observation.ships?.name || '-'} />
+            <Detail label={tr('Localização')} value={observation.area} />
+            <Detail label={tr('Data e hora')} value={formatDateTime(observation.observed_at)} />
+            <Detail label={tr('Modelo')} value={observation.card_template === 'psf' ? tr('Segurança de Processo') : tr('Comportamento / Condição')} />
+            <Detail label={tr('Observador')} value={observation.observer_name || '-'} />
+            <Detail label={tr('Departamento')} value={observation.observer_department || '-'} />
+            <Detail label={tr('Descrição')} value={observation.description} full />
+            <Detail label={tr('Percepção de risco')} value={observation.risk_perception} full />
+            <Detail label={tr('Ação imediata')} value={observation.immediate_action} full />
+            <Detail label={tr('Ação recomendada')} value={observation.recommended_action || '-'} full />
           </div>
         )}
       </DialogContent>

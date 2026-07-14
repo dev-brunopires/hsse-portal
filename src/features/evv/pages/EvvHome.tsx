@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { Cloud, CloudOff, ClipboardList, History, BarChart3, RefreshCw, ShieldCheck } from 'lucide-react';
+import { Cloud, CloudOff, ClipboardList, History, BarChart3, RefreshCw, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -12,7 +12,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 
 export default function EvvHome() {
   const { t } = useTranslation();
-  const { user, isAdmin, isAdminMaster, isPlatformOwner } = useAuth();
+  const { user, role, isAdmin, isAdminMaster, isPlatformOwner } = useAuth();
   const { organization } = useOrganization();
   const [pending, setPending] = useState(0);
   const [online, setOnline] = useState<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
@@ -62,6 +62,7 @@ export default function EvvHome() {
   }
 
   const canReports = isAdmin || isAdminMaster || isPlatformOwner;
+  const canReview = canReports || role === 'supervisor';
 
   return (
     <div className="space-y-6">
@@ -85,7 +86,7 @@ export default function EvvHome() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
         <Link to="/evv/forms">
           <Card className="hover:border-primary transition-colors h-full">
             <CardHeader>
@@ -104,6 +105,17 @@ export default function EvvHome() {
             <CardContent className="text-sm text-muted-foreground">{t('evv.home.historyDesc')}</CardContent>
           </Card>
         </Link>
+        {canReview && (
+          <Link to="/evv/review">
+            <Card className="hover:border-primary transition-colors h-full">
+              <CardHeader>
+                <CheckCircle2 className="h-6 w-6 text-primary" />
+                <CardTitle className="text-base mt-2">{t('evv.nav.review')}</CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground">{t('evv.home.reviewDesc')}</CardContent>
+            </Card>
+          </Link>
+        )}
         {canReports && (
           <Link to="/evv/reports">
             <Card className="hover:border-primary transition-colors h-full">
