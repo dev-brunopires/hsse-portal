@@ -33,6 +33,11 @@ const pickHighestRole = <T extends { role: string | null; organization_id: strin
     .sort((a, b) => (ROLE_RANK[b.role ?? 'viewer'] ?? 0) - (ROLE_RANK[a.role ?? 'viewer'] ?? 0))[0] ?? null
 }
 
+const hasOrgAccess = (
+  rows: Array<{ organization_id: string | null }> | null | undefined,
+  organizationId: string,
+) => (rows ?? []).some((row) => row.organization_id === organizationId)
+
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -70,18 +75,23 @@ Deno.serve(async (req) => {
     })
 
     // Check if user is admin, admin_master, or platform_owner
-    const [roleResult, platformOwnerResult] = await Promise.all([
+    const [roleResult, userOrganizationsResult, platformOwnerResult] = await Promise.all([
       adminClient
         .from('user_roles')
         .select('role, organization_id')
         .eq('user_id', currentUser.id)
         .order('created_at', { ascending: false }),
+      adminClient
+        .from('user_organizations')
+        .select('organization_id')
+        .eq('user_id', currentUser.id),
       adminClient.from('platform_owners').select('id').eq('user_id', currentUser.id).maybeSingle(),
     ])
 
-    if (roleResult.error || platformOwnerResult.error) {
+    if (roleResult.error || userOrganizationsResult.error || platformOwnerResult.error) {
       console.error('Error checking requester permissions:', {
         roleError: roleResult.error,
+        userOrganizationsError: userOrganizationsResult.error,
         platformOwnerError: platformOwnerResult.error,
       })
       return jsonResponse({ error: 'Unable to validate requester permissions' }, 500)
@@ -91,6 +101,7 @@ Deno.serve(async (req) => {
     const currentUserRoleRow = pickHighestRole(roleResult.data, SBM_ORGANIZATION_ID)
     const currentUserRole = currentUserRoleRow?.role
     const currentUserOrgId = currentUserRoleRow?.organization_id
+    const currentUserHasSbmMembership = hasOrgAccess(userOrganizationsResult.data, SBM_ORGANIZATION_ID)
     const isAdmin = currentUserRole && ['admin', 'admin_master'].includes(currentUserRole)
 
     if (!isPlatformOwner && !isAdmin) {
@@ -121,8 +132,11 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'Users can only be created for SBM Offshore' }, 403)
     }
 
-    // SECURITY: Non-platform owners can only create users in the SBM organization they belong to
-    if (!isPlatformOwner && currentUserOrgId !== organizationId) {
+    // SECURITY: Non-platform owners can only create users in the SBM organization they belong to.
+    // Some legacy accounts have role rows with null/old organization_id, so membership is the source of truth.
+    const hasRoleInSbm = currentUserOrgId === organizationId
+    const hasMembershipInSbm = currentUserHasSbmMembership && organizationId === SBM_ORGANIZATION_ID
+    if (!isPlatformOwner && !hasRoleInSbm && !hasMembershipInSbm) {
       return jsonResponse({ error: 'You can only create users in the SBM organization' }, 403)
     }
 
