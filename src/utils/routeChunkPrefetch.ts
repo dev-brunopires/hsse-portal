@@ -5,6 +5,7 @@
  */
 const routeChunkLoaders: Record<string, () => Promise<unknown>> = {
   '/': () => import('@/pages/Index'),
+  '/equipment-dashboard': () => import('@/pages/Dashboard'),
   '/equipment': () => import('@/pages/EquipmentList'),
   '/inspections': () => import('@/pages/Inspections'),
   '/maintenance': () => import('@/pages/Maintenance'),
@@ -31,6 +32,7 @@ const routeChunkLoaders: Record<string, () => Promise<unknown>> = {
   '/evv/history': () => import('@/features/evv/pages/EvvHistory'),
   '/evv/review': () => import('@/features/evv/pages/EvvReview'),
   '/evv/reports': () => import('@/features/evv/pages/EvvReports'),
+  '/evv/templates': () => import('@/features/evv/pages/EvvTemplates'),
   '/platform-admin': () => import('@/pages/PlatformAdmin'),
 };
 

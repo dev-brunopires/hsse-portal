@@ -13,6 +13,27 @@ const ROLE_RANK: Record<string, number> = {
   viewer: 1,
 }
 
+const SBM_ORGANIZATION_ID = '00000000-0000-0000-0000-000000000001'
+
+const jsonResponse = (body: Record<string, unknown>, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  })
+
+const pickHighestRole = <T extends { role: string | null; organization_id: string | null }>(
+  rows: T[] | null | undefined,
+  preferredOrgId?: string,
+) => {
+  const candidates = rows ?? []
+  const preferred = preferredOrgId
+    ? candidates.filter((row) => row.organization_id === preferredOrgId)
+    : candidates
+
+  return (preferred.length > 0 ? preferred : candidates)
+    .sort((a, b) => (ROLE_RANK[b.role ?? 'viewer'] ?? 0) - (ROLE_RANK[a.role ?? 'viewer'] ?? 0))[0] ?? null
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -21,10 +42,7 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return jsonResponse({ error: 'Missing authorization header' }, 401)
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -37,10 +55,7 @@ Deno.serve(async (req) => {
 
     const { data: { user: currentUser }, error: userError } = await userClient.auth.getUser()
     if (userError || !currentUser) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return jsonResponse({ error: 'Unauthorized' }, 401)
     }
 
     const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
@@ -48,53 +63,41 @@ Deno.serve(async (req) => {
     })
 
     const [callerRoleRes, callerPlatformRes] = await Promise.all([
-      adminClient.from('user_roles').select('role, organization_id').eq('user_id', currentUser.id).maybeSingle(),
+      adminClient.from('user_roles').select('role, organization_id').eq('user_id', currentUser.id),
       adminClient.from('platform_owners').select('id').eq('user_id', currentUser.id).maybeSingle(),
     ])
 
     const callerIsPlatformOwner = !!callerPlatformRes.data
-    const callerRole = callerRoleRes.data?.role
-    const callerOrgId = callerRoleRes.data?.organization_id
+    const callerRoleRow = pickHighestRole(callerRoleRes.data, SBM_ORGANIZATION_ID)
+    const callerRole = callerRoleRow?.role
+    const callerOrgId = callerRoleRow?.organization_id
     const callerCanManage =
       callerIsPlatformOwner || callerRole === 'admin_master' || callerRole === 'admin'
 
     if (!callerCanManage) {
-      return new Response(JSON.stringify({ error: 'Forbidden' }), {
-        status: 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return jsonResponse({ error: 'Forbidden' }, 403)
     }
 
     const body = await req.json().catch(() => ({}))
     const { userId, newPassword } = body as { userId?: string; newPassword?: string }
 
     if (!userId || !newPassword) {
-      return new Response(JSON.stringify({ error: 'userId and newPassword are required' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return jsonResponse({ error: 'userId and newPassword are required' }, 400)
     }
 
     if (typeof newPassword !== 'string' || newPassword.length < 6 || newPassword.length > 72) {
-      return new Response(JSON.stringify({ error: 'Password must be between 6 and 72 characters' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return jsonResponse({ error: 'Password must be between 6 and 72 characters' }, 400)
     }
 
     if (userId === currentUser.id) {
-      return new Response(JSON.stringify({ error: 'Use the change password flow for your own account' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return jsonResponse({ error: 'Use the change password flow for your own account' }, 400)
     }
 
     // Load target user role + organization for privilege checks
-    const { data: targetRoleRow } = await adminClient
+    const { data: targetRoleRows } = await adminClient
       .from('user_roles')
       .select('role, organization_id')
       .eq('user_id', userId)
-      .maybeSingle()
 
     const { data: targetPlatform } = await adminClient
       .from('platform_owners')
@@ -103,34 +106,26 @@ Deno.serve(async (req) => {
       .maybeSingle()
 
     const targetIsPlatformOwner = !!targetPlatform
+    const targetRoleRow = pickHighestRole(targetRoleRows, SBM_ORGANIZATION_ID)
     const targetRole = targetRoleRow?.role ?? 'viewer'
     const targetOrgId = targetRoleRow?.organization_id
 
     // Platform owners can reset anyone (except other platform owners are still allowed only by platform owners)
     if (targetIsPlatformOwner && !callerIsPlatformOwner) {
-      return new Response(JSON.stringify({ error: 'Cannot reset password of a platform owner' }), {
-        status: 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return jsonResponse({ error: 'Cannot reset password of a platform owner' }, 403)
     }
 
     if (!callerIsPlatformOwner) {
       // Same organization required
       if (!callerOrgId || callerOrgId !== targetOrgId) {
-        return new Response(JSON.stringify({ error: 'You can only reset users in your own organization' }), {
-          status: 403,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
+        return jsonResponse({ error: 'You can only reset users in your own organization' }, 403)
       }
 
       // Privilege rank: caller must outrank the target
       const callerRank = ROLE_RANK[callerRole ?? 'viewer'] ?? 0
       const targetRank = ROLE_RANK[targetRole] ?? 0
       if (callerRank <= targetRank) {
-        return new Response(JSON.stringify({ error: 'You cannot reset the password of a user with equal or higher role' }), {
-          status: 403,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
+        return jsonResponse({ error: 'You cannot reset the password of a user with equal or higher role' }, 403)
       }
     }
 
@@ -140,10 +135,7 @@ Deno.serve(async (req) => {
 
     if (updateError) {
       console.error('Password reset failed:', updateError)
-      return new Response(JSON.stringify({ error: updateError.message }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return jsonResponse({ error: updateError.message }, 400)
     }
 
     // Audit log
@@ -160,16 +152,10 @@ Deno.serve(async (req) => {
       console.error('Audit log failed:', e)
     }
 
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    return jsonResponse({ success: true })
   } catch (error: unknown) {
     console.error('reset-user-password error:', error)
     const message = error instanceof Error ? error.message : 'Internal server error'
-    return new Response(JSON.stringify({ error: message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    return jsonResponse({ error: message }, 500)
   }
 })

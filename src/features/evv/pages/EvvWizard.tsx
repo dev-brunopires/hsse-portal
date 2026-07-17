@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Send, Save, ClipboardList, Globe2, Ship as ShipIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -195,7 +195,7 @@ export default function EvvWizard() {
   const categoriesValid = Object.entries(answers).some(([, a]) => !!a.rating)
     && categories.every((cat) => cat.questions.every((q) => {
       const answer = answers[q.id];
-      return answer?.rating !== 'not_effective' || (answer.deficiencies?.length ?? 0) > 0;
+      return answer?.rating !== 'not_effective' || !q.deficiencies?.length || (answer.deficiencies?.length ?? 0) > 0;
     }));
   const hasNotEffective = Object.values(answers).some((a) => a.rating === 'not_effective');
   const closingValid = !hasNotEffective || comments.trim().length >= 3;
@@ -484,61 +484,71 @@ export default function EvvWizard() {
         <Card>
           <CardHeader><CardTitle>{t('evv.wizard.step2')}</CardTitle></CardHeader>
           <CardContent>
-            <Accordion type="multiple" className="w-full">
-              {categories.map((cat) => (
-                <AccordionItem key={cat.id} value={cat.id}>
-                  <AccordionTrigger className="text-left">{evvCategoryName(cat, t)}</AccordionTrigger>
-                  <AccordionContent className="space-y-4">
-                    {cat.questions.map((q) => {
-                      const a = answers[q.id];
-                      const guidance = evvQuestionGuidance(q, t);
-                      return (
-                        <div key={q.id} className="rounded-md border p-3 space-y-2">
-                          <p className="text-sm font-medium">{evvQuestionText(q, t)}</p>
-                          {guidance && (
-                            <p className="text-xs text-muted-foreground">{guidance}</p>
-                          )}
-                          <div className="flex flex-wrap gap-2">
-                            {(['effective', 'not_effective', 'not_assessed'] as Rating[]).map((r) => (
-                              <Button
-                                key={r}
-                                type="button"
-                                size="sm"
-                                variant={a?.rating === r ? 'default' : 'outline'}
-                                className={cn(
-                                  a?.rating === r && r === 'effective' && 'bg-emerald-600 hover:bg-emerald-700 text-white',
-                                  a?.rating === r && r === 'not_effective' && 'bg-destructive hover:bg-destructive/90',
-                                  a?.rating === r && r === 'not_assessed' && 'bg-muted-foreground hover:bg-muted-foreground/90',
-                                )}
-                                onClick={() => setAnswer(q.id, { rating: r, deficiencies: r === 'not_effective' ? (a?.deficiencies ?? []) : [] })}
-                              >
-                                {t(`evv.rating.${r}`)}
-                              </Button>
-                            ))}
-                          </div>
-                          {a?.rating === 'not_effective' && q.deficiencies && (
-                            <div className="space-y-2 pt-2 border-t">
-                              <p className="text-xs font-medium text-destructive">
-                                {t('evv.wizard.selectDeficiencies')}
-                              </p>
-                              {q.deficiencies.map((d) => (
-                                <label key={d} className="flex items-start gap-2 text-sm cursor-pointer">
-                                  <Checkbox
-                                    checked={a.deficiencies.includes(d)}
-                                    onCheckedChange={() => toggleDeficiency(q.id, d)}
-                                  />
-                                  <span>{evvDeficiencyText(q, d, t)}</span>
-                                </label>
+            {categories.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-3 rounded-md border border-dashed bg-muted/30 p-8 text-center">
+                <p className="text-sm font-medium">{t('evv.templates.formIsEmpty')}</p>
+                <p className="max-w-xl text-sm text-muted-foreground">{t('evv.templates.formIsEmptyDescription')}</p>
+                <Button asChild variant="outline">
+                  <Link to="/evv/templates">{t('evv.nav.templates')}</Link>
+                </Button>
+              </div>
+            ) : (
+              <Accordion type="multiple" className="w-full">
+                {categories.map((cat) => (
+                  <AccordionItem key={cat.id} value={cat.id}>
+                    <AccordionTrigger className="text-left">{evvCategoryName(cat, t)}</AccordionTrigger>
+                    <AccordionContent className="space-y-4">
+                      {cat.questions.map((q) => {
+                        const a = answers[q.id];
+                        const guidance = evvQuestionGuidance(q, t);
+                        return (
+                          <div key={q.id} className="rounded-md border p-3 space-y-2">
+                            <p className="text-sm font-medium">{evvQuestionText(q, t)}</p>
+                            {guidance && (
+                              <p className="text-xs text-muted-foreground">{guidance}</p>
+                            )}
+                            <div className="flex flex-wrap gap-2">
+                              {(['effective', 'not_effective', 'not_assessed'] as Rating[]).map((r) => (
+                                <Button
+                                  key={r}
+                                  type="button"
+                                  size="sm"
+                                  variant={a?.rating === r ? 'default' : 'outline'}
+                                  className={cn(
+                                    a?.rating === r && r === 'effective' && 'bg-emerald-600 hover:bg-emerald-700 text-white',
+                                    a?.rating === r && r === 'not_effective' && 'bg-destructive hover:bg-destructive/90',
+                                    a?.rating === r && r === 'not_assessed' && 'bg-muted-foreground hover:bg-muted-foreground/90',
+                                  )}
+                                  onClick={() => setAnswer(q.id, { rating: r, deficiencies: r === 'not_effective' ? (a?.deficiencies ?? []) : [] })}
+                                >
+                                  {t(`evv.rating.${r}`)}
+                                </Button>
                               ))}
                             </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
+                            {a?.rating === 'not_effective' && q.deficiencies?.length ? (
+                              <div className="space-y-2 pt-2 border-t">
+                                <p className="text-xs font-medium text-destructive">
+                                  {t('evv.wizard.selectDeficiencies')}
+                                </p>
+                                {q.deficiencies.map((d) => (
+                                  <label key={d} className="flex items-start gap-2 text-sm cursor-pointer">
+                                    <Checkbox
+                                      checked={a.deficiencies.includes(d)}
+                                      onCheckedChange={() => toggleDeficiency(q.id, d)}
+                                    />
+                                    <span>{evvDeficiencyText(q, d, t)}</span>
+                                  </label>
+                                ))}
+                              </div>
+                            ) : null}
+                          </div>
+                        );
+                      })}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            )}
           </CardContent>
         </Card>
       )}

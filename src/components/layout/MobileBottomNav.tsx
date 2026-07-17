@@ -19,7 +19,7 @@ interface NavItem {
 }
 
 const leftNavItems: NavItem[] = [
-  { icon: LayoutDashboard, labelKey: 'navigation.dashboard', path: '/', tabletOnly: true },
+  { icon: LayoutDashboard, labelKey: 'navigation.dashboard', path: '/equipment-dashboard', tabletOnly: true },
   { icon: FileText, labelKey: 'navigation.reports', path: '/reports' },
   { icon: ClipboardList, labelKey: 'navigation.inspections', path: '/inspections', showPendingBadge: true },
 ];

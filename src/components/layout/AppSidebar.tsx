@@ -1,5 +1,5 @@
 import { useState, forwardRef } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   LayoutDashboard,
@@ -22,6 +22,7 @@ import {
   ShieldAlert,
   ShieldCheck,
   ClipboardList,
+  FileCog,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -128,13 +129,19 @@ export function AppSidebar() {
         'h-16 flex items-center border-b border-sidebar-border px-4',
         collapsed && 'justify-center px-2'
       )}>
-        <SystemLogo variant="white" showText={!collapsed} />
+        <Link
+          to="/"
+          aria-label={t('navigation.appTitle')}
+          className="min-w-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-primary"
+        >
+          <SystemLogo variant="white" showText={!collapsed} />
+        </Link>
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 p-3 space-y-4 overflow-y-auto">
         <NavGroup label={t('navigation.groupEquipment')} collapsed={collapsed}>
-          {can('equipment', 'dashboard') && <div data-tour="dashboard"><NavItem to="/" icon={<LayoutDashboard size={20} />} label={t('navigation.dashboard')} collapsed={collapsed} /></div>}
+          {can('equipment', 'dashboard') && <div data-tour="dashboard"><NavItem to="/equipment-dashboard" icon={<LayoutDashboard size={20} />} label={t('navigation.dashboard')} collapsed={collapsed} /></div>}
           {can('equipment', 'equipment') && <div data-tour="equipment"><NavItem to="/equipment" icon={<Package size={20} />} label={t('navigation.equipment')} collapsed={collapsed} /></div>}
           {can('equipment', 'inspections') && <div data-tour="inspections"><NavItem to="/inspections" icon={<ClipboardCheck size={20} />} label={t('navigation.inspections')} collapsed={collapsed} /></div>}
           {can('equipment', 'maintenance') && <div data-tour="maintenance"><NavItem to="/maintenance" icon={<Wrench size={20} />} label={t('navigation.maintenance')} collapsed={collapsed} /></div>}
@@ -167,6 +174,7 @@ export function AppSidebar() {
             {can('evv', 'history') && <NavItem to="/evv/history" icon={<History size={20} />} label={t('navigation.evvHistory')} collapsed={collapsed} />}
             {can('evv', 'review', 'approve') && <NavItem to="/evv/review" icon={<ShieldCheck size={20} />} label={t('navigation.evvReview')} collapsed={collapsed} />}
             {can('evv', 'reports') && <NavItem to="/evv/reports" icon={<FileText size={20} />} label={t('navigation.evvReports')} collapsed={collapsed} />}
+            {can('evv', 'templates', 'admin') && <NavItem to="/evv/templates" icon={<FileCog size={20} />} label={t('navigation.evvTemplates')} collapsed={collapsed} />}
           </NavGroup>
         )}
       </nav>

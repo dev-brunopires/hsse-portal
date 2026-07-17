@@ -33,6 +33,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
 interface CreateUserDialogProps {
   open: boolean;
@@ -44,6 +45,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { organization } = useOrganization();
 
   const createUserSchema = z.object({
     email: z.string().email(t('users.invalidEmail')),
@@ -109,6 +111,22 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
   // Check if selected role has automatic access to all ships
   const roleHasAllShips = roleOptions.find(r => r.value === selectedRole)?.hasAllShips || false;
 
+  const getFunctionErrorMessage = async (error: unknown) => {
+    const fallback = error instanceof Error ? error.message : t('users.errorCreatingUserDesc');
+    const context = (error as { context?: unknown })?.context;
+
+    if (context instanceof Response) {
+      try {
+        const payload = await context.clone().json() as { error?: string; message?: string };
+        return payload.error || payload.message || fallback;
+      } catch {
+        return fallback;
+      }
+    }
+
+    return fallback;
+  };
+
   const onSubmit = async (data: CreateUserFormData) => {
     setIsSubmitting(true);
 
@@ -116,6 +134,10 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
     const language = data.nationality === 'brazilian' ? 'pt-BR' : 'en';
 
     try {
+      if (!organization?.id || !organization.name.toLowerCase().includes('sbm')) {
+        throw new Error('Organizacao SBM nao encontrada no contexto atual. Selecione a organizacao SBM antes de cadastrar usuarios.');
+      }
+
       // Use backend function so the admin session is not affected
       const { data: result, error } = await supabase.functions.invoke('create-user', {
         body: {
@@ -124,11 +146,12 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
           fullName: data.fullName,
           role: data.role,
           language: language,
+          organizationId: organization.id,
         },
       });
 
       if (error) {
-        throw new Error(error.message);
+        throw new Error(await getFunctionErrorMessage(error));
       }
 
       if (!result?.success) {
@@ -144,11 +167,11 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
 
       form.reset();
       onOpenChange(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating user:', error);
       toast({
         title: t('users.errorCreatingUser'),
-        description: error.message || t('users.errorCreatingUserDesc'),
+        description: error instanceof Error ? error.message : t('users.errorCreatingUserDesc'),
         variant: 'destructive',
       });
     } finally {

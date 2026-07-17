@@ -17,6 +17,7 @@ import { lazyWithRetry } from "@/utils/lazyWithRetry";
 
 // Lazy load pages with retry for better resilience
 const Index = lazyWithRetry(() => import("./pages/Index"));
+const Dashboard = lazyWithRetry(() => import("./pages/Dashboard"));
 const Auth = lazyWithRetry(() => import("./pages/Auth"));
 const EquipmentList = lazyWithRetry(() => import("./pages/EquipmentList"));
 const Inspections = lazyWithRetry(() => import("./pages/Inspections"));
@@ -47,6 +48,7 @@ const EvvWizard = lazyWithRetry(() => import("./features/evv/pages/EvvWizard"));
 const EvvHistory = lazyWithRetry(() => import("./features/evv/pages/EvvHistory"));
 const EvvReview = lazyWithRetry(() => import("./features/evv/pages/EvvReview"));
 const EvvReports = lazyWithRetry(() => import("./features/evv/pages/EvvReports"));
+const EvvTemplates = lazyWithRetry(() => import("./features/evv/pages/EvvTemplates"));
 const EvvSubmissionDetail = lazyWithRetry(() => import("./features/evv/pages/EvvSubmissionDetail"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 
@@ -104,7 +106,8 @@ function App() {
                 
                 {/* Protected Routes */}
                 <Route element={<ProtectedAppLayout />}>
-                  <Route path="/" element={<ProtectedRoute moduleKey="equipment" pageKey="dashboard"><Index /></ProtectedRoute>} />
+                  <Route path="/" element={<Index />} />
+                  <Route path="/equipment-dashboard" element={<ProtectedRoute moduleKey="equipment" pageKey="dashboard"><Dashboard /></ProtectedRoute>} />
                   <Route path="/equipment" element={<ProtectedRoute moduleKey="equipment" pageKey="equipment"><EquipmentList /></ProtectedRoute>} />
                   <Route path="/inspections" element={<ProtectedRoute moduleKey="equipment" pageKey="inspections"><Inspections /></ProtectedRoute>} />
                   <Route path="/reports" element={<ProtectedRoute moduleKey="reports" pageKey="reports"><Reports /></ProtectedRoute>} />
@@ -134,6 +137,7 @@ function App() {
                   <Route path="/evv/history/:id" element={<ProtectedRoute moduleKey="evv" pageKey="history"><EvvSubmissionDetail /></ProtectedRoute>} />
                   <Route path="/evv/review" element={<ProtectedRoute moduleKey="evv" pageKey="review" action="approve"><EvvReview /></ProtectedRoute>} />
                   <Route path="/evv/reports" element={<ProtectedRoute moduleKey="evv" pageKey="reports"><EvvReports /></ProtectedRoute>} />
+                  <Route path="/evv/templates" element={<ProtectedRoute moduleKey="evv" pageKey="templates" action="admin"><EvvTemplates /></ProtectedRoute>} />
                 </Route>
 
                 <Route path="*" element={<NotFound />} />

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   LayoutDashboard,
@@ -20,6 +20,7 @@ import {
   ShieldCheck,
   Activity,
   ClipboardList,
+  FileCog,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetHeader } from '@/components/ui/sheet';
@@ -95,13 +96,20 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
         className="w-72 p-0 bg-sidebar border-sidebar-border flex flex-col h-full"
       >
         <SheetHeader className="min-h-16 flex flex-row items-center justify-between border-b border-sidebar-border px-4 shrink-0 pwa-header">
-          <SystemLogo variant="white" />
+          <Link
+            to="/"
+            aria-label={t('navigation.appTitle')}
+            onClick={handleNavClick}
+            className="min-w-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-primary"
+          >
+            <SystemLogo variant="white" />
+          </Link>
         </SheetHeader>
 
         {/* Navigation */}
         <nav className="flex-1 p-3 space-y-4 overflow-y-auto">
           <MobileNavGroup label={t('navigation.groupEquipment')}>
-            {can('equipment', 'dashboard') && <MobileNavItem to="/" icon={<LayoutDashboard size={20} />} label={t('navigation.dashboard')} onClick={handleNavClick} />}
+            {can('equipment', 'dashboard') && <MobileNavItem to="/equipment-dashboard" icon={<LayoutDashboard size={20} />} label={t('navigation.dashboard')} onClick={handleNavClick} />}
             {can('equipment', 'equipment') && <MobileNavItem to="/equipment" icon={<Package size={20} />} label={t('navigation.equipment')} onClick={handleNavClick} />}
             {can('equipment', 'inspections') && <MobileNavItem to="/inspections" icon={<ClipboardCheck size={20} />} label={t('navigation.inspections')} onClick={handleNavClick} />}
             {can('equipment', 'maintenance') && <MobileNavItem to="/maintenance" icon={<Wrench size={20} />} label={t('navigation.maintenance')} onClick={handleNavClick} />}
@@ -134,6 +142,7 @@ export function MobileSidebar({ open, onOpenChange }: MobileSidebarProps) {
               {can('evv', 'history') && <MobileNavItem to="/evv/history" icon={<History size={20} />} label={t('navigation.evvHistory')} onClick={handleNavClick} />}
               {can('evv', 'review', 'approve') && <MobileNavItem to="/evv/review" icon={<ShieldCheck size={20} />} label={t('navigation.evvReview')} onClick={handleNavClick} />}
               {can('evv', 'reports') && <MobileNavItem to="/evv/reports" icon={<FileText size={20} />} label={t('navigation.evvReports')} onClick={handleNavClick} />}
+              {can('evv', 'templates', 'admin') && <MobileNavItem to="/evv/templates" icon={<FileCog size={20} />} label={t('navigation.evvTemplates')} onClick={handleNavClick} />}
             </MobileNavGroup>
           )}
         </nav>

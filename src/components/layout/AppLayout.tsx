@@ -1,4 +1,5 @@
 import { Suspense, useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { AppSidebar } from './AppSidebar';
 import { MobileSidebar } from './MobileSidebar';
 import { MobileBottomNav } from './MobileBottomNav';
@@ -12,6 +13,7 @@ import { SyncProgressIndicator } from './SyncProgressIndicator';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useRoutePrefetch } from '@/hooks/useRoutePrefetch';
 import { prefetchRouteChunk } from '@/utils/routeChunkPrefetch';
+import { cn } from '@/lib/utils';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -19,6 +21,22 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const location = useLocation();
+  const equipmentRoutes = [
+    '/equipment-dashboard',
+    '/equipment',
+    '/inspections',
+    '/maintenance',
+    '/certificates',
+    '/pending',
+    '/categories',
+    '/supervisor',
+    '/reports',
+    '/alerts',
+  ];
+  const showMobileBottomNav = equipmentRoutes.some((path) => (
+    location.pathname === path || location.pathname.startsWith(`${path}/`)
+  ));
   
   // Enable global keyboard shortcuts
   useKeyboardShortcuts();
@@ -29,7 +47,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   // navigations skip the dynamic-import wait entirely.
   useEffect(() => {
     const paths = [
-      '/', '/equipment', '/inspections', '/maintenance', '/certificates',
+      '/', '/equipment-dashboard', '/equipment', '/inspections', '/maintenance', '/certificates',
       '/reports', '/alerts', '/pending', '/categories', '/profile',
     ];
     const idle = (cb: () => void) => {
@@ -60,7 +78,12 @@ export function AppLayout({ children }: AppLayoutProps) {
           onMenuClick={() => setMobileMenuOpen(true)} 
         />
 
-        <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain p-4 lg:p-6 pwa-main-content lg:pb-6 [scrollbar-gutter:stable]">
+        <main
+          className={cn(
+            'flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain p-4 lg:p-6 lg:pb-6 [scrollbar-gutter:stable]',
+            showMobileBottomNav && 'pwa-main-content',
+          )}
+        >
           <Suspense fallback={<PageLoadingFallback delay={120} />}>
             <PageTransition>
               {children}
@@ -70,7 +93,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <MobileBottomNav />
+      {showMobileBottomNav && <MobileBottomNav />}
 
       {/* System Indicators */}
       <OfflineIndicator />

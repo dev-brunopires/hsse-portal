@@ -40,6 +40,24 @@ export function ResetPasswordDialog({ open, onOpenChange, user }: ResetPasswordD
 
   if (!user) return null;
 
+  const getFunctionErrorMessage = async (error: unknown) => {
+    const fallback = error instanceof Error
+      ? error.message
+      : t('resetPasswordDialog.failed', 'Falha ao redefinir senha.');
+    const context = (error as { context?: unknown })?.context;
+
+    if (context instanceof Response) {
+      try {
+        const payload = await context.clone().json() as { error?: string; message?: string };
+        return payload.error || payload.message || fallback;
+      } catch {
+        return fallback;
+      }
+    }
+
+    return fallback;
+  };
+
   const handleSubmit = async () => {
     if (password.length < 6) {
       toast.error(t('resetPasswordDialog.minLengthError', 'A senha deve ter pelo menos 6 caracteres.'));
@@ -57,7 +75,9 @@ export function ResetPasswordDialog({ open, onOpenChange, user }: ResetPasswordD
       });
 
       if (error || (data && (data as { error?: string }).error)) {
-        const msg = (data as { error?: string })?.error || error?.message || t('resetPasswordDialog.failed', 'Falha ao redefinir senha.');
+        const msg = (data as { error?: string })?.error
+          || (error ? await getFunctionErrorMessage(error) : null)
+          || t('resetPasswordDialog.failed', 'Falha ao redefinir senha.');
         toast.error(msg);
         return;
       }

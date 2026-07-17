@@ -168,7 +168,8 @@
     "evvForms": "Formulários",
     "evvHistory": "Histórico",
     "evvReview": "Revisão",
-    "evvReports": "Relatórios"
+    "evvReports": "Relatórios",
+    "evvTemplates": "Templates"
   },
   "evv": {
     "title": "eV&V",
@@ -177,7 +178,8 @@
       "forms": "Formulários",
       "history": "Histórico",
       "reports": "Relatórios",
-      "review": "Revisão"
+      "review": "Revisão",
+      "templates": "Templates"
     },
     "environment": {
       "project": "Projeto",
@@ -188,7 +190,8 @@
       "formsDesc": "Iniciar um novo formulário de V&V",
       "historyDesc": "Ver submissões anteriores e rascunhos",
       "reportsDesc": "Painel consolidado de desvios",
-      "reviewDesc": "Revisar submissões concluídas de V&V"
+      "reviewDesc": "Revisar submissões concluídas de V&V",
+      "templatesDesc": "Configurar formulários, tópicos, subtópicos e checklist"
     },
     "sync": {
       "title": "Sincronização",
@@ -228,7 +231,7 @@
     "wizard": {
       "subtitle": "Preencha os passos para enviar a observação",
       "step1": "Escopo",
-      "step2": "Categorias e Perguntas",
+      "step2": "Tópicos e Checklist",
       "step3": "Fechamento",
       "selectDeficiencies": "Selecione ao menos uma deficiência:",
       "commentsLabel": "Comentários: explique sua intervenção",
@@ -237,12 +240,37 @@
       "scopeRequired": "Preencha todos os campos obrigatorios antes de continuar",
       "requiredFieldsHint": "Campos obrigatorios pendentes",
       "missingFields": "Preencha os seguintes campos: {{fields}}",
-      "answersRequired": "Responda ao menos uma pergunta e selecione uma deficiência para cada Não efetivo",
+      "answersRequired": "Cadastre o checklist do formulário e responda ao menos um item",
       "submit": "Enviar",
       "saveDraft": "Salvar rascunho",
       "draftSaved": "Rascunho salvo",
       "submitted": "Formulário enviado",
       "savedOffline": "Salvo offline — sincronizar quando houver conexão"
+    },
+    "templates": {
+      "title": "Templates V&V",
+      "subtitle": "Configure os formulários por tópico, subtópico e checklist",
+      "form": "Formulário",
+      "instructions": "Os formulários antigos foram zerados. Cadastre aqui os tópicos e checklist que serão exibidos no wizard do V&V.",
+      "addTopic": "Adicionar tópico",
+      "addSubtopic": "Adicionar subtópico",
+      "addChecklistItem": "Adicionar item",
+      "topic": "Tópico",
+      "subtopic": "Subtópico",
+      "checklistItem": "Item de checklist",
+      "topicPlaceholder": "Ex.: Trabalho em altura",
+      "subtopicPlaceholder": "Ex.: Acesso por corda",
+      "empty": "Nenhum tópico cadastrado para este formulário.",
+      "noSubtopics": "Nenhum subtópico cadastrado neste tópico.",
+      "noChecklist": "Nenhum item de checklist cadastrado neste subtópico.",
+      "resetAll": "Zerar tudo",
+      "resetDone": "Templates zerados",
+      "saved": "Templates salvos",
+      "ready": "Configurado",
+      "emptyBadge": "Zerado",
+      "counts": "{{topics}} tópicos · {{subtopics}} subtópicos · {{checklist}} itens",
+      "formIsEmpty": "Este formulário está zerado.",
+      "formIsEmptyDescription": "Acesse Templates V&V para cadastrar tópicos, subtópicos e itens de checklist antes de preencher o formulário."
     },
     "scope": {
       "select": "Selecione",
@@ -501,6 +529,8 @@
       "area": "Área",
       "department": "Departamento",
       "status": "Status",
+      "aiAssessment": "Status da IA",
+      "alignment": "Consistência",
       "severity": "Severidade",
       "riskLevel": "Nível de Risco",
       "period": "Período",
@@ -520,7 +550,12 @@
       "closed": "Fechadas",
       "avgClosingTime": "Tempo médio de fechamento",
       "days": "dias",
-      "overdue": "Atrasadas"
+      "overdue": "Atrasadas",
+      "assessedUnsafe": "UNSAFE pela IA",
+      "mismatches": "Divergências SAFE/UNSAFE",
+      "followup": "Requer follow-up",
+      "weakActions": "Ações fracas/ausentes",
+      "avgCriticality": "Criticidade média"
     },
     "charts": {
       "monthlyTrend": "Tendência Mensal",
@@ -536,7 +571,18 @@
       "topAreas": "Top Áreas Críticas",
       "criticalAreasHeatmap": "Mapa de Áreas Críticas",
       "performanceRanking": "Ranking de Departamentos",
-      "runAiFirst": "Clique em \"Classificar com IA\" para gerar a análise."
+      "runAiFirst": "Clique em \"Classificar com IA\" para gerar a análise.",
+      "statusAssurance": "SAFE/UNSAFE: declarado vs IA",
+      "byBarrier": "Barreira / falha principal",
+      "statusAlignment": "Consistência do status informado",
+      "actionQuality": "Qualidade da ação tomada",
+      "criticalAreas": "Áreas por criticidade real"
+    },
+    "alignment": {
+      "aligned": "Alinhado",
+      "declaredSafeButUnsafe": "SAFE declarado, UNSAFE pela IA",
+      "declaredUnsafeButSafe": "UNSAFE declarado, SAFE pela IA",
+      "insufficientInfo": "Informação insuficiente"
     },
     "severity": {
       "low": "Baixa",

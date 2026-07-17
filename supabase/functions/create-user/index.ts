@@ -11,6 +11,28 @@ const jsonResponse = (body: Record<string, unknown>, status = 200) =>
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   })
 
+const SBM_ORGANIZATION_ID = '00000000-0000-0000-0000-000000000001'
+const ROLE_RANK: Record<string, number> = {
+  admin_master: 5,
+  admin: 4,
+  supervisor: 3,
+  technician: 2,
+  viewer: 1,
+}
+
+const pickHighestRole = <T extends { role: string | null; organization_id: string | null }>(
+  rows: T[] | null | undefined,
+  preferredOrgId?: string,
+) => {
+  const candidates = rows ?? []
+  const preferred = preferredOrgId
+    ? candidates.filter((row) => row.organization_id === preferredOrgId)
+    : candidates
+
+  return (preferred.length > 0 ? preferred : candidates)
+    .sort((a, b) => (ROLE_RANK[b.role ?? 'viewer'] ?? 0) - (ROLE_RANK[a.role ?? 'viewer'] ?? 0))[0] ?? null
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -53,9 +75,7 @@ Deno.serve(async (req) => {
         .from('user_roles')
         .select('role, organization_id')
         .eq('user_id', currentUser.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle(),
+        .order('created_at', { ascending: false }),
       adminClient.from('platform_owners').select('id').eq('user_id', currentUser.id).maybeSingle(),
     ])
 
@@ -68,8 +88,9 @@ Deno.serve(async (req) => {
     }
 
     const isPlatformOwner = !!platformOwnerResult.data
-    const currentUserRole = roleResult.data?.role
-    const currentUserOrgId = roleResult.data?.organization_id
+    const currentUserRoleRow = pickHighestRole(roleResult.data, SBM_ORGANIZATION_ID)
+    const currentUserRole = currentUserRoleRow?.role
+    const currentUserOrgId = currentUserRoleRow?.organization_id
     const isAdmin = currentUserRole && ['admin', 'admin_master'].includes(currentUserRole)
 
     if (!isPlatformOwner && !isAdmin) {
@@ -79,23 +100,36 @@ Deno.serve(async (req) => {
     // Parse request body
     const { email, password, fullName, role, shipIds, language, organizationId: providedOrgId } = await req.json()
 
-    // Determine organization ID
-    let organizationId = providedOrgId
+    const { data: sbmOrganization, error: sbmOrgError } = await adminClient
+      .from('organizations')
+      .select('id, name')
+      .eq('id', SBM_ORGANIZATION_ID)
+      .maybeSingle()
 
-    // If not a platform owner providing an org ID, use the admin's organization
-    if (!organizationId && !isPlatformOwner) {
-      organizationId = currentUserOrgId
+    if (sbmOrgError) {
+      console.error('Error loading SBM organization:', sbmOrgError)
+      return jsonResponse({ error: 'Unable to validate SBM organization' }, 500)
     }
 
-    // SECURITY: Non-platform owners can only create users in their own organization
-    if (!isPlatformOwner && organizationId !== currentUserOrgId) {
-      return jsonResponse({ error: 'You can only create users in your own organization' }, 403)
+    if (!sbmOrganization || !String(sbmOrganization.name ?? '').toLowerCase().includes('sbm')) {
+      return jsonResponse({ error: 'SBM organization is not configured' }, 500)
+    }
+
+    const organizationId = sbmOrganization.id
+
+    if (providedOrgId && providedOrgId !== organizationId) {
+      return jsonResponse({ error: 'Users can only be created for SBM Offshore' }, 403)
+    }
+
+    // SECURITY: Non-platform owners can only create users in the SBM organization they belong to
+    if (!isPlatformOwner && currentUserOrgId !== organizationId) {
+      return jsonResponse({ error: 'You can only create users in the SBM organization' }, 403)
     }
 
     // SECURITY: Prevent privilege escalation - only admin_master/platform_owner can create admin roles
     if (role === 'admin_master') {
-      if (!isPlatformOwner) {
-        return jsonResponse({ error: 'Only platform owners can create admin_master users' }, 403)
+      if (!isPlatformOwner && currentUserRole !== 'admin_master') {
+        return jsonResponse({ error: 'Only admin_master can create admin_master users' }, 403)
       }
     } else if (role === 'admin') {
       if (!isPlatformOwner && currentUserRole !== 'admin_master') {

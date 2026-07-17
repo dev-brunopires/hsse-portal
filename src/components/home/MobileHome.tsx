@@ -26,7 +26,7 @@ const SECTIONS: Section[] = [
     titleKey: 'mobileHome.sections.equipment.title',
     subtitleKey: 'mobileHome.sections.equipment.subtitle',
     icon: Package,
-    path: '/equipment',
+    path: '/equipment-dashboard',
     tone: 'primary',
   },
   {
@@ -101,31 +101,29 @@ export function MobileHome() {
   };
 
   return (
-    <div className="px-4 pt-4 pb-8 space-y-6">
-      {/* Greeting header */}
-      <header className="space-y-1">
-        <p className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
+    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 pb-8 pt-4 sm:px-6 lg:space-y-8 lg:px-8 lg:pt-8">
+      <header className="space-y-1 lg:space-y-2">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground lg:text-sm">
           {todayLabel}
         </p>
-        <h1 className="text-2xl font-bold text-foreground leading-tight">
+        <h1 className="text-2xl font-bold leading-tight text-foreground lg:text-4xl">
           {firstName
             ? t('mobileHome.greetingWithName', { name: firstName })
             : t('mobileHome.greeting')}
         </h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground lg:text-base">
           {t('mobileHome.subtitle')}
         </p>
       </header>
 
-      {/* Sections grid */}
       <section aria-label={t('mobileHome.sectionsLabel')}>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-semibold text-foreground">
+        <div className="mb-3 flex items-center justify-between lg:mb-5">
+          <h2 className="text-base font-semibold text-foreground lg:text-xl">
             {t('mobileHome.sectionsTitle')}
           </h2>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4 xl:gap-5">
           {SECTIONS.map((section) => {
             const Icon = section.icon;
             const tone = TONE_CLASSES[section.tone];
@@ -138,39 +136,39 @@ export function MobileHome() {
                 onMouseEnter={() => section.path && prefetchRouteChunk(section.path)}
                 disabled={isDisabled}
                 className={cn(
-                  'group relative flex flex-col items-start gap-3 p-4 rounded-2xl',
+                  'group relative flex flex-col items-start gap-3 rounded-2xl p-4 lg:gap-4 lg:rounded-xl lg:p-5',
                   'bg-card border border-border shadow-sm',
-                  'transition-all touch-manipulation',
+                  'transition-all touch-manipulation hover:border-primary/40 hover:shadow-md',
                   'active:scale-[0.97] active:shadow-none',
-                  'min-h-[150px] text-left',
+                  'min-h-[150px] text-left lg:min-h-[210px]',
                   isDisabled && 'opacity-60 cursor-not-allowed active:scale-100'
                 )}
                 aria-label={t(section.titleKey)}
               >
-                <span className="text-[10px] text-muted-foreground font-medium">
+                <span className="text-[10px] font-medium text-muted-foreground lg:text-xs">
                   {isDisabled ? t('mobileHome.comingSoon') : todayLabel}
                 </span>
 
                 <div
                   className={cn(
-                    'flex items-center justify-center w-10 h-10 rounded-xl',
+                    'flex h-10 w-10 items-center justify-center rounded-xl lg:h-12 lg:w-12',
                     tone.iconBg
                   )}
                 >
-                  <Icon className={cn('h-5 w-5', tone.iconFg)} />
+                  <Icon className={cn('h-5 w-5 lg:h-6 lg:w-6', tone.iconFg)} />
                 </div>
 
                 <div className="flex-1 min-w-0 w-full">
-                  <h3 className="text-sm font-semibold text-foreground leading-tight line-clamp-2">
+                  <h3 className="line-clamp-2 text-sm font-semibold leading-tight text-foreground lg:text-lg">
                     {t(section.titleKey)}
                   </h3>
-                  <p className="text-[11px] text-muted-foreground mt-1 line-clamp-1">
+                  <p className="mt-1 line-clamp-2 text-[11px] text-muted-foreground lg:text-sm">
                     {t(section.subtitleKey)}
                   </p>
                 </div>
 
-                <div className="flex items-center justify-between w-full pt-1 border-t border-border/60">
-                  <span className="text-[11px] font-medium text-muted-foreground">
+                <div className="flex w-full items-center justify-between border-t border-border/60 pt-1 lg:pt-3">
+                  <span className="text-[11px] font-medium text-muted-foreground lg:text-sm">
                     {isDisabled ? t('mobileHome.comingSoon') : t('mobileHome.access')}
                   </span>
                   <ChevronRight className={cn('h-4 w-4', tone.iconFg)} />

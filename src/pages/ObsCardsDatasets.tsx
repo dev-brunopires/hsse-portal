@@ -27,6 +27,20 @@ const statusVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'o
   failed: 'destructive',
 };
 
+interface DeleteDatasetBatchResult {
+  success?: boolean;
+  error?: string;
+  dataset_deleted?: boolean;
+  has_more?: boolean;
+}
+
+interface ObsCardsDatasetRpcClient {
+  rpc: (
+    fn: 'delete_obs_card_dataset_batch',
+    args: { _dataset_id: string; _batch_size: number },
+  ) => Promise<{ data: DeleteDatasetBatchResult | null; error: Error | null }>;
+}
+
 export default function ObsCardsDatasets() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -36,8 +50,10 @@ export default function ObsCardsDatasets() {
 
   const deleteMut = useMutation({
     mutationFn: async (id: string) => {
+      const rpcClient = supabase as unknown as ObsCardsDatasetRpcClient;
+
       while (true) {
-        const { data, error } = await (supabase as any).rpc('delete_obs_card_dataset_batch', {
+        const { data, error } = await rpcClient.rpc('delete_obs_card_dataset_batch', {
           _dataset_id: id,
           _batch_size: 500,
         });
@@ -53,8 +69,12 @@ export default function ObsCardsDatasets() {
       toast({ title: t('obsCards.datasets.deleted') });
       qc.invalidateQueries({ queryKey: ['obs-datasets'] });
     },
-    onError: (e: any) =>
-      toast({ title: t('obsCards.datasets.deleteError'), description: e.message, variant: 'destructive' }),
+    onError: (error: unknown) =>
+      toast({
+        title: t('obsCards.datasets.deleteError'),
+        description: error instanceof Error ? error.message : String(error),
+        variant: 'destructive',
+      }),
   });
 
   return (

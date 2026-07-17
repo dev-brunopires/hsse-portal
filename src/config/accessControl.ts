@@ -63,7 +63,7 @@ export const ACCESS_MODULES: AccessModuleDefinition[] = [
     key: 'equipment',
     name: 'Gestao de Equipamentos',
     pages: [
-      { key: 'dashboard', name: 'Dashboard', route: '/', actions: ['view', 'export'] },
+      { key: 'dashboard', name: 'Dashboard', route: '/equipment-dashboard', actions: ['view', 'export'] },
       { key: 'equipment', name: 'Equipamentos', route: '/equipment', actions: ['view', 'create', 'edit', 'delete', 'export'] },
       { key: 'inspections', name: 'Inspecoes', route: '/inspections', actions: ['view', 'create', 'edit', 'delete', 'approve', 'export'] },
       { key: 'maintenance', name: 'Manutencao', route: '/maintenance', actions: ['view', 'create', 'edit', 'delete', 'approve', 'export'] },
@@ -90,6 +90,7 @@ export const ACCESS_MODULES: AccessModuleDefinition[] = [
       { key: 'history', name: 'Historico', route: '/evv/history', actions: ['view', 'edit', 'delete', 'export'] },
       { key: 'review', name: 'Revisao', route: '/evv/review', actions: ['view', 'approve', 'export'] },
       { key: 'reports', name: 'Relatorios', route: '/evv/reports', actions: ['view', 'export', 'admin'] },
+      { key: 'templates', name: 'Templates', route: '/evv/templates', actions: ['view', 'admin'] },
     ],
   },
   {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { Cloud, CloudOff, ClipboardList, History, BarChart3, RefreshCw, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Cloud, CloudOff, ClipboardList, History, BarChart3, RefreshCw, ShieldCheck, CheckCircle2, FileCog } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -124,6 +124,17 @@ export default function EvvHome() {
                 <CardTitle className="text-base mt-2">{t('evv.nav.reports')}</CardTitle>
               </CardHeader>
               <CardContent className="text-sm text-muted-foreground">{t('evv.home.reportsDesc')}</CardContent>
+            </Card>
+          </Link>
+        )}
+        {canReports && (
+          <Link to="/evv/templates">
+            <Card className="hover:border-primary transition-colors h-full">
+              <CardHeader>
+                <FileCog className="h-6 w-6 text-primary" />
+                <CardTitle className="text-base mt-2">{t('evv.nav.templates')}</CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground">{t('evv.home.templatesDesc')}</CardContent>
             </Card>
           </Link>
         )}

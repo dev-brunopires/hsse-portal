@@ -6,7 +6,8 @@
       "forms": "Forms",
       "history": "History",
       "reports": "Reports",
-      "review": "Review"
+      "review": "Review",
+      "templates": "Templates"
     },
     "environment": {
       "project": "Project",
@@ -17,7 +18,8 @@
       "formsDesc": "Start a new V&V form",
       "historyDesc": "View previous submissions and drafts",
       "reportsDesc": "Consolidated deviation dashboard",
-      "reviewDesc": "Review completed V&V submissions"
+      "reviewDesc": "Review completed V&V submissions",
+      "templatesDesc": "Configure forms, topics, subtopics, and checklist items"
     },
     "sync": {
       "title": "Sync",
@@ -42,7 +44,7 @@
     "wizard": {
       "subtitle": "Complete the steps to submit the observation",
       "step1": "Scope",
-      "step2": "Categories and Questions",
+      "step2": "Topics and Checklist",
       "step3": "Close-out",
       "selectDeficiencies": "Select at least one deficiency:",
       "commentsLabel": "Comments: explain your intervention",
@@ -51,12 +53,37 @@
       "scopeRequired": "Complete all required fields before continuing",
       "requiredFieldsHint": "Required fields pending",
       "missingFields": "Complete the following fields: {{fields}}",
-      "answersRequired": "Answer at least one question and select a deficiency for each Not Effective item",
+      "answersRequired": "Configure this form checklist and answer at least one item",
       "submit": "Submit",
       "saveDraft": "Save draft",
       "draftSaved": "Draft saved",
       "submitted": "Form submitted",
       "savedOffline": "Saved offline - sync when connection is available"
+    },
+    "templates": {
+      "title": "V&V Templates",
+      "subtitle": "Configure each form by topic, subtopic, and checklist",
+      "form": "Form",
+      "instructions": "The legacy form questions were reset. Add the topics and checklist items that should appear in the V&V wizard.",
+      "addTopic": "Add topic",
+      "addSubtopic": "Add subtopic",
+      "addChecklistItem": "Add item",
+      "topic": "Topic",
+      "subtopic": "Subtopic",
+      "checklistItem": "Checklist item",
+      "topicPlaceholder": "E.g.: Working at height",
+      "subtopicPlaceholder": "E.g.: Rope access",
+      "empty": "No topics configured for this form.",
+      "noSubtopics": "No subtopics configured for this topic.",
+      "noChecklist": "No checklist items configured for this subtopic.",
+      "resetAll": "Reset all",
+      "resetDone": "Templates reset",
+      "saved": "Templates saved",
+      "ready": "Configured",
+      "emptyBadge": "Empty",
+      "counts": "{{topics}} topics · {{subtopics}} subtopics · {{checklist}} items",
+      "formIsEmpty": "This form is empty.",
+      "formIsEmptyDescription": "Open V&V Templates to configure topics, subtopics, and checklist items before completing this form."
     },
     "scope": {
       "select": "Select",
@@ -356,7 +383,8 @@
     "evvForms": "Forms",
     "evvHistory": "History",
     "evvReview": "Review",
-    "evvReports": "Reports"
+    "evvReports": "Reports",
+    "evvTemplates": "Templates"
   },
   "mobileHome": {
     "greeting": "Welcome",
@@ -487,6 +515,8 @@
       "noRegionAssigned": "No region linked to the selected vessel",
       "department": "Department",
       "status": "Status",
+      "aiAssessment": "AI Status",
+      "alignment": "Consistency",
       "severity": "Severity",
       "riskLevel": "Risk Level",
       "period": "Period",
@@ -506,7 +536,12 @@
       "closed": "Closed",
       "avgClosingTime": "Average closing time",
       "days": "days",
-      "overdue": "Overdue"
+      "overdue": "Overdue",
+      "assessedUnsafe": "AI-assessed UNSAFE",
+      "mismatches": "SAFE/UNSAFE mismatches",
+      "followup": "Requires follow-up",
+      "weakActions": "Weak/missing actions",
+      "avgCriticality": "Average criticality"
     },
     "charts": {
       "monthlyTrend": "Monthly Trend",
@@ -522,7 +557,18 @@
       "topAreas": "Top Critical Areas",
       "criticalAreasHeatmap": "Critical Areas Heatmap",
       "performanceRanking": "Department Ranking",
-      "runAiFirst": "Click \"Classify with AI\" to generate this analysis."
+      "runAiFirst": "Click \"Classify with AI\" to generate this analysis.",
+      "statusAssurance": "SAFE/UNSAFE: declared vs AI",
+      "byBarrier": "Main barrier / failure",
+      "statusAlignment": "Reported status consistency",
+      "actionQuality": "Action quality",
+      "criticalAreas": "Areas by real criticality"
+    },
+    "alignment": {
+      "aligned": "Aligned",
+      "declaredSafeButUnsafe": "Declared SAFE, AI-assessed UNSAFE",
+      "declaredUnsafeButSafe": "Declared UNSAFE, AI-assessed SAFE",
+      "insufficientInfo": "Insufficient information"
     },
     "severity": {
       "low": "Low",

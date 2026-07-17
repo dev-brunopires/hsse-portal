@@ -1,5 +1,6 @@
 // eV&V form catalogs based on the All Safe functional specification.
 // The app stores answers as generic ratings, while each form owns its own questions.
+import { evvTemplateToCategories } from './templates';
 
 export type Rating = 'effective' | 'not_effective' | 'not_assessed';
 
@@ -441,15 +442,15 @@ const AAR_CATEGORIES: EvvCategory[] = [
 ];
 
 export const EVV_FORM_CATALOGS: Record<EvvFormType, EvvCategory[]> = {
-  safeguard: SAFEGUARD_CATEGORIES,
-  leaders_engagement: LEADERS_CATEGORIES,
-  workers_engagement: WORKERS_CATEGORIES,
-  tlo: TLO_CATEGORIES,
-  aar: AAR_CATEGORIES,
+  safeguard: [],
+  leaders_engagement: [],
+  workers_engagement: [],
+  tlo: [],
+  aar: [],
 };
 
-export const EVV_CATEGORIES = SAFEGUARD_CATEGORIES;
+export const EVV_CATEGORIES: EvvCategory[] = [];
 
 export function getEvvCategories(formType: EvvFormType): EvvCategory[] {
-  return EVV_FORM_CATALOGS[formType] ?? SAFEGUARD_CATEGORIES;
+  return evvTemplateToCategories(formType);
 }

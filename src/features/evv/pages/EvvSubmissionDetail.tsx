@@ -450,11 +450,11 @@ export default function EvvSubmissionDetail() {
               {attachments.map((att) => (
                 <li key={att.id} className="flex items-center justify-between gap-2 text-sm border rounded-md px-3 py-2">
                   <span className="truncate flex-1">{att.file_name}</span>
-                  <Button size="icon" variant="ghost" onClick={() => downloadAttachment(att)} aria-label="Download">
+                  <Button size="icon" variant="ghost" onClick={() => downloadAttachment(att)} aria-label={t('common.download')}>
                     <Download className="h-4 w-4" />
                   </Button>
                   {submission.review_status !== 'approved' && (att.uploaded_by === user?.id || canReview) && (
-                    <Button size="icon" variant="ghost" onClick={() => deleteAttachment(att)} aria-label="Delete">
+                    <Button size="icon" variant="ghost" onClick={() => deleteAttachment(att)} aria-label={t('common.delete')}>
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   )}
