@@ -128,7 +128,9 @@ export default function Inspections() {
   // Auto-open form when scanning QR code - trigger immediately on scan param
   useEffect(() => {
     if (scanEquipmentId) {
-      console.log('[Inspections] QR scan detected, opening form for equipment:', scanEquipmentId);
+      if (import.meta.env.DEV) {
+        console.log('[Inspections] QR scan detected, opening form for equipment:', scanEquipmentId);
+      }
       setPreselectedEquipmentId(scanEquipmentId);
       setShowNewInspectionForm(true);
       
@@ -303,7 +305,9 @@ export default function Inspections() {
         open={showQRScanner}
         onOpenChange={setShowQRScanner}
         onScan={(equipmentId) => {
-          console.log('[Inspections] QR scanned from internal scanner:', equipmentId);
+          if (import.meta.env.DEV) {
+            console.log('[Inspections] QR scanned from internal scanner:', equipmentId);
+          }
           // Include timestamp so re-scanning the same equipment still updates
           // the URL and re-triggers the scan-handling effect.
           setSearchParams({ scan: equipmentId, t: String(Date.now()) });

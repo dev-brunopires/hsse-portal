@@ -179,7 +179,9 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
       }
       
       if (equipment) {
-        console.log('[NewInspectionDialog] Auto-selecting equipment:', equipment.internal_code, 'Online:', isOnline);
+        if (import.meta.env.DEV) {
+          console.log('[NewInspectionDialog] Auto-selecting equipment:', equipment.internal_code, 'Online:', isOnline);
+        }
         setHasAutoSelected(true);
         
         if (isOnline) {
@@ -205,7 +207,9 @@ export function NewInspectionDialog({ open, onOpenChange, preSelectedEquipmentId
           }
         }
       } else {
-        console.log('[NewInspectionDialog] Equipment not found for ID:', preSelectedEquipmentId);
+        if (import.meta.env.DEV) {
+          console.log('[NewInspectionDialog] Equipment not found for ID:', preSelectedEquipmentId);
+        }
       }
     }
   }, [open, preSelectedEquipmentId, equipmentList, hasAutoSelected, isOnline, offlineEquipment]);
