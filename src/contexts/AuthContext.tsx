@@ -13,6 +13,7 @@ interface Profile {
   user_id: string;
   full_name: string;
   email: string;
+  organization_id: string | null;
   avatar_url: string | null;
   unit: string | null;
   position: string | null;
@@ -25,6 +26,27 @@ type QueryResult<T> = {
   data: T | null;
   error: { code?: string; message?: string } | null;
 };
+
+const ROLE_RANK: Record<AppRole, number> = {
+  admin_master: 5,
+  admin: 4,
+  supervisor: 3,
+  technician: 2,
+  viewer: 1,
+};
+
+function pickHighestRole(
+  roles: Array<{ role: AppRole | null; organization_id: string | null }> | null | undefined,
+  preferredOrganizationId?: string | null,
+) {
+  const candidates = roles?.filter((row): row is { role: AppRole; organization_id: string | null } => !!row.role) ?? [];
+  const preferred = preferredOrganizationId
+    ? candidates.filter(row => row.organization_id === preferredOrganizationId)
+    : [];
+
+  return (preferred.length > 0 ? preferred : candidates)
+    .sort((a, b) => ROLE_RANK[b.role] - ROLE_RANK[a.role])[0] ?? null;
+}
 
 interface AuthContextType {
   user: User | null;
@@ -95,13 +117,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const [profileResult, roleResult, platformOwnerResult] = await Promise.race([
         Promise.all([
           supabase.from('profiles').select('*').eq('user_id', userId).single(),
-          supabase.from('user_roles').select('role').eq('user_id', userId).maybeSingle(),
+          supabase.from('user_roles').select('role, organization_id').eq('user_id', userId),
           supabase.from('platform_owners').select('id').eq('user_id', userId).maybeSingle(),
         ]),
         timeoutPromise.then(() => { throw new Error('timeout'); }),
       ]) as [
         QueryResult<Profile>,
-        QueryResult<{ role: AppRole }>,
+        QueryResult<Array<{ role: AppRole | null; organization_id: string | null }>>,
         QueryResult<{ id: string }>
       ];
 
@@ -115,9 +137,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profileRef.current = profileResult.data;
       }
 
-      if (roleResult.data?.role) {
-        setRole(roleResult.data.role as AppRole);
-        roleRef.current = roleResult.data.role as AppRole;
+      const selectedRole = pickHighestRole(roleResult.data, profileResult.data?.organization_id);
+
+      if (selectedRole?.role) {
+        setRole(selectedRole.role);
+        roleRef.current = selectedRole.role;
       } else {
         // Only clear role when the request succeeded but no role exists.
         setRole(null);

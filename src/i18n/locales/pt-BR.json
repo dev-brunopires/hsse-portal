@@ -237,8 +237,8 @@
       "commentsLabel": "Comentários: explique sua intervenção",
       "commentsPlaceholder": "Descreva a intervenção realizada…",
       "commentsRequired": "Comentário obrigatório antes do envio",
-      "scopeRequired": "Preencha todos os campos obrigatorios antes de continuar",
-      "requiredFieldsHint": "Campos obrigatorios pendentes",
+      "scopeRequired": "Preencha todos os campos obrigatórios antes de continuar",
+      "requiredFieldsHint": "Campos obrigatórios pendentes",
       "missingFields": "Preencha os seguintes campos: {{fields}}",
       "answersRequired": "Cadastre o checklist do formulário e responda ao menos um item",
       "submit": "Enviar",
@@ -277,10 +277,10 @@
       "selectLocationFirst": "Selecione a localização primeiro",
       "environment": "Ambiente",
       "area": "Área geográfica / projeto",
-      "areaPlaceholder": "Ex.: Guiana, Brasil, Angola ou area do projeto",
-      "noRegionAssigned": "Nenhuma regiao vinculada ao navio selecionado",
-      "location": "Localizacao no navio",
-      "locationPlaceholder": "Selecione ou cadastre uma area do navio",
+      "areaPlaceholder": "Ex.: Guiana, Brasil, Angola ou área do projeto",
+      "noRegionAssigned": "Nenhuma região vinculada ao navio selecionado",
+      "location": "Localização no navio",
+      "locationPlaceholder": "Selecione ou cadastre uma área do navio",
       "visitDate": "Data e hora da visita",
       "permitToWork": "Houve Permissão de Trabalho envolvida?",
       "permitToWorkNumber": "Número da Permissão de Trabalho",
@@ -327,13 +327,13 @@
       "delete": "Excluir",
       "openDetail": "Abrir",
       "deleteConfirmTitle": "Excluir registro eV&V?",
-      "deleteConfirmDescription": "Esta acao nao pode ser desfeita. O registro sera removido permanentemente.",
+      "deleteConfirmDescription": "Esta ação não pode ser desfeita. O registro será removido permanentemente.",
       "deleteConfirm": "Excluir",
-      "deletedTitle": "Registro excluido",
+      "deletedTitle": "Registro excluído",
       "deletedDescription": "O registro eV&V foi removido com sucesso.",
       "deleteError": "Erro ao excluir registro",
       "previewTitle": "Visualizar rascunho eV&V",
-      "previewDescription": "Resumo dos dados preenchidos ate o momento.",
+      "previewDescription": "Resumo dos dados preenchidos até o momento.",
       "answeredItems": "Itens respondidos"
     },
     "reports": {
@@ -430,7 +430,7 @@
   },
   "obsCards": {
     "title": "Cartão de Observação com IA",
-    "subtitle": "Analise de cartoes de observacao com IA (BCO / PSO)",
+    "subtitle": "Análise de cartões de observação com IA (BCO / PSO)",
     "tabs": {
       "overview": "Visão Executiva",
       "risk": "Tipos de Risco",
@@ -538,7 +538,8 @@
       "year": "Ano",
       "ship": "Navio",
       "clear": "Limpar filtros",
-      "selectDataset": "Selecione uma base de dados"
+      "selectDataset": "Selecione uma base de dados",
+      "noRegionAssigned": "Nenhuma região vinculada ao navio selecionado"
     },
     "kpis": {
       "total": "Total de Observações",
@@ -609,16 +610,16 @@
       "runReclassify": "Reclassificar tudo (sobrescreve)",
       "runFilteredPending": "Classificar somente filtrados ({{count}})",
       "runFilteredReclassify": "Reclassificar filtrados ({{count}})",
-      "processingTitle": "Processando classificacao IA",
-      "preparing": "Preparando lote e contando cartoes...",
+      "processingTitle": "Processando classificação IA",
+      "preparing": "Preparando lote e contando cartões...",
       "refreshing": "Atualizando dashboard e resumo...",
       "progressDetail": "{{processed}} de {{total}} processados · {{remaining}} restantes",
-      "processingImpact": "Evite trocar de base, recarregar a pagina ou exportar PDF ate o processamento terminar.",
+      "processingImpact": "Evite trocar de base, recarregar a página ou exportar PDF até o processamento terminar.",
       "mode": {
         "all": "todos pendentes",
-        "all-reclassify": "reclassificacao completa",
+        "all-reclassify": "reclassificação completa",
         "filtered": "filtrados pendentes",
-        "filtered-reclassify": "reclassificacao filtrada"
+        "filtered-reclassify": "reclassificação filtrada"
       }
     }
   },
