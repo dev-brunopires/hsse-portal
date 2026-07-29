@@ -7,7 +7,7 @@ import { initClientTelemetry, telemetry } from '@/utils/clientTelemetry';
 
 initClientTelemetry();
 
-// Unregister Service Worker + clear caches on Lovable preview / iframe hosts
+// Unregister Service Worker + clear caches on embedded preview hosts
 // to prevent stale "old app" content. Production published domain keeps PWA.
 (() => {
   try {
@@ -16,9 +16,7 @@ initClientTelemetry();
     })();
     const host = window.location.hostname;
     const isPreviewHost =
-      host.includes('id-preview--') ||
-      host.includes('lovableproject.com') ||
-      host.endsWith('.lovable.dev');
+      host.includes('id-preview--');
 
     if (isPreviewHost || isInIframe) {
       if ('serviceWorker' in navigator) {

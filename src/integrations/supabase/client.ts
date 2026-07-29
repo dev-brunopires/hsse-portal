@@ -1,6 +1,6 @@
 // This file points to the external Supabase project (ovugummbxablwmbpbbhj).
-// Intentionally NOT using VITE_SUPABASE_* env vars (those are managed by Lovable Cloud
-// and still point to the legacy project).
+// Intentionally NOT using VITE_SUPABASE_* env vars here, to keep production
+// pinned to the current Supabase project.
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 

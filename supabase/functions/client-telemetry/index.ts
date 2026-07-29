@@ -1,4 +1,4 @@
-// Lovable Cloud Function: client-telemetry
+// Edge Function: client-telemetry
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

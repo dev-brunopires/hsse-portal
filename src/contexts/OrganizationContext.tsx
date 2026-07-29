@@ -39,9 +39,8 @@ const getSubdomainFromHostname = (search: string): string | null => {
   }
 
   if (
-    hostname.endsWith('.lovable.app') ||
     hostname.endsWith('.vercel.app') ||
-    hostname.endsWith('.lovableproject.com')
+    hostname.endsWith('.preview.vercel.app')
   ) {
     return params.get('org') || null;
   }
