@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '@/contexts/AuthContext';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
 export interface UserShip {
   id: string;
@@ -16,10 +18,42 @@ export interface UserShip {
 }
 
 export function useUserShips(userId?: string) {
+  const { user, isAdmin, isPlatformOwner } = useAuth();
+  const { organization, isPlatformOwnerWithoutOrg, isLoading: isOrgLoading } = useOrganization();
+  const shouldLoadAllAccessibleShips = !!userId && userId === user?.id && (isAdmin || isPlatformOwner);
+
   return useQuery({
-    queryKey: ['user-ships', userId],
+    queryKey: [
+      'user-ships',
+      userId,
+      shouldLoadAllAccessibleShips ? 'all-accessible' : 'assigned',
+      organization?.id,
+      isPlatformOwnerWithoutOrg,
+    ],
     queryFn: async () => {
       if (!userId) return [];
+
+      if (shouldLoadAllAccessibleShips) {
+        let query = supabase
+          .from('ships')
+          .select('id, name, code')
+          .order('name');
+
+        if (!isPlatformOwnerWithoutOrg && organization?.id) {
+          query = query.eq('organization_id', organization.id);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        return (data ?? []).map((ship) => ({
+          id: `all-access-${ship.id}`,
+          user_id: userId,
+          ship_id: ship.id,
+          created_at: '',
+          ship,
+        })) as UserShip[];
+      }
       
       const { data, error } = await supabase
         .from('user_ships')
@@ -36,7 +70,7 @@ export function useUserShips(userId?: string) {
       if (error) throw error;
       return data as UserShip[];
     },
-    enabled: !!userId,
+    enabled: !!userId && (!shouldLoadAllAccessibleShips || !isOrgLoading),
   });
 }
 
